@@ -1,0 +1,45 @@
+.vscode
+node_modules/
+
+# Environment variables - NEVER commit to git!
+.env
+.env.local
+.env.*.local
+.env.traefik
+
+# Copier answers - contains passwords!
+.copier-answers.yml
+.copier/.copier-answers.yml
+
+# Claude Code specific files
+.claude/logs/
+.claude/data/
+.claude/.env
+
+# Large documentation files
+frontend/CHAKRA-UI-FULL-DOCS.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.ruff_cache/
+
+# Frontend build
+frontend/dist/
+frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db

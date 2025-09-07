@@ -1,0 +1,141 @@
+project_name:
+  type: str
+  help: The name of the project, shown to API users (in .env)
+  default: FastAPI Project
+
+stack_name:
+  type: str
+  help: The name of the stack used for Docker Compose labels (no spaces) (in .env)
+  default: fastapi-project
+
+secret_key:
+  type: str
+  help: |
+    'The secret key for the project, used for JWT tokens.
+    Leave empty or "changethis" to auto-generate a secure one'
+  default: changethis
+  validator: "{% if secret_key and secret_key != 'changethis' and secret_key|length < 16 %}Secret key must be at least 16 characters long{% endif %}"
+
+first_superuser_username:
+  type: str
+  help: The username of the first superuser (in .env)
+  default: admin
+
+first_superuser_password:
+  type: str
+  help: |
+    'The password of the first superuser.
+    Leave empty or "changethis" to auto-generate a secure one'
+  default: changethis
+  validator: "{% if first_superuser_password and first_superuser_password != 'changethis' and first_superuser_password|length < 8 %}Password must be at least 8 characters long{% endif %}"
+
+
+postgres_password:
+  type: str
+  help: |
+    'The password for the PostgreSQL database.
+    Leave empty or "changethis" to auto-generate a secure one'
+  default: changethis
+  validator: "{% if postgres_password and postgres_password != 'changethis' and postgres_password|length < 8 %}Password must be at least 8 characters long{% endif %}"
+
+sentry_dsn:
+  type: str
+  help: The DSN for Sentry, if you are using it, you can set it later in .env
+  default: ""
+
+traefik_email:
+  type: str
+  help: |
+    Email for Let's Encrypt SSL certificates (production only).
+    Leave empty if not using Traefik/HTTPS
+  default: ""
+
+traefik_username:
+  type: str
+  help: |
+    Username for Traefik dashboard (production only).
+    Leave empty if not using Traefik
+  default: admin
+
+domain:
+  type: str
+  help: |
+    Production domain (e.g., example.com).
+    Used for CORS and Traefik routing.
+    Leave as "localhost" for local development
+  default: localhost
+
+frontend_subdomain:
+  type: str
+  help: |
+    Frontend location: use subdomain or root domain?
+    - "dashboard" = dashboard.example.com (admin panels)
+    - "" (empty) = example.com (public websites)
+  default: ""
+  choices:
+    - ""
+    - "dashboard"
+    - "app"
+
+github_repository:
+  type: str
+  help: |
+    GitHub repository URL (optional). If provided, will initialize git and set remote.
+    Format: git@github.com:username/repository.git or https://github.com/username/repository.git
+    Leave empty to skip GitHub setup.
+  default: ""
+
+_exclude:
+  # Global
+  - .vscode
+  - .mypy_cache
+  # Python
+  - __pycache__
+  - app.egg-info
+  - "*.pyc"
+  - .mypy_cache
+  - .coverage
+  - htmlcov
+  - .cache
+  - .venv
+  # Frontend
+  # Logs
+  - logs
+  - "*.log"
+  - npm-debug.log*
+  - yarn-debug.log*
+  - yarn-error.log*
+  - pnpm-debug.log*
+  - lerna-debug.log*
+  - node_modules
+  - dist
+  - dist-ssr
+  - "*.local"
+  # Editor directories and files
+  - .idea
+  - .DS_Store
+  - "*.suo"
+  - "*.ntvs*"
+  - "*.njsproj"
+  - "*.sln"
+  - "*.sw?"
+  # Claude Code specific files (exclude from template)
+  - .claude/logs
+  - .claude/data
+  - .claude/.copier
+  - .claude/fix_paths.py
+  - .claude/settings.local.json  # Local settings for template development
+  - .claude/.env  # Exclude local .env from template
+  - README.md  # Template README, not for generated projects
+  - CLAUDE.md  # Use CLAUDE.md.jinja instead
+  - backend/CLAUDE.md  # Use backend/CLAUDE.md.jinja instead
+  - frontend/CLAUDE.md  # Use frontend/CLAUDE.md.jinja instead
+  - frontend/wowdash-templates-tailwand/wowdash.md  # Use wowdash.md.jinja instead
+
+_answers_file: .copier/.copier-answers.yml
+
+_tasks:
+  - ["{{ _copier_python }}", .copier/install_dependencies.py]
+  - ["{{ _copier_python }}", .copier/update_dotenv.py]
+  - ["{{ _copier_python }}", .copier/update_settings_paths.py]
+  - ["{{ _copier_python }}", .copier/setup_git.py]
