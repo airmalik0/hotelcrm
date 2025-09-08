@@ -1,4 +1,5 @@
 import os
+import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -28,8 +29,16 @@ class StorageService(ABC):
 
 
 class LocalStorageService(StorageService):
-    def __init__(self, base_path: str = "/app/reports"):
-        self.base_path = Path(base_path)
+    def __init__(self, base_path: str | None = None):
+        if base_path:
+            self.base_path = Path(base_path)
+        else:
+            # Use /app/reports in Docker, temp directory otherwise
+            if os.path.exists("/app"):
+                self.base_path = Path("/app/reports")
+            else:
+                # For local testing, use temp directory
+                self.base_path = Path(tempfile.gettempdir()) / "hotelcrm_reports"
         self.base_path.mkdir(parents=True, exist_ok=True)
 
     def _get_file_path(self, report_type: str, filename: str) -> Path:

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlmodel import Session
 
 from app.models import Booking, BookingStatus, Customer, Room, RoomType
@@ -86,7 +86,8 @@ class AnalyticsService:
         if room_id:
             room_count_query = room_count_query.where(Room.id == room_id)
 
-        total_rooms = self.db.exec(room_count_query).first() or 1
+        room_count_result = self.db.exec(room_count_query).first()
+        total_rooms = room_count_result[0] if room_count_result else 1
 
         # Calculate occupancy and format results
         formatted_results = []
@@ -413,7 +414,7 @@ class AnalyticsService:
                 customer_bookings.c.period,
                 func.count(customer_bookings.c.customer_id).label("total_customers"),
                 func.sum(
-                    func.case(
+                    case(
                         (customer_bookings.c.booking_count > 1, 1),
                         else_=0
                     )

@@ -68,7 +68,7 @@ async def import_customers_from_csv(
     import_service = ImportService(db)
     result = await import_service.import_customers_from_csv(content)
 
-    if not result.success:
+    if not result.get("success", False):
         # Return detailed error information
         return result
 

@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from sqlmodel import Session
 
-from app.api.deps import CurrentUser, SessionDep, get_current_admin_user
+from app.api.deps import SessionDep, get_current_admin_user
 from app.schemas.report_schemas import (
     JobStatus,
     ReportFormat,
@@ -373,6 +373,61 @@ async def generate_revenue_report(
     )
 
 
+async def generate_top_customers_task(
+    job_id: str,
+    db: Session,
+    params: dict[str, Any]
+) -> None:
+    """Background task to generate top customers report."""
+    try:
+        job_storage[job_id]["status"] = JobStatus.PROCESSING
+        job_storage[job_id]["progress"] = 10
+
+        analytics = AnalyticsService(db)
+        data = await analytics.get_top_customers(
+            params["start_date"],
+            params["end_date"],
+            params["limit"],
+            params["sort_by"]
+        )
+
+        job_storage[job_id]["progress"] = 60
+
+        # Export to requested format
+        format = params.get("format", "json")
+        if format == ReportFormat.JSON:
+            content = json.dumps(data, indent=2).encode()
+            filename = f"top_customers_{job_id}.json"
+        elif format == ReportFormat.CSV:
+            export_service = ExportService()
+            content = await export_service.export_to_csv(data)
+            filename = f"top_customers_{job_id}.csv"
+        elif format == ReportFormat.EXCEL:
+            export_service = ExportService()
+            content = await export_service.export_customer_report(data, "excel")
+            filename = f"top_customers_{job_id}.xlsx"
+        else:  # PDF
+            pdf_service = PDFService()
+            content = await pdf_service.create_customer_report_pdf(data)
+            filename = f"top_customers_{job_id}.pdf"
+
+        job_storage[job_id]["progress"] = 80
+
+        # Save file
+        file_path = await storage_service.save_file(content, filename, "customers")
+
+        # Update job status
+        job_storage[job_id]["status"] = JobStatus.COMPLETED
+        job_storage[job_id]["progress"] = 100
+        job_storage[job_id]["result_path"] = file_path
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+    except Exception as e:
+        job_storage[job_id]["status"] = JobStatus.FAILED
+        job_storage[job_id]["error"] = str(e)
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+
 @router.post(
     "/top_customers/generate",
     response_model=ReportJobResponse,
@@ -386,54 +441,6 @@ async def generate_top_customers_report(
     """Generate top customers report (admin only)."""
     job_id = str(uuid.uuid4())
 
-    async def generate_task():
-        try:
-            job_storage[job_id]["status"] = JobStatus.PROCESSING
-            job_storage[job_id]["progress"] = 10
-
-            analytics = AnalyticsService(db)
-            data = await analytics.get_top_customers(
-                request.start_date,
-                request.end_date,
-                request.limit,
-                request.sort_by
-            )
-
-            job_storage[job_id]["progress"] = 60
-
-            # Export to requested format
-            if request.format == ReportFormat.JSON:
-                content = json.dumps(data, indent=2).encode()
-                filename = f"top_customers_{job_id}.json"
-            elif request.format == ReportFormat.CSV:
-                export_service = ExportService()
-                content = await export_service.export_to_csv(data)
-                filename = f"top_customers_{job_id}.csv"
-            elif request.format == ReportFormat.EXCEL:
-                export_service = ExportService()
-                content = await export_service.export_customer_report(data, "excel")
-                filename = f"top_customers_{job_id}.xlsx"
-            else:  # PDF
-                pdf_service = PDFService()
-                content = await pdf_service.create_customer_report_pdf(data)
-                filename = f"top_customers_{job_id}.pdf"
-
-            job_storage[job_id]["progress"] = 80
-
-            # Save file
-            file_path = await storage_service.save_file(content, filename, "customers")
-
-            # Update job status
-            job_storage[job_id]["status"] = JobStatus.COMPLETED
-            job_storage[job_id]["progress"] = 100
-            job_storage[job_id]["result_path"] = file_path
-            job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-        except Exception as e:
-            job_storage[job_id]["status"] = JobStatus.FAILED
-            job_storage[job_id]["error"] = str(e)
-            job_storage[job_id]["completed_at"] = datetime.utcnow()
-
     job_storage[job_id] = {
         "job_id": job_id,
         "status": JobStatus.QUEUED,
@@ -443,7 +450,12 @@ async def generate_top_customers_report(
         "parameters": request.model_dump(),
     }
 
-    background_tasks.add_task(generate_task)
+    background_tasks.add_task(
+        generate_top_customers_task,
+        job_id,
+        db,
+        request.model_dump()
+    )
 
     return ReportJobResponse(
         job_id=uuid.UUID(job_id),
@@ -452,15 +464,299 @@ async def generate_top_customers_report(
     )
 
 
+async def generate_repeat_guest_rate_task(
+    job_id: str,
+    db: Session,
+    params: dict[str, Any]
+) -> None:
+    """Background task to generate repeat guest rate report."""
+    try:
+        job_storage[job_id]["status"] = JobStatus.PROCESSING
+        job_storage[job_id]["progress"] = 10
+
+        analytics = AnalyticsService(db)
+        data = await analytics.get_repeat_guest_rate(
+            params["start_date"],
+            params["end_date"],
+            params.get("group_by", "month")
+        )
+
+        job_storage[job_id]["progress"] = 60
+
+        # Export to requested format
+        format = params.get("format", "json")
+        if format == ReportFormat.JSON:
+            content = json.dumps(data, indent=2).encode()
+            filename = f"repeat_guest_rate_{job_id}.json"
+        elif format == ReportFormat.CSV:
+            export_service = ExportService()
+            content = await export_service.export_to_csv(data)
+            filename = f"repeat_guest_rate_{job_id}.csv"
+        elif format == ReportFormat.EXCEL:
+            export_service = ExportService()
+            content = await export_service.export_analytics_report(data, "excel")
+            filename = f"repeat_guest_rate_{job_id}.xlsx"
+        else:  # PDF
+            pdf_service = PDFService()
+            content = await pdf_service.create_analytics_report_pdf(data, "Repeat Guest Rate Report")
+            filename = f"repeat_guest_rate_{job_id}.pdf"
+
+        job_storage[job_id]["progress"] = 80
+
+        # Save file
+        file_path = await storage_service.save_file(content, filename, "analytics")
+
+        # Update job status
+        job_storage[job_id]["status"] = JobStatus.COMPLETED
+        job_storage[job_id]["progress"] = 100
+        job_storage[job_id]["result_path"] = file_path
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+    except Exception as e:
+        job_storage[job_id]["status"] = JobStatus.FAILED
+        job_storage[job_id]["error"] = str(e)
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+
+@router.post(
+    "/repeat_guest_rate/generate",
+    response_model=ReportJobResponse,
+    dependencies=[Depends(get_current_admin_user)]
+)
+async def generate_repeat_guest_rate_report(
+    request: ReportGenerationRequest,
+    background_tasks: BackgroundTasks,
+    db: SessionDep
+) -> ReportJobResponse:
+    """Generate repeat guest rate report (admin only)."""
+    job_id = str(uuid.uuid4())
+
+    job_storage[job_id] = {
+        "job_id": job_id,
+        "status": JobStatus.QUEUED,
+        "progress": 0,
+        "created_at": datetime.utcnow(),
+        "report_type": ReportType.REPEAT_GUEST_RATE,
+        "parameters": request.model_dump(),
+    }
+
+    background_tasks.add_task(
+        generate_repeat_guest_rate_task,
+        job_id,
+        db,
+        request.model_dump()
+    )
+
+    return ReportJobResponse(
+        job_id=uuid.UUID(job_id),
+        status=JobStatus.QUEUED,
+        message="Repeat guest rate report generation started"
+    )
+
+
+async def generate_payment_methods_task(
+    job_id: str,
+    db: Session,
+    params: dict[str, Any]
+) -> None:
+    """Background task to generate payment methods report."""
+    try:
+        job_storage[job_id]["status"] = JobStatus.PROCESSING
+        job_storage[job_id]["progress"] = 10
+
+        analytics = AnalyticsService(db)
+        data = await analytics.get_payment_methods_distribution(
+            params["start_date"],
+            params["end_date"],
+            params.get("group_by", "month")
+        )
+
+        job_storage[job_id]["progress"] = 40
+
+        # Generate chart if requested
+        chart_image = None
+        if params.get("include_charts"):
+            chart_service = ChartService()
+            chart_image = await chart_service.create_payment_methods_pie_chart(data)
+
+        job_storage[job_id]["progress"] = 60
+
+        # Export to requested format
+        format = params.get("format", "json")
+        if format == ReportFormat.JSON:
+            content = json.dumps(data, indent=2).encode()
+            filename = f"payment_methods_{job_id}.json"
+        elif format == ReportFormat.CSV:
+            export_service = ExportService()
+            content = await export_service.export_to_csv(data)
+            filename = f"payment_methods_{job_id}.csv"
+        elif format == ReportFormat.EXCEL:
+            export_service = ExportService()
+            content = await export_service.export_analytics_report(data, "excel")
+            filename = f"payment_methods_{job_id}.xlsx"
+        else:  # PDF
+            pdf_service = PDFService()
+            content = await pdf_service.create_analytics_report_pdf(data, "Payment Methods Distribution", chart_image)
+            filename = f"payment_methods_{job_id}.pdf"
+
+        job_storage[job_id]["progress"] = 80
+
+        # Save file
+        file_path = await storage_service.save_file(content, filename, "analytics")
+
+        # Update job status
+        job_storage[job_id]["status"] = JobStatus.COMPLETED
+        job_storage[job_id]["progress"] = 100
+        job_storage[job_id]["result_path"] = file_path
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+    except Exception as e:
+        job_storage[job_id]["status"] = JobStatus.FAILED
+        job_storage[job_id]["error"] = str(e)
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+
+@router.post(
+    "/payment_methods/generate",
+    response_model=ReportJobResponse,
+    dependencies=[Depends(get_current_admin_user)]
+)
+async def generate_payment_methods_report(
+    request: ReportGenerationRequest,
+    background_tasks: BackgroundTasks,
+    db: SessionDep
+) -> ReportJobResponse:
+    """Generate payment methods distribution report (admin only)."""
+    job_id = str(uuid.uuid4())
+
+    job_storage[job_id] = {
+        "job_id": job_id,
+        "status": JobStatus.QUEUED,
+        "progress": 0,
+        "created_at": datetime.utcnow(),
+        "report_type": ReportType.PAYMENT_METHODS,
+        "parameters": request.model_dump(),
+    }
+
+    background_tasks.add_task(
+        generate_payment_methods_task,
+        job_id,
+        db,
+        request.model_dump()
+    )
+
+    return ReportJobResponse(
+        job_id=uuid.UUID(job_id),
+        status=JobStatus.QUEUED,
+        message="Payment methods report generation started"
+    )
+
+
+async def generate_geographic_analysis_task(
+    job_id: str,
+    db: Session,
+    params: dict[str, Any]
+) -> None:
+    """Background task to generate geographic analysis report."""
+    try:
+        job_storage[job_id]["status"] = JobStatus.PROCESSING
+        job_storage[job_id]["progress"] = 10
+
+        analytics = AnalyticsService(db)
+        data = await analytics.get_geographic_analysis(
+            params["start_date"],
+            params["end_date"]
+        )
+
+        job_storage[job_id]["progress"] = 40
+
+        # Generate chart if requested
+        if params.get("include_charts"):
+            chart_service = ChartService()
+            await chart_service.create_geographic_heatmap(data)
+
+        job_storage[job_id]["progress"] = 60
+
+        # Export to requested format
+        format = params.get("format", "json")
+        if format == ReportFormat.JSON:
+            content = json.dumps(data, indent=2).encode()
+            filename = f"geographic_analysis_{job_id}.json"
+        elif format == ReportFormat.CSV:
+            export_service = ExportService()
+            content = await export_service.export_to_csv(data)
+            filename = f"geographic_analysis_{job_id}.csv"
+        elif format == ReportFormat.EXCEL:
+            export_service = ExportService()
+            content = await export_service.export_geographic_report(data, "excel")
+            filename = f"geographic_analysis_{job_id}.xlsx"
+        else:  # PDF
+            pdf_service = PDFService()
+            content = await pdf_service.create_geographic_report_pdf(data)
+            filename = f"geographic_analysis_{job_id}.pdf"
+
+        job_storage[job_id]["progress"] = 80
+
+        # Save file
+        file_path = await storage_service.save_file(content, filename, "analytics")
+
+        # Update job status
+        job_storage[job_id]["status"] = JobStatus.COMPLETED
+        job_storage[job_id]["progress"] = 100
+        job_storage[job_id]["result_path"] = file_path
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+    except Exception as e:
+        job_storage[job_id]["status"] = JobStatus.FAILED
+        job_storage[job_id]["error"] = str(e)
+        job_storage[job_id]["completed_at"] = datetime.utcnow()
+
+
+@router.post(
+    "/geographic_analysis/generate",
+    response_model=ReportJobResponse,
+    dependencies=[Depends(get_current_admin_user)]
+)
+async def generate_geographic_analysis_report(
+    request: ReportGenerationRequest,
+    background_tasks: BackgroundTasks,
+    db: SessionDep
+) -> ReportJobResponse:
+    """Generate geographic analysis report (admin only)."""
+    job_id = str(uuid.uuid4())
+
+    job_storage[job_id] = {
+        "job_id": job_id,
+        "status": JobStatus.QUEUED,
+        "progress": 0,
+        "created_at": datetime.utcnow(),
+        "report_type": ReportType.GEOGRAPHIC_ANALYSIS,
+        "parameters": request.model_dump(),
+    }
+
+    background_tasks.add_task(
+        generate_geographic_analysis_task,
+        job_id,
+        db,
+        request.model_dump()
+    )
+
+    return ReportJobResponse(
+        job_id=uuid.UUID(job_id),
+        status=JobStatus.QUEUED,
+        message="Geographic analysis report generation started"
+    )
+
+
 @router.get(
     "/jobs/{job_id}/status",
-    response_model=ReportJobStatus
+    response_model=ReportJobStatus,
+    dependencies=[Depends(get_current_admin_user)]
 )
 async def get_job_status(
-    job_id: uuid.UUID,
-    current_user: CurrentUser
+    job_id: uuid.UUID
 ) -> ReportJobStatus:
-    """Get report generation job status."""
+    """Get report generation job status (admin only)."""
     job_id_str = str(job_id)
 
     if job_id_str not in job_storage:
@@ -481,13 +777,13 @@ async def get_job_status(
 
 
 @router.get(
-    "/jobs/{job_id}/download"
+    "/jobs/{job_id}/download",
+    dependencies=[Depends(get_current_admin_user)]
 )
 async def download_report(
-    job_id: uuid.UUID,
-    current_user: CurrentUser
+    job_id: uuid.UUID
 ) -> Response:
-    """Download completed report."""
+    """Download completed report (admin only)."""
     job_id_str = str(job_id)
 
     if job_id_str not in job_storage:

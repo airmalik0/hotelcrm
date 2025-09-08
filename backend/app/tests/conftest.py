@@ -18,8 +18,18 @@ from app.models import AuditLog, Booking, Customer, Room, User
 from app.tests.utils.user import authentication_token_from_username
 from app.tests.utils.utils import get_superuser_token_headers
 
-# Create a test database URL
-TEST_DATABASE_URL = str(settings.SQLALCHEMY_DATABASE_URI).replace("/app", "/test_app")
+# Create a test database URL - use localhost when running tests from host
+# The Docker compose exposes PostgreSQL on localhost:5432
+import os
+if os.getenv("TESTING_IN_DOCKER"):
+    # If running tests inside Docker container
+    TEST_DATABASE_URL = str(settings.SQLALCHEMY_DATABASE_URI).replace("/app", "/test_app")
+else:
+    # Running tests from host machine - connect to Docker PostgreSQL on localhost
+    # Use psycopg (v3) driver explicitly
+    # Docker exposes PostgreSQL on port 5433
+    postgres_password = "92c648d90ef8afdaef5951e008a6b43f1568ef1821b71a940d1ee82f7f11c4b1"
+    TEST_DATABASE_URL = f"postgresql+psycopg://postgres:{postgres_password}@localhost:5433/test_app"
 
 
 @pytest.fixture(scope="session")
