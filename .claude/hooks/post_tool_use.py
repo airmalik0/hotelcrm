@@ -192,8 +192,8 @@ def manage_counter_and_check_linters(tool_name, input_data):
     with open(counter_file, "w") as f:
         json.dump({"backend_count": backend_count, "frontend_count": frontend_count}, f)
 
-    # Check if we should run linters (every 3rd write operation for that specific type)
-    should_run = current_count % 3 == 0
+    # Check if we should run linters (every 5th write operation for that specific type)
+    should_run = current_count % 5 == 0
 
     return should_run, current_count, operation_type
 
@@ -509,7 +509,7 @@ Schemas automatically regenerated due to models.py changes."""
                     f" ({linter_operation_type})" if linter_operation_type else ""
                 )
                 linter_output.append(
-                    f"🔍 LINTER CHECK{linter_type_label} (every 3rd {linter_operation_type or ''} write operation, #{current_count})"
+                    f"🔍 LINTER CHECK{linter_type_label} (every 5th {linter_operation_type or ''} write operation, #{current_count})"
                 )
                 linter_output.append(f"{'='*60}")
 

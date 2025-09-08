@@ -1,15 +1,13 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app import crud
-from app.api.deps import (
-    CurrentUser,
-    SessionDep,
-    get_current_active_superuser,
-)
+from app.api.deps import CurrentUser, SessionDep
+from app.core.audit import get_change_values, get_entity_name, log_audit
+from app.core.rbac import check_admin_only
 from app.core.security import get_password_hash, verify_password
 from app.models import (
     Message,
@@ -26,15 +24,12 @@ from app.models import (
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get(
-    "/",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=UsersPublic,
-)
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+@router.get("/", response_model=UsersPublic)
+def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
-    Retrieve users.
+    Retrieve users. Only admin can access.
     """
+    check_admin_only(current_user)
 
     count_statement = select(func.count()).select_from(User)
     count = session.exec(count_statement).one()
@@ -45,21 +40,35 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     return UsersPublic(data=users, count=count)
 
 
-@router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
-)
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+@router.post("/", response_model=UserPublic)
+def create_user(*, session: SessionDep, current_user: CurrentUser, user_in: UserCreate) -> Any:
     """
-    Create new user.
+    Create new user. Only admin can create users.
     """
-    user = crud.get_user_by_username(session=session, username=user_in.username)
-    if user:
+    check_admin_only(current_user)
+    existing_user = crud.get_user_by_username(session=session, username=user_in.username)
+    if existing_user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
 
     user = crud.create_user(session=session, user_create=user_in)
+
+    # Log audit in the same transaction
+    entity_name = get_entity_name("user", user)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="created",
+        entity_type="user",
+        entity_id=user.id,
+        entity_name=entity_name,
+    )
+
+    # Single commit for both user and audit
+    session.commit()
+    session.refresh(user)
     return user
 
 
@@ -80,8 +89,28 @@ def update_user_me(
                 status_code=409, detail="User with this username already exists"
             )
     user_data = user_in.model_dump(exclude_unset=True)
+
+    # Get old and new values for audit
+    old_values, new_values = get_change_values(current_user, user_data)
+
     current_user.sqlmodel_update(user_data)
     session.add(current_user)
+
+    # Log audit if there were changes
+    if old_values:
+        entity_name = get_entity_name("user", current_user)
+        log_audit(
+            session=session,
+            user=current_user,
+            action="updated_profile",
+            entity_type="user",
+            entity_id=current_user.id,
+            entity_name=entity_name,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
+    # Single commit for both user update and audit
     session.commit()
     session.refresh(current_user)
     return current_user
@@ -104,6 +133,18 @@ def update_password_me(
     current_user.hashed_password = hashed_password
     session.add(current_user)
     session.commit()
+
+    # Log audit for password change
+    entity_name = get_entity_name("user", current_user)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="password_changed",
+        entity_type="user",
+        entity_id=current_user.id,
+        entity_name=entity_name,
+    )
+
     return Message(message="Password updated successfully")
 
 
@@ -124,6 +165,18 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+
+    # Log audit before deletion
+    entity_name = get_entity_name("user", current_user)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="self_deleted",
+        entity_type="user",
+        entity_id=current_user.id,
+        entity_name=entity_name,
+    )
+
     session.delete(current_user)
     session.commit()
     return Message(message="User deleted successfully")
@@ -133,15 +186,28 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """
     Create new user without the need to be logged in.
+    Note: In production, this endpoint should have rate limiting and possibly CAPTCHA.
     """
-    user = crud.get_user_by_username(session=session, username=user_in.username)
-    if user:
+    existing_user = crud.get_user_by_username(session=session, username=user_in.username)
+    if existing_user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
+
+    # Log audit for self-registration
+    entity_name = get_entity_name("user", user)
+    log_audit(
+        session=session,
+        user=user,  # User logs their own registration
+        action="registered",
+        entity_type="user",
+        entity_id=user.id,
+        entity_name=entity_name,
+    )
+
     return user
 
 
@@ -153,33 +219,33 @@ def read_user_by_id(
     Get a specific user by id.
     """
     user = session.get(User, user_id)
+    if not user:
+        # Check permissions before revealing that user doesn't exist
+        if current_user.id != user_id:
+            check_admin_only(current_user)
+        raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
         return user
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403,
-            detail="The user doesn't have enough privileges",
-        )
+    # Only admin can view other users
+    check_admin_only(current_user)
     return user
 
 
-@router.patch(
-    "/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
-    response_model=UserPublic,
-)
+@router.patch("/{user_id}", response_model=UserPublic)
 def update_user(
     *,
     session: SessionDep,
+    current_user: CurrentUser,
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
     """
-    Update a user.
+    Update a user. Only admin can update users.
     """
+    check_admin_only(current_user)
 
-    db_user = session.get(User, user_id)
-    if not db_user:
+    user = session.get(User, user_id)
+    if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this id does not exist in the system",
@@ -193,24 +259,63 @@ def update_user(
                 status_code=409, detail="User with this username already exists"
             )
 
-    db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
-    return db_user
+    # Get old values before update
+    update_data = user_in.model_dump(exclude_unset=True)
+    old_values, new_values = get_change_values(user, update_data)
+
+    user = crud.update_user(session=session, user=user, user_in=user_in)
+
+    # Log audit if there were changes
+    if old_values:
+        entity_name = get_entity_name("user", user)
+        log_audit(
+            session=session,
+            user=current_user,
+            action="updated",
+            entity_type="user",
+            entity_id=user.id,
+            entity_name=entity_name,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
+    return user
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete("/{user_id}")
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
     """
-    Delete a user.
+    Delete a user. Only admin can delete users.
     """
+    check_admin_only(current_user)
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
+        if user.is_superuser:
+            raise HTTPException(
+                status_code=403, detail="Super users are not allowed to delete themselves"
+            )
         raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
+            status_code=403, detail="You cannot delete your own account. Use /me endpoint instead."
         )
+    if user.is_superuser:
+        raise HTTPException(
+            status_code=403, detail="Cannot delete superuser accounts"
+        )
+    # Log audit before deletion
+    entity_name = get_entity_name("user", user)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="deleted",
+        entity_type="user",
+        entity_id=user.id,
+        entity_name=entity_name,
+    )
+
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")

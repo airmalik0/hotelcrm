@@ -1,8 +1,8 @@
-"""Add hotel CRM models
+"""Initial migration with all models
 
-Revision ID: 4417f4b41525
-Revises: 85a0ae115761
-Create Date: 2025-09-06 13:59:51.921348
+Revision ID: ed773035736b
+Revises: 
+Create Date: 2025-09-08 15:45:12.843194
 
 """
 from alembic import op
@@ -11,8 +11,8 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = '4417f4b41525'
-down_revision = '85a0ae115761'
+revision = 'ed773035736b'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -22,12 +22,10 @@ def upgrade():
     op.create_table('customer',
     sa.Column('first_name', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('last_name', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
-    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
-    sa.Column('passport_number', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=True),
-    sa.Column('nationality', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=True),
     sa.Column('date_of_birth', sa.DateTime(), nullable=True),
-    sa.Column('address', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
+    sa.Column('district', sqlmodel.sql.sqltypes.AutoString(length=200), nullable=True),
+    sa.Column('passport_photo_path', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('total_spent', sa.Float(), nullable=False),
@@ -39,32 +37,56 @@ def upgrade():
     sa.Column('tags', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_customer_email'), 'customer', ['email'], unique=True)
     op.create_table('room',
     sa.Column('room_number', sqlmodel.sql.sqltypes.AutoString(length=10), nullable=False),
     sa.Column('floor', sa.Integer(), nullable=False),
-    sa.Column('room_type', sa.Enum('SINGLE', 'DOUBLE', 'SUITE', 'DELUXE', 'PRESIDENTIAL', name='roomtype'), nullable=False),
+    sa.Column('room_type', sa.Enum('STANDARD', 'VIP', name='roomtype'), nullable=False),
     sa.Column('price_per_night', sa.Float(), nullable=False),
     sa.Column('status', sa.Enum('AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', name='roomstatus'), nullable=False),
-    sa.Column('max_occupancy', sa.Integer(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
+    sa.Column('room_photo_paths', sa.JSON(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_room_room_number'), 'room', ['room_number'], unique=True)
+    op.create_table('user',
+    sa.Column('username', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_superuser', sa.Boolean(), nullable=False),
+    sa.Column('full_name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('role', sa.Enum('ADMIN', 'MANAGER', 'HOST', name='userrole'), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('hashed_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_user_username'), 'user', ['username'], unique=True)
+    op.create_table('auditlog',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('action', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
+    sa.Column('entity_type', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=False),
+    sa.Column('entity_id', sa.Uuid(), nullable=False),
+    sa.Column('entity_name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
+    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=False),
+    sa.Column('old_values', sa.JSON(), nullable=True),
+    sa.Column('new_values', sa.JSON(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('booking',
     sa.Column('customer_id', sa.Uuid(), nullable=False),
     sa.Column('room_id', sa.Uuid(), nullable=False),
     sa.Column('check_in', sa.DateTime(), nullable=False),
     sa.Column('check_out', sa.DateTime(), nullable=False),
     sa.Column('status', sa.Enum('CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', name='bookingstatus'), nullable=False),
-    sa.Column('adults', sa.Integer(), nullable=False),
-    sa.Column('children', sa.Integer(), nullable=False),
     sa.Column('total_amount', sa.Float(), nullable=False),
-    sa.Column('paid_amount', sa.Float(), nullable=False),
-    sa.Column('special_requests', sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=True),
+    sa.Column('discount', sa.Float(), nullable=False),
+    sa.Column('discount_reason', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
+    sa.Column('payment_method', sa.Enum('CASH', 'TRANSFER', 'TERMINAL', name='paymentmethod'), nullable=False),
+    sa.Column('registration_need', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('booking_date', sa.DateTime(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
@@ -79,8 +101,10 @@ def upgrade():
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('booking')
+    op.drop_table('auditlog')
+    op.drop_index(op.f('ix_user_username'), table_name='user')
+    op.drop_table('user')
     op.drop_index(op.f('ix_room_room_number'), table_name='room')
     op.drop_table('room')
-    op.drop_index(op.f('ix_customer_email'), table_name='customer')
     op.drop_table('customer')
     # ### end Alembic commands ###

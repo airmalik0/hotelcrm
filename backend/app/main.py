@@ -1,11 +1,15 @@
 # Main FastAPI application entry point
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from sqlalchemy.exc import IntegrityError
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.db_events import setup_db_events
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -43,3 +47,58 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Setup database event handlers for automatic field updates
+setup_db_events()
+
+
+# Exception handlers
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle Pydantic validation errors with consistent format.
+    """
+    errors = []
+    for error in exc.errors():
+        field_path = " -> ".join(str(loc) for loc in error["loc"])
+        errors.append({
+            "field": field_path,
+            "message": error["msg"],
+            "type": error["type"]
+        })
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "detail": "Validation error",
+            "errors": errors
+        }
+    )
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_exception_handler(request: Request, exc: IntegrityError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle database integrity errors (unique constraints, foreign keys, etc).
+    """
+    error_msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
+
+    # Parse common integrity errors for better messages
+    if "duplicate key" in error_msg.lower() or "unique constraint" in error_msg.lower():
+        if "room_number" in error_msg:
+            detail = "Room number already exists"
+        elif "phone" in error_msg:
+            detail = "Phone number already registered"
+        elif "username" in error_msg:
+            detail = "Username already exists"
+        else:
+            detail = "Duplicate value for unique field"
+    elif "foreign key" in error_msg.lower():
+        detail = "Referenced record does not exist"
+    else:
+        detail = "Database constraint violation"
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": detail}
+    )

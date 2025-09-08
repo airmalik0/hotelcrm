@@ -2,24 +2,30 @@ import re
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_core import core_schema
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, ForeignKey, Uuid
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     pass
 
 
-# Test comment to trigger schema regeneration
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    MANAGER = "manager"
+    HOST = "host"
+
+
 # Shared properties
 class UserBase(SQLModel):
     username: str = Field(unique=True, index=True, min_length=3, max_length=50)
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
+    role: "UserRole" = Field(default=UserRole.HOST)
 
     @field_validator("username")
     @classmethod
@@ -112,11 +118,8 @@ class TokenPayload(SQLModel):
 
 
 class RoomType(str, Enum):
-    SINGLE = "single"
-    DOUBLE = "double"
-    SUITE = "suite"
-    DELUXE = "deluxe"
-    PRESIDENTIAL = "presidential"
+    STANDARD = "standard"
+    VIP = "vip"
 
 
 class RoomStatus(str, Enum):
@@ -133,23 +136,37 @@ class BookingStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class PaymentMethod(str, Enum):
+    CASH = "cash"
+    TRANSFER = "transfer"
+    TERMINAL = "terminal"
+
+
 class CustomerTag(str, Enum):
+    LOYAL = "loyal"
     VIP = "vip"
-    REGULAR = "regular"
-    BUSINESS = "business"
-    FAMILY = "family"
-    CORPORATE = "corporate"
+    PROBLEMATIC = "problematic"
 
 
 # Room models
 class RoomBase(SQLModel):
-    room_number: str = Field(unique=True, index=True, max_length=10)
+    room_number: str = Field(unique=True, index=True, min_length=1, max_length=10)
     floor: int = Field(ge=1, le=20)
     room_type: RoomType
-    price_per_night: float = Field(gt=0)
+    price_per_night: float = Field(gt=0, le=100000)  # Max price limit for sanity
     status: RoomStatus = Field(default=RoomStatus.AVAILABLE)
-    max_occupancy: int = Field(ge=1, le=6, default=2)
     description: str | None = Field(default=None, max_length=500)
+    room_photo_paths: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+
+    @field_validator("room_number")
+    @classmethod
+    def validate_room_number(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Room number cannot be empty")
+        # Allow alphanumeric with optional floor/section indicators
+        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9-]*$", v.strip()):
+            raise ValueError("Room number must start with letter or number and contain only letters, numbers, and hyphens")
+        return v.strip().upper()  # Normalize to uppercase
 
 
 class Room(RoomBase, table=True):
@@ -157,6 +174,21 @@ class Room(RoomBase, table=True):
     bookings: list["Booking"] = Relationship(back_populates="room")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def is_status_transition_valid(self, new_status: RoomStatus) -> bool:
+        """Check if a room status transition is valid."""
+        # Define valid transitions
+        valid_transitions = {
+            RoomStatus.AVAILABLE: [RoomStatus.OCCUPIED, RoomStatus.MAINTENANCE, RoomStatus.CLEANING],
+            RoomStatus.OCCUPIED: [RoomStatus.CLEANING],  # Must go through cleaning after occupied
+            RoomStatus.CLEANING: [RoomStatus.AVAILABLE, RoomStatus.MAINTENANCE],
+            RoomStatus.MAINTENANCE: [RoomStatus.AVAILABLE, RoomStatus.CLEANING],
+        }
+        return new_status in valid_transitions.get(self.status, [])
+
+    def get_next_status_after_checkout(self) -> RoomStatus:
+        """Get the next status after a room is checked out."""
+        return RoomStatus.CLEANING  # Always go to cleaning after checkout
 
 
 class RoomCreate(RoomBase):
@@ -169,8 +201,8 @@ class RoomUpdate(SQLModel):
     room_type: RoomType | None = None
     price_per_night: float | None = None
     status: RoomStatus | None = None
-    max_occupancy: int | None = None
     description: str | None = None
+    room_photo_paths: list[str] | None = None
 
 
 class RoomPublic(RoomBase):
@@ -180,22 +212,33 @@ class RoomPublic(RoomBase):
 
 # Customer models
 class CustomerBase(SQLModel):
-    first_name: str = Field(max_length=100)
-    last_name: str = Field(max_length=100)
-    email: str = Field(unique=True, index=True, max_length=255)
-    phone: str | None = Field(default=None, max_length=20)
-    passport_number: str | None = Field(default=None, max_length=50)
-    nationality: str | None = Field(default=None, max_length=100)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: str | None = Field(default=None, max_length=20, unique=True, index=True)  # Index for faster lookups
     date_of_birth: datetime | None = None
-    address: str | None = Field(default=None, max_length=500)
+    district: str | None = Field(default=None, max_length=200)
+    passport_photo_path: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None, max_length=1000)
 
-    @field_validator("email")
+    @field_validator("first_name", "last_name")
     @classmethod
-    def validate_email(cls, v: str) -> str:
-        if "@" not in v:
-            raise ValueError("Invalid email address")
-        return v.lower()
+    def validate_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Name cannot be empty")
+        # Strip whitespace and ensure proper capitalization
+        return v.strip().title()
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str | None) -> str | None:
+        if v:
+            # Remove all non-digit characters for validation
+            digits_only = re.sub(r'\D', '', v)
+            if len(digits_only) < 7 or len(digits_only) > 15:
+                raise ValueError("Phone number must contain between 7 and 15 digits")
+            # Store normalized format with original formatting preserved
+            return v.strip()
+        return v
 
 
 class Customer(CustomerBase, table=True):
@@ -217,14 +260,34 @@ class CustomerCreate(CustomerBase):
 class CustomerUpdate(SQLModel):
     first_name: str | None = None
     last_name: str | None = None
-    email: str | None = None
     phone: str | None = None
-    passport_number: str | None = None
-    nationality: str | None = None
     date_of_birth: datetime | None = None
-    address: str | None = None
+    district: str | None = None
+    passport_photo_path: str | None = None
     tags: list[str] | None = None
     notes: str | None = None
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def validate_name(cls, v: str | None) -> str | None:
+        if v is not None:
+            if not v or not v.strip():
+                raise ValueError("Name cannot be empty")
+            # Strip whitespace and ensure proper capitalization
+            return v.strip().title()
+        return v
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str | None) -> str | None:
+        if v:
+            # Remove all non-digit characters for validation
+            digits_only = re.sub(r'\D', '', v)
+            if len(digits_only) < 7 or len(digits_only) > 15:
+                raise ValueError("Phone number must contain between 7 and 15 digits")
+            # Store normalized format with original formatting preserved
+            return v.strip()
+        return v
 
 
 class CustomerPublic(CustomerBase):
@@ -243,18 +306,27 @@ class BookingBase(SQLModel):
     check_in: datetime
     check_out: datetime
     status: BookingStatus = Field(default=BookingStatus.CONFIRMED)
-    adults: int = Field(ge=1, le=6, default=1)
-    children: int = Field(ge=0, le=4, default=0)
-    total_amount: float = Field(gt=0)
-    paid_amount: float = Field(default=0.0)
-    special_requests: str | None = Field(default=None, max_length=1000)
+    total_amount: float = Field(gt=0, le=1000000)  # Max amount limit for sanity
+    discount: float = Field(default=0.0, ge=0, le=100)
+    discount_reason: str | None = Field(default=None, max_length=500)
+    payment_method: PaymentMethod = Field(default=PaymentMethod.CASH)
+    registration_need: bool = Field(default=True)
 
     @field_validator("check_out")
     @classmethod
     def validate_dates(cls, v: datetime, info: core_schema.FieldValidationInfo) -> datetime:
-        if info.data and "check_in" in info.data and v <= info.data["check_in"]:
-            raise ValueError("Check-out must be after check-in")
+        # Safely check if check_in exists in the data
+        if info.data:
+            check_in = info.data.get("check_in")
+            if check_in is not None and v <= check_in:
+                raise ValueError("Check-out must be after check-in")
         return v
+
+    @model_validator(mode="after")
+    def validate_discount_reason(self) -> "BookingBase":
+        if self.discount and self.discount > 0 and not self.discount_reason:
+            raise ValueError("Discount reason is required when applying a discount")
+        return self
 
 
 class Booking(BookingBase, table=True):
@@ -264,6 +336,29 @@ class Booking(BookingBase, table=True):
     booking_date: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def calculate_total_amount(self, room_price_per_night: float) -> float:
+        """Calculate total amount for the booking based on room price and discount."""
+        # Calculate nights (minimum 1 night even for same-day checkout)
+        nights = (self.check_out.date() - self.check_in.date()).days
+        nights = max(1, nights)
+
+        subtotal = room_price_per_night * nights
+        discount_amount = subtotal * (self.discount / 100) if self.discount else 0
+        total = subtotal - discount_amount
+
+        # Ensure total is positive
+        return max(0.0, total)
+
+    def is_status_transition_valid(self, new_status: BookingStatus) -> bool:
+        """Check if a status transition is valid."""
+        valid_transitions = {
+            BookingStatus.CONFIRMED: [BookingStatus.CHECKED_IN, BookingStatus.CANCELLED],
+            BookingStatus.CHECKED_IN: [BookingStatus.CHECKED_OUT, BookingStatus.CANCELLED],
+            BookingStatus.CHECKED_OUT: [],  # Cannot change from checked-out
+            BookingStatus.CANCELLED: [],  # Cannot change from cancelled
+        }
+        return new_status in valid_transitions.get(self.status, [])
 
 
 class BookingCreate(BookingBase):
@@ -276,11 +371,11 @@ class BookingUpdate(SQLModel):
     check_in: datetime | None = None
     check_out: datetime | None = None
     status: BookingStatus | None = None
-    adults: int | None = None
-    children: int | None = None
     total_amount: float | None = None
-    paid_amount: float | None = None
-    special_requests: str | None = None
+    discount: float | None = None
+    discount_reason: str | None = None
+    payment_method: PaymentMethod | None = None
+    registration_need: bool | None = None
 
 
 class BookingPublic(BookingBase):
@@ -289,6 +384,43 @@ class BookingPublic(BookingBase):
     room: RoomPublic | None = None
     booking_date: datetime
     created_at: datetime
+
+
+# Audit Log models
+class AuditLog(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+        )
+    )
+    action: str = Field(max_length=50, index=True)  # Index for filtering
+    entity_type: str = Field(max_length=50, index=True)  # Index for filtering
+    entity_id: uuid.UUID
+    entity_name: str = Field(max_length=255)
+    description: str = Field(max_length=1000)
+    old_values: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    new_values: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)  # Index for sorting
+
+    # Relationship to get current username (no back_populates as User doesn't have audit_logs field)
+    user: Optional["User"] = Relationship()
+
+
+class AuditLogPublic(SQLModel):
+    id: uuid.UUID
+    user_id: uuid.UUID | None
+    username: str  # Include username from relationship
+    action: str
+    entity_type: str
+    entity_id: uuid.UUID
+    entity_name: str
+    description: str
+    old_values: dict[str, Any] | None
+    new_values: dict[str, Any] | None
+    timestamp: datetime
 
 
 # List responses
@@ -304,4 +436,9 @@ class CustomersPublic(SQLModel):
 
 class BookingsPublic(SQLModel):
     data: list[BookingPublic]
+    count: int
+
+
+class AuditLogsPublic(SQLModel):
+    data: list[AuditLogPublic]
     count: int
