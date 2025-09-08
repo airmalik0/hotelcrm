@@ -5,11 +5,10 @@ This module provides function-scoped fixtures for true test isolation.
 Each test gets its own transaction that's rolled back after the test.
 """
 from collections.abc import Generator
-from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, event
+from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine, delete
 
 from app.core.config import settings
@@ -48,12 +47,12 @@ def db(engine: Engine) -> Generator[Session, None, None]:
     with Session(engine) as session:
         # Initialize database with superuser
         init_db(session)
-        
+
         yield session
-        
+
         # Clean up after test - rollback any uncommitted changes
         session.rollback()
-        
+
         # Clean all data created during the test
         session.execute(delete(AuditLog))
         session.execute(delete(Booking))
