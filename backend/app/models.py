@@ -496,17 +496,17 @@ class ReportJob(ReportJobBase, table=True):
     started_at: datetime | None = None
     completed_at: datetime | None = None
     expires_at: datetime | None = None  # When the report file will be deleted
-    
+
     # Relationships
     user: Optional["User"] = Relationship()
     history_entries: list["ReportHistory"] = Relationship(back_populates="job")
-    
+
     def is_expired(self) -> bool:
         """Check if the report has expired."""
         if self.expires_at:
             return datetime.utcnow() > self.expires_at
         return False
-    
+
     def can_transition_to(self, new_status: ReportJobStatus) -> bool:
         """Check if status transition is valid."""
         valid_transitions = {
@@ -569,7 +569,7 @@ class ReportHistory(ReportHistoryBase, table=True):
         )
     )
     timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
-    
+
     # Relationships
     job: Optional["ReportJob"] = Relationship(back_populates="history_entries")
     user: Optional["User"] = Relationship()

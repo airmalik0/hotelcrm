@@ -34,7 +34,7 @@ def update_report_job(
 ) -> ReportJob:
     """Update a report job."""
     report_data = report_update.model_dump(exclude_unset=True)
-    
+
     # Check if status transition is valid
     if "status" in report_data:
         new_status = report_data["status"]
@@ -42,7 +42,7 @@ def update_report_job(
             raise ValueError(
                 f"Invalid status transition from {report_job.status} to {new_status}"
             )
-        
+
         # Set timestamps based on status changes
         if new_status == ReportJobStatus.PROCESSING:
             report_data["started_at"] = datetime.utcnow()
@@ -51,7 +51,7 @@ def update_report_job(
             # Set expiration for completed reports (7 days by default)
             if new_status == ReportJobStatus.COMPLETED and "expires_at" not in report_data:
                 report_data["expires_at"] = datetime.utcnow() + timedelta(days=7)
-    
+
     report_job.sqlmodel_update(report_data)
     session.add(report_job)
     session.flush()
@@ -85,16 +85,16 @@ def list_report_jobs(
 ) -> list[ReportJob]:
     """List report jobs with optional filters."""
     statement = select(ReportJob)
-    
+
     if user_id:
         statement = statement.where(ReportJob.user_id == user_id)
-    
+
     if status:
         statement = statement.where(ReportJob.status == status)
-    
+
     statement = statement.order_by(ReportJob.created_at.desc())
     statement = statement.offset(skip).limit(limit)
-    
+
     return list(session.exec(statement).all())
 
 
@@ -106,13 +106,13 @@ def count_report_jobs(
 ) -> int:
     """Count report jobs with optional filters."""
     statement = select(ReportJob)
-    
+
     if user_id:
         statement = statement.where(ReportJob.user_id == user_id)
-    
+
     if status:
         statement = statement.where(ReportJob.status == status)
-    
+
     return len(session.exec(statement).all())
 
 
@@ -129,15 +129,15 @@ def delete_expired_reports(*, session: Session) -> int:
         ReportJob.expires_at < datetime.utcnow()
     )
     expired_jobs = session.exec(statement).all()
-    
+
     count = 0
     for job in expired_jobs:
         session.delete(job)
         count += 1
-    
+
     if count > 0:
         session.flush()
-    
+
     return count
 
 
@@ -146,20 +146,20 @@ def cleanup_old_reports(
 ) -> int:
     """Clean up old report jobs older than specified days."""
     cutoff_date = datetime.utcnow() - timedelta(days=days_to_keep)
-    
+
     statement = select(ReportJob).where(
         ReportJob.created_at < cutoff_date
     )
     old_jobs = session.exec(statement).all()
-    
+
     count = 0
     for job in old_jobs:
         session.delete(job)
         count += 1
-    
+
     if count > 0:
         session.flush()
-    
+
     return count
 
 
@@ -196,16 +196,16 @@ def list_report_history(
 ) -> list[ReportHistory]:
     """List report history entries with optional filters."""
     statement = select(ReportHistory)
-    
+
     if job_id:
         statement = statement.where(ReportHistory.job_id == job_id)
-    
+
     if user_id:
         statement = statement.where(ReportHistory.user_id == user_id)
-    
+
     statement = statement.order_by(ReportHistory.timestamp.desc())
     statement = statement.offset(skip).limit(limit)
-    
+
     return list(session.exec(statement).all())
 
 
@@ -227,20 +227,20 @@ def cancel_pending_jobs(
     statement = select(ReportJob).where(
         ReportJob.status == ReportJobStatus.PENDING
     )
-    
+
     if user_id:
         statement = statement.where(ReportJob.user_id == user_id)
-    
+
     pending_jobs = session.exec(statement).all()
-    
+
     count = 0
     for job in pending_jobs:
         job.status = ReportJobStatus.CANCELLED
         job.completed_at = datetime.utcnow()
         session.add(job)
         count += 1
-    
+
     if count > 0:
         session.flush()
-    
+
     return count

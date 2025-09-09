@@ -137,14 +137,12 @@ async def export_all_customers(
 ) -> Any:
     """Export all customers to CSV (admin only)."""
     from fastapi import Response
-    from sqlmodel import select
 
-    from app.models import Customer
+    from app.crud.customer import customer as crud_customer
     from app.services.export_service import ExportService
 
     # Get all customers
-    statement = select(Customer).order_by(Customer.created_at.desc())
-    customers = session.exec(statement).all()
+    customers = crud_customer.get_multi(session, skip=0, limit=10000)
 
     # Convert to dict format
     customer_data = []

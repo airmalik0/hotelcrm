@@ -340,9 +340,9 @@ class PDFService:
         """Create generic analytics PDF report."""
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=self.page_size, **self.margins)
-        
+
         story = []
-        
+
         # Title
         story.append(Paragraph(title, self.styles["CustomTitle"]))
         story.append(Spacer(1, 12))
@@ -353,20 +353,20 @@ class PDFService:
             )
         )
         story.append(Spacer(1, 24))
-        
+
         # Add chart if provided
         if chart_image:
             img = Image(io.BytesIO(chart_image), width=6*inch, height=4*inch)
             story.append(img)
             story.append(Spacer(1, 12))
-        
+
         # Add data table
         if data:
             # Create table based on first row keys
             if data[0]:
                 headers = list(data[0].keys())
                 table_data = [headers]
-                
+
                 for row in data:
                     table_row = []
                     for header in headers:
@@ -382,11 +382,11 @@ class PDFService:
                         else:
                             table_row.append(str(value))
                     table_data.append(table_row)
-                
+
                 # Create table with dynamic column widths
                 col_count = len(headers)
                 col_width = 7.0 / col_count * inch
-                
+
                 table = Table(table_data, colWidths=[col_width] * col_count)
                 table.setStyle(
                     TableStyle([
@@ -404,10 +404,10 @@ class PDFService:
                 story.append(table)
         else:
             story.append(Paragraph("No data available for this report.", self.styles["Normal"]))
-        
+
         doc.build(story)
         return buffer.getvalue()
-    
+
     def create_geographic_report_pdf(
         self,
         data: list[dict[str, Any]],
@@ -415,7 +415,7 @@ class PDFService:
     ) -> bytes:
         """Create geographic analysis PDF report."""
         return self.create_analytics_report_pdf(
-            data, 
+            data,
             "Geographic Analysis Report",
             chart_image
         )

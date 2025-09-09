@@ -19,7 +19,7 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
             )
         )
         return session.exec(statement).first()
-    
+
     def get_multi_filtered(
         self,
         session: Session,
@@ -31,21 +31,21 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         customer_id: UUID | None = None
     ) -> list[Booking]:
         statement = select(Booking)
-        
+
         if status:
             statement = statement.where(Booking.status == status)
         if room_id:
             statement = statement.where(Booking.room_id == room_id)
         if customer_id:
             statement = statement.where(Booking.customer_id == customer_id)
-        
+
         statement = statement.options(
             joinedload(Booking.customer),  # type: ignore[arg-type]
             joinedload(Booking.room)  # type: ignore[arg-type]
         )
         statement = statement.offset(skip).limit(limit)
         return session.exec(statement).all()
-    
+
     def count_filtered(
         self,
         session: Session,
@@ -55,16 +55,16 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         customer_id: UUID | None = None
     ) -> int:
         statement = select(func.count()).select_from(Booking)
-        
+
         if status:
             statement = statement.where(Booking.status == status)
         if room_id:
             statement = statement.where(Booking.room_id == room_id)
         if customer_id:
             statement = statement.where(Booking.customer_id == customer_id)
-        
+
         return session.exec(statement).one()
-    
+
     def get_overlapping(
         self,
         session: Session,
@@ -85,7 +85,7 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         )
         if exclude_id:
             query = query.where(Booking.id != exclude_id)
-        
+
         return session.exec(query.with_for_update()).all()
 
 

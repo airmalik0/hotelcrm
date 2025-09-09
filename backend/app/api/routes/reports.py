@@ -1,31 +1,20 @@
 import json
 import uuid
-from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 
 from app.api.deps import CurrentUser, SessionDep, get_current_admin_user
 from app.core.audit import log_audit
-from app.crud_reports import (
-    count_report_jobs,
-    create_report_history,
-    create_report_job,
-    delete_expired_reports,
-    get_report_job_by_user,
-    list_report_jobs,
-    update_report_job,
-)
+from app.crud.report import report as crud_report
+from app.crud.user import user as crud_user
 from app.models import (
     ReportFormat,
-    ReportJob,
     ReportJobCreate,
     ReportJobPublic,
     ReportJobsPublic,
     ReportJobStatus,
     ReportJobType,
-    ReportJobUpdate,
-    User,
     UserRole,
 )
 from app.services.analytics_service import AnalyticsService
@@ -52,18 +41,15 @@ async def generate_occupancy_report_task(
     with Session(engine) as session:
         try:
             # Update job status to processing
-            job = session.get(ReportJob, job_id)
+            job = crud_report.get(session, id=job_id)
             if not job:
                 return
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(
-                    status=ReportJobStatus.PROCESSING,
-                    started_at=datetime.utcnow(),
-                    progress=10
-                )
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=ReportJobStatus.PROCESSING,
+                progress=10
             )
             session.commit()
 
@@ -98,10 +84,11 @@ async def generate_occupancy_report_task(
                 )
 
             # Update progress
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=40)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=40
             )
             session.commit()
 
@@ -116,10 +103,11 @@ async def generate_occupancy_report_task(
                 else:
                     chart_image = chart_service.create_occupancy_chart(data)
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=60)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=60
             )
             session.commit()
 
@@ -143,10 +131,11 @@ async def generate_occupancy_report_task(
                 )
                 filename = f"occupancy_report_{job_id}.pdf"
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=80)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=80
             )
             session.commit()
 
@@ -155,21 +144,17 @@ async def generate_occupancy_report_task(
             file_size = len(content)
 
             # Update job status to completed
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(
-                    status=ReportJobStatus.COMPLETED,
-                    progress=100,
-                    result_path=file_path,
-                    result_size=file_size,
-                    completed_at=datetime.utcnow(),
-                    expires_at=datetime.utcnow() + timedelta(days=7)
-                )
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=ReportJobStatus.COMPLETED,
+                progress=100,
+                result_path=file_path,
+                result_size=file_size
             )
 
             # Log audit
-            user = session.get(User, user_id)
+            user = crud_user.get(session, id=user_id)
             if user:
                 log_audit(
                     session=session,
@@ -185,15 +170,12 @@ async def generate_occupancy_report_task(
 
         except Exception as e:
             # Update job status to failed
-            if job := session.get(ReportJob, job_id):
-                update_report_job(
-                    session=session,
-                    report_job=job,
-                    report_update=ReportJobUpdate(
-                        status=ReportJobStatus.FAILED,
-                        error_message=str(e),
-                        completed_at=datetime.utcnow()
-                    )
+            if job := crud_report.get(session, id=job_id):
+                crud_report.update_status(
+                    session,
+                    db_obj=job,
+                    status=ReportJobStatus.FAILED,
+                    error_message=str(e)
                 )
                 session.commit()
 
@@ -212,18 +194,15 @@ async def generate_revenue_report_task(
     with Session(engine) as session:
         try:
             # Update job status to processing
-            job = session.get(ReportJob, job_id)
+            job = crud_report.get(session, id=job_id)
             if not job:
                 return
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(
-                    status=ReportJobStatus.PROCESSING,
-                    started_at=datetime.utcnow(),
-                    progress=10
-                )
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=ReportJobStatus.PROCESSING,
+                progress=10
             )
             session.commit()
 
@@ -236,10 +215,11 @@ async def generate_revenue_report_task(
                 params.get("group_by", "month")
             )
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=40)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=40
             )
             session.commit()
 
@@ -249,10 +229,11 @@ async def generate_revenue_report_task(
                 chart_service = ChartService()
                 chart_image = chart_service.create_revenue_chart(data)
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=60)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=60
             )
             session.commit()
 
@@ -274,10 +255,11 @@ async def generate_revenue_report_task(
                 content = pdf_service.create_revenue_report_pdf(data, chart_image)
                 filename = f"revenue_report_{job_id}.pdf"
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=80)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=80
             )
             session.commit()
 
@@ -286,21 +268,17 @@ async def generate_revenue_report_task(
             file_size = len(content)
 
             # Update job status to completed
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(
-                    status=ReportJobStatus.COMPLETED,
-                    progress=100,
-                    result_path=file_path,
-                    result_size=file_size,
-                    completed_at=datetime.utcnow(),
-                    expires_at=datetime.utcnow() + timedelta(days=7)
-                )
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=ReportJobStatus.COMPLETED,
+                progress=100,
+                result_path=file_path,
+                result_size=file_size
             )
 
             # Log audit
-            user = session.get(User, user_id)
+            user = crud_user.get(session, id=user_id)
             if user:
                 log_audit(
                     session=session,
@@ -316,15 +294,12 @@ async def generate_revenue_report_task(
 
         except Exception as e:
             # Update job status to failed
-            if job := session.get(ReportJob, job_id):
-                update_report_job(
-                    session=session,
-                    report_job=job,
-                    report_update=ReportJobUpdate(
-                        status=ReportJobStatus.FAILED,
-                        error_message=str(e),
-                        completed_at=datetime.utcnow()
-                    )
+            if job := crud_report.get(session, id=job_id):
+                crud_report.update_status(
+                    session,
+                    db_obj=job,
+                    status=ReportJobStatus.FAILED,
+                    error_message=str(e)
                 )
                 session.commit()
 
@@ -343,18 +318,15 @@ async def generate_top_customers_task(
     with Session(engine) as session:
         try:
             # Update job status to processing
-            job = session.get(ReportJob, job_id)
+            job = crud_report.get(session, id=job_id)
             if not job:
                 return
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(
-                    status=ReportJobStatus.PROCESSING,
-                    started_at=datetime.utcnow(),
-                    progress=10
-                )
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=ReportJobStatus.PROCESSING,
+                progress=10
             )
             session.commit()
 
@@ -366,10 +338,11 @@ async def generate_top_customers_task(
                 params.get("sort_by", "total_spent")
             )
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=60)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=60
             )
             session.commit()
 
@@ -391,10 +364,11 @@ async def generate_top_customers_task(
                 content = pdf_service.create_customer_report_pdf(data)
                 filename = f"top_customers_{job_id}.pdf"
 
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(progress=80)
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=job.status,  # Keep current status
+                progress=80
             )
             session.commit()
 
@@ -403,21 +377,17 @@ async def generate_top_customers_task(
             file_size = len(content)
 
             # Update job status to completed
-            update_report_job(
-                session=session,
-                report_job=job,
-                report_update=ReportJobUpdate(
-                    status=ReportJobStatus.COMPLETED,
-                    progress=100,
-                    result_path=file_path,
-                    result_size=file_size,
-                    completed_at=datetime.utcnow(),
-                    expires_at=datetime.utcnow() + timedelta(days=7)
-                )
+            crud_report.update_status(
+                session,
+                db_obj=job,
+                status=ReportJobStatus.COMPLETED,
+                progress=100,
+                result_path=file_path,
+                result_size=file_size
             )
 
             # Log audit
-            user = session.get(User, user_id)
+            user = crud_user.get(session, id=user_id)
             if user:
                 log_audit(
                     session=session,
@@ -433,15 +403,12 @@ async def generate_top_customers_task(
 
         except Exception as e:
             # Update job status to failed
-            if job := session.get(ReportJob, job_id):
-                update_report_job(
-                    session=session,
-                    report_job=job,
-                    report_update=ReportJobUpdate(
-                        status=ReportJobStatus.FAILED,
-                        error_message=str(e),
-                        completed_at=datetime.utcnow()
-                    )
+            if job := crud_report.get(session, id=job_id):
+                crud_report.update_status(
+                    session,
+                    db_obj=job,
+                    status=ReportJobStatus.FAILED,
+                    error_message=str(e)
                 )
                 session.commit()
 
@@ -468,14 +435,14 @@ async def generate_report(
         )
 
     # Create report job in database
-    report_job = create_report_job(
-        session=session,
-        user=current_user,
-        report_create=ReportJobCreate(
+    report_job = crud_report.create_with_user(
+        session,
+        obj_in=ReportJobCreate(
             type=report_type,
             format=format,
             params=params or {}
-        )
+        ),
+        user_id=current_user.id
     )
     session.commit()
 
@@ -504,14 +471,11 @@ async def generate_report(
         )
     else:
         # For other report types, mark as failed immediately
-        update_report_job(
-            session=session,
-            report_job=report_job,
-            report_update=ReportJobUpdate(
-                status=ReportJobStatus.FAILED,
-                error_message=f"Report type {report_type} not implemented yet",
-                completed_at=datetime.utcnow()
-            )
+        crud_report.update_status(
+            session,
+            db_obj=report_job,
+            status=ReportJobStatus.FAILED,
+            error_message=f"Report type {report_type} not implemented yet"
         )
         session.commit()
 
@@ -529,11 +493,12 @@ async def get_report_status(
 ) -> ReportJobPublic:
     """Get report job status."""
     # Get job from database
-    job = get_report_job_by_user(
-        session=session,
-        job_id=job_id,
-        user_id=current_user.id if current_user.role == UserRole.HOST else None
-    )
+    if current_user.role == UserRole.HOST:
+        job = crud_report.get_by_user(
+            session, job_id=job_id, user_id=current_user.id
+        )
+    else:
+        job = crud_report.get(session, id=job_id)
 
     if not job:
         raise HTTPException(status_code=404, detail="Report job not found")
@@ -551,11 +516,12 @@ async def download_report(
 ) -> Response:
     """Download completed report."""
     # Get job from database
-    job = get_report_job_by_user(
-        session=session,
-        job_id=job_id,
-        user_id=current_user.id if current_user.role == UserRole.HOST else None
-    )
+    if current_user.role == UserRole.HOST:
+        job = crud_report.get_by_user(
+            session, job_id=job_id, user_id=current_user.id
+        )
+    else:
+        job = crud_report.get(session, id=job_id)
 
     if not job:
         raise HTTPException(status_code=404, detail="Report job not found")
@@ -576,12 +542,13 @@ async def download_report(
         raise HTTPException(status_code=404, detail="Report file not found")
 
     # Log download in history
-    create_report_history(
-        session=session,
-        job_id=job_id,
-        user_id=current_user.id,
-        action="downloaded"
-    )
+    if job.result_path and job.result_size:
+        crud_report.create_history_entry(
+            session,
+            report_job=job,
+            file_path=job.result_path,
+            file_size=job.result_size
+        )
 
     # Log audit
     log_audit(
@@ -632,16 +599,16 @@ async def list_jobs(
     # For regular hosts, only show their own jobs
     user_id = current_user.id if current_user.role == UserRole.HOST else None
 
-    jobs = list_report_jobs(
-        session=session,
+    jobs = crud_report.list_by_user(
+        session,
         user_id=user_id,
         status=status,
         skip=skip,
         limit=limit
     )
 
-    total = count_report_jobs(
-        session=session,
+    total = crud_report.count_by_user(
+        session,
         user_id=user_id,
         status=status
     )
@@ -661,7 +628,7 @@ async def cleanup_expired_reports(
     current_user: CurrentUser
 ) -> dict[str, int]:
     """Clean up expired reports (admin only)."""
-    deleted_count = delete_expired_reports(session=session)
+    deleted_count = crud_report.cleanup_old_jobs(session, days=30)
 
     # Log audit
     if deleted_count > 0:

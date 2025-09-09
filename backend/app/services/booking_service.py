@@ -46,15 +46,15 @@ class BookingService:
         customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
         if not customer:
             raise ValueError("Customer not found")
-        
+
         # Verify room exists and is available
         room = self.crud_room.get(self.session, id=booking_in.room_id)
         if not room:
             raise ValueError("Room not found")
-        
+
         if room.status != RoomStatus.AVAILABLE:
             raise ValueError(f"Room is currently {room.status.value} and cannot be booked")
-        
+
         # Check for overlapping bookings
         overlapping = self.crud_booking.get_overlapping(
             self.session,
@@ -62,23 +62,23 @@ class BookingService:
             check_in=booking_in.check_in,
             check_out=booking_in.check_out
         )
-        
+
         if overlapping:
             raise ValueError("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
-        
+
         # Create temporary booking to validate total amount
         temp_booking = Booking.model_validate(booking_in)
         expected_total = temp_booking.calculate_total_amount(room.price_per_night)
-        
+
         # Allow small difference for rounding (1 currency unit)
         if abs(booking_in.total_amount - expected_total) > 1:
             raise ValueError(
                 f"Total amount mismatch. Expected: {expected_total:.2f}, got: {booking_in.total_amount:.2f}"
             )
-        
+
         # Create booking
         booking = self.crud_booking.create(self.session, obj_in=booking_in)
-        
+
         # Update customer statistics
         update_customer_stats_on_booking_change(
             session=self.session,
@@ -87,7 +87,7 @@ class BookingService:
             booking_delta=1,
             new_booking_date=datetime.utcnow()
         )
-        
+
         return booking
 
     def update_booking(self, booking: Booking, booking_in: BookingUpdate) -> Booking:
@@ -107,13 +107,13 @@ class BookingService:
         # Track changes for customer stats
         old_customer_id = booking.customer_id
         old_amount = booking.total_amount
-        
+
         # If room is being changed, verify it exists and handle room status updates
         if booking_in.room_id and booking_in.room_id != booking.room_id:
             new_room = self.crud_room.get(self.session, id=booking_in.room_id)
             if not new_room:
                 raise ValueError("Room not found")
-            
+
             # If booking is currently checked in, handle room status transitions
             if booking.status == BookingStatus.CHECKED_IN:
                 # Old room becomes available for cleaning
@@ -121,27 +121,27 @@ class BookingService:
                 if old_room:
                     old_room.status = RoomStatus.CLEANING
                     self.session.add(old_room)
-                
+
                 # New room must be available
                 if new_room.status != RoomStatus.AVAILABLE:
                     raise ValueError(f"New room is {new_room.status.value} and cannot be used")
-                
+
                 # New room becomes occupied
                 new_room.status = RoomStatus.OCCUPIED
                 self.session.add(new_room)
-        
+
         # Check if customer is being changed
         if booking_in.customer_id and booking_in.customer_id != booking.customer_id:
             new_customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
             if not new_customer:
                 raise ValueError("Customer not found")
-        
+
         # Check room availability if dates or room changed
         if (booking_in.check_in or booking_in.check_out or booking_in.room_id):
             room_id = booking_in.room_id or booking.room_id
             check_in = booking_in.check_in or booking.check_in
             check_out = booking_in.check_out or booking.check_out
-            
+
             overlapping = self.crud_booking.get_overlapping(
                 self.session,
                 room_id=room_id,
@@ -149,12 +149,12 @@ class BookingService:
                 check_out=check_out,
                 exclude_id=booking.id
             )
-            
+
             if overlapping:
                 raise ValueError("Room is not available for the selected dates")
-        
+
         # Recalculate total if needed
-        if any([booking_in.check_in, booking_in.check_out, booking_in.room_id, 
+        if any([booking_in.check_in, booking_in.check_out, booking_in.room_id,
                 booking_in.discount is not None]):
             new_total = self.recalculate_booking_total(
                 booking,
@@ -163,16 +163,16 @@ class BookingService:
                 new_room_id=booking_in.room_id,
                 new_discount=booking_in.discount
             )
-            
+
             # Verify provided total matches calculated
             if booking_in.total_amount and abs(booking_in.total_amount - new_total) > 1:
                 raise ValueError(
                     f"Total amount mismatch. Expected: {new_total:.2f}, got: {booking_in.total_amount:.2f}"
                 )
-        
+
         # Update booking
         booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_in)
-        
+
         # Update customer stats if needed
         if booking_in.customer_id and booking_in.customer_id != old_customer_id:
             # Remove from old customer
@@ -198,7 +198,7 @@ class BookingService:
                 amount_delta=booking.total_amount - old_amount,
                 booking_delta=0
             )
-        
+
         return booking
 
     def check_in_booking(self, booking: Booking) -> Booking:
@@ -216,14 +216,14 @@ class BookingService:
         """
         if booking.status != BookingStatus.CONFIRMED:
             raise ValueError("Only confirmed bookings can be checked in")
-        
+
         room = self.crud_room.get(self.session, id=booking.room_id)
         if not room:
             raise ValueError("Room not found")
-        
+
         if room.status != RoomStatus.AVAILABLE:
             raise ValueError(f"Room is {room.status.value} and cannot be checked in")
-        
+
         # Check for conflicts
         overlapping = self.crud_booking.get_overlapping(
             self.session,
@@ -232,18 +232,18 @@ class BookingService:
             check_out=booking.check_out,
             exclude_id=booking.id
         )
-        
+
         if overlapping:
             raise ValueError("Cannot check in: room has conflicting bookings")
-        
+
         # Update statuses
         booking.status = BookingStatus.CHECKED_IN
         room.status = RoomStatus.OCCUPIED
-        
+
         self.session.add(booking)
         self.session.add(room)
         self.session.flush()
-        
+
         return booking
 
     def check_out_booking(self, booking: Booking) -> Booking:
@@ -261,17 +261,17 @@ class BookingService:
         """
         if booking.status != BookingStatus.CHECKED_IN:
             raise ValueError("Only checked-in bookings can be checked out")
-        
+
         room = self.crud_room.get(self.session, id=booking.room_id)
         if room:
             # Room needs cleaning after checkout
             room.status = RoomStatus.CLEANING
             self.session.add(room)
-        
+
         booking.status = BookingStatus.CHECKED_OUT
         self.session.add(booking)
         self.session.flush()
-        
+
         return booking
 
     def cancel_booking(self, booking: Booking) -> Booking:
@@ -286,7 +286,7 @@ class BookingService:
         """
         if booking.status == BookingStatus.CANCELLED:
             return booking  # Already cancelled
-        
+
         # Update customer stats
         update_customer_stats_on_booking_change(
             session=self.session,
@@ -294,7 +294,7 @@ class BookingService:
             amount_delta=-booking.total_amount,
             booking_delta=-1
         )
-        
+
         # Update room status if checked in
         if booking.status == BookingStatus.CHECKED_IN:
             room = self.crud_room.get(self.session, id=booking.room_id)
@@ -302,12 +302,12 @@ class BookingService:
                 # Room must go through cleaning after being occupied
                 room.status = RoomStatus.CLEANING
                 self.session.add(room)
-        
+
         # Update booking status
         booking.status = BookingStatus.CANCELLED
         self.session.add(booking)
         self.session.flush()
-        
+
         return booking
 
     def delete_booking(self, booking: Booking) -> None:
@@ -325,14 +325,14 @@ class BookingService:
                 amount_delta=-booking.total_amount,
                 booking_delta=-1
             )
-        
+
         # Update room status if needed
         if booking.status == BookingStatus.CHECKED_IN:
             room = self.crud_room.get(self.session, id=booking.room_id)
             if room:
                 room.status = RoomStatus.CLEANING
                 self.session.add(room)
-        
+
         # Delete the booking
         self.crud_booking.delete(self.session, id=booking.id)
 
@@ -362,12 +362,12 @@ class BookingService:
         room = self.crud_room.get(self.session, id=room_id)
         if not room:
             raise ValueError(f"Room {room_id} not found")
-        
+
         # Use new or existing dates
         check_in = new_check_in or booking.check_in
         check_out = new_check_out or booking.check_out
         discount = new_discount if new_discount is not None else booking.discount
-        
+
         # Create a temporary booking to use the model's calculation method
         temp_booking = Booking(
             customer_id=booking.customer_id,
@@ -380,5 +380,5 @@ class BookingService:
             payment_method=booking.payment_method,
             registration_need=booking.registration_need
         )
-        
+
         return temp_booking.calculate_total_amount(room.price_per_night)

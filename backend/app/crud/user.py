@@ -8,29 +8,29 @@ from app.models import User, UserCreate, UserUpdate
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def create(self, session: Session, *, obj_in: UserCreate) -> User:
         user = User.model_validate(
-            obj_in, 
+            obj_in,
             update={"hashed_password": get_password_hash(obj_in.password)}
         )
         session.add(user)
         session.flush()
         return user
-    
+
     def update(self, session: Session, *, db_obj: User, obj_in: UserUpdate) -> User:
         update_data = obj_in.model_dump(exclude_unset=True)
         if "password" in update_data:
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
-        
+
         db_obj.sqlmodel_update(update_data)
         session.add(db_obj)
         session.flush()
         return db_obj
-    
+
     def get_by_username(self, session: Session, *, username: str) -> User | None:
         statement = select(User).where(User.username == username)
         return session.exec(statement).first()
-    
+
     def authenticate(self, session: Session, *, username: str, password: str) -> User | None:
         user = self.get_by_username(session=session, username=username)
         if not user:

@@ -2,12 +2,11 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy.orm import selectinload
-from sqlmodel import col, func, or_, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.rbac import check_admin_only
-from app.models import AuditLog, AuditLogPublic, AuditLogsPublic, User
+from app.crud.audit import audit as crud_audit
+from app.models import AuditLogPublic, AuditLogsPublic
 
 router = APIRouter()
 
@@ -28,32 +27,16 @@ def read_audit_logs(
     """
     check_admin_only(current_user)
 
-    # Always eager load the user relationship for displaying username
-    statement = select(AuditLog).options(selectinload(AuditLog.user))  # type: ignore
-
-    # Join with User table if we need to filter or search by username
-    if user_name or search:
-        statement = statement.join(User)
-    # Apply filters
-    if user_name:
-        statement = statement.where(col(User.username).ilike(f"%{user_name}%"))
-    if action:
-        statement = statement.where(AuditLog.action == action)
-    if entity_type:
-        statement = statement.where(AuditLog.entity_type == entity_type)
-    if search:
-        # Include username in search if User table is joined
-        search_filter = or_(
-            col(User.username).ilike(f"%{search}%"),
-            col(AuditLog.description).ilike(f"%{search}%"),
-            col(AuditLog.entity_name).ilike(f"%{search}%"),
-        )
-        statement = statement.where(search_filter)
-
-    # Order by timestamp descending (newest first)
-    statement = statement.order_by(col(AuditLog.timestamp).desc())
-    statement = statement.offset(skip).limit(limit)
-    audit_logs = session.exec(statement).all()
+    # Get audit logs with filters using CRUD
+    audit_logs = crud_audit.get_multi_with_filters(
+        session,
+        skip=skip,
+        limit=limit,
+        user_name=user_name,
+        action=action,
+        entity_type=entity_type,
+        search=search
+    )
 
     # Convert to public model with username from relationship
     audit_logs_public = []
@@ -62,29 +45,14 @@ def read_audit_logs(
         log_dict['username'] = log.user.username if log.user else 'Unknown'
         audit_logs_public.append(AuditLogPublic(**log_dict))
 
-    # Count total records with same filters
-    count_statement = select(func.count()).select_from(AuditLog)
-
-    # Join with User table if we need to filter or search by username
-    if user_name or search:
-        count_statement = count_statement.join(User)
-
-    if user_name:
-        count_statement = count_statement.where(col(User.username).ilike(f"%{user_name}%"))
-    if action:
-        count_statement = count_statement.where(AuditLog.action == action)
-    if entity_type:
-        count_statement = count_statement.where(AuditLog.entity_type == entity_type)
-    if search:
-        # Include username in search if User table is joined
-        search_filter_count = or_(
-            col(User.username).ilike(f"%{search}%"),
-            col(AuditLog.description).ilike(f"%{search}%"),
-            col(AuditLog.entity_name).ilike(f"%{search}%"),
-        )
-        count_statement = count_statement.where(search_filter_count)
-
-    count = session.exec(count_statement).one()
+    # Count total records with same filters using CRUD
+    count = crud_audit.count_with_filters(
+        session,
+        user_name=user_name,
+        action=action,
+        entity_type=entity_type,
+        search=search
+    )
 
     return AuditLogsPublic(data=audit_logs_public, count=count)
 
@@ -100,8 +68,7 @@ def read_audit_log(
     """
     check_admin_only(current_user)
 
-    statement = select(AuditLog).where(AuditLog.id == audit_log_id).options(selectinload(AuditLog.user))  # type: ignore
-    audit_log = session.exec(statement).first()
+    audit_log = crud_audit.get_with_user(session, audit_id=audit_log_id)
     if not audit_log:
         raise HTTPException(status_code=404, detail="Audit log not found")
 
@@ -121,33 +88,12 @@ def get_audit_stats(
     """
     check_admin_only(current_user)
 
-    # Get counts by action
-    action_stats = session.exec(
-        select(AuditLog.action, func.count().label("count"))
-        .group_by(AuditLog.action)
-        .order_by(func.count().desc())
-    ).all()
-
-    # Get counts by entity type
-    entity_stats = session.exec(
-        select(AuditLog.entity_type, func.count().label("count"))
-        .group_by(AuditLog.entity_type)
-        .order_by(func.count().desc())
-    ).all()
-
-    # Get counts by user (join with User table to get username)
-    user_stats = session.exec(
-        select(User.username, func.count().label("count"))
-        .select_from(AuditLog)
-        .join(User)
-        .group_by(User.username)
-        .order_by(func.count().desc())
-        .limit(10)  # Top 10 most active users
-    ).all()
+    # Get audit statistics using CRUD
+    stats = crud_audit.get_stats(session, days=30)
 
     return {
-        "total_logs": session.exec(select(func.count()).select_from(AuditLog)).first(),
-        "by_action": [{"action": row[0], "count": row[1]} for row in action_stats],
-        "by_entity_type": [{"entity_type": row[0], "count": row[1]} for row in entity_stats],
-        "top_users": [{"username": row[0], "count": row[1]} for row in user_stats],
+        "total_logs": stats["total_actions"],
+        "by_action": [{"action": action, "count": count} for action, count in stats["actions_by_type"].items()],
+        "by_entity_type": [{"entity_type": entity, "count": count} for entity, count in stats["actions_by_entity"].items()],
+        "top_users": stats["most_active_users"],
     }

@@ -134,7 +134,7 @@ class TestBookingCreate:
             json=booking_data,
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 400
         assert "Customer not found" in response.json()["detail"]
 
     def test_create_booking_nonexistent_room(
@@ -165,7 +165,7 @@ class TestBookingCreate:
             json=booking_data,
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 400
         assert "Room not found" in response.json()["detail"]
 
     def test_create_booking_unavailable_room(

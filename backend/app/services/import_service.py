@@ -7,7 +7,7 @@ from typing import Any
 from sqlmodel import Session
 
 from app.crud.customer import customer as crud_customer
-from app.models import Customer, CustomerCreate
+from app.models import CustomerCreate
 
 
 class ImportService:

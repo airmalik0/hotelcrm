@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Comprehensive testing of all report functionality"""
 
-import requests
 import json
-import time
 import os
-from datetime import datetime
+import time
+
+import requests
 
 # Configuration
 BASE_URL = "http://localhost:8000/api/v1"
@@ -16,17 +16,17 @@ def test_report(report_type, endpoint, params, description):
     """Test a single report generation"""
     print(f"\n{description}")
     print("-" * 40)
-    
+
     # Generate report
     resp = requests.post(f"{BASE_URL}/reports/{endpoint}/generate", headers=HEADERS, json=params)
     if resp.status_code != 200:
         print(f"❌ Failed to generate: {resp.status_code} - {resp.text}")
         return False
-    
+
     job = resp.json()
     job_id = job["job_id"]
     print(f"✓ Job created: {job_id}")
-    
+
     # Wait for completion
     max_attempts = 30
     for i in range(max_attempts):
@@ -34,31 +34,31 @@ def test_report(report_type, endpoint, params, description):
         if resp.status_code != 200:
             print(f"❌ Failed to check status: {resp.text}")
             return False
-        
+
         status = resp.json()
         if status["status"] == "completed":
             print(f"✓ Report completed in {i+1} seconds")
-            
+
             # Download report
             resp = requests.get(f"{BASE_URL}/reports/jobs/{job_id}/download", headers=HEADERS)
             if resp.status_code == 200:
                 # Save file
                 format_ext = params.get("format", "json")
                 filename = f"/tmp/test_{report_type}_{job_id[:8]}.{format_ext}"
-                
+
                 with open(filename, "wb") as f:
                     f.write(resp.content)
-                
+
                 file_size = os.path.getsize(filename)
                 print(f"✓ Downloaded: {filename} ({file_size} bytes)")
-                
+
                 # Check if file has content
                 if file_size > 100:  # More than just empty JSON
-                    print(f"✓ Report has content")
-                    
+                    print("✓ Report has content")
+
                     # For JSON reports, show a preview
                     if format_ext == "json":
-                        with open(filename, "r") as f:
+                        with open(filename) as f:
                             data = json.load(f)
                             if isinstance(data, list) and len(data) > 0:
                                 print(f"  Preview: {len(data)} records")
@@ -67,28 +67,28 @@ def test_report(report_type, endpoint, params, description):
                                 print(f"  Report data: {json.dumps(data)[:200]}...")
                 else:
                     print(f"⚠️  Report seems empty ({file_size} bytes)")
-                
+
                 return True
             else:
                 print(f"❌ Failed to download: {resp.status_code}")
                 return False
-        
+
         elif status["status"] == "failed":
             print(f"❌ Job failed: {status.get('error', 'Unknown error')}")
             return False
-        
+
         time.sleep(1)
-    
-    print(f"❌ Timeout waiting for report")
+
+    print("❌ Timeout waiting for report")
     return False
 
 def main():
     print("="*60)
     print("COMPREHENSIVE REPORT TESTING")
     print("="*60)
-    
+
     results = []
-    
+
     # Test 1: Occupancy Standard with monthly grouping
     results.append(test_report(
         "occupancy_standard",
@@ -101,7 +101,7 @@ def main():
         },
         "1. Occupancy Standard Report (Monthly)"
     ))
-    
+
     # Test 2: Revenue report with room type filter
     results.append(test_report(
         "revenue_vip",
@@ -115,7 +115,7 @@ def main():
         },
         "2. Revenue Report (VIP rooms only)"
     ))
-    
+
     # Test 3: Top Customers by bookings
     results.append(test_report(
         "top_customers",
@@ -129,7 +129,7 @@ def main():
         },
         "3. Top 5 Customers by Bookings"
     ))
-    
+
     # Test 4: Weekly Pattern
     results.append(test_report(
         "weekly_pattern",
@@ -142,7 +142,7 @@ def main():
         },
         "4. Weekly Pattern (Summer, Standard rooms)"
     ))
-    
+
     # Test 5: Payment Methods with charts
     results.append(test_report(
         "payment_methods",
@@ -156,7 +156,7 @@ def main():
         },
         "5. Payment Methods Report (PDF with charts)"
     ))
-    
+
     # Test 6: Geographic Analysis
     results.append(test_report(
         "geographic",
@@ -168,7 +168,7 @@ def main():
         },
         "6. Geographic Analysis"
     ))
-    
+
     # Test 7: Daily Pattern
     results.append(test_report(
         "daily_pattern",
@@ -180,7 +180,7 @@ def main():
         },
         "7. Daily Pattern (July)"
     ))
-    
+
     # Test 8: Seasonal Trend with different grouping
     results.append(test_report(
         "seasonal_trend",
@@ -193,7 +193,7 @@ def main():
         },
         "8. Seasonal Trend (PDF with charts)"
     ))
-    
+
     # Test 9: Repeat Guest Rate
     results.append(test_report(
         "repeat_guest",
@@ -206,11 +206,11 @@ def main():
         },
         "9. Repeat Guest Rate"
     ))
-    
+
     # Test 10: Concurrent report generation
     print("\n10. Concurrent Report Generation")
     print("-" * 40)
-    
+
     jobs = []
     for i in range(3):
         resp = requests.post(
@@ -225,9 +225,9 @@ def main():
         )
         if resp.status_code == 200:
             jobs.append(resp.json()["job_id"])
-    
+
     print(f"✓ Started {len(jobs)} concurrent jobs")
-    
+
     # Wait for all to complete
     time.sleep(3)
     all_completed = True
@@ -240,13 +240,13 @@ def main():
                 print(f"❌ Job {job_id[:8]} status: {status}")
             else:
                 print(f"✓ Job {job_id[:8]} completed")
-    
+
     results.append(all_completed)
-    
+
     # Test error handling
     print("\n11. Error Handling Tests")
     print("-" * 40)
-    
+
     # Invalid date range
     resp = requests.post(
         f"{BASE_URL}/reports/revenue/generate",
@@ -259,7 +259,7 @@ def main():
     )
     # This might not fail at generation but at processing
     print(f"Invalid date range: Status {resp.status_code}")
-    
+
     # Invalid format
     resp = requests.post(
         f"{BASE_URL}/reports/revenue/generate",
@@ -271,22 +271,22 @@ def main():
         }
     )
     print(f"Invalid format: Status {resp.status_code}")
-    
+
     # Summary
     print("\n" + "="*60)
     print("TEST SUMMARY")
     print("="*60)
-    
+
     passed = sum(1 for r in results if r)
     total = len(results)
-    
+
     print(f"Tests passed: {passed}/{total}")
-    
+
     if passed == total:
         print("✅ All tests passed!")
     else:
         print(f"⚠️  {total - passed} tests failed")
-    
+
     # Check generated files
     print("\nGenerated test files in /tmp/:")
     os.system("ls -la /tmp/test_*.* 2>/dev/null | tail -10")

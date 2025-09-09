@@ -2,17 +2,15 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.rbac import check_admin_only
 from app.core.security import get_password_hash, verify_password
+from app.crud.user import user as crud_user
 from app.models import (
     Message,
     UpdatePassword,
-    User,
     UserCreate,
     UserPublic,
     UserRegister,
@@ -31,11 +29,8 @@ def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, li
     """
     check_admin_only(current_user)
 
-    count_statement = select(func.count()).select_from(User)
-    count = session.exec(count_statement).one()
-
-    statement = select(User).offset(skip).limit(limit)
-    users = session.exec(statement).all()
+    count = crud_user.count(session)
+    users = crud_user.get_multi(session, skip=skip, limit=limit)
 
     return UsersPublic(data=users, count=count)
 
@@ -46,14 +41,14 @@ def create_user(*, session: SessionDep, current_user: CurrentUser, user_in: User
     Create new user. Only admin can create users.
     """
     check_admin_only(current_user)
-    existing_user = crud.get_user_by_username(session=session, username=user_in.username)
+    existing_user = crud_user.get_by_username(session, username=user_in.username)
     if existing_user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
 
-    user = crud.create_user(session=session, user_create=user_in)
+    user = crud_user.create(session, obj_in=user_in)
 
     # Log audit in the same transaction
     entity_name = get_entity_name("user", user)
@@ -81,7 +76,7 @@ def update_user_me(
     """
 
     if user_in.username:
-        existing_user = crud.get_user_by_username(
+        existing_user = crud_user.get_user_by_username(
             session=session, username=user_in.username
         )
         if existing_user and existing_user.id != current_user.id:
@@ -188,14 +183,14 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     Create new user without the need to be logged in.
     Note: In production, this endpoint should have rate limiting and possibly CAPTCHA.
     """
-    existing_user = crud.get_user_by_username(session=session, username=user_in.username)
+    existing_user = crud_user.get_by_username(session, username=user_in.username)
     if existing_user:
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
-    user = crud.create_user(session=session, user_create=user_create)
+    user = crud_user.create(session, obj_in=user_create)
 
     # Log audit for self-registration
     entity_name = get_entity_name("user", user)
@@ -218,7 +213,7 @@ def read_user_by_id(
     """
     Get a specific user by id.
     """
-    user = session.get(User, user_id)
+    user = crud_user.get(session, id=user_id)
     if not user:
         # Check permissions before revealing that user doesn't exist
         if current_user.id != user_id:
@@ -244,14 +239,14 @@ def update_user(
     """
     check_admin_only(current_user)
 
-    user = session.get(User, user_id)
+    user = crud_user.get(session, id=user_id)
     if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
     if user_in.username:
-        existing_user = crud.get_user_by_username(
+        existing_user = crud_user.get_user_by_username(
             session=session, username=user_in.username
         )
         if existing_user and existing_user.id != user_id:
@@ -263,7 +258,7 @@ def update_user(
     update_data = user_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(user, update_data)
 
-    user = crud.update_user(session=session, user=user, user_in=user_in)
+    user = crud_user.update(session, db_obj=user, obj_in=user_in)
 
     # Log audit if there were changes
     if old_values:
@@ -290,7 +285,7 @@ def delete_user(
     Delete a user. Only admin can delete users.
     """
     check_admin_only(current_user)
-    user = session.get(User, user_id)
+    user = crud_user.get(session, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
