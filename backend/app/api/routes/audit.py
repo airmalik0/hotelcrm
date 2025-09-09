@@ -38,25 +38,31 @@ def read_audit_logs(
     # Convert to public model with username from relationship
     audit_logs_public = []
     for log in audit_logs:
-        # Create dict from model instance (handle both model and Row objects)
-        if hasattr(log, 'model_dump'):
-            log_dict = log.model_dump()
-        else:
-            # Handle Row object from eager loading
-            log_dict = {
-                'id': log.id,
-                'user_id': log.user_id,
-                'action': log.action,
-                'entity_type': log.entity_type,
-                'entity_id': log.entity_id,
-                'entity_name': log.entity_name,
-                'description': getattr(log, 'description', ''),
-                'old_values': log.old_values,
-                'new_values': log.new_values,
-                'timestamp': log.timestamp
-            }
-        log_dict['username'] = log.user.username if log.user else 'Unknown'
-        audit_logs_public.append(AuditLogPublic(**log_dict))
+        # Create AuditLogPublic from AuditLog model
+        # Get username from user relationship if available
+        username = 'Unknown'
+        if log.user:
+            username = log.user.username
+        elif log.user_id:
+            # Fallback: get user from database if relationship not loaded
+            from app.models import User
+            user = session.get(User, log.user_id)
+            if user:
+                username = user.username
+        
+        audit_logs_public.append(AuditLogPublic(
+            id=log.id,
+            user_id=log.user_id,
+            username=username,
+            action=log.action,
+            entity_type=log.entity_type,
+            entity_id=log.entity_id,
+            entity_name=log.entity_name,
+            description=getattr(log, 'description', ''),
+            old_values=log.old_values,
+            new_values=log.new_values,
+            timestamp=log.timestamp
+        ))
 
     # Count total records with same filters using CRUD
     count = crud_audit.count_with_filters(
@@ -84,22 +90,8 @@ def read_audit_log(
         raise HTTPException(status_code=404, detail="Audit log not found")
 
     # Convert to public model with username
-    if hasattr(audit_log, 'model_dump'):
-        log_dict = audit_log.model_dump()
-    else:
-        # Handle Row object from eager loading
-        log_dict = {
-            'id': audit_log.id,
-            'user_id': audit_log.user_id,
-            'action': audit_log.action,
-            'entity_type': audit_log.entity_type,
-            'entity_id': audit_log.entity_id,
-            'entity_name': audit_log.entity_name,
-            'description': getattr(audit_log, 'description', ''),
-            'old_values': audit_log.old_values,
-            'new_values': audit_log.new_values,
-            'timestamp': audit_log.timestamp
-        }
+    log_dict = audit_log.model_dump()
+    # Add username from the lazy-loaded user relationship
     log_dict['username'] = audit_log.user.username if audit_log.user else 'Unknown'
     return AuditLogPublic(**log_dict)
 

@@ -3,7 +3,6 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import desc, func, select
-from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, or_
 
 from app.crud.base import CRUDBase
@@ -69,12 +68,9 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
         # Apply pagination
         statement = statement.offset(skip).limit(limit)
 
-        # Add eager loading for user relationship
-        statement = statement.options(selectinload(AuditLog.user))  # type: ignore
-
-        # Execute the query and get audit logs
+        # Execute the query and get audit logs as proper models
+        # SQLModel's exec returns proper model instances when selecting a single model
         audit_logs = session.exec(statement).all()
-
         return audit_logs
 
     def count_with_filters(
