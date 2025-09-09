@@ -4,10 +4,10 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.core import security
 from app.core.config import settings
+from app.crud.user import user as crud_user
 from app.models import Token, UserPublic
 
 router = APIRouter(tags=["login"])
@@ -20,7 +20,7 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = crud.authenticate(
+    user = crud_user.authenticate(
         session=session, username=form_data.username, password=form_data.password
     )
     if not user:

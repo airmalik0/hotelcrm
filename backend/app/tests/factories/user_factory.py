@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlmodel import Session
 
-from app import crud
+from app.crud.user import user as crud_user
 from app.models import User, UserCreate, UserRole, UserUpdate
 
 
@@ -48,7 +48,7 @@ class UserFactory:
             full_name=full_name or f"Test User {username}",
         )
 
-        return crud.create_user(session=session, user_create=user_in)
+        return crud_user.create(session, obj_in=user_in)
 
     @staticmethod
     def create_admin_user(
@@ -101,7 +101,7 @@ class UserFactory:
     ) -> User:
         """Update a user with given data."""
         user_update = UserUpdate(**kwargs)
-        return crud.update_user(session=session, user=user, user_in=user_update)
+        return crud_user.update(session, db_obj=user, obj_in=user_update)
 
     @staticmethod
     def get_admin_user(session: Session) -> User:

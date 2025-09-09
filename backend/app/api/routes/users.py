@@ -1,11 +1,10 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, require_admin
 from app.core.audit import get_change_values, get_entity_name, log_audit
-from app.core.rbac import check_admin_only
 from app.core.security import get_password_hash, verify_password
 from app.crud.user import user as crud_user
 from app.models import (
@@ -22,12 +21,11 @@ from app.models import (
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/", response_model=UsersPublic)
-def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
+@router.get("/", response_model=UsersPublic, dependencies=[Depends(require_admin)])
+def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     """
     Retrieve users. Only admin can access.
     """
-    check_admin_only(current_user)
 
     count = crud_user.count(session)
     users = crud_user.get_multi(session, skip=skip, limit=limit)
@@ -35,12 +33,11 @@ def read_users(session: SessionDep, current_user: CurrentUser, skip: int = 0, li
     return UsersPublic(data=users, count=count)
 
 
-@router.post("/", response_model=UserPublic)
+@router.post("/", response_model=UserPublic, dependencies=[Depends(require_admin)])
 def create_user(*, session: SessionDep, current_user: CurrentUser, user_in: UserCreate) -> Any:
     """
     Create new user. Only admin can create users.
     """
-    check_admin_only(current_user)
     existing_user = crud_user.get_by_username(session, username=user_in.username)
     if existing_user:
         raise HTTPException(
@@ -76,8 +73,8 @@ def update_user_me(
     """
 
     if user_in.username:
-        existing_user = crud_user.get_user_by_username(
-            session=session, username=user_in.username
+        existing_user = crud_user.get_by_username(
+            session, username=user_in.username
         )
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(
@@ -211,22 +208,22 @@ def read_user_by_id(
     user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
 ) -> Any:
     """
-    Get a specific user by id.
+    Get a specific user by id. Users can view their own profile, admins can view any profile.
     """
     user = crud_user.get(session, id=user_id)
     if not user:
-        # Check permissions before revealing that user doesn't exist
-        if current_user.id != user_id:
-            check_admin_only(current_user)
         raise HTTPException(status_code=404, detail="User not found")
-    if user == current_user:
+
+    # Allow users to view their own profile
+    if user.id == current_user.id:
         return user
+
     # Only admin can view other users
-    check_admin_only(current_user)
+    require_admin(current_user)
     return user
 
 
-@router.patch("/{user_id}", response_model=UserPublic)
+@router.patch("/{user_id}", response_model=UserPublic, dependencies=[Depends(require_admin)])
 def update_user(
     *,
     session: SessionDep,
@@ -237,7 +234,6 @@ def update_user(
     """
     Update a user. Only admin can update users.
     """
-    check_admin_only(current_user)
 
     user = crud_user.get(session, id=user_id)
     if not user:
@@ -246,8 +242,8 @@ def update_user(
             detail="The user with this id does not exist in the system",
         )
     if user_in.username:
-        existing_user = crud_user.get_user_by_username(
-            session=session, username=user_in.username
+        existing_user = crud_user.get_by_username(
+            session, username=user_in.username
         )
         if existing_user and existing_user.id != user_id:
             raise HTTPException(
@@ -277,14 +273,13 @@ def update_user(
     return user
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", dependencies=[Depends(require_admin)])
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
     """
     Delete a user. Only admin can delete users.
     """
-    check_admin_only(current_user)
     user = crud_user.get(session, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

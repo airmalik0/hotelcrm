@@ -56,20 +56,168 @@ Reset DB: docker-compose down -v
 ```
 backend/
 ├── app/
-│   ├── api/           # API routes
+│   ├── api/           # API routes (HTTP layer)
 │   │   ├── routes/    # Individual route modules
-│   │   └── deps.py    # Dependencies (auth, db, etc)
+│   │   └── deps.py    # Dependencies (auth, db, permissions)
 │   ├── core/          # Core functionality
 │   │   ├── config.py  # Settings and configuration
 │   │   ├── db.py      # Database setup
 │   │   └── security.py # Auth and security
+│   ├── services/      # Business logic layer
+│   ├── crud/          # Database operations layer
 │   ├── models.py      # SQLModel database models
-│   ├── crud.py        # CRUD operations
 │   ├── schemas.py     # Pydantic schemas
 │   ├── utils.py       # Utility functions
 │   └── main.py        # FastAPI app entry point
 ├── tests/             # Test files
 └── alembic/           # Database migrations
+```
+
+## Architecture Guidelines
+
+### CRITICAL: Follow Clean Architecture Pattern
+```
+Request → Router → Service → CRUD → Database
+           ↓         ↓         ↓
+        (HTTP)   (Business)  (SQL)
+```
+
+**MANDATORY RULES:**
+1. **Routers**: ONLY handle HTTP concerns. NEVER write SQL queries or business logic here
+2. **Services**: ONLY business logic and orchestration. NEVER write SQL queries here
+3. **CRUD**: ALL database queries MUST be here. NEVER put SQL in routers or services
+4. **Naming**: ALWAYS use `session: SessionDep` (not `db`). Follow SQLModel conventions
+
+### Layer Responsibilities
+
+#### Routers (app/api/routes/)
+```python
+# CORRECT: Router only handles HTTP
+@router.post("/", response_model=CustomerPublic)
+def create_customer(
+    session: SessionDep,  # ALWAYS use 'session', not 'db'
+    current_user: CurrentUser,
+    customer_in: CustomerCreate,
+) -> Any:
+    service = CustomerService(session)
+    try:
+        customer = service.create_customer(customer_in)
+        session.commit()
+        session.refresh(customer)
+        return customer
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+```
+
+#### Services (app/services/)
+```python
+# CORRECT: Service contains business logic, uses CRUD for DB
+class CustomerService:
+    def __init__(self, session: Session):
+        self.session = session
+        self.crud = crud_customer
+    
+    def create_customer(self, customer_in: CustomerCreate) -> Customer:
+        # Business validation
+        if self.crud.get_by_phone(self.session, phone=customer_in.phone):
+            raise ValueError("Phone number already registered")
+        
+        # Delegate to CRUD
+        return self.crud.create(self.session, obj_in=customer_in)
+```
+
+#### CRUD (app/crud/)
+```python
+# CORRECT: CRUD contains ALL database queries
+from app.crud.base import CRUDBase
+
+class CRUDCustomer(CRUDBase[Customer, CustomerCreate, CustomerUpdate]):
+    def get_by_phone(self, session: Session, *, phone: str) -> Customer | None:
+        statement = select(Customer).where(Customer.phone == phone)
+        return session.exec(statement).first()
+
+customer = CRUDCustomer(Customer)
+```
+
+### Critical Design Decisions
+
+#### 1. NO Fake Async
+```python
+# WRONG: Fake async (no await inside)
+async def get_report(self):  # NO!
+    return self.crud.get_data()  # No await = not async
+
+# CORRECT: Synchronous when using SQLModel
+def get_report(self):
+    return self.crud.get_data()
+
+# CORRECT: Real async for background tasks
+async def generate_report_task(job_id: UUID):
+    await asyncio.sleep(0)  # Real async operation
+```
+
+#### 2. Permission Handling
+```python
+# WRONG: Permission check hidden in function body
+def update_room(current_user: CurrentUser, ...):
+    check_admin_or_manager(current_user)  # Hidden!
+
+# CORRECT: Use Dependencies in decorator (visible in OpenAPI)
+@router.put("/", dependencies=[Depends(require_admin_or_manager)])
+def update_room(...):
+    # Permission already checked by dependency
+```
+
+#### 3. Transaction Pattern
+```python
+# ALWAYS use this pattern:
+session.add(entity)
+session.flush()  # Get ID, validate constraints
+log_audit(...)   # Operations in same transaction
+session.commit()
+session.refresh(entity)
+```
+
+#### 4. Background Tasks Session Handling
+```python
+# WRONG: Using request session in background task
+async def bg_task(session: Session):  # Will fail!
+    job = session.get(Job, id)  # Session already closed!
+
+# CORRECT: Create new session in background task
+async def bg_task(job_id: UUID):
+    from app.core.db import engine
+    with Session(engine) as session:
+        job = session.get(Job, job_id)
+        # Work with new session
+```
+
+### Validation Strategy
+- **Models**: Structural validation (types, formats, regex)
+- **Services**: Business validation (uniqueness, availability)
+- **Routers**: Request validation and error formatting
+
+### Base CRUD Pattern
+```python
+from typing import Generic, TypeVar
+from sqlmodel import Session, SQLModel, select
+
+ModelType = TypeVar("ModelType", bound=SQLModel)
+CreateSchemaType = TypeVar("CreateSchemaType", bound=SQLModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=SQLModel)
+
+class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+    def __init__(self, model: type[ModelType]):
+        self.model = model
+
+    def get(self, session: Session, id: UUID) -> ModelType | None:
+        return session.get(self.model, id)
+
+    def create(self, session: Session, *, obj_in: CreateSchemaType) -> ModelType:
+        db_obj = self.model.model_validate(obj_in)
+        session.add(db_obj)
+        session.flush()
+        return db_obj
 ```
 
 ## Key Patterns
@@ -79,6 +227,7 @@ backend/
 - Use dependency injection for auth: `current_user: CurrentUser`
 - Return proper HTTP status codes
 - Use Pydantic models for request/response validation
+- NEVER write SQL queries directly in routes
 
 ### Database Models
 - Defined in `app/models.py` using SQLModel
@@ -199,6 +348,11 @@ except PaymentError as e:
 
 ## Important Notes
 - **ALWAYS use `uv run` for Python commands, NEVER use `python` or `pip` directly**
+- **ALWAYS follow the Router → Service → CRUD architecture pattern**
+- **NEVER put SQL queries in routers or services - only in CRUD layer**
+- **ALWAYS use `session: SessionDep` naming (not `db`)**
+- **NEVER use fake async** - remove `async` if there's no `await`
+- **ALWAYS use permission Dependencies in decorators** (not in function body)
 - Follow existing code patterns and conventions
 - Add type hints to all functions
 - **ASK about tests** - After new features work, ask if tests should be added
@@ -208,3 +362,58 @@ except PaymentError as e:
   - Update this CLAUDE.md with new patterns/examples
   - Document new API endpoints and their usage
   - Add database schema changes to the models section
+
+## Common Architecture Mistakes to Avoid
+
+### ❌ WRONG: SQL in Router
+```python
+# NEVER do this in a router!
+@router.get("/customers")
+def get_customers(session: SessionDep):
+    return session.exec(select(Customer)).all()  # NO!
+```
+
+### ❌ WRONG: SQL in Service
+```python
+# NEVER do this in a service!
+class CustomerService:
+    def get_all(self):
+        return self.session.exec(select(Customer)).all()  # NO!
+```
+
+### ❌ WRONG: Business Logic in Router
+```python
+# NEVER do this in a router!
+@router.post("/bookings")
+def create_booking(...):
+    if room.status != "available":  # Business logic in router!
+        raise HTTPException(...)
+```
+
+### ✅ CORRECT: Proper Separation
+```python
+# Router: HTTP only
+@router.post("/bookings")
+def create_booking(session: SessionDep, booking_in: BookingCreate):
+    service = BookingService(session)
+    try:
+        return service.create_booking(booking_in)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+# Service: Business logic
+class BookingService:
+    def create_booking(self, booking_in: BookingCreate):
+        room = self.crud_room.get(self.session, booking_in.room_id)
+        if room.status != "available":  # Business logic here!
+            raise ValueError("Room not available")
+        return self.crud_booking.create(self.session, booking_in)
+
+# CRUD: Database queries
+class CRUDBooking(CRUDBase):
+    def create(self, session: Session, obj_in: BookingCreate):
+        booking = Booking.model_validate(obj_in)
+        session.add(booking)
+        session.flush()
+        return booking
+```

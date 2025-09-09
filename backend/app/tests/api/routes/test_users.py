@@ -3,9 +3,9 @@ import uuid
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app import crud
 from app.core.config import settings
 from app.core.security import verify_password
+from app.crud.user import user as crud_user
 from app.models import User, UserCreate
 from app.tests.utils.utils import random_lower_string, random_username
 
@@ -45,7 +45,7 @@ def test_create_user_new_username(
     )
     assert 200 <= r.status_code < 300
     created_user = r.json()
-    user = crud.get_user_by_username(session=db, username=username)
+    user = crud_user.get_by_username(db, username=username)
     assert user
     assert user.username == created_user["username"]
 
@@ -56,7 +56,7 @@ def test_get_existing_user(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
     user_id = user.id
     r = client.get(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -64,7 +64,7 @@ def test_get_existing_user(
     )
     assert 200 <= r.status_code < 300
     api_user = r.json()
-    existing_user = crud.get_user_by_username(session=db, username=username)
+    existing_user = crud_user.get_by_username(db, username=username)
     assert existing_user
     assert existing_user.username == api_user["username"]
 
@@ -73,7 +73,7 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
     user_id = user.id
 
     login_data = {
@@ -91,7 +91,7 @@ def test_get_existing_user_current_user(client: TestClient, db: Session) -> None
     )
     assert 200 <= r.status_code < 300
     api_user = r.json()
-    existing_user = crud.get_user_by_username(session=db, username=username)
+    existing_user = crud_user.get_by_username(db, username=username)
     assert existing_user
     assert existing_user.username == api_user["username"]
 
@@ -114,7 +114,7 @@ def test_create_user_existing_username(
     # username = email
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    crud.create_user(session=db, user_create=user_in)
+    crud_user.create(db, obj_in=user_in)
     data = {"username": username, "password": password}
     r = client.post(
         f"{settings.API_V1_STR}/users/",
@@ -146,12 +146,12 @@ def test_retrieve_users(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    crud.create_user(session=db, user_create=user_in)
+    crud_user.create(db, obj_in=user_in)
 
     username2 = random_username()
     password2 = random_lower_string()
     user_in2 = UserCreate(username=username2, password=password2)
-    crud.create_user(session=db, user_create=user_in2)
+    crud_user.create(db, obj_in=user_in2)
 
     r = client.get(f"{settings.API_V1_STR}/users/", headers=superuser_token_headers)
     all_users = r.json()
@@ -245,7 +245,7 @@ def test_update_user_me_username_exists(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
 
     data = {"username": user.username}
     r = client.patch(
@@ -322,7 +322,7 @@ def test_update_user(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
 
     data = {"full_name": "Updated_full_name"}
     r = client.patch(
@@ -361,12 +361,12 @@ def test_update_user_username_exists(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
 
     username2 = random_username()
     password2 = random_lower_string()
     user_in2 = UserCreate(username=username2, password=password2)
-    user2 = crud.create_user(session=db, user_create=user_in2)
+    user2 = crud_user.create(db, obj_in=user_in2)
 
     data = {"username": user2.username}
     r = client.patch(
@@ -382,7 +382,7 @@ def test_delete_user_me(client: TestClient, db: Session) -> None:
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
     user_id = user.id
 
     login_data = {
@@ -427,7 +427,7 @@ def test_delete_user_super_user(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
     user_id = user.id
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user_id}",
@@ -454,7 +454,7 @@ def test_delete_user_not_found(
 def test_delete_user_current_super_user_error(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
-    super_user = crud.get_user_by_username(
+    super_user = crud_user.get_by_username(
         session=db, username=settings.FIRST_SUPERUSER_USERNAME
     )
     assert super_user
@@ -474,7 +474,7 @@ def test_delete_user_without_privileges(
     username = random_username()
     password = random_lower_string()
     user_in = UserCreate(username=username, password=password)
-    user = crud.create_user(session=db, user_create=user_in)
+    user = crud_user.create(db, obj_in=user_in)
 
     r = client.delete(
         f"{settings.API_V1_STR}/users/{user.id}",

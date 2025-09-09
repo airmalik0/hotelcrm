@@ -29,14 +29,17 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
         end_date: datetime | None = None,
     ) -> list[AuditLog]:
         """Get audit logs with filters and user relationship."""
-        statement = select(AuditLog).options(selectinload(AuditLog.user))  # type: ignore
+        # Build statement without join first
+        statement = select(AuditLog)
 
         # Apply filters
         if user_id:
             statement = statement.where(AuditLog.user_id == user_id)
 
         if user_name:
-            statement = statement.join(User).where(col(User.username).ilike(f"%{user_name}%"))
+            # Join with User table for username filter
+            subquery = select(User.id).where(col(User.username).ilike(f"%{user_name}%"))
+            statement = statement.where(col(AuditLog.user_id).in_(subquery))
 
         if action:
             statement = statement.where(AuditLog.action == action)
@@ -66,7 +69,13 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
         # Apply pagination
         statement = statement.offset(skip).limit(limit)
 
-        return session.exec(statement).all()
+        # Add eager loading for user relationship
+        statement = statement.options(selectinload(AuditLog.user))  # type: ignore
+
+        # Execute the query and get audit logs
+        audit_logs = session.exec(statement).all()
+
+        return audit_logs
 
     def count_with_filters(
         self,
@@ -88,7 +97,9 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
             statement = statement.where(AuditLog.user_id == user_id)
 
         if user_name:
-            statement = statement.join(User).where(col(User.username).ilike(f"%{user_name}%"))
+            # Use subquery for username filter
+            subquery = select(User.id).where(col(User.username).ilike(f"%{user_name}%"))
+            statement = statement.where(col(AuditLog.user_id).in_(subquery))
 
         if action:
             statement = statement.where(AuditLog.action == action)
@@ -116,12 +127,14 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
 
     def get_with_user(self, session: Session, *, audit_id: UUID) -> AuditLog | None:
         """Get audit log with user relationship loaded."""
-        statement = (
-            select(AuditLog)
-            .where(AuditLog.id == audit_id)
-            .options(selectinload(AuditLog.user))  # type: ignore
-        )
-        return session.exec(statement).first()
+        statement = select(AuditLog).where(AuditLog.id == audit_id)
+        audit_log = session.exec(statement).first()
+
+        # Trigger lazy loading of user relationship if audit log exists
+        if audit_log and audit_log.user_id:
+            _ = audit_log.user  # This will load the user relationship
+
+        return audit_log
 
     def get_stats(
         self,
@@ -165,8 +178,8 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
 
         return {
             "total_actions": total_count,
-            "actions_by_type": {action: count for action, count in action_counts},
-            "actions_by_entity": {entity: count for entity, count in entity_counts},
+            "actions_by_type": dict(action_counts),
+            "actions_by_entity": dict(entity_counts),
             "most_active_users": [
                 {"username": username, "action_count": count}
                 for username, count in user_counts
