@@ -33,7 +33,7 @@ async def validate_customer_csv(
     import_service = ImportService(session)
     result = import_service.validate_csv_structure(content)
 
-    return result
+    return CSVValidationResult(**result)
 
 
 @router.post(
@@ -73,7 +73,7 @@ async def import_customers_from_csv(
 
     if not result.get("success", False):
         # Return detailed error information
-        return result
+        return ImportResult(**result)
 
     # Log audit for successful import
     log_audit(
@@ -87,7 +87,7 @@ async def import_customers_from_csv(
     )
     session.commit()
 
-    return result
+    return ImportResult(**result)
 
 
 @router.get(
@@ -160,7 +160,7 @@ async def export_all_customers(
 
     # Export to CSV
     export_service = ExportService()
-    csv_content = await export_service.export_to_csv(customer_data)
+    csv_content = export_service.export_to_csv(customer_data)
 
     # Log audit for export
     log_audit(

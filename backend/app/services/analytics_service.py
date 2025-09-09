@@ -80,7 +80,7 @@ class AnalyticsService:
             hour = int(row[0])
             count = row[1]
             avg_amount = row[2] or 0
-            hourly_pattern[hour] = {"count": count, "amount": float(avg_amount)}
+            hourly_pattern[hour] = {"count": int(count), "amount": float(avg_amount)}
 
         formatted_results = [
             {
@@ -249,8 +249,8 @@ class AnalyticsService:
         booking_distribution = {}
 
         for row in repeat_data:
-            booking_count = row[0]
-            customer_count = row[1]
+            booking_count = int(row[0]) if row[0] else 0
+            customer_count = int(row[1]) if row[1] else 0
             total_customers += customer_count
 
             if booking_count > 1:
