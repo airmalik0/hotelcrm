@@ -23,6 +23,14 @@ export type AuditLogsPublic = {
     count: number;
 };
 
+export type Body_import_import_customers_from_csv = {
+    file: (Blob | File);
+};
+
+export type Body_import_validate_customer_csv = {
+    file: (Blob | File);
+};
+
 export type Body_login_login_access_token = {
     grant_type?: (string | null);
     username: string;
@@ -83,6 +91,15 @@ export type BookingUpdate = {
     registration_need?: (boolean | null);
 };
 
+export type CSVValidationResult = {
+    valid: boolean;
+    error?: (string | null);
+    fields?: (Array<(string)> | null);
+    row_count?: (number | null);
+    required_fields?: (Array<(string)> | null);
+    optional_fields?: (Array<(string)> | null);
+};
+
 export type CustomerCreate = {
     first_name: string;
     last_name: string;
@@ -125,15 +142,93 @@ export type CustomerUpdate = {
     notes?: (string | null);
 };
 
+export type GroupByPeriod = 'hour' | 'day' | 'week' | 'month' | 'year';
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
+
+export type ImportResult = {
+    success: boolean;
+    message?: (string | null);
+    imported?: number;
+    validation_errors?: (Array<ImportValidationError> | null);
+    duplicates_in_csv?: ({
+    [key: string]: Array<{
+        [key: string]: unknown;
+    }>;
+} | null);
+    existing_in_db?: ({
+    [key: string]: {
+        [key: string]: unknown;
+    };
+} | null);
+    error?: (string | null);
+};
+
+export type ImportValidationError = {
+    row: number;
+    error: string;
+};
+
+export type JobStatus = 'queued' | 'processing' | 'completed' | 'failed';
 
 export type Message = {
     message: string;
 };
 
 export type PaymentMethod = 'cash' | 'transfer' | 'terminal';
+
+export type ReportFormat = 'json' | 'csv' | 'excel' | 'pdf';
+
+export type ReportGenerationRequest = {
+    start_date: string;
+    end_date: string;
+    /**
+     * all|standard|vip
+     */
+    room_type?: (string | null);
+    room_id?: (string | null);
+    group_by?: GroupByPeriod;
+    format?: ReportFormat;
+    include_charts?: boolean;
+};
+
+export type ReportJobResponse = {
+    job_id: string;
+    status: JobStatus;
+    message?: (string | null);
+};
+
+export type ReportJobStatus = {
+    job_id: string;
+    status: JobStatus;
+    progress: number;
+    message?: (string | null);
+    result_path?: (string | null);
+    error?: (string | null);
+    created_at: string;
+    completed_at?: (string | null);
+};
+
+export type ReportListResponse = {
+    reports: Array<ReportMetadata>;
+    total: number;
+};
+
+export type ReportMetadata = {
+    job_id: string;
+    report_type: ReportType;
+    format: ReportFormat;
+    parameters: {
+        [key: string]: unknown;
+    };
+    created_at: string;
+    file_path?: (string | null);
+    file_size?: (number | null);
+};
+
+export type ReportType = 'occupancy_standard' | 'occupancy_daily_pattern' | 'occupancy_weekly_pattern' | 'occupancy_seasonal_trend' | 'revenue' | 'top_customers' | 'repeat_guest_rate' | 'payment_methods' | 'geographic_analysis';
 
 export type RoomCreate = {
     room_number: string;
@@ -179,6 +274,14 @@ export type RoomUpdate = {
 export type Token = {
     access_token: string;
     token_type?: string;
+};
+
+export type TopCustomersRequest = {
+    start_date: string;
+    end_date: string;
+    limit?: number;
+    sort_by?: string;
+    format?: ReportFormat;
 };
 
 export type UpdatePassword = {
@@ -552,3 +655,142 @@ export type AuditReadAuditLogError = (HTTPValidationError);
 export type AuditGetAuditStatsResponse = (unknown);
 
 export type AuditGetAuditStatsError = unknown;
+
+export type ReportsGenerateOccupancyReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateOccupancyReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateOccupancyReportError = (HTTPValidationError);
+
+export type ReportsGenerateDailyPatternReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateDailyPatternReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateDailyPatternReportError = (HTTPValidationError);
+
+export type ReportsGenerateWeeklyPatternReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateWeeklyPatternReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateWeeklyPatternReportError = (HTTPValidationError);
+
+export type ReportsGenerateSeasonalTrendReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateSeasonalTrendReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateSeasonalTrendReportError = (HTTPValidationError);
+
+export type ReportsGenerateRevenueReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateRevenueReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateRevenueReportError = (HTTPValidationError);
+
+export type ReportsGenerateTopCustomersReportData = {
+    body: TopCustomersRequest;
+};
+
+export type ReportsGenerateTopCustomersReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateTopCustomersReportError = (HTTPValidationError);
+
+export type ReportsGenerateRepeatGuestRateReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateRepeatGuestRateReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateRepeatGuestRateReportError = (HTTPValidationError);
+
+export type ReportsGeneratePaymentMethodsReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGeneratePaymentMethodsReportResponse = (ReportJobResponse);
+
+export type ReportsGeneratePaymentMethodsReportError = (HTTPValidationError);
+
+export type ReportsGenerateGeographicAnalysisReportData = {
+    body: ReportGenerationRequest;
+};
+
+export type ReportsGenerateGeographicAnalysisReportResponse = (ReportJobResponse);
+
+export type ReportsGenerateGeographicAnalysisReportError = (HTTPValidationError);
+
+export type ReportsGetJobStatusData = {
+    path: {
+        job_id: string;
+    };
+};
+
+export type ReportsGetJobStatusResponse = (ReportJobStatus);
+
+export type ReportsGetJobStatusError = (HTTPValidationError);
+
+export type ReportsDownloadReportData = {
+    path: {
+        job_id: string;
+    };
+};
+
+export type ReportsDownloadReportResponse = (unknown);
+
+export type ReportsDownloadReportError = (HTTPValidationError);
+
+export type ReportsListReportsData = {
+    query?: {
+        limit?: number;
+        skip?: number;
+    };
+};
+
+export type ReportsListReportsResponse = (ReportListResponse);
+
+export type ReportsListReportsError = (HTTPValidationError);
+
+export type ReportsCleanupOldReportsData = {
+    query?: {
+        days?: number;
+    };
+};
+
+export type ReportsCleanupOldReportsResponse = ({
+    [key: string]: unknown;
+});
+
+export type ReportsCleanupOldReportsError = (HTTPValidationError);
+
+export type ImportValidateCustomerCsvData = {
+    body: Body_import_validate_customer_csv;
+};
+
+export type ImportValidateCustomerCsvResponse = (CSVValidationResult);
+
+export type ImportValidateCustomerCsvError = (HTTPValidationError);
+
+export type ImportImportCustomersFromCsvData = {
+    body: Body_import_import_customers_from_csv;
+};
+
+export type ImportImportCustomersFromCsvResponse = (ImportResult);
+
+export type ImportImportCustomersFromCsvError = (HTTPValidationError);
+
+export type ImportGetCustomerImportTemplateResponse = (unknown);
+
+export type ImportGetCustomerImportTemplateError = unknown;
+
+export type ImportExportAllCustomersResponse = (unknown);
+
+export type ImportExportAllCustomersError = unknown;

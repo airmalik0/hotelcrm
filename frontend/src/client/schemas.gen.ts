@@ -96,6 +96,32 @@ export const AuditLogsPublicSchema = {
     title: 'AuditLogsPublic'
 } as const;
 
+export const Body_import_import_customers_from_csvSchema = {
+    properties: {
+        file: {
+            type: 'string',
+            format: 'binary',
+            title: 'File'
+        }
+    },
+    type: 'object',
+    required: ['file'],
+    title: 'Body_import-import_customers_from_csv'
+} as const;
+
+export const Body_import_validate_customer_csvSchema = {
+    properties: {
+        file: {
+            type: 'string',
+            format: 'binary',
+            title: 'File'
+        }
+    },
+    type: 'object',
+    required: ['file'],
+    title: 'Body_import-validate_customer_csv'
+} as const;
+
 export const Body_login_login_access_tokenSchema = {
     properties: {
         grant_type: {
@@ -462,6 +488,82 @@ export const BookingsPublicSchema = {
     title: 'BookingsPublic'
 } as const;
 
+export const CSVValidationResultSchema = {
+    properties: {
+        valid: {
+            type: 'boolean',
+            title: 'Valid'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error'
+        },
+        fields: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fields'
+        },
+        row_count: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Row Count'
+        },
+        required_fields: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Required Fields'
+        },
+        optional_fields: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optional Fields'
+        }
+    },
+    type: 'object',
+    required: ['valid'],
+    title: 'CSVValidationResult'
+} as const;
+
 export const CustomerCreateSchema = {
     properties: {
         first_name: {
@@ -782,6 +884,12 @@ export const CustomersPublicSchema = {
     title: 'CustomersPublic'
 } as const;
 
+export const GroupByPeriodSchema = {
+    type: 'string',
+    enum: ['hour', 'day', 'week', 'month', 'year'],
+    title: 'GroupByPeriod'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -794,6 +902,112 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const ImportResultSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Message'
+        },
+        imported: {
+            type: 'integer',
+            title: 'Imported',
+            default: 0
+        },
+        validation_errors: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/ImportValidationError'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validation Errors'
+        },
+        duplicates_in_csv: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        items: {
+                            type: 'object'
+                        },
+                        type: 'array'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Duplicates In Csv'
+        },
+        existing_in_db: {
+            anyOf: [
+                {
+                    additionalProperties: {
+                        type: 'object'
+                    },
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Existing In Db'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error'
+        }
+    },
+    type: 'object',
+    required: ['success'],
+    title: 'ImportResult'
+} as const;
+
+export const ImportValidationErrorSchema = {
+    properties: {
+        row: {
+            type: 'integer',
+            title: 'Row'
+        },
+        error: {
+            type: 'string',
+            title: 'Error'
+        }
+    },
+    type: 'object',
+    required: ['row', 'error'],
+    title: 'ImportValidationError'
+} as const;
+
+export const JobStatusSchema = {
+    type: 'string',
+    enum: ['queued', 'processing', 'completed', 'failed'],
+    title: 'JobStatus'
 } as const;
 
 export const MessageSchema = {
@@ -812,6 +1026,241 @@ export const PaymentMethodSchema = {
     type: 'string',
     enum: ['cash', 'transfer', 'terminal'],
     title: 'PaymentMethod'
+} as const;
+
+export const ReportFormatSchema = {
+    type: 'string',
+    enum: ['json', 'csv', 'excel', 'pdf'],
+    title: 'ReportFormat'
+} as const;
+
+export const ReportGenerationRequestSchema = {
+    properties: {
+        start_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Date'
+        },
+        room_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Room Type',
+            description: 'all|standard|vip'
+        },
+        room_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Room Id'
+        },
+        group_by: {
+            '$ref': '#/components/schemas/GroupByPeriod',
+            default: 'day'
+        },
+        format: {
+            '$ref': '#/components/schemas/ReportFormat',
+            default: 'json'
+        },
+        include_charts: {
+            type: 'boolean',
+            title: 'Include Charts',
+            default: false
+        }
+    },
+    type: 'object',
+    required: ['start_date', 'end_date'],
+    title: 'ReportGenerationRequest'
+} as const;
+
+export const ReportJobResponseSchema = {
+    properties: {
+        job_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Job Id'
+        },
+        status: {
+            '$ref': '#/components/schemas/JobStatus'
+        },
+        message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Message'
+        }
+    },
+    type: 'object',
+    required: ['job_id', 'status'],
+    title: 'ReportJobResponse'
+} as const;
+
+export const ReportJobStatusSchema = {
+    properties: {
+        job_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Job Id'
+        },
+        status: {
+            '$ref': '#/components/schemas/JobStatus'
+        },
+        progress: {
+            type: 'integer',
+            maximum: 100,
+            minimum: 0,
+            title: 'Progress'
+        },
+        message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Message'
+        },
+        result_path: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Result Path'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        completed_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Completed At'
+        }
+    },
+    type: 'object',
+    required: ['job_id', 'status', 'progress', 'created_at'],
+    title: 'ReportJobStatus'
+} as const;
+
+export const ReportListResponseSchema = {
+    properties: {
+        reports: {
+            items: {
+                '$ref': '#/components/schemas/ReportMetadata'
+            },
+            type: 'array',
+            title: 'Reports'
+        },
+        total: {
+            type: 'integer',
+            title: 'Total'
+        }
+    },
+    type: 'object',
+    required: ['reports', 'total'],
+    title: 'ReportListResponse'
+} as const;
+
+export const ReportMetadataSchema = {
+    properties: {
+        job_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Job Id'
+        },
+        report_type: {
+            '$ref': '#/components/schemas/ReportType'
+        },
+        format: {
+            '$ref': '#/components/schemas/ReportFormat'
+        },
+        parameters: {
+            type: 'object',
+            title: 'Parameters'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        file_path: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'File Path'
+        },
+        file_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'File Size'
+        }
+    },
+    type: 'object',
+    required: ['job_id', 'report_type', 'format', 'parameters', 'created_at'],
+    title: 'ReportMetadata'
+} as const;
+
+export const ReportTypeSchema = {
+    type: 'string',
+    enum: ['occupancy_standard', 'occupancy_daily_pattern', 'occupancy_weekly_pattern', 'occupancy_seasonal_trend', 'revenue', 'top_customers', 'repeat_guest_rate', 'payment_methods', 'geographic_analysis'],
+    title: 'ReportType'
 } as const;
 
 export const RoomCreateSchema = {
@@ -1059,6 +1508,41 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
+} as const;
+
+export const TopCustomersRequestSchema = {
+    properties: {
+        start_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Date'
+        },
+        end_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'End Date'
+        },
+        limit: {
+            type: 'integer',
+            maximum: 100,
+            minimum: 1,
+            title: 'Limit',
+            default: 10
+        },
+        sort_by: {
+            type: 'string',
+            pattern: '^(revenue|bookings)$',
+            title: 'Sort By',
+            default: 'revenue'
+        },
+        format: {
+            '$ref': '#/components/schemas/ReportFormat',
+            default: 'json'
+        }
+    },
+    type: 'object',
+    required: ['start_date', 'end_date'],
+    title: 'TopCustomersRequest'
 } as const;
 
 export const UpdatePasswordSchema = {

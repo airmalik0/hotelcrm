@@ -442,3 +442,152 @@ class BookingsPublic(SQLModel):
 class AuditLogsPublic(SQLModel):
     data: list[AuditLogPublic]
     count: int
+
+
+# Report and Export Models
+
+
+class ReportJobStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class ReportJobType(str, Enum):
+    BOOKING_SUMMARY = "booking_summary"
+    CUSTOMER_REPORT = "customer_report"
+    ROOM_OCCUPANCY = "room_occupancy"
+    REVENUE_REPORT = "revenue_report"
+    AUDIT_LOG_EXPORT = "audit_log_export"
+    FULL_DATA_EXPORT = "full_data_export"
+
+
+class ReportFormat(str, Enum):
+    JSON = "json"
+    CSV = "csv"
+    EXCEL = "excel"
+    PDF = "pdf"
+
+
+# Report Job models
+class ReportJobBase(SQLModel):
+    type: ReportJobType
+    status: ReportJobStatus = Field(default=ReportJobStatus.PENDING)
+    format: ReportFormat = Field(default=ReportFormat.JSON)
+    params: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
+    error_message: str | None = Field(default=None, max_length=1000)
+    progress: int = Field(default=0, ge=0, le=100)
+    result_path: str | None = Field(default=None, max_length=500)
+    result_size: int | None = Field(default=None)  # File size in bytes
+
+
+class ReportJob(ReportJobBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+        )
+    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    expires_at: datetime | None = None  # When the report file will be deleted
+    
+    # Relationships
+    user: Optional["User"] = Relationship()
+    history_entries: list["ReportHistory"] = Relationship(back_populates="job")
+    
+    def is_expired(self) -> bool:
+        """Check if the report has expired."""
+        if self.expires_at:
+            return datetime.utcnow() > self.expires_at
+        return False
+    
+    def can_transition_to(self, new_status: ReportJobStatus) -> bool:
+        """Check if status transition is valid."""
+        valid_transitions = {
+            ReportJobStatus.PENDING: [ReportJobStatus.PROCESSING, ReportJobStatus.CANCELLED],
+            ReportJobStatus.PROCESSING: [ReportJobStatus.COMPLETED, ReportJobStatus.FAILED, ReportJobStatus.CANCELLED],
+            ReportJobStatus.COMPLETED: [],  # Cannot change from completed
+            ReportJobStatus.FAILED: [ReportJobStatus.PENDING],  # Can retry
+            ReportJobStatus.CANCELLED: [],  # Cannot change from cancelled
+        }
+        return new_status in valid_transitions.get(self.status, [])
+
+
+class ReportJobCreate(SQLModel):
+    type: ReportJobType
+    format: ReportFormat = Field(default=ReportFormat.JSON)
+    params: dict[str, Any] | None = None
+
+
+class ReportJobUpdate(SQLModel):
+    status: ReportJobStatus | None = None
+    error_message: str | None = None
+    progress: int | None = None
+    result_path: str | None = None
+    result_size: int | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    expires_at: datetime | None = None
+
+
+class ReportJobPublic(ReportJobBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+    expires_at: datetime | None
+
+
+# Report History models (for tracking downloads and access)
+class ReportHistoryBase(SQLModel):
+    action: str = Field(max_length=50, index=True)  # downloaded, viewed, deleted
+    ip_address: str | None = Field(default=None, max_length=45)  # IPv6 max length
+    user_agent: str | None = Field(default=None, max_length=500)
+
+
+class ReportHistory(ReportHistoryBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    job_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid,
+            ForeignKey("reportjob.id", ondelete="CASCADE"),
+            index=True,
+        )
+    )
+    user_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+        )
+    )
+    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
+    
+    # Relationships
+    job: Optional["ReportJob"] = Relationship(back_populates="history_entries")
+    user: Optional["User"] = Relationship()
+
+
+class ReportHistoryPublic(ReportHistoryBase):
+    id: uuid.UUID
+    job_id: uuid.UUID
+    user_id: uuid.UUID
+    timestamp: datetime
+
+
+# List responses
+class ReportJobsPublic(SQLModel):
+    data: list[ReportJobPublic]
+    count: int
+
+
+class ReportHistoriesPublic(SQLModel):
+    data: list[ReportHistoryPublic]
+    count: int

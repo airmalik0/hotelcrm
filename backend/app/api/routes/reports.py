@@ -1,22 +1,33 @@
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from sqlmodel import Session
 
-from app.api.deps import SessionDep, get_current_admin_user
-from app.schemas.report_schemas import (
-    JobStatus,
+from app.api.deps import CurrentUser, SessionDep, get_current_admin_user
+from app.core.audit import log_audit
+from app.crud_reports import (
+    count_report_jobs,
+    create_report_history,
+    create_report_job,
+    delete_expired_reports,
+    get_report_job_by_user,
+    list_report_jobs,
+    update_report_job,
+)
+from app.models import (
     ReportFormat,
-    ReportGenerationRequest,
-    ReportJobResponse,
+    ReportJob,
+    ReportJobCreate,
+    ReportJobPublic,
+    ReportJobsPublic,
     ReportJobStatus,
-    ReportListResponse,
-    ReportMetadata,
-    ReportType,
-    TopCustomersRequest,
+    ReportJobType,
+    ReportJobUpdate,
+    User,
+    UserRole,
 )
 from app.services.analytics_service import AnalyticsService
 from app.services.chart_service import ChartService
@@ -26,20 +37,31 @@ from app.services.storage_service import storage_service
 
 router = APIRouter()
 
-# In-memory job storage (in production, use Redis or database)
-job_storage: dict[str, dict[str, Any]] = {}
-
 
 async def generate_occupancy_report_task(
-    job_id: str,
+    job_id: uuid.UUID,
     db: Session,
+    user_id: uuid.UUID,
     params: dict[str, Any],
     report_variant: str = "standard"
 ) -> None:
     """Background task to generate occupancy report."""
     try:
-        job_storage[job_id]["status"] = JobStatus.PROCESSING
-        job_storage[job_id]["progress"] = 10
+        # Update job status to processing
+        job = db.get(ReportJob, job_id)
+        if not job:
+            return
+
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.PROCESSING,
+                started_at=datetime.utcnow(),
+                progress=10
+            )
+        )
+        db.commit()
 
         analytics = AnalyticsService(db)
 
@@ -71,7 +93,13 @@ async def generate_occupancy_report_task(
                 params.get("group_by", "day")
             )
 
-        job_storage[job_id]["progress"] = 40
+        # Update progress
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=40)
+        )
+        db.commit()
 
         # Generate chart if requested
         chart_image = None
@@ -84,10 +112,15 @@ async def generate_occupancy_report_task(
             else:
                 chart_image = await chart_service.create_occupancy_chart(data)
 
-        job_storage[job_id]["progress"] = 60
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=60)
+        )
+        db.commit()
 
         # Export to requested format
-        format = params.get("format", "json")
+        format = params.get("format", ReportFormat.JSON)
         if format == ReportFormat.JSON:
             content = json.dumps(data, indent=2).encode()
             filename = f"occupancy_report_{job_id}.json"
@@ -106,32 +139,84 @@ async def generate_occupancy_report_task(
             )
             filename = f"occupancy_report_{job_id}.pdf"
 
-        job_storage[job_id]["progress"] = 80
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=80)
+        )
+        db.commit()
 
         # Save file
         file_path = await storage_service.save_file(content, filename, "occupancy")
+        file_size = len(content)
 
-        # Update job status
-        job_storage[job_id]["status"] = JobStatus.COMPLETED
-        job_storage[job_id]["progress"] = 100
-        job_storage[job_id]["result_path"] = file_path
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
+        # Update job status to completed
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.COMPLETED,
+                progress=100,
+                result_path=file_path,
+                result_size=file_size,
+                completed_at=datetime.utcnow(),
+                expires_at=datetime.utcnow() + timedelta(days=7)
+            )
+        )
+
+        # Log audit
+        user = db.get(User, user_id)
+        if user:
+            log_audit(
+                session=db,
+                user=user,
+                action="generated",
+                entity_type="report",
+                entity_id=job_id,
+                entity_name=f"Occupancy Report ({report_variant})",
+                description=f"Generated {report_variant} occupancy report in {format} format"
+            )
+
+        db.commit()
 
     except Exception as e:
-        job_storage[job_id]["status"] = JobStatus.FAILED
-        job_storage[job_id]["error"] = str(e)
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
+        # Update job status to failed
+        if job := db.get(ReportJob, job_id):
+            update_report_job(
+                session=db,
+                report_job=job,
+                report_update=ReportJobUpdate(
+                    status=ReportJobStatus.FAILED,
+                    error_message=str(e),
+                    completed_at=datetime.utcnow()
+                )
+            )
+            db.commit()
 
 
 async def generate_revenue_report_task(
-    job_id: str,
+    job_id: uuid.UUID,
     db: Session,
+    user_id: uuid.UUID,
     params: dict[str, Any]
 ) -> None:
     """Background task to generate revenue report."""
     try:
-        job_storage[job_id]["status"] = JobStatus.PROCESSING
-        job_storage[job_id]["progress"] = 10
+        # Update job status to processing
+        job = db.get(ReportJob, job_id)
+        if not job:
+            return
+
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.PROCESSING,
+                started_at=datetime.utcnow(),
+                progress=10
+            )
+        )
+        db.commit()
 
         analytics = AnalyticsService(db)
         data = await analytics.get_revenue_report(
@@ -142,7 +227,12 @@ async def generate_revenue_report_task(
             params.get("group_by", "month")
         )
 
-        job_storage[job_id]["progress"] = 40
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=40)
+        )
+        db.commit()
 
         # Generate chart if requested
         chart_image = None
@@ -150,10 +240,15 @@ async def generate_revenue_report_task(
             chart_service = ChartService()
             chart_image = await chart_service.create_revenue_chart(data)
 
-        job_storage[job_id]["progress"] = 60
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=60)
+        )
+        db.commit()
 
         # Export to requested format
-        format = params.get("format", "json")
+        format = params.get("format", ReportFormat.JSON)
         if format == ReportFormat.JSON:
             content = json.dumps(data, indent=2).encode()
             filename = f"revenue_report_{job_id}.json"
@@ -170,231 +265,102 @@ async def generate_revenue_report_task(
             content = await pdf_service.create_revenue_report_pdf(data, chart_image)
             filename = f"revenue_report_{job_id}.pdf"
 
-        job_storage[job_id]["progress"] = 80
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=80)
+        )
+        db.commit()
 
         # Save file
         file_path = await storage_service.save_file(content, filename, "revenue")
+        file_size = len(content)
 
-        # Update job status
-        job_storage[job_id]["status"] = JobStatus.COMPLETED
-        job_storage[job_id]["progress"] = 100
-        job_storage[job_id]["result_path"] = file_path
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
+        # Update job status to completed
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.COMPLETED,
+                progress=100,
+                result_path=file_path,
+                result_size=file_size,
+                completed_at=datetime.utcnow(),
+                expires_at=datetime.utcnow() + timedelta(days=7)
+            )
+        )
+
+        # Log audit
+        user = db.get(User, user_id)
+        if user:
+            log_audit(
+                session=db,
+                user=user,
+                action="generated",
+                entity_type="report",
+                entity_id=job_id,
+                entity_name="Revenue Report",
+                description=f"Generated revenue report in {format} format"
+            )
+
+        db.commit()
 
     except Exception as e:
-        job_storage[job_id]["status"] = JobStatus.FAILED
-        job_storage[job_id]["error"] = str(e)
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-
-@router.post(
-    "/occupancy_standard/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_occupancy_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate standard occupancy report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    # Initialize job
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.OCCUPANCY_STANDARD,
-        "parameters": request.model_dump(),
-    }
-
-    # Start background task
-    background_tasks.add_task(
-        generate_occupancy_report_task,
-        job_id,
-        db,
-        request.model_dump(),
-        "standard"
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Report generation started"
-    )
-
-
-@router.post(
-    "/occupancy_daily_pattern/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_daily_pattern_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate daily occupancy pattern report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.OCCUPANCY_DAILY_PATTERN,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_occupancy_report_task,
-        job_id,
-        db,
-        request.model_dump(),
-        "daily_pattern"
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Daily pattern report generation started"
-    )
-
-
-@router.post(
-    "/occupancy_weekly_pattern/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_weekly_pattern_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate weekly occupancy pattern report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.OCCUPANCY_WEEKLY_PATTERN,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_occupancy_report_task,
-        job_id,
-        db,
-        request.model_dump(),
-        "weekly_pattern"
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Weekly pattern report generation started"
-    )
-
-
-@router.post(
-    "/occupancy_seasonal_trend/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_seasonal_trend_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate seasonal trend report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.OCCUPANCY_SEASONAL_TREND,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_occupancy_report_task,
-        job_id,
-        db,
-        request.model_dump(),
-        "seasonal_trend"
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Seasonal trend report generation started"
-    )
-
-
-@router.post(
-    "/revenue/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_revenue_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate revenue report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.REVENUE,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_revenue_report_task,
-        job_id,
-        db,
-        request.model_dump()
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Revenue report generation started"
-    )
+        # Update job status to failed
+        if job := db.get(ReportJob, job_id):
+            update_report_job(
+                session=db,
+                report_job=job,
+                report_update=ReportJobUpdate(
+                    status=ReportJobStatus.FAILED,
+                    error_message=str(e),
+                    completed_at=datetime.utcnow()
+                )
+            )
+            db.commit()
 
 
 async def generate_top_customers_task(
-    job_id: str,
+    job_id: uuid.UUID,
     db: Session,
+    user_id: uuid.UUID,
     params: dict[str, Any]
 ) -> None:
     """Background task to generate top customers report."""
     try:
-        job_storage[job_id]["status"] = JobStatus.PROCESSING
-        job_storage[job_id]["progress"] = 10
+        # Update job status to processing
+        job = db.get(ReportJob, job_id)
+        if not job:
+            return
+
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.PROCESSING,
+                started_at=datetime.utcnow(),
+                progress=10
+            )
+        )
+        db.commit()
 
         analytics = AnalyticsService(db)
         data = await analytics.get_top_customers(
             params["start_date"],
             params["end_date"],
-            params["limit"],
-            params["sort_by"]
+            params.get("limit", 10),
+            params.get("sort_by", "total_spent")
         )
 
-        job_storage[job_id]["progress"] = 60
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=60)
+        )
+        db.commit()
 
         # Export to requested format
-        format = params.get("format", "json")
+        format = params.get("format", ReportFormat.JSON)
         if format == ReportFormat.JSON:
             content = json.dumps(data, indent=2).encode()
             filename = f"top_customers_{job_id}.json"
@@ -411,399 +377,216 @@ async def generate_top_customers_task(
             content = await pdf_service.create_customer_report_pdf(data)
             filename = f"top_customers_{job_id}.pdf"
 
-        job_storage[job_id]["progress"] = 80
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(progress=80)
+        )
+        db.commit()
 
         # Save file
         file_path = await storage_service.save_file(content, filename, "customers")
+        file_size = len(content)
 
-        # Update job status
-        job_storage[job_id]["status"] = JobStatus.COMPLETED
-        job_storage[job_id]["progress"] = 100
-        job_storage[job_id]["result_path"] = file_path
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-    except Exception as e:
-        job_storage[job_id]["status"] = JobStatus.FAILED
-        job_storage[job_id]["error"] = str(e)
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-
-@router.post(
-    "/top_customers/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_top_customers_report(
-    request: TopCustomersRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate top customers report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.TOP_CUSTOMERS,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_top_customers_task,
-        job_id,
-        db,
-        request.model_dump()
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Top customers report generation started"
-    )
-
-
-async def generate_repeat_guest_rate_task(
-    job_id: str,
-    db: Session,
-    params: dict[str, Any]
-) -> None:
-    """Background task to generate repeat guest rate report."""
-    try:
-        job_storage[job_id]["status"] = JobStatus.PROCESSING
-        job_storage[job_id]["progress"] = 10
-
-        analytics = AnalyticsService(db)
-        data = await analytics.get_repeat_guest_rate(
-            params["start_date"],
-            params["end_date"],
-            params.get("group_by", "month")
+        # Update job status to completed
+        update_report_job(
+            session=db,
+            report_job=job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.COMPLETED,
+                progress=100,
+                result_path=file_path,
+                result_size=file_size,
+                completed_at=datetime.utcnow(),
+                expires_at=datetime.utcnow() + timedelta(days=7)
+            )
         )
 
-        job_storage[job_id]["progress"] = 60
+        # Log audit
+        user = db.get(User, user_id)
+        if user:
+            log_audit(
+                session=db,
+                user=user,
+                action="generated",
+                entity_type="report",
+                entity_id=job_id,
+                entity_name="Top Customers Report",
+                description=f"Generated top customers report in {format} format"
+            )
 
-        # Export to requested format
-        format = params.get("format", "json")
-        if format == ReportFormat.JSON:
-            content = json.dumps(data, indent=2).encode()
-            filename = f"repeat_guest_rate_{job_id}.json"
-        elif format == ReportFormat.CSV:
-            export_service = ExportService()
-            content = await export_service.export_to_csv(data)
-            filename = f"repeat_guest_rate_{job_id}.csv"
-        elif format == ReportFormat.EXCEL:
-            export_service = ExportService()
-            content = await export_service.export_analytics_report(data, "excel")
-            filename = f"repeat_guest_rate_{job_id}.xlsx"
-        else:  # PDF
-            pdf_service = PDFService()
-            content = await pdf_service.create_analytics_report_pdf(data, "Repeat Guest Rate Report")
-            filename = f"repeat_guest_rate_{job_id}.pdf"
-
-        job_storage[job_id]["progress"] = 80
-
-        # Save file
-        file_path = await storage_service.save_file(content, filename, "analytics")
-
-        # Update job status
-        job_storage[job_id]["status"] = JobStatus.COMPLETED
-        job_storage[job_id]["progress"] = 100
-        job_storage[job_id]["result_path"] = file_path
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
+        db.commit()
 
     except Exception as e:
-        job_storage[job_id]["status"] = JobStatus.FAILED
-        job_storage[job_id]["error"] = str(e)
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
+        # Update job status to failed
+        if job := db.get(ReportJob, job_id):
+            update_report_job(
+                session=db,
+                report_job=job,
+                report_update=ReportJobUpdate(
+                    status=ReportJobStatus.FAILED,
+                    error_message=str(e),
+                    completed_at=datetime.utcnow()
+                )
+            )
+            db.commit()
 
 
 @router.post(
-    "/repeat_guest_rate/generate",
-    response_model=ReportJobResponse,
+    "/generate",
+    response_model=ReportJobPublic,
     dependencies=[Depends(get_current_admin_user)]
 )
-async def generate_repeat_guest_rate_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate repeat guest rate report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.REPEAT_GUEST_RATE,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_repeat_guest_rate_task,
-        job_id,
-        db,
-        request.model_dump()
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Repeat guest rate report generation started"
-    )
-
-
-async def generate_payment_methods_task(
-    job_id: str,
-    db: Session,
-    params: dict[str, Any]
-) -> None:
-    """Background task to generate payment methods report."""
-    try:
-        job_storage[job_id]["status"] = JobStatus.PROCESSING
-        job_storage[job_id]["progress"] = 10
-
-        analytics = AnalyticsService(db)
-        data = await analytics.get_payment_methods_distribution(
-            params["start_date"],
-            params["end_date"],
-            params.get("group_by", "month")
+async def generate_report(
+    report_type: ReportJobType,
+    format: ReportFormat = ReportFormat.JSON,
+    params: dict[str, Any] | None = None,
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    db: SessionDep = None,
+    current_user: CurrentUser = None
+) -> ReportJobPublic:
+    """Generate a report (admin only)."""
+    # Check user permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins and managers can generate reports"
         )
 
-        job_storage[job_id]["progress"] = 40
-
-        # Generate chart if requested
-        chart_image = None
-        if params.get("include_charts"):
-            chart_service = ChartService()
-            chart_image = await chart_service.create_payment_methods_pie_chart(data)
-
-        job_storage[job_id]["progress"] = 60
-
-        # Export to requested format
-        format = params.get("format", "json")
-        if format == ReportFormat.JSON:
-            content = json.dumps(data, indent=2).encode()
-            filename = f"payment_methods_{job_id}.json"
-        elif format == ReportFormat.CSV:
-            export_service = ExportService()
-            content = await export_service.export_to_csv(data)
-            filename = f"payment_methods_{job_id}.csv"
-        elif format == ReportFormat.EXCEL:
-            export_service = ExportService()
-            content = await export_service.export_analytics_report(data, "excel")
-            filename = f"payment_methods_{job_id}.xlsx"
-        else:  # PDF
-            pdf_service = PDFService()
-            content = await pdf_service.create_analytics_report_pdf(data, "Payment Methods Distribution", chart_image)
-            filename = f"payment_methods_{job_id}.pdf"
-
-        job_storage[job_id]["progress"] = 80
-
-        # Save file
-        file_path = await storage_service.save_file(content, filename, "analytics")
-
-        # Update job status
-        job_storage[job_id]["status"] = JobStatus.COMPLETED
-        job_storage[job_id]["progress"] = 100
-        job_storage[job_id]["result_path"] = file_path
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-    except Exception as e:
-        job_storage[job_id]["status"] = JobStatus.FAILED
-        job_storage[job_id]["error"] = str(e)
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-
-@router.post(
-    "/payment_methods/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_payment_methods_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate payment methods distribution report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.PAYMENT_METHODS,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_payment_methods_task,
-        job_id,
-        db,
-        request.model_dump()
-    )
-
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Payment methods report generation started"
-    )
-
-
-async def generate_geographic_analysis_task(
-    job_id: str,
-    db: Session,
-    params: dict[str, Any]
-) -> None:
-    """Background task to generate geographic analysis report."""
-    try:
-        job_storage[job_id]["status"] = JobStatus.PROCESSING
-        job_storage[job_id]["progress"] = 10
-
-        analytics = AnalyticsService(db)
-        data = await analytics.get_geographic_analysis(
-            params["start_date"],
-            params["end_date"]
+    # Create report job in database
+    report_job = create_report_job(
+        session=db,
+        user=current_user,
+        report_create=ReportJobCreate(
+            type=report_type,
+            format=format,
+            params=params or {}
         )
-
-        job_storage[job_id]["progress"] = 40
-
-        # Generate chart if requested
-        if params.get("include_charts"):
-            chart_service = ChartService()
-            await chart_service.create_geographic_heatmap(data)
-
-        job_storage[job_id]["progress"] = 60
-
-        # Export to requested format
-        format = params.get("format", "json")
-        if format == ReportFormat.JSON:
-            content = json.dumps(data, indent=2).encode()
-            filename = f"geographic_analysis_{job_id}.json"
-        elif format == ReportFormat.CSV:
-            export_service = ExportService()
-            content = await export_service.export_to_csv(data)
-            filename = f"geographic_analysis_{job_id}.csv"
-        elif format == ReportFormat.EXCEL:
-            export_service = ExportService()
-            content = await export_service.export_geographic_report(data, "excel")
-            filename = f"geographic_analysis_{job_id}.xlsx"
-        else:  # PDF
-            pdf_service = PDFService()
-            content = await pdf_service.create_geographic_report_pdf(data)
-            filename = f"geographic_analysis_{job_id}.pdf"
-
-        job_storage[job_id]["progress"] = 80
-
-        # Save file
-        file_path = await storage_service.save_file(content, filename, "analytics")
-
-        # Update job status
-        job_storage[job_id]["status"] = JobStatus.COMPLETED
-        job_storage[job_id]["progress"] = 100
-        job_storage[job_id]["result_path"] = file_path
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-    except Exception as e:
-        job_storage[job_id]["status"] = JobStatus.FAILED
-        job_storage[job_id]["error"] = str(e)
-        job_storage[job_id]["completed_at"] = datetime.utcnow()
-
-
-@router.post(
-    "/geographic_analysis/generate",
-    response_model=ReportJobResponse,
-    dependencies=[Depends(get_current_admin_user)]
-)
-async def generate_geographic_analysis_report(
-    request: ReportGenerationRequest,
-    background_tasks: BackgroundTasks,
-    db: SessionDep
-) -> ReportJobResponse:
-    """Generate geographic analysis report (admin only)."""
-    job_id = str(uuid.uuid4())
-
-    job_storage[job_id] = {
-        "job_id": job_id,
-        "status": JobStatus.QUEUED,
-        "progress": 0,
-        "created_at": datetime.utcnow(),
-        "report_type": ReportType.GEOGRAPHIC_ANALYSIS,
-        "parameters": request.model_dump(),
-    }
-
-    background_tasks.add_task(
-        generate_geographic_analysis_task,
-        job_id,
-        db,
-        request.model_dump()
     )
+    db.commit()
 
-    return ReportJobResponse(
-        job_id=uuid.UUID(job_id),
-        status=JobStatus.QUEUED,
-        message="Geographic analysis report generation started"
-    )
+    # Start appropriate background task based on report type
+    if report_type == ReportJobType.ROOM_OCCUPANCY:
+        background_tasks.add_task(
+            generate_occupancy_report_task,
+            report_job.id,
+            db,
+            current_user.id,
+            params or {},
+            "standard"
+        )
+    elif report_type == ReportJobType.REVENUE_REPORT:
+        background_tasks.add_task(
+            generate_revenue_report_task,
+            report_job.id,
+            db,
+            current_user.id,
+            params or {}
+        )
+    elif report_type == ReportJobType.CUSTOMER_REPORT:
+        background_tasks.add_task(
+            generate_top_customers_task,
+            report_job.id,
+            db,
+            current_user.id,
+            params or {}
+        )
+    else:
+        # For other report types, mark as failed immediately
+        update_report_job(
+            session=db,
+            report_job=report_job,
+            report_update=ReportJobUpdate(
+                status=ReportJobStatus.FAILED,
+                error_message=f"Report type {report_type} not implemented yet",
+                completed_at=datetime.utcnow()
+            )
+        )
+        db.commit()
+
+    return ReportJobPublic.model_validate(report_job)
 
 
 @router.get(
-    "/jobs/{job_id}/status",
-    response_model=ReportJobStatus,
-    dependencies=[Depends(get_current_admin_user)]
+    "/jobs/{job_id}",
+    response_model=ReportJobPublic
 )
-async def get_job_status(
-    job_id: uuid.UUID
-) -> ReportJobStatus:
-    """Get report generation job status (admin only)."""
-    job_id_str = str(job_id)
-
-    if job_id_str not in job_storage:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    job = job_storage[job_id_str]
-
-    return ReportJobStatus(
+async def get_report_status(
+    job_id: uuid.UUID,
+    db: SessionDep,
+    current_user: CurrentUser
+) -> ReportJobPublic:
+    """Get report job status."""
+    # Get job from database
+    job = get_report_job_by_user(
+        session=db,
         job_id=job_id,
-        status=job["status"],
-        progress=job.get("progress", 0),
-        message=job.get("message"),
-        result_path=job.get("result_path"),
-        error=job.get("error"),
-        created_at=job["created_at"],
-        completed_at=job.get("completed_at")
+        user_id=current_user.id if current_user.role == UserRole.HOST else None
     )
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Report job not found")
+
+    return ReportJobPublic.model_validate(job)
 
 
 @router.get(
-    "/jobs/{job_id}/download",
-    dependencies=[Depends(get_current_admin_user)]
+    "/jobs/{job_id}/download"
 )
 async def download_report(
-    job_id: uuid.UUID
+    job_id: uuid.UUID,
+    db: SessionDep,
+    current_user: CurrentUser
 ) -> Response:
-    """Download completed report (admin only)."""
-    job_id_str = str(job_id)
+    """Download completed report."""
+    # Get job from database
+    job = get_report_job_by_user(
+        session=db,
+        job_id=job_id,
+        user_id=current_user.id if current_user.role == UserRole.HOST else None
+    )
 
-    if job_id_str not in job_storage:
-        raise HTTPException(status_code=404, detail="Job not found")
+    if not job:
+        raise HTTPException(status_code=404, detail="Report job not found")
 
-    job = job_storage[job_id_str]
-
-    if job["status"] != JobStatus.COMPLETED:
+    if job.status != ReportJobStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Report not ready")
 
-    if not job.get("result_path"):
+    if not job.result_path:
         raise HTTPException(status_code=404, detail="Report file not found")
 
+    # Check if report has expired
+    if job.is_expired():
+        raise HTTPException(status_code=410, detail="Report has expired")
+
     # Get file content
-    content = await storage_service.get_file(job["result_path"])
+    content = await storage_service.get_file(job.result_path)
     if not content:
         raise HTTPException(status_code=404, detail="Report file not found")
 
+    # Log download in history
+    create_report_history(
+        session=db,
+        job_id=job_id,
+        user_id=current_user.id,
+        action="downloaded"
+    )
+
+    # Log audit
+    log_audit(
+        session=db,
+        user=current_user,
+        action="downloaded",
+        entity_type="report",
+        entity_id=job_id,
+        entity_name=f"Report {job.type}",
+        description=f"Downloaded {job.type} report"
+    )
+
+    db.commit()
+
     # Determine content type
-    file_ext = job["result_path"].split(".")[-1].lower()
+    file_ext = job.result_path.split(".")[-1].lower()
     content_types = {
         "json": "application/json",
         "csv": "text/csv",
@@ -813,7 +596,7 @@ async def download_report(
     content_type = content_types.get(file_ext, "application/octet-stream")
 
     # Create response
-    filename = job["result_path"].split("/")[-1]
+    filename = job.result_path.split("/")[-1]
     return Response(
         content=content,
         media_type=content_type,
@@ -824,40 +607,37 @@ async def download_report(
 
 
 @router.get(
-    "/list",
-    response_model=ReportListResponse,
-    dependencies=[Depends(get_current_admin_user)]
+    "/jobs",
+    response_model=ReportJobsPublic
 )
-async def list_reports(
+async def list_jobs(
     skip: int = 0,
-    limit: int = 100
-) -> ReportListResponse:
-    """List all generated reports (admin only)."""
-    # Get all completed jobs
-    reports = []
-    for job_id, job in job_storage.items():
-        if job["status"] == JobStatus.COMPLETED:
-            reports.append(
-                ReportMetadata(
-                    job_id=uuid.UUID(job_id),
-                    report_type=job["report_type"],
-                    format=job["parameters"].get("format", ReportFormat.JSON),
-                    parameters=job["parameters"],
-                    created_at=job["created_at"],
-                    file_path=job.get("result_path"),
-                    file_size=None  # Would need to implement file size tracking
-                )
-            )
+    limit: int = 100,
+    status: ReportJobStatus | None = None,
+    db: SessionDep = None,
+    current_user: CurrentUser = None
+) -> ReportJobsPublic:
+    """List report jobs."""
+    # For regular hosts, only show their own jobs
+    user_id = current_user.id if current_user.role == UserRole.HOST else None
 
-    # Sort by created_at descending
-    reports.sort(key=lambda x: x.created_at, reverse=True)
+    jobs = list_report_jobs(
+        session=db,
+        user_id=user_id,
+        status=status,
+        skip=skip,
+        limit=limit
+    )
 
-    # Apply pagination
-    paginated_reports = reports[skip : skip + limit]
+    total = count_report_jobs(
+        session=db,
+        user_id=user_id,
+        status=status
+    )
 
-    return ReportListResponse(
-        reports=paginated_reports,
-        total=len(reports)
+    return ReportJobsPublic(
+        data=[ReportJobPublic.model_validate(job) for job in jobs],
+        count=total
     )
 
 
@@ -865,23 +645,31 @@ async def list_reports(
     "/cleanup",
     dependencies=[Depends(get_current_admin_user)]
 )
-async def cleanup_old_reports(
-    days: int = 30
-) -> dict[str, Any]:
-    """Clean up reports older than specified days (admin only)."""
-    deleted_count = await storage_service.cleanup_old_files(days)
+async def cleanup_expired_reports(
+    db: SessionDep,
+    current_user: CurrentUser
+) -> dict[str, int]:
+    """Clean up expired reports (admin only)."""
+    deleted_count = delete_expired_reports(session=db)
 
-    # Also clean up old jobs from memory
-    cutoff_date = datetime.utcnow().timestamp() - (days * 24 * 60 * 60)
-    jobs_to_delete = []
-    for job_id, job in job_storage.items():
-        if job["created_at"].timestamp() < cutoff_date:
-            jobs_to_delete.append(job_id)
+    # Log audit
+    if deleted_count > 0:
+        log_audit(
+            session=db,
+            user=current_user,
+            action="cleanup",
+            entity_type="reports",
+            entity_id=uuid.uuid4(),  # Dummy ID for cleanup action
+            entity_name="Expired Reports",
+            description=f"Cleaned up {deleted_count} expired reports"
+        )
 
-    for job_id in jobs_to_delete:
-        del job_storage[job_id]
+    db.commit()
+
+    # Also clean up files from storage
+    files_deleted = await storage_service.cleanup_old_files(7)  # 7 days
 
     return {
-        "files_deleted": deleted_count,
-        "jobs_deleted": len(jobs_to_delete)
+        "reports_deleted": deleted_count,
+        "files_deleted": files_deleted
     }
