@@ -50,7 +50,7 @@ def engine() -> Generator[Engine, None, None]:
 def db(engine: Engine) -> Generator[Session, None, None]:
     """
     Provide a database session for tests.
-    
+
     Uses a simpler approach without nested transactions to avoid
     conflicts with application-level commits.
     """

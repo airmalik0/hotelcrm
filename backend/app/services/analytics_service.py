@@ -113,7 +113,7 @@ class AnalyticsService:
         weekly_pattern = {day: {"bookings": 0, "avg_amount": 0} for day in range(7)}
         for row in results:
             day = int(row[0])
-            hour = int(row[1]) if row[1] else 0
+            int(row[1]) if row[1] else 0
             count = row[2]
             # Aggregate by day (ignoring hour for weekly pattern)
             if day not in weekly_pattern:

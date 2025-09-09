@@ -50,7 +50,7 @@ class ImportService:
         self, csv_content: bytes
     ) -> dict[str, Any]:
         """Import customers from CSV file.
-        
+
         Returns a report with validation errors and import results.
         """
         try:

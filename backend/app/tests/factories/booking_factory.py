@@ -221,7 +221,7 @@ class BookingFactory:
     ) -> tuple[Booking, Booking]:
         """
         Create two bookings that overlap in time for testing conflicts.
-        
+
         Returns:
             Tuple of (first_booking, overlapping_booking)
         """
@@ -263,7 +263,7 @@ class BookingFactory:
     ) -> tuple[Booking, Booking]:
         """
         Create two bookings with proper buffer time between them.
-        
+
         Returns:
             Tuple of (first_booking, second_booking)
         """

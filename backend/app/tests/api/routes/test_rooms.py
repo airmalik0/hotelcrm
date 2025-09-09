@@ -506,7 +506,7 @@ class TestRoomsDelete:
     ) -> None:
         """Cannot delete room with active bookings."""
         # Create an active booking
-        booking = BookingFactory.create_confirmed_booking(
+        BookingFactory.create_confirmed_booking(
             db,
             customer=test_customer,
             room=test_room,
@@ -529,7 +529,7 @@ class TestRoomsDelete:
     ) -> None:
         """Cannot delete room with historical bookings."""
         # Create a checked-out booking
-        booking = BookingFactory.create_checked_out_booking(
+        BookingFactory.create_checked_out_booking(
             db,
             customer=test_customer,
             room=test_room,

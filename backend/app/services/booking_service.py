@@ -32,13 +32,13 @@ class BookingService:
     def create_booking(self, booking_in: BookingCreate) -> Booking:
         """
         Create a new booking with all validations.
-        
+
         Args:
             booking_in: Booking creation data
-            
+
         Returns:
             Created booking
-            
+
         Raises:
             ValueError: If validation fails
         """
@@ -93,14 +93,14 @@ class BookingService:
     def update_booking(self, booking: Booking, booking_in: BookingUpdate) -> Booking:
         """
         Update a booking with validations.
-        
+
         Args:
             booking: Current booking
             booking_in: Update data
-            
+
         Returns:
             Updated booking
-            
+
         Raises:
             ValueError: If validation fails
         """
@@ -202,13 +202,13 @@ class BookingService:
     def check_in_booking(self, booking: Booking) -> Booking:
         """
         Handle check-in with room status updates.
-        
+
         Args:
             booking: Booking to check in
-            
+
         Returns:
             Updated booking
-            
+
         Raises:
             ValueError: If check-in is not allowed
         """
@@ -243,13 +243,13 @@ class BookingService:
     def check_out_booking(self, booking: Booking) -> Booking:
         """
         Handle check-out with room status updates.
-        
+
         Args:
             booking: Booking to check out
-            
+
         Returns:
             Updated booking
-            
+
         Raises:
             ValueError: If check-out is not allowed
         """
@@ -268,10 +268,10 @@ class BookingService:
     def cancel_booking(self, booking: Booking) -> Booking:
         """
         Cancel a booking with proper status and stats updates.
-        
+
         Args:
             booking: Booking to cancel
-            
+
         Returns:
             Updated booking
         """
@@ -301,7 +301,7 @@ class BookingService:
     def delete_booking(self, booking: Booking) -> None:
         """
         Handle all operations needed when deleting a booking.
-        
+
         Args:
             booking: Booking to delete
         """
@@ -333,14 +333,14 @@ class BookingService:
     ) -> float:
         """
         Recalculate booking total amount based on changes.
-        
+
         Args:
             booking: Current booking
             new_check_in: New check-in date (optional)
             new_check_out: New check-out date (optional)
             new_room_id: New room ID (optional)
             new_discount: New discount percentage (optional)
-            
+
         Returns:
             New total amount
         """

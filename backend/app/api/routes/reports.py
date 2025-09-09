@@ -4,7 +4,12 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 
-from app.api.deps import CurrentUser, SessionDep, get_current_admin_user, require_admin_or_manager
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    get_current_admin_user,
+    require_admin_or_manager,
+)
 from app.core.audit import log_audit
 from app.crud.report import report as crud_report
 from app.crud.user import user as crud_user

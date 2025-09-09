@@ -372,7 +372,7 @@ class PDFService:
                     for header in headers:
                         value = row.get(header, "")
                         # Format numbers
-                        if isinstance(value, (int, float)):
+                        if isinstance(value, int | float):
                             if "amount" in header.lower() or "revenue" in header.lower():
                                 table_row.append(f"${value:,.2f}")
                             elif "rate" in header.lower() or "percentage" in header.lower():

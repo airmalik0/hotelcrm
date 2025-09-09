@@ -1,4 +1,7 @@
 
+from uuid import UUID
+
+from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, func, or_, select
 
 from app.crud.base import CRUDBase
@@ -6,6 +9,17 @@ from app.models import Customer, CustomerCreate, CustomerUpdate
 
 
 class CRUDCustomer(CRUDBase[Customer, CustomerCreate, CustomerUpdate]):
+    def get_with_relations(self, session: Session, *, customer_id: UUID) -> Customer | None:
+        """Get customer with all relationships loaded."""
+        statement = (
+            select(Customer)
+            .where(Customer.id == customer_id)
+            .options(
+                joinedload(Customer.bookings)  # type: ignore[arg-type]
+            )
+        )
+        return session.exec(statement).first()
+
     def get_by_phone(self, session: Session, *, phone: str) -> Customer | None:
         statement = select(Customer).where(Customer.phone == phone)
         return session.exec(statement).first()
