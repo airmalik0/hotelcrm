@@ -119,16 +119,14 @@ class BookingService:
                 # Old room becomes available for cleaning
                 old_room = self.crud_room.get(self.session, id=booking.room_id)
                 if old_room:
-                    old_room.status = RoomStatus.CLEANING
-                    self.session.add(old_room)
+                    self.crud_room.update_status(self.session, room=old_room, status=RoomStatus.CLEANING)
 
                 # New room must be available
                 if new_room.status != RoomStatus.AVAILABLE:
                     raise ValueError(f"New room is {new_room.status.value} and cannot be used")
 
                 # New room becomes occupied
-                new_room.status = RoomStatus.OCCUPIED
-                self.session.add(new_room)
+                self.crud_room.update_status(self.session, room=new_room, status=RoomStatus.OCCUPIED)
 
         # Check if customer is being changed
         if booking_in.customer_id and booking_in.customer_id != booking.customer_id:
@@ -237,12 +235,8 @@ class BookingService:
             raise ValueError("Cannot check in: room has conflicting bookings")
 
         # Update statuses
-        booking.status = BookingStatus.CHECKED_IN
-        room.status = RoomStatus.OCCUPIED
-
-        self.session.add(booking)
-        self.session.add(room)
-        self.session.flush()
+        self.crud_booking.update_status(self.session, booking=booking, status=BookingStatus.CHECKED_IN)
+        self.crud_room.update_status(self.session, room=room, status=RoomStatus.OCCUPIED)
 
         return booking
 
@@ -265,12 +259,9 @@ class BookingService:
         room = self.crud_room.get(self.session, id=booking.room_id)
         if room:
             # Room needs cleaning after checkout
-            room.status = RoomStatus.CLEANING
-            self.session.add(room)
+            self.crud_room.update_status(self.session, room=room, status=RoomStatus.CLEANING)
 
-        booking.status = BookingStatus.CHECKED_OUT
-        self.session.add(booking)
-        self.session.flush()
+        self.crud_booking.update_status(self.session, booking=booking, status=BookingStatus.CHECKED_OUT)
 
         return booking
 
@@ -300,13 +291,10 @@ class BookingService:
             room = self.crud_room.get(self.session, id=booking.room_id)
             if room:
                 # Room must go through cleaning after being occupied
-                room.status = RoomStatus.CLEANING
-                self.session.add(room)
+                self.crud_room.update_status(self.session, room=room, status=RoomStatus.CLEANING)
 
         # Update booking status
-        booking.status = BookingStatus.CANCELLED
-        self.session.add(booking)
-        self.session.flush()
+        self.crud_booking.update_status(self.session, booking=booking, status=BookingStatus.CANCELLED)
 
         return booking
 
@@ -330,8 +318,7 @@ class BookingService:
         if booking.status == BookingStatus.CHECKED_IN:
             room = self.crud_room.get(self.session, id=booking.room_id)
             if room:
-                room.status = RoomStatus.CLEANING
-                self.session.add(room)
+                self.crud_room.update_status(self.session, room=room, status=RoomStatus.CLEANING)
 
         # Delete the booking
         self.crud_booking.delete(self.session, id=booking.id)

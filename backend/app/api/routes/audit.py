@@ -37,19 +37,16 @@ def read_audit_logs(
 
     # Convert to public model with username from relationship
     audit_logs_public = []
+    from app.models import User
+
     for log in audit_logs:
-        # Create AuditLogPublic from AuditLog model
-        # Get username from user relationship if available
+        # Get username - relationship might not be loaded
         username = 'Unknown'
-        if log.user:
-            username = log.user.username
-        elif log.user_id:
-            # Fallback: get user from database if relationship not loaded
-            from app.models import User
+        if log.user_id:
             user = session.get(User, log.user_id)
             if user:
                 username = user.username
-        
+
         audit_logs_public.append(AuditLogPublic(
             id=log.id,
             user_id=log.user_id,
@@ -58,7 +55,7 @@ def read_audit_logs(
             entity_type=log.entity_type,
             entity_id=log.entity_id,
             entity_name=log.entity_name,
-            description=getattr(log, 'description', ''),
+            description=log.description if log.description else '',
             old_values=log.old_values,
             new_values=log.new_values,
             timestamp=log.timestamp
@@ -90,10 +87,26 @@ def read_audit_log(
         raise HTTPException(status_code=404, detail="Audit log not found")
 
     # Convert to public model with username
-    log_dict = audit_log.model_dump()
-    # Add username from the lazy-loaded user relationship
-    log_dict['username'] = audit_log.user.username if audit_log.user else 'Unknown'
-    return AuditLogPublic(**log_dict)
+    username = 'Unknown'
+    if audit_log.user_id:
+        from app.models import User
+        user = session.get(User, audit_log.user_id)
+        if user:
+            username = user.username
+
+    return AuditLogPublic(
+        id=audit_log.id,
+        user_id=audit_log.user_id,
+        username=username,
+        action=audit_log.action,
+        entity_type=audit_log.entity_type,
+        entity_id=audit_log.entity_id,
+        entity_name=audit_log.entity_name,
+        description=audit_log.description if audit_log.description else '',
+        old_values=audit_log.old_values,
+        new_values=audit_log.new_values,
+        timestamp=audit_log.timestamp
+    )
 
 
 @router.get("/stats/summary", dependencies=[Depends(require_admin)])

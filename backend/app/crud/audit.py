@@ -3,7 +3,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import desc, func, select
-from sqlmodel import Session, col, or_
+from sqlmodel import Session, or_
 
 from app.crud.base import CRUDBase
 from app.models import AuditLog, User
@@ -37,8 +37,8 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
 
         if user_name:
             # Join with User table for username filter
-            subquery = select(User.id).where(col(User.username).ilike(f"%{user_name}%"))
-            statement = statement.where(col(AuditLog.user_id).in_(subquery))
+            subquery = select(User.id).where(User.username.ilike(f"%{user_name}%"))
+            statement = statement.where(AuditLog.user_id.in_(subquery))
 
         if action:
             statement = statement.where(AuditLog.action == action)
@@ -51,8 +51,8 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
 
         if search:
             search_filter = or_(
-                col(AuditLog.entity_name).ilike(f"%{search}%"),
-                col(AuditLog.description).ilike(f"%{search}%"),
+                AuditLog.entity_name.ilike(f"%{search}%"),
+                AuditLog.description.ilike(f"%{search}%"),
             )
             statement = statement.where(search_filter)
 
@@ -94,8 +94,8 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
 
         if user_name:
             # Use subquery for username filter
-            subquery = select(User.id).where(col(User.username).ilike(f"%{user_name}%"))
-            statement = statement.where(col(AuditLog.user_id).in_(subquery))
+            subquery = select(User.id).where(User.username.ilike(f"%{user_name}%"))
+            statement = statement.where(AuditLog.user_id.in_(subquery))
 
         if action:
             statement = statement.where(AuditLog.action == action)
@@ -108,8 +108,8 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
 
         if search:
             search_filter = or_(
-                col(AuditLog.entity_name).ilike(f"%{search}%"),
-                col(AuditLog.description).ilike(f"%{search}%"),
+                AuditLog.entity_name.ilike(f"%{search}%"),
+                AuditLog.description.ilike(f"%{search}%"),
             )
             statement = statement.where(search_filter)
 

@@ -124,9 +124,9 @@ def update_password_me(
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password
     session.add(current_user)
-    session.commit()
+    session.flush()  # Use flush instead of commit
 
-    # Log audit for password change
+    # Log audit for password change in same transaction
     entity_name = get_entity_name("user", current_user)
     log_audit(
         session=session,
@@ -137,6 +137,8 @@ def update_password_me(
         entity_name=entity_name,
     )
 
+    # Now commit everything together
+    session.commit()
     return Message(message="Password updated successfully")
 
 
@@ -200,6 +202,9 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
         entity_name=entity_name,
     )
 
+    # Commit and refresh
+    session.commit()
+    session.refresh(user)
     return user
 
 
@@ -270,6 +275,9 @@ def update_user(
             new_values=new_values,
         )
 
+    # Commit and refresh
+    session.commit()
+    session.refresh(user)
     return user
 
 
@@ -308,4 +316,5 @@ def delete_user(
 
     session.delete(user)
     session.commit()
+    return Message(message="User deleted successfully")
     return Message(message="User deleted successfully")

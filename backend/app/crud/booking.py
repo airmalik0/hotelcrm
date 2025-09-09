@@ -88,5 +88,12 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
 
         return session.exec(query.with_for_update()).all()
 
+    def update_status(self, session: Session, *, booking: Booking, status: BookingStatus) -> Booking:
+        """Update booking status."""
+        booking.status = status
+        session.add(booking)
+        session.flush()
+        return booking
+
 
 booking = CRUDBooking(Booking)

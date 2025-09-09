@@ -27,5 +27,12 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         )
         return session.exec(statement).one()
 
+    def update_status(self, session: Session, *, room: Room, status: RoomStatus) -> Room:
+        """Update room status."""
+        room.status = status
+        session.add(room)
+        session.flush()
+        return room
+
 
 room = CRUDRoom(Room)

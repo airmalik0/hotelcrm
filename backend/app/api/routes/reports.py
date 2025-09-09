@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 
-from app.api.deps import CurrentUser, SessionDep, get_current_admin_user
+from app.api.deps import CurrentUser, SessionDep, get_current_admin_user, require_admin_or_manager
 from app.core.audit import log_audit
 from app.crud.report import report as crud_report
 from app.crud.user import user as crud_user
@@ -416,7 +416,7 @@ async def generate_top_customers_task(
 @router.post(
     "/generate",
     response_model=ReportJobPublic,
-    dependencies=[Depends(get_current_admin_user)]
+    dependencies=[Depends(require_admin_or_manager)]
 )
 async def generate_report(
     report_type: ReportJobType,
@@ -426,13 +426,7 @@ async def generate_report(
     session: SessionDep = None,
     current_user: CurrentUser = None
 ) -> ReportJobPublic:
-    """Generate a report (admin only)."""
-    # Check user permissions
-    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
-        raise HTTPException(
-            status_code=403,
-            detail="Only admins and managers can generate reports"
-        )
+    """Generate a report (admin and manager only)."""
 
     # Create report job in database
     report_job = crud_report.create_with_user(
