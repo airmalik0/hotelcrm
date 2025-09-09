@@ -18,7 +18,7 @@ class ChartService:
         self.dpi = 100
         self.colors = ["#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"]
 
-    async def create_occupancy_chart(
+    def create_occupancy_chart(
         self, data: list[dict[str, Any]], chart_type: str = "line"
     ) -> bytes:
         """Create occupancy rate chart."""
@@ -63,7 +63,7 @@ class ChartService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_revenue_chart(
+    def create_revenue_chart(
         self, data: list[dict[str, Any]], chart_type: str = "bar"
     ) -> bytes:
         """Create revenue chart."""
@@ -112,7 +112,7 @@ class ChartService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_payment_methods_pie_chart(
+    def create_payment_methods_pie_chart(
         self, data: list[dict[str, Any]]
     ) -> bytes:
         """Create pie chart for payment methods distribution."""
@@ -156,7 +156,7 @@ class ChartService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_customer_distribution_chart(
+    def create_customer_distribution_chart(
         self, data: list[dict[str, Any]], top_n: int = 10
     ) -> bytes:
         """Create horizontal bar chart for top districts by revenue."""
@@ -201,7 +201,7 @@ class ChartService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_weekly_pattern_heatmap(
+    def create_weekly_pattern_heatmap(
         self, data: list[dict[str, Any]]
     ) -> bytes:
         """Create heatmap for weekly booking patterns."""
@@ -244,7 +244,7 @@ class ChartService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_seasonal_trend_chart(
+    def create_seasonal_trend_chart(
         self, data: list[dict[str, Any]]
     ) -> bytes:
         """Create multi-line chart for seasonal trends."""

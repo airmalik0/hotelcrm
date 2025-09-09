@@ -2,138 +2,342 @@
 Booking service layer for centralizing booking business logic.
 """
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from sqlmodel import Session, and_, select
+from sqlmodel import Session
 
 from app.core.customer_stats import update_customer_stats_on_booking_change
-from app.models import Booking, BookingStatus, Room, RoomStatus
+from app.crud.booking import booking as crud_booking
+from app.crud.customer import customer as crud_customer
+from app.crud.room import room as crud_room
+from app.models import (
+    Booking,
+    BookingCreate,
+    BookingStatus,
+    BookingUpdate,
+    RoomStatus,
+)
 
 
 class BookingService:
     """Service class for handling booking operations."""
 
-    @staticmethod
-    def check_room_availability(
-        session: Session,
-        room_id: uuid.UUID,
-        check_in: datetime,
-        check_out: datetime,
-        exclude_booking_id: uuid.UUID | None = None,
-        buffer_minutes: int = 15
-    ) -> list[Booking]:
+    def __init__(self, session: Session):
+        """Initialize service with database session."""
+        self.session = session
+        self.crud_booking = crud_booking
+        self.crud_room = crud_room
+        self.crud_customer = crud_customer
+
+    def create_booking(self, booking_in: BookingCreate) -> Booking:
         """
-        Check if a room is available for the given dates.
-
+        Create a new booking with all validations.
+        
         Args:
-            session: Database session
-            room_id: Room ID to check
-            check_in: Check-in date
-            check_out: Check-out date
-            exclude_booking_id: Booking ID to exclude from check (for updates)
-            buffer_minutes: Buffer time between bookings
-
+            booking_in: Booking creation data
+            
         Returns:
-            List of conflicting bookings (empty if available)
+            Created booking
+            
+        Raises:
+            ValueError: If validation fails
         """
-        query = select(Booking).where(
-            and_(
-                Booking.room_id == room_id,
-                Booking.status != BookingStatus.CANCELLED,
-                Booking.check_out > check_in - timedelta(minutes=buffer_minutes),
-                Booking.check_in < check_out + timedelta(minutes=buffer_minutes),
-            )
+        # Verify customer exists
+        customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
+        if not customer:
+            raise ValueError("Customer not found")
+        
+        # Verify room exists and is available
+        room = self.crud_room.get(self.session, id=booking_in.room_id)
+        if not room:
+            raise ValueError("Room not found")
+        
+        if room.status != RoomStatus.AVAILABLE:
+            raise ValueError(f"Room is currently {room.status.value} and cannot be booked")
+        
+        # Check for overlapping bookings
+        overlapping = self.crud_booking.get_overlapping(
+            self.session,
+            room_id=booking_in.room_id,
+            check_in=booking_in.check_in,
+            check_out=booking_in.check_out
         )
+        
+        if overlapping:
+            raise ValueError("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
+        
+        # Create temporary booking to validate total amount
+        temp_booking = Booking.model_validate(booking_in)
+        expected_total = temp_booking.calculate_total_amount(room.price_per_night)
+        
+        # Allow small difference for rounding (1 currency unit)
+        if abs(booking_in.total_amount - expected_total) > 1:
+            raise ValueError(
+                f"Total amount mismatch. Expected: {expected_total:.2f}, got: {booking_in.total_amount:.2f}"
+            )
+        
+        # Create booking
+        booking = self.crud_booking.create(self.session, obj_in=booking_in)
+        
+        # Update customer statistics
+        update_customer_stats_on_booking_change(
+            session=self.session,
+            customer_id=booking_in.customer_id,
+            amount_delta=booking_in.total_amount,
+            booking_delta=1,
+            new_booking_date=datetime.utcnow()
+        )
+        
+        return booking
 
-        if exclude_booking_id:
-            query = query.where(Booking.id != exclude_booking_id)
-
-        # Use FOR UPDATE to prevent race conditions
-        return list(session.exec(query.with_for_update()).all())
-
-    @staticmethod
-    def update_room_status_on_checkin(session: Session, room: Room) -> None:
-        """Update room status when checking in."""
-        if room.status == RoomStatus.AVAILABLE:
-            room.status = RoomStatus.OCCUPIED
-            session.add(room)
-
-    @staticmethod
-    def update_room_status_on_checkout(session: Session, room: Room) -> None:
-        """Update room status when checking out."""
-        room.status = room.get_next_status_after_checkout()
-        session.add(room)
-
-    @staticmethod
-    def update_room_status_on_cancel(session: Session, booking: Booking) -> None:
-        """Update room status when cancelling a booking."""
-        if booking.status == BookingStatus.CHECKED_IN:
-            room = session.get(Room, booking.room_id)
-            if room:
-                # Room must go through cleaning after being occupied
-                room.status = RoomStatus.CLEANING
-                session.add(room)
-
-    @staticmethod
-    def handle_booking_cancellation(
-        session: Session,
-        booking: Booking
-    ) -> None:
+    def update_booking(self, booking: Booking, booking_in: BookingUpdate) -> Booking:
         """
-        Handle all operations needed when cancelling a booking.
-
+        Update a booking with validations.
+        
         Args:
-            session: Database session
+            booking: Current booking
+            booking_in: Update data
+            
+        Returns:
+            Updated booking
+            
+        Raises:
+            ValueError: If validation fails
+        """
+        # Track changes for customer stats
+        old_customer_id = booking.customer_id
+        old_amount = booking.total_amount
+        
+        # If room is being changed, verify it exists and handle room status updates
+        if booking_in.room_id and booking_in.room_id != booking.room_id:
+            new_room = self.crud_room.get(self.session, id=booking_in.room_id)
+            if not new_room:
+                raise ValueError("Room not found")
+            
+            # If booking is currently checked in, handle room status transitions
+            if booking.status == BookingStatus.CHECKED_IN:
+                # Old room becomes available for cleaning
+                old_room = self.crud_room.get(self.session, id=booking.room_id)
+                if old_room:
+                    old_room.status = RoomStatus.CLEANING
+                    self.session.add(old_room)
+                
+                # New room must be available
+                if new_room.status != RoomStatus.AVAILABLE:
+                    raise ValueError(f"New room is {new_room.status.value} and cannot be used")
+                
+                # New room becomes occupied
+                new_room.status = RoomStatus.OCCUPIED
+                self.session.add(new_room)
+        
+        # Check if customer is being changed
+        if booking_in.customer_id and booking_in.customer_id != booking.customer_id:
+            new_customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
+            if not new_customer:
+                raise ValueError("Customer not found")
+        
+        # Check room availability if dates or room changed
+        if (booking_in.check_in or booking_in.check_out or booking_in.room_id):
+            room_id = booking_in.room_id or booking.room_id
+            check_in = booking_in.check_in or booking.check_in
+            check_out = booking_in.check_out or booking.check_out
+            
+            overlapping = self.crud_booking.get_overlapping(
+                self.session,
+                room_id=room_id,
+                check_in=check_in,
+                check_out=check_out,
+                exclude_id=booking.id
+            )
+            
+            if overlapping:
+                raise ValueError("Room is not available for the selected dates")
+        
+        # Recalculate total if needed
+        if any([booking_in.check_in, booking_in.check_out, booking_in.room_id, 
+                booking_in.discount is not None]):
+            new_total = self.recalculate_booking_total(
+                booking,
+                new_check_in=booking_in.check_in,
+                new_check_out=booking_in.check_out,
+                new_room_id=booking_in.room_id,
+                new_discount=booking_in.discount
+            )
+            
+            # Verify provided total matches calculated
+            if booking_in.total_amount and abs(booking_in.total_amount - new_total) > 1:
+                raise ValueError(
+                    f"Total amount mismatch. Expected: {new_total:.2f}, got: {booking_in.total_amount:.2f}"
+                )
+        
+        # Update booking
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_in)
+        
+        # Update customer stats if needed
+        if booking_in.customer_id and booking_in.customer_id != old_customer_id:
+            # Remove from old customer
+            update_customer_stats_on_booking_change(
+                session=self.session,
+                customer_id=old_customer_id,
+                amount_delta=-old_amount,
+                booking_delta=-1
+            )
+            # Add to new customer
+            update_customer_stats_on_booking_change(
+                session=self.session,
+                customer_id=booking_in.customer_id,
+                amount_delta=booking.total_amount,
+                booking_delta=1,
+                new_booking_date=datetime.utcnow()
+            )
+        elif booking.total_amount != old_amount:
+            # Just amount changed
+            update_customer_stats_on_booking_change(
+                session=self.session,
+                customer_id=booking.customer_id,
+                amount_delta=booking.total_amount - old_amount,
+                booking_delta=0
+            )
+        
+        return booking
+
+    def check_in_booking(self, booking: Booking) -> Booking:
+        """
+        Handle check-in with room status updates.
+        
+        Args:
+            booking: Booking to check in
+            
+        Returns:
+            Updated booking
+            
+        Raises:
+            ValueError: If check-in is not allowed
+        """
+        if booking.status != BookingStatus.CONFIRMED:
+            raise ValueError("Only confirmed bookings can be checked in")
+        
+        room = self.crud_room.get(self.session, id=booking.room_id)
+        if not room:
+            raise ValueError("Room not found")
+        
+        if room.status != RoomStatus.AVAILABLE:
+            raise ValueError(f"Room is {room.status.value} and cannot be checked in")
+        
+        # Check for conflicts
+        overlapping = self.crud_booking.get_overlapping(
+            self.session,
+            room_id=booking.room_id,
+            check_in=booking.check_in,
+            check_out=booking.check_out,
+            exclude_id=booking.id
+        )
+        
+        if overlapping:
+            raise ValueError("Cannot check in: room has conflicting bookings")
+        
+        # Update statuses
+        booking.status = BookingStatus.CHECKED_IN
+        room.status = RoomStatus.OCCUPIED
+        
+        self.session.add(booking)
+        self.session.add(room)
+        self.session.flush()
+        
+        return booking
+
+    def check_out_booking(self, booking: Booking) -> Booking:
+        """
+        Handle check-out with room status updates.
+        
+        Args:
+            booking: Booking to check out
+            
+        Returns:
+            Updated booking
+            
+        Raises:
+            ValueError: If check-out is not allowed
+        """
+        if booking.status != BookingStatus.CHECKED_IN:
+            raise ValueError("Only checked-in bookings can be checked out")
+        
+        room = self.crud_room.get(self.session, id=booking.room_id)
+        if room:
+            # Room needs cleaning after checkout
+            room.status = RoomStatus.CLEANING
+            self.session.add(room)
+        
+        booking.status = BookingStatus.CHECKED_OUT
+        self.session.add(booking)
+        self.session.flush()
+        
+        return booking
+
+    def cancel_booking(self, booking: Booking) -> Booking:
+        """
+        Cancel a booking with proper status and stats updates.
+        
+        Args:
             booking: Booking to cancel
+            
+        Returns:
+            Updated booking
         """
         if booking.status == BookingStatus.CANCELLED:
-            return  # Already cancelled
-
-        # Update customer stats if not already cancelled
+            return booking  # Already cancelled
+        
+        # Update customer stats
         update_customer_stats_on_booking_change(
-            session=session,
+            session=self.session,
             customer_id=booking.customer_id,
             amount_delta=-booking.total_amount,
             booking_delta=-1
         )
-
-        # Update room status if needed
-        BookingService.update_room_status_on_cancel(session, booking)
-
+        
+        # Update room status if checked in
+        if booking.status == BookingStatus.CHECKED_IN:
+            room = self.crud_room.get(self.session, id=booking.room_id)
+            if room:
+                # Room must go through cleaning after being occupied
+                room.status = RoomStatus.CLEANING
+                self.session.add(room)
+        
         # Update booking status
         booking.status = BookingStatus.CANCELLED
+        self.session.add(booking)
+        self.session.flush()
+        
+        return booking
 
-    @staticmethod
-    def handle_booking_deletion(
-        session: Session,
-        booking: Booking
-    ) -> None:
+    def delete_booking(self, booking: Booking) -> None:
         """
         Handle all operations needed when deleting a booking.
-
+        
         Args:
-            session: Database session
             booking: Booking to delete
         """
         # Update customer statistics only if booking wasn't cancelled
         if booking.status != BookingStatus.CANCELLED:
             update_customer_stats_on_booking_change(
-                session=session,
+                session=self.session,
                 customer_id=booking.customer_id,
                 amount_delta=-booking.total_amount,
                 booking_delta=-1
             )
-
+        
         # Update room status if needed
         if booking.status == BookingStatus.CHECKED_IN:
-            room = session.get(Room, booking.room_id)
+            room = self.crud_room.get(self.session, id=booking.room_id)
             if room:
                 room.status = RoomStatus.CLEANING
-                session.add(room)
+                self.session.add(room)
+        
+        # Delete the booking
+        self.crud_booking.delete(self.session, id=booking.id)
 
-    @staticmethod
     def recalculate_booking_total(
-        session: Session,
+        self,
         booking: Booking,
         new_check_in: datetime | None = None,
         new_check_out: datetime | None = None,
@@ -142,29 +346,28 @@ class BookingService:
     ) -> float:
         """
         Recalculate booking total amount based on changes.
-
+        
         Args:
-            session: Database session
             booking: Current booking
             new_check_in: New check-in date (optional)
             new_check_out: New check-out date (optional)
             new_room_id: New room ID (optional)
             new_discount: New discount percentage (optional)
-
+            
         Returns:
             New total amount
         """
         # Get the room for pricing
         room_id = new_room_id or booking.room_id
-        room = session.get(Room, room_id)
+        room = self.crud_room.get(self.session, id=room_id)
         if not room:
             raise ValueError(f"Room {room_id} not found")
-
+        
         # Use new or existing dates
         check_in = new_check_in or booking.check_in
         check_out = new_check_out or booking.check_out
         discount = new_discount if new_discount is not None else booking.discount
-
+        
         # Create a temporary booking to use the model's calculation method
         temp_booking = Booking(
             customer_id=booking.customer_id,
@@ -177,43 +380,5 @@ class BookingService:
             payment_method=booking.payment_method,
             registration_need=booking.registration_need
         )
-
+        
         return temp_booking.calculate_total_amount(room.price_per_night)
-
-    @staticmethod
-    def handle_customer_change(
-        session: Session,
-        booking: Booking,
-        old_customer_id: uuid.UUID,
-        new_customer_id: uuid.UUID,
-        amount_changed: bool = False,
-        new_amount: float | None = None
-    ) -> None:
-        """
-        Handle customer change on a booking with proper stats updates.
-
-        Args:
-            session: Database session
-            booking: Booking being updated
-            old_customer_id: Previous customer ID
-            new_customer_id: New customer ID
-            amount_changed: Whether the amount also changed
-            new_amount: New amount if changed
-        """
-        # Remove from old customer
-        update_customer_stats_on_booking_change(
-            session=session,
-            customer_id=old_customer_id,
-            amount_delta=-booking.total_amount,
-            booking_delta=-1
-        )
-
-        # Add to new customer
-        amount = new_amount if amount_changed and new_amount is not None else booking.total_amount
-        update_customer_stats_on_booking_change(
-            session=session,
-            customer_id=new_customer_id,
-            amount_delta=amount,
-            booking_delta=1,
-            new_booking_date=datetime.utcnow()
-        )

@@ -4,6 +4,9 @@ Test configuration and fixtures.
 This module provides function-scoped fixtures for true test isolation.
 Each test gets its own transaction that's rolled back after the test.
 """
+# Create a test database URL - use localhost when running tests from host
+# The Docker compose exposes PostgreSQL on localhost:5432
+import os
 from collections.abc import Generator
 
 import pytest
@@ -18,9 +21,6 @@ from app.models import AuditLog, Booking, Customer, Room, User
 from app.tests.utils.user import authentication_token_from_username
 from app.tests.utils.utils import get_superuser_token_headers
 
-# Create a test database URL - use localhost when running tests from host
-# The Docker compose exposes PostgreSQL on localhost:5432
-import os
 if os.getenv("TESTING_IN_DOCKER"):
     # If running tests inside Docker container
     TEST_DATABASE_URL = str(settings.SQLALCHEMY_DATABASE_URI).replace("/app", "/test_app")

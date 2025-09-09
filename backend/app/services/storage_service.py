@@ -8,23 +8,23 @@ from pathlib import Path
 
 class StorageService(ABC):
     @abstractmethod
-    async def save_file(self, file_content: bytes, filename: str, report_type: str) -> str:
+    def save_file(self, file_content: bytes, filename: str, report_type: str) -> str:
         pass
 
     @abstractmethod
-    async def get_file(self, file_path: str) -> bytes | None:
+    def get_file(self, file_path: str) -> bytes | None:
         pass
 
     @abstractmethod
-    async def delete_file(self, file_path: str) -> bool:
+    def delete_file(self, file_path: str) -> bool:
         pass
 
     @abstractmethod
-    async def list_files(self, prefix: str = "") -> list[str]:
+    def list_files(self, prefix: str = "") -> list[str]:
         pass
 
     @abstractmethod
-    async def cleanup_old_files(self, days: int = 30) -> int:
+    def cleanup_old_files(self, days: int = 30) -> int:
         pass
 
 
@@ -55,7 +55,7 @@ class LocalStorageService(StorageService):
 
         return dir_path / final_filename
 
-    async def save_file(self, file_content: bytes, filename: str, report_type: str) -> str:
+    def save_file(self, file_content: bytes, filename: str, report_type: str) -> str:
         file_path = self._get_file_path(report_type, filename)
 
         with open(file_path, "wb") as f:
@@ -64,7 +64,7 @@ class LocalStorageService(StorageService):
         # Return relative path from base_path
         return str(file_path.relative_to(self.base_path))
 
-    async def get_file(self, file_path: str) -> bytes | None:
+    def get_file(self, file_path: str) -> bytes | None:
         full_path = self.base_path / file_path
 
         if not full_path.exists():
@@ -73,7 +73,7 @@ class LocalStorageService(StorageService):
         with open(full_path, "rb") as f:
             return f.read()
 
-    async def delete_file(self, file_path: str) -> bool:
+    def delete_file(self, file_path: str) -> bool:
         full_path = self.base_path / file_path
 
         if not full_path.exists():
@@ -85,7 +85,7 @@ class LocalStorageService(StorageService):
         except Exception:
             return False
 
-    async def list_files(self, prefix: str = "") -> list[str]:
+    def list_files(self, prefix: str = "") -> list[str]:
         files = []
 
         for file_path in self.base_path.rglob("*"):
@@ -96,7 +96,7 @@ class LocalStorageService(StorageService):
 
         return sorted(files)
 
-    async def cleanup_old_files(self, days: int = 30) -> int:
+    def cleanup_old_files(self, days: int = 30) -> int:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         deleted_count = 0
 
@@ -130,19 +130,19 @@ class S3StorageService(StorageService):
         # Will use boto3 for S3 operations
         raise NotImplementedError("S3 storage service not yet implemented")
 
-    async def save_file(self, file_content: bytes, filename: str, report_type: str) -> str:
+    def save_file(self, file_content: bytes, filename: str, report_type: str) -> str:
         raise NotImplementedError()
 
-    async def get_file(self, file_path: str) -> bytes | None:
+    def get_file(self, file_path: str) -> bytes | None:
         raise NotImplementedError()
 
-    async def delete_file(self, file_path: str) -> bool:
+    def delete_file(self, file_path: str) -> bool:
         raise NotImplementedError()
 
-    async def list_files(self, prefix: str = "") -> list[str]:
+    def list_files(self, prefix: str = "") -> list[str]:
         raise NotImplementedError()
 
-    async def cleanup_old_files(self, days: int = 30) -> int:
+    def cleanup_old_files(self, days: int = 30) -> int:
         raise NotImplementedError()
 
 

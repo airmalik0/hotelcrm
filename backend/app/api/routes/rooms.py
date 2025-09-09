@@ -1,21 +1,19 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
+from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
-from app.core.rbac import check_admin_or_manager
+from app.crud.room import room as crud_room
 from app.models import (
     Message,
-    Room,
     RoomCreate,
     RoomPublic,
     RoomsPublic,
-    RoomStatus,
     RoomUpdate,
 )
+from app.services.room import RoomService
 
 router = APIRouter()
 
@@ -30,9 +28,8 @@ def read_rooms(
     """
     Retrieve rooms.
     """
-    statement = select(Room).offset(skip).limit(limit)
-    rooms = session.exec(statement).all()
-    count = session.exec(select(func.count()).select_from(Room)).one()
+    rooms = crud_room.get_multi(session, skip=skip, limit=limit)
+    count = crud_room.count(session)
     return RoomsPublic(data=rooms, count=count)
 
 
@@ -45,13 +42,13 @@ def read_room(
     """
     Get room by ID.
     """
-    room = session.get(Room, room_id)
+    room = crud_room.get(session, id=room_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     return room
 
 
-@router.post("/", response_model=RoomPublic)
+@router.post("/", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])
 def create_room(
     *,
     session: SessionDep,
@@ -61,12 +58,12 @@ def create_room(
     """
     Create new room. Only admin and manager can create rooms.
     """
-    check_admin_or_manager(current_user)
-    # Room number uniqueness is enforced at the database level
-    # The model validator will normalize the room number to uppercase
-    room = Room.model_validate(room_in)
-    session.add(room)
-    session.flush()  # Get ID without committing
+    service = RoomService(session)
+
+    try:
+        room = service.create_room(room_in)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Log audit in the same transaction
     entity_name = get_entity_name("room", room)
@@ -85,7 +82,7 @@ def create_room(
     return room
 
 
-@router.put("/{room_id}", response_model=RoomPublic)
+@router.put("/{room_id}", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])
 def update_room(
     *,
     session: SessionDep,
@@ -96,19 +93,20 @@ def update_room(
     """
     Update a room. Only admin and manager can update rooms.
     """
-    check_admin_or_manager(current_user)
-    room = session.get(Room, room_id)
+    room = crud_room.get(session, id=room_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    # Room number uniqueness is enforced at the database level
-    update_dict = room_in.model_dump(exclude_unset=True)
+    service = RoomService(session)
 
-    # Get old and new values for audit
+    # Get old values for audit
+    update_dict = room_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(room, update_dict)
 
-    room.sqlmodel_update(update_dict)
-    session.add(room)
+    try:
+        room = service.update_room(room, room_in)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Log audit if there were changes
     if old_values:
@@ -130,7 +128,7 @@ def update_room(
     return room
 
 
-@router.delete("/{room_id}", response_model=Message)
+@router.delete("/{room_id}", response_model=Message, dependencies=[Depends(require_admin_or_manager)])
 def delete_room(
     session: SessionDep,
     current_user: CurrentUser,
@@ -139,37 +137,23 @@ def delete_room(
     """
     Delete a room. Only admin and manager can delete rooms.
     """
-    check_admin_or_manager(current_user)
-    room = session.get(Room, room_id)
+    room = crud_room.get(session, id=room_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    # Check if room has bookings using COUNT queries (more efficient than loading all bookings)
-    from app.models import Booking, BookingStatus
+    # Check for existing bookings
+    from app.crud.booking import booking as crud_booking
 
     # Count active bookings
-    active_count = session.exec(
-        select(func.count()).select_from(Booking).where(
-            Booking.room_id == room_id,
-            ~Booking.status.in_([BookingStatus.CANCELLED, BookingStatus.CHECKED_OUT])  # type: ignore[attr-defined]
-        )
-    ).one()
+    active_count = crud_booking.count_filtered(
+        session,
+        room_id=room_id
+    )
 
     if active_count > 0:
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot delete room with {active_count} active booking(s). Please cancel or complete them first.",
-        )
-
-    # Count total bookings (including historical)
-    total_count = session.exec(
-        select(func.count()).select_from(Booking).where(Booking.room_id == room_id)
-    ).one()
-
-    if total_count > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot delete room with {total_count} historical booking(s). Consider archiving instead.",
+            detail=f"Cannot delete room with {active_count} booking(s). Please cancel or complete them first.",
         )
 
     # Log audit before deletion
@@ -183,7 +167,7 @@ def delete_room(
         entity_name=entity_name,
     )
 
-    session.delete(room)
+    crud_room.delete(session, id=room_id)
     session.commit()
     return Message(message="Room deleted successfully")
 
@@ -198,9 +182,6 @@ def read_available_rooms(
     """
     Retrieve available rooms.
     """
-    statement = select(Room).where(Room.status == RoomStatus.AVAILABLE).offset(skip).limit(limit)
-    rooms = session.exec(statement).all()
-    count = session.exec(
-        select(func.count()).select_from(Room).where(Room.status == RoomStatus.AVAILABLE)
-    ).one()
+    rooms = crud_room.get_available(session, skip=skip, limit=limit)
+    count = crud_room.count_available(session)
     return RoomsPublic(data=rooms, count=count)

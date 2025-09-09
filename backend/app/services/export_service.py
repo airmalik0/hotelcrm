@@ -14,7 +14,7 @@ class ExportService:
         self.header_font = Font(color="FFFFFF", bold=True)
         self.header_alignment = Alignment(horizontal="center", vertical="center")
 
-    async def export_to_csv(self, data: list[dict[str, Any]], filename: str = "export.csv") -> bytes:
+    def export_to_csv(self, data: list[dict[str, Any]], filename: str = "export.csv") -> bytes:
         """Export data to CSV format."""
         if not data:
             return b""
@@ -26,7 +26,7 @@ class ExportService:
 
         return output.getvalue().encode("utf-8")
 
-    async def export_to_excel(
+    def export_to_excel(
         self,
         data: list[dict[str, Any]] | dict[str, list[dict[str, Any]]],
         filename: str = "export.xlsx",
@@ -128,12 +128,12 @@ class ExportService:
                 cell = ws.cell(row=last_row, column=col_idx)
                 cell.font = Font(bold=True)
 
-    async def export_occupancy_report(
+    def export_occupancy_report(
         self, occupancy_data: list[dict[str, Any]], format: str = "excel"
     ) -> bytes:
         """Export occupancy report with specific formatting."""
         if format == "csv":
-            return await self.export_to_csv(occupancy_data)
+            return self.export_to_csv(occupancy_data)
 
         # Excel with multiple analysis sheets
         sheets_data = {
@@ -145,7 +145,7 @@ class ExportService:
             metrics = self._calculate_occupancy_metrics(occupancy_data)
             sheets_data["Metrics"] = metrics
 
-        return await self.export_to_excel(sheets_data)
+        return self.export_to_excel(sheets_data)
 
     def _calculate_occupancy_metrics(self, data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Calculate occupancy metrics for the report."""
@@ -165,12 +165,12 @@ class ExportService:
             {"Metric": "Reporting Periods", "Value": len(data)},
         ]
 
-    async def export_revenue_report(
+    def export_revenue_report(
         self, revenue_data: list[dict[str, Any]], format: str = "excel"
     ) -> bytes:
         """Export revenue report with financial formatting."""
         if format == "csv":
-            return await self.export_to_csv(revenue_data)
+            return self.export_to_csv(revenue_data)
 
         # Format currency values
         formatted_data = []
@@ -181,14 +181,14 @@ class ExportService:
                     formatted_row[key] = f"${formatted_row[key]:,.2f}"
             formatted_data.append(formatted_row)
 
-        return await self.export_to_excel({"Revenue Report": formatted_data})
+        return self.export_to_excel({"Revenue Report": formatted_data})
 
-    async def export_customer_report(
+    def export_customer_report(
         self, customer_data: list[dict[str, Any]], format: str = "excel"
     ) -> bytes:
         """Export customer report with contact information."""
         if format == "csv":
-            return await self.export_to_csv(customer_data)
+            return self.export_to_csv(customer_data)
 
         # Format for Excel with customer insights
         formatted_data = []
@@ -198,9 +198,9 @@ class ExportService:
                 formatted_row["total_revenue"] = f"${formatted_row['total_revenue']:,.2f}"
             formatted_data.append(formatted_row)
 
-        return await self.export_to_excel({"Top Customers": formatted_data})
+        return self.export_to_excel({"Top Customers": formatted_data})
 
-    async def export_payment_methods_report(
+    def export_payment_methods_report(
         self, payment_data: list[dict[str, Any]], format: str = "excel"
     ) -> bytes:
         """Export payment methods distribution report."""
@@ -223,17 +223,17 @@ class ExportService:
                     "Total Amount": period["total_amount"],
                 }
                 flattened_data.append(row)
-            return await self.export_to_csv(flattened_data)
+            return self.export_to_csv(flattened_data)
 
         # Excel with formatted payment data
-        return await self.export_to_excel({"Payment Methods": payment_data})
+        return self.export_to_excel({"Payment Methods": payment_data})
 
-    async def export_geographic_report(
+    def export_geographic_report(
         self, geographic_data: list[dict[str, Any]], format: str = "excel"
     ) -> bytes:
         """Export geographic analysis report."""
         if format == "csv":
-            return await self.export_to_csv(geographic_data)
+            return self.export_to_csv(geographic_data)
 
         # Format currency values
         formatted_data = []
@@ -257,9 +257,9 @@ class ExportService:
                 {"Metric": "Total Revenue", "Value": f"${total_revenue:,.2f}"},
             ]
 
-            return await self.export_to_excel({
+            return self.export_to_excel({
                 "Geographic Analysis": formatted_data,
                 "Summary": summary,
             })
 
-        return await self.export_to_excel({"Geographic Analysis": formatted_data})
+        return self.export_to_excel({"Geographic Analysis": formatted_data})

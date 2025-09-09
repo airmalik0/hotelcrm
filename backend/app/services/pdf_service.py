@@ -89,7 +89,7 @@ class PDFService:
 
         canvas.restoreState()
 
-    async def create_occupancy_report_pdf(
+    def create_occupancy_report_pdf(
         self,
         data: list[dict[str, Any]],
         chart_image: bytes | None = None,
@@ -182,7 +182,7 @@ class PDFService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_revenue_report_pdf(
+    def create_revenue_report_pdf(
         self,
         data: list[dict[str, Any]],
         chart_image: bytes | None = None,
@@ -276,7 +276,7 @@ class PDFService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_customer_report_pdf(
+    def create_customer_report_pdf(
         self,
         data: list[dict[str, Any]],
         title: str = "Customer Report"
@@ -331,7 +331,7 @@ class PDFService:
         buffer.seek(0)
         return buffer.read()
 
-    async def create_analytics_report_pdf(
+    def create_analytics_report_pdf(
         self,
         data: list[dict[str, Any]],
         title: str = "Analytics Report",
@@ -408,19 +408,19 @@ class PDFService:
         doc.build(story)
         return buffer.getvalue()
     
-    async def create_geographic_report_pdf(
+    def create_geographic_report_pdf(
         self,
         data: list[dict[str, Any]],
         chart_image: bytes | None = None
     ) -> bytes:
         """Create geographic analysis PDF report."""
-        return await self.create_analytics_report_pdf(
+        return self.create_analytics_report_pdf(
             data, 
             "Geographic Analysis Report",
             chart_image
         )
 
-    async def create_comprehensive_report_pdf(
+    def create_comprehensive_report_pdf(
         self,
         occupancy_data: list[dict[str, Any]] | None = None,
         revenue_data: list[dict[str, Any]] | None = None,

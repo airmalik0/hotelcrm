@@ -64,3 +64,17 @@ def get_current_admin_user(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have admin privileges"
         )
     return current_user
+
+
+def require_admin(current_user: CurrentUser) -> User:
+    """Require admin role."""
+    if current_user.role != UserRole.ADMIN and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+
+def require_admin_or_manager(current_user: CurrentUser) -> User:
+    """Require admin or manager role."""
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Admin or manager access required")
+    return current_user

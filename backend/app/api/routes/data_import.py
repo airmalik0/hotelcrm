@@ -1,9 +1,12 @@
+import uuid
 from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.api.deps import SessionDep, get_current_admin_user
+from app.core.audit import log_audit
+from app.models import User
 from app.schemas.import_schemas import CSVValidationResult, ImportResult
 from app.services.import_service import ImportService
 
@@ -16,8 +19,8 @@ router = APIRouter()
     dependencies=[Depends(get_current_admin_user)]
 )
 async def validate_customer_csv(
-    file: UploadFile = File(...),
-    db: SessionDep = None
+    session: SessionDep,
+    file: UploadFile = File(...)
 ) -> CSVValidationResult:
     """Validate CSV file structure without importing (admin only)."""
     if not file.filename or not file.filename.endswith(".csv"):
@@ -27,7 +30,7 @@ async def validate_customer_csv(
     content = await file.read()
 
     # Validate CSV structure
-    import_service = ImportService(db)
+    import_service = ImportService(session)
     result = await import_service.validate_csv_structure(content)
 
     return result
@@ -36,11 +39,11 @@ async def validate_customer_csv(
 @router.post(
     "/customers/import",
     response_model=ImportResult,
-    dependencies=[Depends(get_current_admin_user)]
 )
 async def import_customers_from_csv(
-    file: UploadFile = File(...),
-    db: SessionDep = None
+    session: SessionDep,
+    current_user: User = Depends(get_current_admin_user),
+    file: UploadFile = File(...)
 ) -> ImportResult:
     """Import customers from CSV file (admin only).
 
@@ -65,12 +68,24 @@ async def import_customers_from_csv(
     content = await file.read()
 
     # Import customers
-    import_service = ImportService(db)
+    import_service = ImportService(session)
     result = await import_service.import_customers_from_csv(content)
 
     if not result.get("success", False):
         # Return detailed error information
         return result
+
+    # Log audit for successful import
+    log_audit(
+        session=session,
+        user=current_user,
+        action="imported",
+        entity_type="customers",
+        entity_id=uuid.uuid4(),  # Generate a tracking ID for this import
+        entity_name="CSV Import",
+        description=f"Imported {result.get('imported', 0)} customers from CSV"
+    )
+    session.commit()
 
     return result
 
@@ -115,10 +130,10 @@ async def get_customer_import_template() -> Any:
 
 @router.get(
     "/customers/export",
-    dependencies=[Depends(get_current_admin_user)]
 )
 async def export_all_customers(
-    db: SessionDep
+    session: SessionDep,
+    current_user: User = Depends(get_current_admin_user)
 ) -> Any:
     """Export all customers to CSV (admin only)."""
     from fastapi import Response
@@ -129,7 +144,7 @@ async def export_all_customers(
 
     # Get all customers
     statement = select(Customer).order_by(Customer.created_at.desc())
-    customers = db.exec(statement).all()
+    customers = session.exec(statement).all()
 
     # Convert to dict format
     customer_data = []
@@ -148,6 +163,18 @@ async def export_all_customers(
     # Export to CSV
     export_service = ExportService()
     csv_content = await export_service.export_to_csv(customer_data)
+
+    # Log audit for export
+    log_audit(
+        session=session,
+        user=current_user,
+        action="exported",
+        entity_type="customers",
+        entity_id=uuid.uuid4(),  # Generate a tracking ID for this export
+        entity_name="CSV Export",
+        description=f"Exported {len(customer_data)} customers to CSV"
+    )
+    session.commit()
 
     return Response(
         content=csv_content,

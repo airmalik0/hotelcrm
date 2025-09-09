@@ -4,14 +4,15 @@ import re
 from datetime import datetime
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from app.models import Customer
+from app.crud.customer import customer as crud_customer
+from app.models import Customer, CustomerCreate
 
 
 class ImportService:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, session: Session):
+        self.session = session
 
     def _validate_phone(self, phone: str | None) -> str | None:
         """Validate phone number format."""
@@ -45,7 +46,7 @@ class ImportService:
 
         raise ValueError(f"Invalid date format: {date_str}")
 
-    async def import_customers_from_csv(
+    def import_customers_from_csv(
         self, csv_content: bytes
     ) -> dict[str, Any]:
         """Import customers from CSV file.
@@ -146,9 +147,9 @@ class ImportService:
             # Check for existing customers in database
             unique_phones = list(phone_to_rows.keys())
             if unique_phones:
-                existing_customers = self.db.exec(
-                    select(Customer).where(Customer.phone.in_(unique_phones))
-                ).all()
+                existing_customers = crud_customer.get_by_phones(
+                    self.session, phones=unique_phones
+                )
 
                 for customer in existing_customers:
                     if customer.phone in phone_to_rows:
@@ -180,11 +181,12 @@ class ImportService:
                 # Remove row_num from data before creating customer
                 customer_data.pop("row_num", None)
 
-                new_customer = Customer(**customer_data)
-                self.db.add(new_customer)
+                # Use CRUD to create customer
+                customer_create = CustomerCreate(**customer_data)
+                crud_customer.create(self.session, obj_in=customer_create)
                 imported_count += 1
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "success": True,
@@ -199,14 +201,14 @@ class ImportService:
                 "imported": 0,
             }
         except Exception as e:
-            self.db.rollback()
+            self.session.rollback()
             return {
                 "success": False,
                 "error": f"Import failed: {str(e)}",
                 "imported": 0,
             }
 
-    async def validate_csv_structure(self, csv_content: bytes) -> dict[str, Any]:
+    def validate_csv_structure(self, csv_content: bytes) -> dict[str, Any]:
         """Validate CSV structure without importing."""
         try:
             csv_text = csv_content.decode("utf-8-sig")
