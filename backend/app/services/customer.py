@@ -11,8 +11,8 @@ class CustomerService:
 
     def create_customer(self, customer_in: CustomerCreate) -> Customer:
         """Create customer with business logic."""
-        # Check if phone exists
-        if self.crud.get_by_phone(self.session, phone=customer_in.phone):
+        # Check if phone exists (phone is required)
+        if customer_in.phone and self.crud.get_by_phone(self.session, phone=customer_in.phone):
             raise ValueError("Phone number already registered")
 
         return self.crud.create(self.session, obj_in=customer_in)
@@ -25,12 +25,17 @@ class CustomerService:
 
         return self.crud.update(self.session, db_obj=customer, obj_in=customer_in)
 
-    def delete_customer(self, customer_id: str) -> Customer:
+    def delete_customer(self, customer_id: str) -> Customer | None:
         """Delete customer with validation."""
+        from uuid import UUID
+
         from app.crud.booking import booking as crud_booking
 
+        # Convert string to UUID
+        customer_uuid = UUID(customer_id)
+
         # Check for existing bookings
-        if crud_booking.count_filtered(self.session, customer_id=customer_id) > 0:
+        if crud_booking.count_filtered(self.session, customer_id=customer_uuid) > 0:
             raise ValueError("Cannot delete customer with existing bookings")
 
-        return self.crud.delete(self.session, id=customer_id)
+        return self.crud.delete(self.session, id=customer_uuid)

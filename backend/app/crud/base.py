@@ -18,7 +18,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self, session: Session, *, skip: int = 0, limit: int = 100
     ) -> list[ModelType]:
         statement = select(self.model).offset(skip).limit(limit)
-        return session.exec(statement).all()
+        return list(session.exec(statement).all())
 
     def create(self, session: Session, *, obj_in: CreateSchemaType) -> ModelType:
         db_obj = self.model.model_validate(obj_in)
@@ -35,7 +35,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session.flush()
         return db_obj
 
-    def delete(self, session: Session, *, id: UUID) -> ModelType:
+    def delete(self, session: Session, *, id: UUID) -> ModelType | None:
         obj = session.get(self.model, id)
         if obj:
             session.delete(obj)

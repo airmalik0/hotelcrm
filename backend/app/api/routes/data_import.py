@@ -31,7 +31,7 @@ async def validate_customer_csv(
 
     # Validate CSV structure
     import_service = ImportService(session)
-    result = await import_service.validate_csv_structure(content)
+    result = import_service.validate_csv_structure(content)
 
     return result
 
@@ -69,7 +69,7 @@ async def import_customers_from_csv(
 
     # Import customers
     import_service = ImportService(session)
-    result = await import_service.import_customers_from_csv(content)
+    result = import_service.import_customers_from_csv(content)
 
     if not result.get("success", False):
         # Return detailed error information

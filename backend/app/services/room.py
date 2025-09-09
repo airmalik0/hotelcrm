@@ -25,12 +25,17 @@ class RoomService:
 
         return self.crud.update(self.session, db_obj=room, obj_in=room_in)
 
-    def delete_room(self, room_id: str) -> Room:
+    def delete_room(self, room_id: str) -> Room | None:
         """Delete room with validation."""
+        from uuid import UUID
+
         from app.crud.booking import booking as crud_booking
 
+        # Convert string to UUID
+        room_uuid = UUID(room_id)
+
         # Check for existing bookings
-        if crud_booking.count_filtered(self.session, room_id=room_id) > 0:
+        if crud_booking.count_filtered(self.session, room_id=room_uuid) > 0:
             raise ValueError("Cannot delete room with existing bookings")
 
-        return self.crud.delete(self.session, id=room_id)
+        return self.crud.delete(self.session, id=room_uuid)

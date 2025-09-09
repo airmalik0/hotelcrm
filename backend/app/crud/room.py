@@ -33,7 +33,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
             .offset(skip)
             .limit(limit)
         )
-        return session.exec(statement).all()
+        return list(session.exec(statement).all())
 
     def count_available(self, session: Session) -> int:
         statement = select(func.count()).select_from(Room).where(

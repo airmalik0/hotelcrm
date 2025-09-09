@@ -60,8 +60,8 @@ def create_customer(
     """
     Create new customer.
     """
-    # Check if phone exists
-    if crud_customer.get_by_phone(session, phone=customer_in.phone):
+    # Check if phone exists (phone is required in CustomerCreate)
+    if customer_in.phone and crud_customer.get_by_phone(session, phone=customer_in.phone):
         raise HTTPException(status_code=400, detail="Phone number already registered")
 
     customer = crud_customer.create(session, obj_in=customer_in)

@@ -42,7 +42,7 @@ class ExportService:
             sheets_data = data
 
         # Remove default sheet if we have data
-        if sheets_data:
+        if sheets_data and wb.active:
             wb.remove(wb.active)
 
         for sheet_name, sheet_data in sheets_data.items():

@@ -425,11 +425,11 @@ async def generate_top_customers_task(
 )
 async def generate_report(
     report_type: ReportJobType,
+    session: SessionDep,
+    current_user: CurrentUser,
+    background_tasks: BackgroundTasks,
     format: ReportFormat = ReportFormat.JSON,
     params: dict[str, Any] | None = None,
-    background_tasks: BackgroundTasks = BackgroundTasks(),
-    session: SessionDep = None,
-    current_user: CurrentUser = None
 ) -> ReportJobPublic:
     """Generate a report (admin and manager only)."""
 
@@ -588,11 +588,11 @@ async def download_report(
     response_model=ReportJobsPublic
 )
 async def list_jobs(
+    session: SessionDep,
+    current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
     status: ReportJobStatus | None = None,
-    session: SessionDep = None,
-    current_user: CurrentUser = None
 ) -> ReportJobsPublic:
     """List report jobs."""
     # For regular hosts, only show their own jobs

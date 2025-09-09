@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import desc, func, select
+from sqlalchemy.sql import func, select
 from sqlmodel import Session
 
 from app.crud.base import CRUDBase
@@ -78,7 +78,8 @@ class CRUDReport(CRUDBase[ReportJob, ReportJobCreate, ReportJobUpdate]):
     ) -> ReportJob | None:
         """Get a report job by ID and user ID."""
         statement = select(ReportJob).where(
-            ReportJob.id == job_id,
+            ReportJob.id == job_id
+        ).where(
             ReportJob.user_id == user_id
         )
         return session.exec(statement).first()
@@ -100,9 +101,9 @@ class CRUDReport(CRUDBase[ReportJob, ReportJobCreate, ReportJobUpdate]):
         if status:
             statement = statement.where(ReportJob.status == status)
 
-        statement = statement.order_by(desc(ReportJob.created_at))
+        statement = statement.order_by(ReportJob.created_at.desc())  # type: ignore[attr-defined]
         statement = statement.offset(skip).limit(limit)
-        return session.exec(statement).all()
+        return list(session.exec(statement).all())
 
     def count_by_user(
         self,
@@ -158,9 +159,9 @@ class CRUDReport(CRUDBase[ReportJob, ReportJobCreate, ReportJobUpdate]):
         if user_id:
             statement = statement.where(ReportHistory.user_id == user_id)
 
-        statement = statement.order_by(desc(ReportHistory.created_at))
+        statement = statement.order_by(ReportHistory.created_at.desc())  # type: ignore[attr-defined]
         statement = statement.offset(skip).limit(limit)
-        return session.exec(statement).all()
+        return list(session.exec(statement).all())
 
     def count_history(
         self,
