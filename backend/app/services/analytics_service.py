@@ -75,7 +75,7 @@ class AnalyticsService:
         )
 
         # Create full 24-hour pattern
-        hourly_pattern = {hour: {"count": 0, "amount": 0} for hour in range(24)}
+        hourly_pattern = {hour: {"count": 0, "amount": 0.0} for hour in range(24)}
         for row in results:
             hour = int(row[0])
             count = row[1]
@@ -179,7 +179,7 @@ class AnalyticsService:
         """Get revenue analytics."""
         # Get data from CRUD
         results = self.crud.get_revenue_data(
-            start_date, end_date, room_type, payment_method, group_by
+            start_date, end_date, group_by
         )
 
         formatted_results = []
@@ -209,7 +209,7 @@ class AnalyticsService:
         """Get top customers by revenue or booking count."""
         # Get data from CRUD
         results = self.crud.get_top_customers_data(
-            start_date, end_date, limit, order_by
+            start_date, end_date, limit
         )
 
         formatted_results = []
@@ -249,8 +249,12 @@ class AnalyticsService:
         booking_distribution = {}
 
         for row in repeat_data:
-            booking_count = int(row[0]) if row[0] else 0
-            customer_count = int(row[1]) if row[1] else 0
+            if isinstance(row, list | tuple) and len(row) >= 2:
+                booking_count = int(row[0]) if row[0] else 0
+                customer_count = int(row[1]) if row[1] else 0
+            else:
+                booking_count = 0
+                customer_count = 0
             total_customers += customer_count
 
             if booking_count > 1:
