@@ -6,13 +6,12 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 **System Features:**
 - **Role-based access control** (Admin/Manager/Host)  
-- **Hourly chess-board booking calendar** (max 25 rooms)
+- **Time continuum booking calendar** (weekly/monthly views, max 25 rooms)
 - **Customer database with individual profiles**
 - **Room management module**
 - **Comprehensive audit trail** (admin only)
-- **Modern React frontend** using WowDash HTML templates
+- **Modern React frontend** using WowDash HTML templates as references
 
-## What I'm 100% Confident About
 
 **Backend (already analyzed code):**
 - ✅ All API endpoints ready: `/api/v1/users/`, `/api/v1/customers/`, `/api/v1/rooms/`, `/api/v1/bookings/`, `/api/v1/audit/`
@@ -22,26 +21,24 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 **Frontend Foundation:**
 - ✅ React 19 + TypeScript + Tailwind CSS + TanStack Query setup
-- ✅ WowDash templates: 83 HTML files with extraction patterns documented
+- ✅ WowDash templates: 83 HTML files with extraction patterns documented for references
 - ✅ Specific templates identified: `sign-in.html`, `users-list.html`, `table-data.html`, etc.
 - ✅ Basic React patterns and component architecture
 
 ## Areas Requiring Research During Implementation
 
 **WowDash Integration:**
-- ❓ SCSS custom classes implementation details
-- ❓ Flowbite JS dependency for dropdowns/modals  
 - ❓ Dark mode toggle mechanism in practice
 
 **Calendar Module (most complex):**
-- ❓ HTML5 Drag & Drop implementation complexity
-- ❓ CSS Grid positioning with dynamic booking blocks
+- ❓ HTML5 Drag & Drop implementation for room changes
+- ❓ Time continuum positioning with percentage-based layout
 - ❓ Real-time synchronization between users
 - ❓ Mobile touch interaction handling
 
 **Advanced Features:**
-- ❓ File upload implementation (photos)
-- ❓ JSON diff viewer for audit changes
+- ❓ File upload implementation (room and passport photos)
+- ❓ diff viewer for audit changes
 - ❓ Export functionality (CSV/Excel)
 
 ## Table of Contents
@@ -49,7 +46,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 1. [Current Backend Analysis](#current-backend-analysis)
 2. [Role-Based Access Control](#role-based-access-control)  
 3. [System Modules](#system-modules)
-4. [Hourly Calendar Implementation](#hourly-calendar-implementation)
+4. [Time Continuum Calendar Implementation](#time-continuum-calendar-implementation)
 5. [Audit Module Design](#audit-module-design)
 6. [UX Flow Design](#ux-flow-design)
 7. [WowDash Template Mapping](#wowdash-template-mapping)
@@ -84,7 +81,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 - Photo path storage support
 
 **Booking System:**
-- Complete booking lifecycle (confirmed → checked_in → checked_out)
+- Complete booking lifecycle (confirmed → checked_in → checked_out → cleaning)
 - Automatic pricing calculation with discount support
 - Date validation and conflict detection  
 - Payment method tracking
@@ -108,18 +105,32 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 ## Role-Based Access Control
 
-### Permission Matrix
+## Role-Based Access Control Matrix
 
-| Module | Admin | Manager | Host |
-|--------|--------|---------|------|
-| **Dashboard** | Full stats + system health | Operational metrics | Today's bookings only |
-| **Calendar** | Full CRUD + bulk ops | Full CRUD + discount mgmt | Bookings + check-in/out only |
-| **Rooms** | Full CRUD | Full CRUD | Read-only view |
-| **Customers** | Full CRUD | Full CRUD | Full CRUD |  
-| **Bookings** | Full CRUD + pricing | Full CRUD + discount | CRUD (no discount mgmt) |
-| **Users** | Full CRUD | ❌ No access | ❌ No access |
-| **Analytics** | Full reports | ❌ Basic metrics only | ❌ No access |
-| **Audit** | Full access | ❌ No access | ❌ No access |
+### ADMIN (Full System Access)
+**Dashboard:** System stats, user activity, financial metrics, system health  
+**Calendar:** Create/Read/Update/Delete bookings, drag & drop (room changes), discount management  
+**Rooms:** Create/Read/Update/Delete rooms, status management, pricing  
+**Customers:** Create/Read/Update/Delete customers, full profile access  
+  
+**Users:** Create/Read/Update/Delete users, role assignment  
+**Audit:** View all audit logs, filter/search, export audit data  
+
+### MANAGER (Operations Management)
+**Dashboard:** Room occupancy, today's bookings, revenue metrics (no system internals)  
+**Calendar:** Create/Read/Update/Delete bookings, drag & drop (room changes), discount management  
+**Rooms:** Create/Read/Update/Delete rooms, status management, pricing  
+**Customers:** Create/Read/Update/Delete customers, full profile access  
+**Users:** Read-only view of own profile (no user management)  
+**Audit:** No access  
+
+### HOST (Front Desk Operations)
+**Dashboard:** Today's check-ins/check-outs, pending tasks only  
+**Calendar:** Create/Read bookings, check-in/check-out operations (no drag & drop, no discounts)  
+**Rooms:** Read-only view, see status (no editing, no creation)  
+**Customers:** Create/Read/Update/Delete customers, full profile access  
+**Users:** Read-only view of own profile (no user management)  
+**Audit:** No access
 
 ### Role Definitions
 
@@ -165,9 +176,9 @@ This plan implements a Hotel CRM system component by component, where each compo
   - **Host:** Today's schedule, pending check-ins, quick booking
 
 ### 3. Calendar Module (Primary Feature)
-- **Purpose:** Hourly chess-board booking visualization  
+- **Purpose:** Chess-board booking calendar visualization  
 - **Features:**
-  - 24-hour timeline view (00:00-23:59)
+  - Weekly and monthly view modes
   - Max 25 rooms as rows
   - Drag & drop booking management
   - Real-time status updates
@@ -180,7 +191,6 @@ This plan implements a Hotel CRM system component by component, where each compo
   - Room CRUD operations (admin/manager only)
   - Status management workflow
   - Photo gallery management
-  - Maintenance scheduling
   - Pricing configuration
 
 ### 5. Customer Database
@@ -192,47 +202,55 @@ This plan implements a Hotel CRM system component by component, where each compo
   - Booking statistics and preferences
   - Document storage (passport photos)
 
-### 6. Booking Management
-- **Purpose:** Reservation lifecycle management
-- **Features:**
-  - Booking creation and modification
-  - Check-in/check-out workflows
-  - Payment tracking
-  - Status management
-  - Automatic pricing calculation
 
-### 7. User Management (Admin Only)
+### 6. User Management (Admin Only)
 - **Purpose:** Staff account administration
 - **Features:**
   - User creation with role assignment
   - Password management
-  - Activity monitoring
-  - Permission management
 
-### 8. Audit Module (Admin Only)  
+### 7. Audit Module (Admin Only)  
 - **Purpose:** Security and compliance tracking
 - **Features:**
   - Complete action history
   - Before/after change tracking
   - User activity analytics
-  - Export capabilities
-  - Security event monitoring
 
 ---
 
-## Hourly Calendar Implementation
+## Time Continuum Calendar Implementation
 
-### Technical Architecture
+### Technical Architecture: Time as Continuous Flow
 
-**Grid Layout (≤25 rooms = No virtualization needed):**
+**Core Concept: Time Continuum**
+- **Week View:** 168 continuous hours (7 days × 24 hours)
+- **Month View:** ~744 continuous hours (31 days × 24 hours, varies by month)  
+- **Booking positioning:** Percentage-based from period start
+- **No daily boundaries:** Bookings flow naturally across time
+
+**Container Layout (≤25 rooms = No virtualization needed):**
 ```css
-.calendar-grid {
-  display: grid;
-  grid-template-columns: 200px repeat(24, 1fr); /* Sidebar + 24 hours */
-  grid-template-rows: 60px repeat(25, 60px);    /* Header + max 25 rooms */
-  gap: 1px;
-  max-width: 100vw;
+.calendar-container {
+  position: relative;
+  width: 100%;
+  height: calc(25 * 60px + 40px); /* 25 rooms + header */
+}
+
+.calendar-timeline {
+  position: absolute;
+  top: 40px; /* Header height */
+  left: 200px; /* Room sidebar width */
+  right: 0;
+  height: calc(25 * 60px);
   overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.room-row {
+  position: absolute;
+  height: 60px;
+  width: 100%;
+  border-bottom: 1px solid #e5e5e5;
 }
 ```
 
@@ -242,47 +260,126 @@ interface BookingBlock {
   id: string
   roomId: string
   customerId: string
-  startHour: number  // 0-23
-  endHour: number    // 0-23  
-  date: string       // "2025-01-01"
-  duration: number   // hours
+  check_in: Date
+  check_out: Date
+  duration: number   // Total hours
   status: BookingStatus
   customer: CustomerPublic
   room: RoomPublic
 }
 
-const positionBooking = (booking: BookingBlock) => ({
-  gridColumn: `${booking.startHour + 2} / ${booking.endHour + 2}`, // +2 for sidebar offset
-  gridRow: getRoomIndex(booking.roomId) + 2, // +2 for header offset
-  backgroundColor: getStatusColor(booking.status),
-})
+// Calculate position as percentage of total period
+const positionBooking = (booking: BookingBlock, periodStart: Date, periodEnd: Date) => {
+  const totalPeriodHours = (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60)
+  const bookingStartOffset = (booking.check_in.getTime() - periodStart.getTime()) / (1000 * 60 * 60)
+  const bookingDuration = booking.duration
+  
+  const leftPercent = (bookingStartOffset / totalPeriodHours) * 100
+  const widthPercent = (bookingDuration / totalPeriodHours) * 100
+  
+  return {
+    position: 'absolute',
+    left: `${leftPercent}%`,
+    width: `${widthPercent}%`,
+    top: '4px',
+    height: '52px', // Room height - margins
+    backgroundColor: getStatusColor(booking.status),
+    borderRadius: '6px',
+    minWidth: '60px', // Minimum visible width
+  }
+}
 ```
 
-**Drag & Drop Implementation:**
+**Time Scale Generation:**
+```typescript
+const generateTimeScale = (viewMode: 'week' | 'month', startDate: Date) => {
+  const totalHours = viewMode === 'week' ? 168 : 744  // 31 days max month
+  const tickInterval = viewMode === 'week' ? 6 : 24 // Every 6h for week, 24h for month
+  
+  const ticks = []
+  for (let hour = 0; hour < totalHours; hour += tickInterval) {
+    const tickDate = new Date(startDate.getTime() + hour * 60 * 60 * 1000)
+    const position = (hour / totalHours) * 100
+    
+    ticks.push({
+      position: `${position}%`,
+      label: formatTimeLabel(tickDate, viewMode),
+      date: tickDate
+    })
+  }
+  return ticks
+}
+```
+
+**Drag & Drop Implementation (Room Change Only):**
 ```typescript
 const handleBookingDrag = {
   onDragStart: (booking: BookingBlock, event: DragEvent) => {
     setDraggedBooking(booking)
-    event.dataTransfer?.setData('application/json', JSON.stringify(booking))
+    const dragData = {
+      bookingId: booking.id,
+      originalRoomId: booking.roomId,
+      check_in: booking.check_in,
+      check_out: booking.check_out
+    }
+    event.dataTransfer?.setData('application/json', JSON.stringify(dragData))
+    
+    // Visual feedback - highlight valid drop zones
+    highlightAvailableRooms(booking)
   },
   
-  onDrop: (roomId: string, hour: number, event: DragEvent) => {
-    const booking = JSON.parse(event.dataTransfer?.getData('application/json') || '{}')
+  onDrop: (targetRoomId: string, event: DragEvent) => {
+    const dragData = JSON.parse(event.dataTransfer?.getData('application/json') || '{}')
+    const booking = draggedBooking
     
-    // Validation checks
-    if (!canDropBooking(booking, roomId, hour)) {
-      showError('Booking conflict or invalid placement')
+    if (!booking || targetRoomId === booking.roomId) {
+      return // Same room or invalid
+    }
+    
+    // Check if target room is available for these exact dates/times
+    if (!canChangeRoom(booking, targetRoomId)) {
+      showError('Target room is not available for these dates')
       return
     }
     
-    // Update booking with new position
+    // Update booking - ONLY room changes, time stays the same
     updateBooking({
       ...booking,
-      roomId,
-      check_in: setHour(parseISO(booking.date), hour),
-      check_out: setHour(parseISO(booking.date), hour + booking.duration)
+      room_id: targetRoomId,
+      // check_in and check_out remain unchanged
     })
+    
+    clearDropZoneHighlights()
+  },
+  
+  onDragEnd: () => {
+    setDraggedBooking(null)
+    clearDropZoneHighlights()
   }
+}
+
+// Check if room is available for exact time period
+const canChangeRoom = (booking: BookingBlock, targetRoomId: string) => {
+  const conflictingBookings = existingBookings.filter(existing => 
+    existing.roomId === targetRoomId &&
+    existing.id !== booking.id &&
+    !(booking.check_out <= existing.check_in || booking.check_in >= existing.check_out)
+  )
+  
+  return conflictingBookings.length === 0
+}
+
+// Visual feedback for valid drop targets
+const highlightAvailableRooms = (booking: BookingBlock) => {
+  rooms.forEach(room => {
+    const isAvailable = canChangeRoom(booking, room.id)
+    const roomElement = document.querySelector(`[data-room-id="${room.id}"]`)
+    
+    if (roomElement) {
+      roomElement.classList.toggle('drop-zone-valid', isAvailable)
+      roomElement.classList.toggle('drop-zone-invalid', !isAvailable)
+    }
+  })
 }
 ```
 
@@ -292,9 +389,38 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
   return existingBookings.filter(existing => 
     existing.roomId === newBooking.roomId &&
     existing.id !== newBooking.id &&
-    existing.date === newBooking.date &&
-    !(newBooking.endHour <= existing.startHour || newBooking.startHour >= existing.endHour)
+    !(newBooking.check_out <= existing.check_in || newBooking.check_in >= existing.check_out)
   )
+}
+```
+
+**Automatic Gap Management:**
+```typescript
+const ensureBookingGaps = (bookings: BookingBlock[], minGapMinutes: number = 15) => {
+  return bookings.map(booking => {
+    const roomBookings = bookings
+      .filter(b => b.roomId === booking.roomId && b.id !== booking.id)
+      .sort((a, b) => a.check_in.getTime() - b.check_in.getTime())
+    
+    // Find conflicts and adjust
+    const conflicting = roomBookings.find(other => 
+      booking.check_in < other.check_out && booking.check_out > other.check_in
+    )
+    
+    if (conflicting) {
+      // Auto-adjust to maintain gap
+      const gapMs = minGapMinutes * 60 * 1000
+      const adjustedCheckIn = new Date(conflicting.check_out.getTime() + gapMs)
+      
+      return {
+        ...booking,
+        check_in: adjustedCheckIn,
+        check_out: new Date(adjustedCheckIn.getTime() + booking.duration * 60 * 60 * 1000)
+      }
+    }
+    
+    return booking
+  })
 }
 ```
 
@@ -306,16 +432,21 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
 - **Checked-out:** `bg-gray-200 border-gray-400`
 - **Cancelled:** `bg-red-100 border-red-300`
 
+**Room Status Colors:**
+- **Available:** `bg-success-100 border-success-200`
+- **Occupied:** `bg-danger-100 border-danger-200` 
+- **Cleaning:** `bg-warning-100 border-warning-200`
+- **Maintenance:** `bg-purple-100 border-purple-200`
+
 **Interactive Elements:**
 - **Hover:** Tooltip with customer details and booking info
-- **Click:** Booking detail modal with actions
-- **Drag:** Visual feedback with valid drop zones highlighted
-- **Resize:** Handle at booking edges for duration adjustment
+- **Click:** Booking detail modal with actions  
+- **Drag:** Visual feedback with valid drop zones highlighted (room changes only)
 
 **Responsive Behavior:**
-- **Desktop:** Full 24-hour view
-- **Tablet:** Scrollable timeline with fixed room sidebar
-- **Mobile:** Stacked daily view with swipe navigation
+- **Desktop:** Full timeline view with horizontal scroll
+- **Tablet:** Scrollable timeline with fixed room sidebar  
+- **Mobile:** Compressed timeline with touch gestures, zoom, and full functionality
 
 ---
 
@@ -353,18 +484,11 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
 │ │ district │ null        │ Manhattan       │ Added       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
-│ Raw JSON: [Toggle View]                                     │
+│                                                            │
 │ [< Back to List] [Export Entry] [Related Entries]          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Audit Statistics:**
-- Total actions by time period
-- Most active users
-- Most frequently modified entities  
-- Action type distribution
-- Peak activity periods
-- Security event highlighting
 
 ### Backend Integration
 
@@ -401,10 +525,10 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
    │  │CALENDAR │ │  ROOMS  │       │ ← Always visible
    │  │(Primary)│ │ Management│     │
    │  └─────────┘ └─────────┘       │
-   │  ┌─────────┐ ┌─────────┐       │
-   │  │CUSTOMERS│ │BOOKINGS │       │ ← Always visible  
-   │  │Database │ │ Management│     │
-   │  └─────────┘ └─────────┘       │
+   │  ┌─────────┐                     │
+   │  │CUSTOMERS│                   │ ← Always visible  
+   │  │Database │                   │
+   │  └─────────┘                   │
    │  ┌─────────┐ ┌─────────┐       │
    │  │ USERS   │ │  AUDIT  │       │ ← Admin only
    │  │Management│ │  Logs   │     │
@@ -418,14 +542,14 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
 1. CALENDAR ENTRY:
    ┌─────────────────────────────────────────────┐
    │            BOOKING CALENDAR                 │
-   │ View: [Week] [Day]  Filters: [Room Type]    │
-   │ Quick Actions: [+ New Booking] [Bulk Ops]   │
+   │ View: [Week] [Month]  Filters: [Room Type]   │
+   │ Quick Actions: [+ New Booking]              │
    │                                             │
-   │ ┌─Room─┬─00─┬─01─┬─02─┬─...─┬─23─┐          │
-   │ │ 101  │    │██████████│    │    │          │ ← Occupied
-   │ │ 102  │████│    │    │    │    │          │ ← Checkout
-   │ │ 103  │    │    │    │████████████│       │ ← Cleaning
-   │ └──────┴────┴────┴────┴────┴────┘          │
+   │ ┌─Room─┬─────── Timeline (168hrs) ──────────┐ │
+   │ │ 101  │  ██████████          ████████   │ │ ← Bookings
+   │ │ 102  │████              ██████████████ │ │ ← Continuous
+   │ │ 103  │        ████████████             │ │ ← Flow
+   │ └──────┴──────────────────────────────────┘ │
    └─────────────────────────────────────────────┘
 
 2. BOOKING INTERACTION:
@@ -434,13 +558,42 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
    ┌─────────────────────────────────────┐
    │           NEW BOOKING               │
    │ Customer: [Search/Select ▼]         │  
-   │ Room: 101 (Pre-filled)             │
-   │ Time: 14:00 - 16:00 (Pre-filled)   │
+   │ Room: 101 (Pre-filled from row)    │
+   │ Time: Jan 5 14:00 - Jan 6 12:00 (Start from click, end next day 12:00) │
    │ Price: $120 (Auto-calculated)      │
    │ Payment: [Cash ▼]                  │
    │ Notes: [Optional...]               │
    │ [Cancel] [Create Booking]          │
    └─────────────────────────────────────┘
+   
+   Time Calculation Logic:
+   ```typescript
+   const calculateTimeFromClick = (clickX: number, roomRow: Element) => {
+     const timelineWidth = timelineRef.current?.offsetWidth || 1
+     const clickPercent = (clickX / timelineWidth) * 100
+     
+     // Convert to hours from period start
+     const totalPeriodHours = viewMode === 'week' ? 168 : 744
+     const clickOffsetHours = (clickPercent / 100) * totalPeriodHours
+     
+     // Calculate actual datetime
+     const clickDateTime = new Date(periodStart.getTime() + clickOffsetHours * 60 * 60 * 1000)
+     
+     // Round to nearest hour for user convenience
+     const roundedStart = new Date(clickDateTime)
+     roundedStart.setMinutes(0, 0, 0)
+     
+     // Default checkout: 12:00 next day (standard hotel checkout time)
+     const defaultEnd = new Date(roundedStart)
+     defaultEnd.setDate(defaultEnd.getDate() + 1) // Next day
+     defaultEnd.setHours(12, 0, 0, 0) // 12:00 PM
+     
+     return {
+       check_in: roundedStart,
+       check_out: defaultEnd
+     }
+   }
+   ```
    
    b) CLICK BOOKING BLOCK → Action Menu:
    ┌─────────────────┐
@@ -452,11 +605,11 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
    │ • Move/Resize   │
    └─────────────────┘
 
-3. DRAG & DROP:
+3. DRAG & DROP (Room Changes Only):
    - Visual feedback with valid drop zones
    - Automatic conflict detection  
-   - Real-time price recalculation
-   - Undo/redo capability
+   - Time remains unchanged during drag
+   - Only room assignment changes
 ```
 
 ### Customer Module Flow
@@ -505,7 +658,7 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
    │ Birth Date: [1990-01-01    ]   District: [Manhattan  ]  │
    │                                                         │
    │ Customer Tags:                                          │
-   │ ☑ VIP    ☐ Loyal    ☐ Regular    ☐ Corporate          │
+   │ ☑ VIP    ☐ Loyal                                        │
    │                                                         │
    │ Documents:                                              │
    │ ┌─────────────────────────────────────────────────────┐ │
@@ -529,17 +682,16 @@ const detectConflicts = (newBooking: BookingBlock, existingBookings: BookingBloc
 | Hotel CRM Component | WowDash Template | Key Features Extracted |
 |-------------------|------------------|----------------------|
 | **Login Page** | `sign-in.html` | Two-column layout, icon inputs, auth forms |
-| **Dashboard** | `index.html`, `index-2.html` | Stats cards, charts, KPI widgets |
-| **Calendar Grid** | `calendar-main.html` + Custom | FullCalendar base + custom hourly grid |
-| **Room Cards** | `users-grid.html` | Card layouts, photo galleries, status badges |
+| **Dashboard** | `index.html`, `index-2.html`, `widgets.html` | Stats cards, KPI widgets with trends, metric charts, gradient backgrounds |
+| **Calendar Grid** | Custom implementation | Time continuum layout + percentage positioning (no suitable WowDash template) |
+| **Room Cards** | `card.html` | Image-based cards, flexible layouts, action buttons, status indicators |
 | **Room List** | `table-data.html` | Data tables, action buttons, filtering |
 | **Customer List** | `users-list.html` | User tables, search, pagination |
 | **Customer Profile** | `view-profile.html` | Profile layouts, tabs, activity feeds |
-| **Booking Forms** | `form.html` | Form layouts, validation, date pickers |
 | **User Management** | `add-user.html` | User creation forms, role selection |
 | **Audit Table** | `table-data.html` | Advanced tables, filtering, export |
 | **Navigation** | `_sidebar.html`, `_nav.html` | Sidebar menus, breadcrumbs, user dropdown |
-| **Modals** | Various | Booking modals, confirmations, detail views |
+| **Modals** | Various | Quick booking modal (calendar), confirmations, detail views |
 
 ### Key Design Patterns Extracted
 
@@ -645,7 +797,7 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 **Role-based Navigation:**
 - **Admin:** All modules visible
-- **Manager:** No Users/Audit/Advanced Analytics
+- **Manager:** No Users/Audit/Analytics
 - **Host:** No Users/Audit/Analytics/Room Editing
 
 **Research needed:** Dark mode implementation in WowDash
@@ -654,7 +806,7 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 ## COMPONENT 3: Basic Dashboard (Role-specific)
 **Confidence:** ✅ High  
-**Templates:** `pages/index.html`, `pages/widgets.html`
+**Templates:** `pages/index.html`, `pages/index-2.html`, `pages/widgets.html`
 
 **What to build:**
 - **Admin:** System stats, user activity, revenue metrics
@@ -716,7 +868,7 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 ## COMPONENT 6: Room Management  
 **Confidence:** ✅ High  
-**Templates:** `pages/users-grid.html` (card layout)
+**Templates:** `pages/card.html` (image-based cards with actions)
 
 **What to build:**
 - Room grid/list view
@@ -748,62 +900,43 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 ---
 
-## COMPONENT 8: Basic Booking Management
-**Confidence:** ✅ Medium (before calendar)  
-**Templates:** `pages/table-data.html`, `pages/form.html`
-
-**What to build:**
-- Booking list/table view
-- Create booking form (without calendar)
-- Edit booking details
-- Basic check-in/check-out
-- Status management
-
-**API Integration:**
-- `GET /api/v1/bookings/`
-- `POST /api/v1/bookings/`
-- `PUT /api/v1/bookings/{id}`
-- Check-in/out endpoints
-
-**Note:** This provides full booking functionality before tackling calendar complexity
-
----
-
-## COMPONENT 9: Calendar Grid (Research Phase)
+## COMPONENT 8: Calendar Grid (Research Phase)
 **Confidence:** ❓ Medium (requires research)  
-**Templates:** `pages/calendar-main.html` + Custom CSS Grid
+**Templates:** Custom implementation (calendar-main.html not suitable - uses FullCalendar for events, not room-based continuum)
 
 **Research Phase:**
-1. CSS Grid positioning with booking blocks
-2. HTML5 Drag & Drop API complexity
+1. Percentage-based positioning for time continuum
+2. HTML5 Drag & Drop API for room changes only
 3. Touch events for mobile
 4. Real-time sync strategy
 
 **What to build:**
-- Static calendar grid (25 rooms × 24 hours)
-- Booking block visualization  
-- Basic click interactions
-- Time scale and room headers
+- Time continuum container (25 rooms × timeline)
+- Booking block visualization with percentage positioning
+- Click-to-create booking interactions
+- Time scale markers and room headers
 
 **Major Research Areas:**
-- Dynamic CSS Grid positioning
+- Dynamic percentage positioning calculations
 - Conflict detection UI
 - Performance with multiple bookings
 
 ---
 
-## COMPONENT 10: Calendar Interactions  
-**Confidence:** ❓ Medium (depends on Component 9 research)
+## COMPONENT 9: Calendar Interactions  
+**Confidence:** ❓ Medium (depends on Component 8 research)
 
 **What to build:**
 - Click to create booking
+  - **Quick booking modal:** Customer search/create + time selection + room (pre-filled)
 - Booking detail tooltips
 - Status-based coloring
-- Basic drag & drop (research dependent)
+- Basic drag & drop for room changes only (research dependent)
+
 
 ---
 
-## COMPONENT 11: Audit Module (Admin Only)
+## COMPONENT 10: Audit Module (Admin Only)
 **Confidence:** ✅ High  
 **Templates:** `pages/table-data.html`
 
@@ -825,11 +958,11 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 **Key Principle:** If any component proves more complex than expected, we break it down further or research first.
 
-**Example:** If Calendar Grid (Component 9) research shows high complexity, we split into:
-- 9a: Static Grid Layout
-- 9b: Booking Block Positioning  
-- 9c: Interaction Layer
-- 9d: Drag & Drop
+**Example:** If Calendar Grid (Component 8) research shows high complexity, we split into:
+- 8a: Static Grid Layout
+- 8b: Booking Block Positioning  
+- 8c: Interaction Layer
+- 8d: Drag & Drop
 
 **User Check Points:** After each component, full functionality demo and approval before proceeding.
 
@@ -861,7 +994,7 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 HotelCalendar/
 ├── CalendarContainer.tsx        # Main orchestrator
 ├── CalendarHeader.tsx           # Navigation, filters, actions
-├── TimeScale.tsx                # Hour markers (00-23)  
+├── TimeScale.tsx                # Timeline markers (week/month ticks)  
 ├── RoomSidebar.tsx              # Room list with statuses
 ├── CalendarGrid.tsx             # Main booking grid
 │   ├── BookingBlock.tsx         # Individual booking
@@ -879,7 +1012,7 @@ HotelCalendar/
 interface CalendarState {
   // View state
   currentDate: Date
-  viewMode: 'week' | 'day'
+  viewMode: 'week' | 'month'
   selectedRooms: string[]
   
   // Data
@@ -908,12 +1041,12 @@ interface CalendarState {
 
 **API Optimization:**
 ```typescript
-// Single endpoint for calendar data
-GET /api/v1/calendar/week?date=2025-01-06
+// Use existing booking endpoints with filtering
+GET /api/v1/bookings/?date_from=2025-01-06&date_to=2025-01-13  // Week
+GET /api/v1/rooms/                                              // All rooms
 Response: {
-  rooms: Room[],           // All 25 rooms
-  bookings: BookingBlock[], // Week's bookings
-  conflicts: ConflictInfo[] // Pre-computed conflicts
+  rooms: Room[],           // All 25 rooms from rooms endpoint
+  bookings: BookingBlock[], // Filtered bookings from bookings endpoint
 }
 ```
 
@@ -985,7 +1118,7 @@ Response: {
 
 ## Conclusion
 
-This implementation plan provides a comprehensive roadmap for building a modern, role-based Hotel CRM system with a unique hourly booking calendar. The combination of the existing robust FastAPI backend and the WowDash design system creates a solid foundation for rapid development.
+This implementation plan provides a comprehensive roadmap for building a modern, role-based Hotel CRM system with a unique time continuum booking calendar. The combination of the existing robust FastAPI backend and the WowDash design system creates a solid foundation for rapid development.
 
 **Key Success Factors:**
 1. **Proven Backend:** 90% of backend functionality already implemented
@@ -999,4 +1132,4 @@ This implementation plan provides a comprehensive roadmap for building a modern,
 **Technical Risk:** Low (proven technologies, clear requirements)
 **Business Impact:** High (significant operational efficiency gains)
 
-The hourly chess-board calendar represents a significant competitive advantage over traditional daily-view booking systems, providing unprecedented visibility into room utilization and operational efficiency.
+The time continuum calendar represents a significant competitive advantage over traditional daily-view booking systems, providing unprecedented visibility into room utilization and operational efficiency with natural time flow visualization.
