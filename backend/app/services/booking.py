@@ -2,7 +2,7 @@
 Booking service layer for centralizing booking business logic.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlmodel import Session
 
@@ -79,13 +79,13 @@ class BookingService:
         # Create booking
         booking = self.crud_booking.create(self.session, obj_in=booking_in)
 
-        # Update customer statistics
+        # Update customer statistics (use check_in semantics)
         update_customer_stats_on_booking_change(
             session=self.session,
             customer_id=booking_in.customer_id,
             amount_delta=booking_in.total_amount,
             booking_delta=1,
-            new_booking_date=datetime.now(timezone.utc)
+            new_booking_date=booking_in.check_in
         )
 
         return booking
@@ -180,22 +180,31 @@ class BookingService:
                 amount_delta=-old_amount,
                 booking_delta=-1
             )
-            # Add to new customer
+            # Add to new customer (use check_in semantics)
             update_customer_stats_on_booking_change(
                 session=self.session,
                 customer_id=booking_in.customer_id,
                 amount_delta=booking.total_amount,
                 booking_delta=1,
-                new_booking_date=datetime.now(timezone.utc)
+                new_booking_date=(booking_in.check_in or booking.check_in)
             )
-        elif booking.total_amount != old_amount:
-            # Just amount changed
-            update_customer_stats_on_booking_change(
-                session=self.session,
-                customer_id=booking.customer_id,
-                amount_delta=booking.total_amount - old_amount,
-                booking_delta=0
-            )
+        else:
+            # Amount and/or dates may have changed while staying with same customer
+            amount_delta_value = None
+            if booking.total_amount != old_amount:
+                amount_delta_value = booking.total_amount - old_amount
+
+            # If dates changed, pass new check_in to potentially update first/last
+            new_check_in_for_stats = booking_in.check_in if booking_in.check_in else None
+
+            if amount_delta_value is not None or new_check_in_for_stats is not None:
+                update_customer_stats_on_booking_change(
+                    session=self.session,
+                    customer_id=booking.customer_id,
+                    amount_delta=amount_delta_value,
+                    booking_delta=0,
+                    new_booking_date=new_check_in_for_stats
+                )
 
         return booking
 

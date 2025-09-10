@@ -23,14 +23,6 @@ export type AuditLogsPublic = {
     count: number;
 };
 
-export type Body_import_import_customers_from_csv = {
-    file: (Blob | File);
-};
-
-export type Body_import_validate_customer_csv = {
-    file: (Blob | File);
-};
-
 export type Body_login_login_access_token = {
     grant_type?: (string | null);
     username: string;
@@ -91,15 +83,6 @@ export type BookingUpdate = {
     registration_need?: (boolean | null);
 };
 
-export type CSVValidationResult = {
-    valid: boolean;
-    error?: (string | null);
-    fields?: (Array<(string)> | null);
-    row_count?: (number | null);
-    required_fields?: (Array<(string)> | null);
-    optional_fields?: (Array<(string)> | null);
-};
-
 export type CustomerCreate = {
     first_name: string;
     last_name: string;
@@ -146,64 +129,11 @@ export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
 
-export type ImportResult = {
-    success: boolean;
-    message?: (string | null);
-    imported?: number;
-    validation_errors?: (Array<ImportValidationError> | null);
-    duplicates_in_csv?: ({
-    [key: string]: Array<{
-        [key: string]: unknown;
-    }>;
-} | null);
-    existing_in_db?: ({
-    [key: string]: {
-        [key: string]: unknown;
-    };
-} | null);
-    error?: (string | null);
-};
-
-export type ImportValidationError = {
-    row: number;
-    error: string;
-};
-
 export type Message = {
     message: string;
 };
 
 export type PaymentMethod = 'cash' | 'transfer' | 'terminal';
-
-export type ReportFormat = 'json' | 'csv' | 'excel' | 'pdf';
-
-export type ReportJobPublic = {
-    type: ReportJobType;
-    status?: ReportJobStatus;
-    format?: ReportFormat;
-    params?: ({
-    [key: string]: unknown;
-} | null);
-    error_message?: (string | null);
-    progress?: number;
-    result_path?: (string | null);
-    result_size?: (number | null);
-    id: string;
-    user_id: string;
-    created_at: string;
-    started_at: (string | null);
-    completed_at: (string | null);
-    expires_at: (string | null);
-};
-
-export type ReportJobsPublic = {
-    data: Array<ReportJobPublic>;
-    count: number;
-};
-
-export type ReportJobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-
-export type ReportJobType = 'booking_summary' | 'customer_report' | 'room_occupancy' | 'revenue_report' | 'audit_log_export' | 'full_data_export';
 
 export type RoomCreate = {
     room_number: string;
@@ -622,79 +552,3 @@ export type AuditReadAuditLogError = (HTTPValidationError);
 export type AuditGetAuditStatsResponse = (unknown);
 
 export type AuditGetAuditStatsError = unknown;
-
-export type ReportsGenerateReportData = {
-    body?: ({
-    [key: string]: unknown;
-} | null);
-    query: {
-        format?: ReportFormat;
-        report_type: ReportJobType;
-    };
-};
-
-export type ReportsGenerateReportResponse = (ReportJobPublic);
-
-export type ReportsGenerateReportError = (HTTPValidationError);
-
-export type ReportsGetReportStatusData = {
-    path: {
-        job_id: string;
-    };
-};
-
-export type ReportsGetReportStatusResponse = (ReportJobPublic);
-
-export type ReportsGetReportStatusError = (HTTPValidationError);
-
-export type ReportsDownloadReportData = {
-    path: {
-        job_id: string;
-    };
-};
-
-export type ReportsDownloadReportResponse = (unknown);
-
-export type ReportsDownloadReportError = (HTTPValidationError);
-
-export type ReportsListJobsData = {
-    query?: {
-        limit?: number;
-        skip?: number;
-        status?: (ReportJobStatus | null);
-    };
-};
-
-export type ReportsListJobsResponse = (ReportJobsPublic);
-
-export type ReportsListJobsError = (HTTPValidationError);
-
-export type ReportsCleanupExpiredReportsResponse = ({
-    [key: string]: (number);
-});
-
-export type ReportsCleanupExpiredReportsError = unknown;
-
-export type ImportValidateCustomerCsvData = {
-    body: Body_import_validate_customer_csv;
-};
-
-export type ImportValidateCustomerCsvResponse = (CSVValidationResult);
-
-export type ImportValidateCustomerCsvError = (HTTPValidationError);
-
-export type ImportImportCustomersFromCsvData = {
-    body: Body_import_import_customers_from_csv;
-};
-
-export type ImportImportCustomersFromCsvResponse = (ImportResult);
-
-export type ImportImportCustomersFromCsvError = (HTTPValidationError);
-
-export type ImportGetCustomerImportTemplateResponse = (unknown);
-
-export type ImportGetCustomerImportTemplateError = unknown;
-
-export type ImportExportAllCustomersResponse = (unknown);
-
-export type ImportExportAllCustomersError = unknown;

@@ -51,6 +51,7 @@ exclude = ["venv", ".venv", "alembic"]
 warn_return_any = false
 warn_unused_ignores = false
 ignore_missing_imports = true
+implicit_reexport = true
 
 # Ignore SQLModel/SQLAlchemy type issues that can't be fixed
 [[tool.mypy.overrides]]
@@ -100,6 +101,7 @@ ignore = [
     "W191",  # indentation contains tabs
     "B904",  # Allow raising exceptions without from e, for HTTPException
 ]
+per-file-ignores = {"app/models/__init__.py" = ["F401", "I001"]}
 
 [tool.ruff.lint.pyupgrade]
 # Preserve types, even if a file imports `from __future__ import annotations`.

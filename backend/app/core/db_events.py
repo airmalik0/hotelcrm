@@ -1,7 +1,7 @@
 """
 Database event handlers for automatic field updates
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import event
@@ -20,7 +20,7 @@ def setup_db_events() -> None:
     for model in models_with_updated_at:
         @event.listens_for(model, "before_update")
         def update_updated_at(mapper: Any, connection: Any, target: Any) -> None:  # noqa: ARG001
-            target.updated_at = datetime.utcnow()
+            target.updated_at = datetime.now(timezone.utc)
 
     # Special handler for Customer to ensure statistics are never negative
     @event.listens_for(Customer, "before_update")

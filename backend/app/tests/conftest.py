@@ -12,6 +12,7 @@ Architecture Testing Principles:
 """
 import os
 from collections.abc import Generator
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -74,10 +75,10 @@ def db(engine: Engine) -> Generator[Session, None, None]:
     # If the application code calls session.commit(),
     # it will only commit the nested transaction
     @event.listens_for(session, "after_transaction_end")
-    def restart_savepoint(_session, transaction):  # noqa: ARG001
+    def restart_savepoint(_session: Session, transaction: Any) -> None:  # noqa: ARG001
         """Restart savepoint after nested transaction ends"""
         nonlocal nested
-        if transaction.nested and not transaction._parent.nested:
+        if transaction.nested and not transaction._parent.nested:  # type: ignore[attr-defined]
             # Check if connection is still valid
             if connection.closed:
                 return

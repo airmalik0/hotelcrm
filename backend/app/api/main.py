@@ -4,9 +4,7 @@ from app.api.routes import (
     audit,
     bookings,
     customers,
-    data_import,
     login,
-    reports,
     rooms,
     users,
     utils,
@@ -20,7 +18,5 @@ api_router.include_router(rooms.router, prefix="/rooms", tags=["rooms"])
 api_router.include_router(customers.router, prefix="/customers", tags=["customers"])
 api_router.include_router(bookings.router, prefix="/bookings", tags=["bookings"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
-api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
-api_router.include_router(data_import.router, prefix="/import", tags=["import"])
 
 

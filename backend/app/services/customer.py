@@ -1,3 +1,5 @@
+import uuid
+
 from sqlmodel import Session
 
 from app.crud.customer import customer as crud_customer
@@ -25,17 +27,13 @@ class CustomerService:
 
         return self.crud.update(self.session, db_obj=customer, obj_in=customer_in)
 
-    def delete_customer(self, customer_id: str) -> Customer | None:
+    def delete_customer(self, customer_id: uuid.UUID) -> Customer | None:
         """Delete customer with validation."""
-        from uuid import UUID
-
         from app.crud.booking import booking as crud_booking
 
-        # Convert string to UUID
-        customer_uuid = UUID(customer_id)
-
         # Check for existing bookings
-        if crud_booking.count_filtered(self.session, customer_id=customer_uuid) > 0:
-            raise ValueError("Cannot delete customer with existing bookings")
+        booking_count = crud_booking.count_filtered(self.session, customer_id=customer_id)
+        if booking_count > 0:
+            raise ValueError(f"Cannot delete customer with {booking_count} existing booking(s)")
 
-        return self.crud.delete(self.session, id=customer_uuid)
+        return self.crud.delete(self.session, id=customer_id)

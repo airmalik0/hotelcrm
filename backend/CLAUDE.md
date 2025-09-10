@@ -192,11 +192,18 @@ async def bg_task(job_id: UUID):
         # Work with new session
 ```
 
-### Validation Strategy
-- **Models**: Structural validation (types, formats, regex)
-- **Services**: Business validation (uniqueness, availability)
-- **Routers**: Request validation and error formatting
+### Validation Principles
+- **Models**: define data structure and local invariants of a single entity (types, ranges, formats, simple dependencies like "B after A"). Contain pure calculations. Do not touch the database or other subsystems.
+- **Services**: implement business rules that depend on system state and multiple entities (uniqueness, availability/overlaps, state transitions, cascading effects, aggregate/stat updates). Execute transactionally.
+- **HTTP layer**: accept/validate input and translate domain errors into proper HTTP responses. No business logic.
 
+### Domain Services (Aggregates/Stats)
+- **Purpose**: maintain derived data and invariants that cannot be expressed locally on a single entity.
+- **Approach**:
+  - Incremental updates within the same transaction as primary data changes; use record-level locks under contention; prevent negative values.
+  - Full recomputation for consistency repairs and backfills; run as background/admin operations.
+- **Time**: rely on business event time (e.g., period start), always use timezone-aware UTC; store timestamps in the DB with timezone support.
+- **Reliability**: avoid side effects outside transactions; keep operations idempotent; index fields used in filters and aggregates.
 
 **ALWAYS import `select` from `sqlmodel`, NOT `sqlalchemy`!**
 ```

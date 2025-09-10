@@ -14,7 +14,7 @@ from app.models import (
     BookingUpdate,
     Message,
 )
-from app.services.booking_service import BookingService
+from app.services.booking import BookingService
 
 router = APIRouter()
 
@@ -90,11 +90,10 @@ def create_booking(
             entity_name=entity_name,
         )
 
-        # Commit and refresh
+        # Commit everything
         session.commit()
-        session.refresh(booking)
 
-        # Reload with relationships
+        # Get booking with relationships in one query
         return crud_booking.get_with_relations(session, booking_id=booking.id)
 
     except ValueError as e:

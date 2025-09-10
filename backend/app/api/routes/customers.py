@@ -13,6 +13,7 @@ from app.models import (
     CustomerUpdate,
     Message,
 )
+from app.services.customer import CustomerService
 
 router = APIRouter()
 
@@ -54,17 +55,18 @@ def read_customer(
 def create_customer(
     *,
     session: SessionDep,
-    current_user: CurrentUser,  # noqa: ARG001
+    current_user: CurrentUser,
     customer_in: CustomerCreate,
 ) -> Any:
     """
     Create new customer.
     """
-    # Check if phone exists (phone is required in CustomerCreate)
-    if customer_in.phone and crud_customer.get_by_phone(session, phone=customer_in.phone):
-        raise HTTPException(status_code=400, detail="Phone number already registered")
+    service = CustomerService(session)
 
-    customer = crud_customer.create(session, obj_in=customer_in)
+    try:
+        customer = service.create_customer(customer_in)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Log audit in the same transaction
     entity_name = get_entity_name("customer", customer)
@@ -87,7 +89,7 @@ def create_customer(
 def update_customer(
     *,
     session: SessionDep,
-    current_user: CurrentUser,  # noqa: ARG001
+    current_user: CurrentUser,
     customer_id: uuid.UUID,
     customer_in: CustomerUpdate,
 ) -> Any:
@@ -98,16 +100,16 @@ def update_customer(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    # Check phone uniqueness if changing
-    if customer_in.phone and customer_in.phone != customer.phone:
-        if crud_customer.get_by_phone(session, phone=customer_in.phone):
-            raise HTTPException(status_code=400, detail="Phone number already in use")
+    service = CustomerService(session)
 
     # Get old and new values for audit
     update_dict = customer_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(customer, update_dict)
 
-    customer = crud_customer.update(session, db_obj=customer, obj_in=customer_in)
+    try:
+        customer = service.update_customer(customer, customer_in)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Log audit if there were changes
     if old_values:
@@ -132,7 +134,7 @@ def update_customer(
 @router.delete("/{customer_id}", response_model=Message)
 def delete_customer(
     session: SessionDep,
-    current_user: CurrentUser,  # noqa: ARG001
+    current_user: CurrentUser,
     customer_id: uuid.UUID,
 ) -> Any:
     """
@@ -142,14 +144,7 @@ def delete_customer(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    # Check for existing bookings
-    from app.crud.booking import booking as crud_booking
-    booking_count = crud_booking.count_filtered(session, customer_id=customer_id)
-    if booking_count > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot delete customer with {booking_count} existing booking(s)",
-        )
+    service = CustomerService(session)
 
     # Log audit before deletion
     entity_name = get_entity_name("customer", customer)
@@ -162,6 +157,10 @@ def delete_customer(
         entity_name=entity_name,
     )
 
-    crud_customer.delete(session, id=customer_id)
+    try:
+        service.delete_customer(customer_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     session.commit()
     return Message(message="Customer deleted successfully")

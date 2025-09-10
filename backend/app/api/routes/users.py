@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import CurrentUser, SessionDep, require_admin
 from app.core.audit import get_change_values, get_entity_name, log_audit
-from app.core.security import get_password_hash, verify_password
 from app.crud.user import user as crud_user
 from app.models import (
     Message,
@@ -17,6 +16,7 @@ from app.models import (
     UserUpdate,
     UserUpdateMe,
 )
+from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -38,14 +38,12 @@ def create_user(*, session: SessionDep, current_user: CurrentUser, user_in: User
     """
     Create new user. Only admin can create users.
     """
-    existing_user = crud_user.get_by_username(session, username=user_in.username)
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this username already exists in the system.",
-        )
+    service = UserService(session)
 
-    user = crud_user.create(session, obj_in=user_in)
+    try:
+        user = service.create_user(user_in)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Log audit in the same transaction
     entity_name = get_entity_name("user", user)
@@ -71,22 +69,16 @@ def update_user_me(
     """
     Update own user.
     """
+    service = UserService(session)
 
-    if user_in.username:
-        existing_user = crud_user.get_by_username(
-            session, username=user_in.username
-        )
-        if existing_user and existing_user.id != current_user.id:
-            raise HTTPException(
-                status_code=409, detail="User with this username already exists"
-            )
+    # Get old values for audit
     user_data = user_in.model_dump(exclude_unset=True)
-
-    # Get old and new values for audit
     old_values, new_values = get_change_values(current_user, user_data)
 
-    # Use CRUD to update user
-    current_user = crud_user.update(session, db_obj=current_user, obj_in=user_in)
+    try:
+        current_user = service.update_user_me(current_user, user_in)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
     # Log audit if there were changes
     if old_values:
@@ -115,15 +107,13 @@ def update_password_me(
     """
     Update own password.
     """
-    if not verify_password(body.current_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-    if body.current_password == body.new_password:
-        raise HTTPException(
-            status_code=400, detail="New password cannot be the same as the current one"
-        )
-    # Update password through CRUD
-    update_data = UserUpdate(hashed_password=get_password_hash(body.new_password))
-    current_user = crud_user.update(session, db_obj=current_user, obj_in=update_data)
+    service = UserService(session)
+
+    try:
+        current_user = service.update_password(current_user, body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     session.flush()  # Use flush instead of commit
 
     # Log audit for password change in same transaction
@@ -155,24 +145,23 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete own user.
     """
-    if current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
+    service = UserService(session)
+
+    try:
+        # Log audit before deletion
+        entity_name = get_entity_name("user", current_user)
+        log_audit(
+            session=session,
+            user=current_user,
+            action="self_deleted",
+            entity_type="user",
+            entity_id=current_user.id,
+            entity_name=entity_name,
         )
 
-    # Log audit before deletion
-    entity_name = get_entity_name("user", current_user)
-    log_audit(
-        session=session,
-        user=current_user,
-        action="self_deleted",
-        entity_type="user",
-        entity_id=current_user.id,
-        entity_name=entity_name,
-    )
-
-    # Use CRUD to delete user
-    crud_user.delete(session, id=current_user.id)
+        service.delete_user_me(current_user)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     session.commit()
     return Message(message="User deleted successfully")
 
@@ -183,14 +172,13 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     Create new user without the need to be logged in.
     Note: In production, this endpoint should have rate limiting and possibly CAPTCHA.
     """
-    existing_user = crud_user.get_by_username(session, username=user_in.username)
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this username already exists in the system",
-        )
+    service = UserService(session)
+
     user_create = UserCreate.model_validate(user_in)
-    user = crud_user.create(session, obj_in=user_create)
+    try:
+        user = service.create_user(user_create)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Log audit for self-registration
     entity_name = get_entity_name("user", user)
@@ -240,27 +228,23 @@ def update_user(
     """
     Update a user. Only admin can update users.
     """
-
     user = crud_user.get(session, id=user_id)
     if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
-    if user_in.username:
-        existing_user = crud_user.get_by_username(
-            session, username=user_in.username
-        )
-        if existing_user and existing_user.id != user_id:
-            raise HTTPException(
-                status_code=409, detail="User with this username already exists"
-            )
+
+    service = UserService(session)
 
     # Get old values before update
     update_data = user_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(user, update_data)
 
-    user = crud_user.update(session, db_obj=user, obj_in=user_in)
+    try:
+        user = service.update_user(user, user_in)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
     # Log audit if there were changes
     if old_values:
@@ -292,30 +276,23 @@ def delete_user(
     user = crud_user.get(session, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if user == current_user:
-        if user.is_superuser:
-            raise HTTPException(
-                status_code=403, detail="Super users are not allowed to delete themselves"
-            )
-        raise HTTPException(
-            status_code=403, detail="You cannot delete your own account. Use /me endpoint instead."
-        )
-    if user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="Cannot delete superuser accounts"
-        )
-    # Log audit before deletion
-    entity_name = get_entity_name("user", user)
-    log_audit(
-        session=session,
-        user=current_user,
-        action="deleted",
-        entity_type="user",
-        entity_id=user.id,
-        entity_name=entity_name,
-    )
 
-    # Use CRUD to delete user
-    crud_user.delete(session, id=user.id)
+    service = UserService(session)
+
+    try:
+        # Log audit before deletion
+        entity_name = get_entity_name("user", user)
+        log_audit(
+            session=session,
+            user=current_user,
+            action="deleted",
+            entity_type="user",
+            entity_id=user.id,
+            entity_name=entity_name,
+        )
+
+        service.delete_user(user, current_user)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     session.commit()
     return Message(message="User deleted successfully")
