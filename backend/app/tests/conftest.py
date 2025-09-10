@@ -21,9 +21,13 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.core.config import settings
 from app.core.db import init_db
 from app.main import app
-from app.models import Booking, Customer, Room, User
-from app.tests.utils.user import authentication_token_from_username
-from app.tests.utils.utils import get_superuser_token_headers
+from app.models import User
+from app.tests.crud_factories import UserCRUDFactory
+from app.tests.utils.user import (
+    authentication_token_from_username,
+    get_superuser_token_headers,
+    user_authentication_headers,
+)
 
 if os.getenv("TESTING_IN_DOCKER"):
     # If running tests inside Docker container
@@ -130,28 +134,30 @@ def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]
 @pytest.fixture(scope="function")
 def admin_user(db: Session) -> User:
     """Create an admin user for testing."""
-    from app.tests.factories.user_factory import UserFactory
-    return UserFactory.create_admin_user(db)
+    user = UserCRUDFactory.create_admin_user(db)
+    db.commit()
+    return user
 
 
 @pytest.fixture(scope="function")
 def manager_user(db: Session) -> User:
     """Create a manager user for testing."""
-    from app.tests.factories.user_factory import UserFactory
-    return UserFactory.create_manager_user(db)
+    user = UserCRUDFactory.create_manager_user(db)
+    db.commit()
+    return user
 
 
 @pytest.fixture(scope="function")
 def host_user(db: Session) -> User:
     """Create a host user for testing."""
-    from app.tests.factories.user_factory import UserFactory
-    return UserFactory.create_host_user(db)
+    user = UserCRUDFactory.create_host_user(db)
+    db.commit()
+    return user
 
 
 @pytest.fixture(scope="function")
 def admin_headers(client: TestClient, admin_user: User, db: Session) -> dict[str, str]:  # noqa: ARG001
     """Get admin user authentication headers."""
-    from app.tests.utils.user import user_authentication_headers
     return user_authentication_headers(
         client=client,
         username=admin_user.username,
@@ -162,7 +168,6 @@ def admin_headers(client: TestClient, admin_user: User, db: Session) -> dict[str
 @pytest.fixture(scope="function")
 def manager_headers(client: TestClient, manager_user: User, db: Session) -> dict[str, str]:  # noqa: ARG001
     """Get manager user authentication headers."""
-    from app.tests.utils.user import user_authentication_headers
     return user_authentication_headers(
         client=client,
         username=manager_user.username,
@@ -173,7 +178,6 @@ def manager_headers(client: TestClient, manager_user: User, db: Session) -> dict
 @pytest.fixture(scope="function")
 def host_headers(client: TestClient, host_user: User, db: Session) -> dict[str, str]:  # noqa: ARG001
     """Get host user authentication headers."""
-    from app.tests.utils.user import user_authentication_headers
     return user_authentication_headers(
         client=client,
         username=host_user.username,
@@ -181,29 +185,10 @@ def host_headers(client: TestClient, host_user: User, db: Session) -> dict[str, 
     )
 
 
-@pytest.fixture(scope="function")
-def test_room(db: Session) -> Room:
-    """Create a test room."""
-    from app.tests.factories.room_factory import RoomFactory
-    return RoomFactory.create_test_room(db)
-
-
-@pytest.fixture(scope="function")
-def test_customer(db: Session) -> Customer:
-    """Create a test customer."""
-    from app.tests.factories.customer_factory import CustomerFactory
-    return CustomerFactory.create_test_customer(db)
-
-
-@pytest.fixture(scope="function")
-def test_booking(db: Session, test_customer: Customer, test_room: Room) -> Booking:
-    """Create a test booking."""
-    from app.tests.factories.booking_factory import BookingFactory
-    return BookingFactory.create_test_booking(
-        db,
-        customer=test_customer,
-        room=test_room
-    )
+# Legacy factory fixtures removed - use API factories instead
+# APICustomerFactory.create_customer(client, headers)
+# APIRoomFactory.create_room(client, headers)
+# APIBookingFactory.create_booking(client, headers)
 
 
 

@@ -1,5 +1,83 @@
 # Testing Best Practices & Common Pitfalls
 
+## API Factories Ideology
+
+API Factories are specialized test utilities designed to create test data through HTTP API endpoints, ensuring all business logic is properly executed.
+
+### Core Principles of API Factories
+
+1. **Single Responsibility**: Factories ONLY create test data via POST endpoints
+2. **Happy Path Only**: Factories create valid, working data - never invalid states
+3. **No Business Logic Testing**: Factories prepare data, tests verify behavior
+4. **Deterministic Data**: Use counters for predictable, unique values
+
+### What Belongs in Factories
+
+✅ **DO include:**
+- Creation methods via POST endpoints (`create_customer`, `create_room`)
+- State preparation methods (`create_checked_in_booking`, `create_loyal_customer`)
+- Essential utilities (`get_next_room_number`, `assert_success`)
+- Complex setup scenarios (`create_customer_with_history`)
+
+❌ **DON'T include:**
+- Simple UPDATE/DELETE operations (unless part of state preparation)
+- GET operations (except for polling async operations)
+- Business logic verification methods
+- Error scenario creation methods
+- Test assertions beyond basic success checks
+
+### What Belongs in Tests
+
+Tests should contain:
+- Business logic verification
+- Error scenarios and edge cases
+- Validation of side effects
+- Complex workflow testing
+- All assertions about business rules
+
+### Factory Usage Example
+
+```python
+# FACTORY: Only creates data
+customer = APICustomerFactory.create_loyal_customer(
+    client, headers, 
+    bookings_count=5
+)
+
+# TEST: Verifies business logic
+def test_loyal_customer_gets_discount():
+    customer = APICustomerFactory.create_loyal_customer(bookings_count=5)
+    
+    # Test makes the API call
+    booking = client.post("/bookings/", json={...})
+    
+    # Test verifies business rule
+    assert booking.json()["discount"] == 10
+    
+    # Use helper for common verifications
+    APITestHelper.verify_customer_stats(
+        client, headers, customer["id"], 
+        expected_bookings=6, expected_spent=1000.0
+    )
+```
+
+### Directory Structure
+```
+tests/
+├── api_factories/       # Data creation via API
+│   ├── base.py         # Base factory with utilities
+│   ├── customer.py     # Customer creation
+│   ├── room.py         # Room creation
+│   ├── booking.py      # Booking creation
+│   └── user.py         # User creation & auth
+├── helpers/            # Test utilities
+│   └── api_helpers.py  # Response validation & verification
+└── api/routes/         # Actual tests
+    ├── test_customers.py
+    ├── test_bookings.py
+    └── test_rooms.py
+```
+
 ## Core Testing Principles
 
 ### 1. Single Level of Abstraction Principle
@@ -244,23 +322,96 @@ assert "admin" in response.json()["detail"].lower()
 
 ## Running Tests
 
+### 🔴 IMPORTANT: Always Run Tests in Docker Container
+
+Tests require database access and proper environment configuration. **ALWAYS use Docker for testing.**
+
+### Docker Testing (Recommended)
+
+#### Easy Way: Use Test Script
+
 ```bash
 # Run all tests
-uv run python -m pytest
+./scripts/test.sh
+
+# Quick test (stops on first failure)
+./scripts/test.sh quick
+
+# Verbose output
+./scripts/test.sh verbose
+
+# With coverage
+./scripts/test.sh coverage
+
+# Run only failed tests from last run
+./scripts/test.sh failed
 
 # Run specific test file
-uv run python -m pytest app/tests/api/routes/test_users.py
+./scripts/test.sh app/tests/api/routes/test_users.py
+```
+
+#### Manual Way: Direct Docker Commands
+
+```bash
+# Run all tests in Docker container
+docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest"
+
+# Run specific test file
+docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest app/tests/api/routes/test_users.py"
+
+# Run with verbose output
+docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest -xvs"
 
 # Run with coverage
-uv run python -m pytest --cov=app --cov-report=term-missing
+docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest --cov=app --cov-report=term-missing"
 
-# Run in Docker (required for database access)
-docker exec hotelcrm-backend-1 uv run python -m pytest
+# Quick test run (stops on first failure)
+docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest -x"
 ```
+
+### Environment Variables
+
+- **`TESTING_IN_DOCKER=1`**: MUST be set when running tests in Docker container
+  - When set: Tests connect to `db` container using internal Docker network
+  - When not set: Tests try to connect to `localhost:5433` (for local development)
+
+### Local Testing (Not Recommended)
+
+If you must run tests locally (not in Docker):
+```bash
+# Requires PostgreSQL exposed on port 5433
+uv run python -m pytest
+
+# Will use: postgresql://postgres:PASSWORD@localhost:5433/test_app
+```
+
+⚠️ **Warning**: Local testing requires:
+- PostgreSQL running on port 5433
+- Correct password in conftest.py
+- All dependencies installed locally
+- Proper environment setup
 
 ## Test Database
 
-- Tests use separate database: `test_app` (vs production `app`)
-- Tables created at session start, dropped at session end
-- Data cleaned between each test for isolation
-- Admin user recreated for each test via `init_db()`
+### Database Configuration
+
+- **Test database name**: `test_app` (production uses `app`)
+- **Connection in Docker**: `postgresql://postgres:PASSWORD@db/test_app`
+- **Connection from host**: `postgresql://postgres:PASSWORD@localhost:5433/test_app`
+
+### Test Isolation
+
+1. **Session-level**: Tables created at start, dropped at end
+2. **Function-level**: Each test runs in transaction that rolls back
+3. **Data cleanup**: All data deleted after each test
+4. **Admin user**: Recreated for each test via `init_db()`
+
+### Database States
+
+```
+Before Test Suite → Create test_app database
+Before Each Test  → Begin transaction, create admin user
+During Test       → All operations in transaction
+After Each Test   → Rollback transaction, delete all data
+After Test Suite  → Drop all tables
+```
