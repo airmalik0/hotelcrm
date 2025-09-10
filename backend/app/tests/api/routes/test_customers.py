@@ -8,16 +8,17 @@ Tests follow CRUD testing ideology:
 - Clean database state for each test
 """
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.config import settings
 from app.models import Customer
 from app.tests.factories.booking_factory import BookingFactory
 from app.tests.factories.customer_factory import CustomerFactory
+from app.tests.helpers.api_helpers import APITestHelper
 
 
 class TestCustomersCreate:
@@ -42,17 +43,20 @@ class TestCustomersCreate:
             headers=host_headers,
             json=data,
         )
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["first_name"] == "John"
         assert content["last_name"] == "Doe"
         assert content["phone"] == "+1234567890"
         assert "id" in content
 
-        # Verify in database
-        customer = db.exec(select(Customer).where(Customer.phone == "+1234567890")).first()
-        assert customer is not None
-        assert customer.first_name == "John"
+        # Verify via API GET request instead of direct database query
+        verify_response = client.get(
+            f"{settings.API_V1_STR}/customers/{content['id']}",
+            headers=host_headers,
+        )
+        verify_content = APITestHelper.assert_success_response(verify_response, 200)
+        assert verify_content["first_name"] == "John"
+        assert verify_content["phone"] == "+1234567890"
 
     def test_create_customer_name_normalization(
         self,
@@ -328,8 +332,8 @@ class TestCustomersRead:
             db,
             total_spent=1500.0,
             total_bookings=5,
-            first_booking_date=datetime.utcnow() - timedelta(days=30),
-            last_booking_date=datetime.utcnow() - timedelta(days=2),
+            first_booking_date=datetime.now(timezone.utc) - timedelta(days=30),
+            last_booking_date=datetime.now(timezone.utc) - timedelta(days=2),
         )
 
         response = client.get(
@@ -365,15 +369,18 @@ class TestCustomersUpdate:
             headers=host_headers,
             json=update_data,
         )
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["first_name"] == "Updated"
         assert content["district"] == "Uptown"
         assert content["notes"] == "VIP customer"
 
-        # Verify in database
-        db.refresh(test_customer)
-        assert test_customer.first_name == "Updated"
+        # Verify via API GET request instead of database refresh
+        verify_response = client.get(
+            f"{settings.API_V1_STR}/customers/{test_customer.id}",
+            headers=host_headers,
+        )
+        verify_content = APITestHelper.assert_success_response(verify_response, 200)
+        assert verify_content["first_name"] == "Updated"
 
     def test_update_customer_phone_unique(
         self,
@@ -582,8 +589,8 @@ class TestCustomersStatistics:
         booking_data = {
             "customer_id": str(test_customer.id),
             "room_id": str(test_room.id),
-            "check_in": datetime.utcnow().isoformat(),
-            "check_out": (datetime.utcnow() + timedelta(days=nights)).isoformat(),
+            "check_in": datetime.now(timezone.utc).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=nights)).isoformat(),
             "total_amount": total_amount,
             "payment_method": "cash",
         }
@@ -594,12 +601,16 @@ class TestCustomersStatistics:
         )
         assert response.status_code == 200
 
-        # Check updated stats
-        db.refresh(test_customer)
-        assert test_customer.total_bookings == 1
-        assert test_customer.total_spent == total_amount
-        assert test_customer.first_booking_date is not None
-        assert test_customer.last_booking_date is not None
+        # Check updated stats via API instead of database refresh
+        stats_response = client.get(
+            f"{settings.API_V1_STR}/customers/{test_customer.id}",
+            headers=host_headers,
+        )
+        stats_content = APITestHelper.assert_success_response(stats_response, 200)
+        assert stats_content["total_bookings"] == 1
+        assert stats_content["total_spent"] == total_amount
+        assert stats_content["first_booking_date"] is not None
+        assert stats_content["last_booking_date"] is not None
 
     def test_customer_search_case_insensitive(
         self,

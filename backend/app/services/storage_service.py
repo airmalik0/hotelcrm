@@ -2,7 +2,7 @@ import os
 import tempfile
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -42,7 +42,7 @@ class LocalStorageService(StorageService):
         self.base_path.mkdir(parents=True, exist_ok=True)
 
     def _get_file_path(self, report_type: str, filename: str) -> Path:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         year_month = now.strftime("%Y-%m")
         dir_path = self.base_path / year_month
         dir_path.mkdir(parents=True, exist_ok=True)
@@ -97,7 +97,7 @@ class LocalStorageService(StorageService):
         return sorted(files)
 
     def cleanup_old_files(self, days: int = 30) -> int:
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
         deleted_count = 0
 
         for file_path in self.base_path.rglob("*"):

@@ -142,8 +142,6 @@ export type CustomerUpdate = {
     notes?: (string | null);
 };
 
-export type GroupByPeriod = 'hour' | 'day' | 'week' | 'month' | 'year';
-
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -171,8 +169,6 @@ export type ImportValidationError = {
     error: string;
 };
 
-export type JobStatus = 'queued' | 'processing' | 'completed' | 'failed';
-
 export type Message = {
     message: string;
 };
@@ -181,54 +177,33 @@ export type PaymentMethod = 'cash' | 'transfer' | 'terminal';
 
 export type ReportFormat = 'json' | 'csv' | 'excel' | 'pdf';
 
-export type ReportGenerationRequest = {
-    start_date: string;
-    end_date: string;
-    /**
-     * all|standard|vip
-     */
-    room_type?: (string | null);
-    room_id?: (string | null);
-    group_by?: GroupByPeriod;
+export type ReportJobPublic = {
+    type: ReportJobType;
+    status?: ReportJobStatus;
     format?: ReportFormat;
-    include_charts?: boolean;
-};
-
-export type ReportJobResponse = {
-    job_id: string;
-    status: JobStatus;
-    message?: (string | null);
-};
-
-export type ReportJobStatus = {
-    job_id: string;
-    status: JobStatus;
-    progress: number;
-    message?: (string | null);
+    params?: ({
+    [key: string]: unknown;
+} | null);
+    error_message?: (string | null);
+    progress?: number;
     result_path?: (string | null);
-    error?: (string | null);
+    result_size?: (number | null);
+    id: string;
+    user_id: string;
     created_at: string;
-    completed_at?: (string | null);
+    started_at: (string | null);
+    completed_at: (string | null);
+    expires_at: (string | null);
 };
 
-export type ReportListResponse = {
-    reports: Array<ReportMetadata>;
-    total: number;
+export type ReportJobsPublic = {
+    data: Array<ReportJobPublic>;
+    count: number;
 };
 
-export type ReportMetadata = {
-    job_id: string;
-    report_type: ReportType;
-    format: ReportFormat;
-    parameters: {
-        [key: string]: unknown;
-    };
-    created_at: string;
-    file_path?: (string | null);
-    file_size?: (number | null);
-};
+export type ReportJobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
-export type ReportType = 'occupancy_standard' | 'occupancy_daily_pattern' | 'occupancy_weekly_pattern' | 'occupancy_seasonal_trend' | 'revenue' | 'top_customers' | 'repeat_guest_rate' | 'payment_methods' | 'geographic_analysis';
+export type ReportJobType = 'booking_summary' | 'customer_report' | 'room_occupancy' | 'revenue_report' | 'audit_log_export' | 'full_data_export';
 
 export type RoomCreate = {
     room_number: string;
@@ -274,14 +249,6 @@ export type RoomUpdate = {
 export type Token = {
     access_token: string;
     token_type?: string;
-};
-
-export type TopCustomersRequest = {
-    start_date: string;
-    end_date: string;
-    limit?: number;
-    sort_by?: string;
-    format?: ReportFormat;
 };
 
 export type UpdatePassword = {
@@ -656,87 +623,29 @@ export type AuditGetAuditStatsResponse = (unknown);
 
 export type AuditGetAuditStatsError = unknown;
 
-export type ReportsGenerateOccupancyReportData = {
-    body: ReportGenerationRequest;
+export type ReportsGenerateReportData = {
+    body?: ({
+    [key: string]: unknown;
+} | null);
+    query: {
+        format?: ReportFormat;
+        report_type: ReportJobType;
+    };
 };
 
-export type ReportsGenerateOccupancyReportResponse = (ReportJobResponse);
+export type ReportsGenerateReportResponse = (ReportJobPublic);
 
-export type ReportsGenerateOccupancyReportError = (HTTPValidationError);
+export type ReportsGenerateReportError = (HTTPValidationError);
 
-export type ReportsGenerateDailyPatternReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGenerateDailyPatternReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateDailyPatternReportError = (HTTPValidationError);
-
-export type ReportsGenerateWeeklyPatternReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGenerateWeeklyPatternReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateWeeklyPatternReportError = (HTTPValidationError);
-
-export type ReportsGenerateSeasonalTrendReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGenerateSeasonalTrendReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateSeasonalTrendReportError = (HTTPValidationError);
-
-export type ReportsGenerateRevenueReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGenerateRevenueReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateRevenueReportError = (HTTPValidationError);
-
-export type ReportsGenerateTopCustomersReportData = {
-    body: TopCustomersRequest;
-};
-
-export type ReportsGenerateTopCustomersReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateTopCustomersReportError = (HTTPValidationError);
-
-export type ReportsGenerateRepeatGuestRateReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGenerateRepeatGuestRateReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateRepeatGuestRateReportError = (HTTPValidationError);
-
-export type ReportsGeneratePaymentMethodsReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGeneratePaymentMethodsReportResponse = (ReportJobResponse);
-
-export type ReportsGeneratePaymentMethodsReportError = (HTTPValidationError);
-
-export type ReportsGenerateGeographicAnalysisReportData = {
-    body: ReportGenerationRequest;
-};
-
-export type ReportsGenerateGeographicAnalysisReportResponse = (ReportJobResponse);
-
-export type ReportsGenerateGeographicAnalysisReportError = (HTTPValidationError);
-
-export type ReportsGetJobStatusData = {
+export type ReportsGetReportStatusData = {
     path: {
         job_id: string;
     };
 };
 
-export type ReportsGetJobStatusResponse = (ReportJobStatus);
+export type ReportsGetReportStatusResponse = (ReportJobPublic);
 
-export type ReportsGetJobStatusError = (HTTPValidationError);
+export type ReportsGetReportStatusError = (HTTPValidationError);
 
 export type ReportsDownloadReportData = {
     path: {
@@ -748,28 +657,23 @@ export type ReportsDownloadReportResponse = (unknown);
 
 export type ReportsDownloadReportError = (HTTPValidationError);
 
-export type ReportsListReportsData = {
+export type ReportsListJobsData = {
     query?: {
         limit?: number;
         skip?: number;
+        status?: (ReportJobStatus | null);
     };
 };
 
-export type ReportsListReportsResponse = (ReportListResponse);
+export type ReportsListJobsResponse = (ReportJobsPublic);
 
-export type ReportsListReportsError = (HTTPValidationError);
+export type ReportsListJobsError = (HTTPValidationError);
 
-export type ReportsCleanupOldReportsData = {
-    query?: {
-        days?: number;
-    };
-};
-
-export type ReportsCleanupOldReportsResponse = ({
-    [key: string]: unknown;
+export type ReportsCleanupExpiredReportsResponse = ({
+    [key: string]: (number);
 });
 
-export type ReportsCleanupOldReportsError = (HTTPValidationError);
+export type ReportsCleanupExpiredReportsError = unknown;
 
 export type ImportValidateCustomerCsvData = {
     body: Body_import_validate_customer_csv;

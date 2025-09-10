@@ -884,12 +884,6 @@ export const CustomersPublicSchema = {
     title: 'CustomersPublic'
 } as const;
 
-export const GroupByPeriodSchema = {
-    type: 'string',
-    enum: ['hour', 'day', 'week', 'month', 'year'],
-    title: 'GroupByPeriod'
-} as const;
-
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -1004,12 +998,6 @@ export const ImportValidationErrorSchema = {
     title: 'ImportValidationError'
 } as const;
 
-export const JobStatusSchema = {
-    type: 'string',
-    enum: ['queued', 'processing', 'completed', 'failed'],
-    title: 'JobStatus'
-} as const;
-
 export const MessageSchema = {
     properties: {
         message: {
@@ -1034,119 +1022,54 @@ export const ReportFormatSchema = {
     title: 'ReportFormat'
 } as const;
 
-export const ReportGenerationRequestSchema = {
+export const ReportJobPublicSchema = {
     properties: {
-        start_date: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Start Date'
+        type: {
+            '$ref': '#/components/schemas/ReportJobType'
         },
-        end_date: {
-            type: 'string',
-            format: 'date-time',
-            title: 'End Date'
-        },
-        room_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Room Type',
-            description: 'all|standard|vip'
-        },
-        room_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Room Id'
-        },
-        group_by: {
-            '$ref': '#/components/schemas/GroupByPeriod',
-            default: 'day'
+        status: {
+            '$ref': '#/components/schemas/ReportJobStatus',
+            default: 'pending'
         },
         format: {
             '$ref': '#/components/schemas/ReportFormat',
             default: 'json'
         },
-        include_charts: {
-            type: 'boolean',
-            title: 'Include Charts',
-            default: false
-        }
-    },
-    type: 'object',
-    required: ['start_date', 'end_date'],
-    title: 'ReportGenerationRequest'
-} as const;
-
-export const ReportJobResponseSchema = {
-    properties: {
-        job_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Job Id'
-        },
-        status: {
-            '$ref': '#/components/schemas/JobStatus'
-        },
-        message: {
+        params: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'object'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Message'
-        }
-    },
-    type: 'object',
-    required: ['job_id', 'status'],
-    title: 'ReportJobResponse'
-} as const;
-
-export const ReportJobStatusSchema = {
-    properties: {
-        job_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Job Id'
+            title: 'Params'
         },
-        status: {
-            '$ref': '#/components/schemas/JobStatus'
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
         },
         progress: {
             type: 'integer',
             maximum: 100,
             minimum: 0,
-            title: 'Progress'
-        },
-        message: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Message'
+            title: 'Progress',
+            default: 0
         },
         result_path: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'string',
+                    maxLength: 500
                 },
                 {
                     type: 'null'
@@ -1154,21 +1077,43 @@ export const ReportJobStatusSchema = {
             ],
             title: 'Result Path'
         },
-        error: {
+        result_size: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'integer'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Error'
+            title: 'Result Size'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
         },
         created_at: {
             type: 'string',
             format: 'date-time',
             title: 'Created At'
+        },
+        started_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Started At'
         },
         completed_at: {
             anyOf: [
@@ -1181,86 +1126,54 @@ export const ReportJobStatusSchema = {
                 }
             ],
             title: 'Completed At'
+        },
+        expires_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expires At'
         }
     },
     type: 'object',
-    required: ['job_id', 'status', 'progress', 'created_at'],
+    required: ['type', 'id', 'user_id', 'created_at', 'started_at', 'completed_at', 'expires_at'],
+    title: 'ReportJobPublic'
+} as const;
+
+export const ReportJobStatusSchema = {
+    type: 'string',
+    enum: ['pending', 'processing', 'completed', 'failed', 'cancelled'],
     title: 'ReportJobStatus'
 } as const;
 
-export const ReportListResponseSchema = {
+export const ReportJobTypeSchema = {
+    type: 'string',
+    enum: ['booking_summary', 'customer_report', 'room_occupancy', 'revenue_report', 'audit_log_export', 'full_data_export'],
+    title: 'ReportJobType'
+} as const;
+
+export const ReportJobsPublicSchema = {
     properties: {
-        reports: {
+        data: {
             items: {
-                '$ref': '#/components/schemas/ReportMetadata'
+                '$ref': '#/components/schemas/ReportJobPublic'
             },
             type: 'array',
-            title: 'Reports'
+            title: 'Data'
         },
-        total: {
+        count: {
             type: 'integer',
-            title: 'Total'
+            title: 'Count'
         }
     },
     type: 'object',
-    required: ['reports', 'total'],
-    title: 'ReportListResponse'
-} as const;
-
-export const ReportMetadataSchema = {
-    properties: {
-        job_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Job Id'
-        },
-        report_type: {
-            '$ref': '#/components/schemas/ReportType'
-        },
-        format: {
-            '$ref': '#/components/schemas/ReportFormat'
-        },
-        parameters: {
-            type: 'object',
-            title: 'Parameters'
-        },
-        created_at: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Created At'
-        },
-        file_path: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'File Path'
-        },
-        file_size: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'File Size'
-        }
-    },
-    type: 'object',
-    required: ['job_id', 'report_type', 'format', 'parameters', 'created_at'],
-    title: 'ReportMetadata'
-} as const;
-
-export const ReportTypeSchema = {
-    type: 'string',
-    enum: ['occupancy_standard', 'occupancy_daily_pattern', 'occupancy_weekly_pattern', 'occupancy_seasonal_trend', 'revenue', 'top_customers', 'repeat_guest_rate', 'payment_methods', 'geographic_analysis'],
-    title: 'ReportType'
+    required: ['data', 'count'],
+    title: 'ReportJobsPublic'
 } as const;
 
 export const RoomCreateSchema = {
@@ -1508,41 +1421,6 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
-} as const;
-
-export const TopCustomersRequestSchema = {
-    properties: {
-        start_date: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Start Date'
-        },
-        end_date: {
-            type: 'string',
-            format: 'date-time',
-            title: 'End Date'
-        },
-        limit: {
-            type: 'integer',
-            maximum: 100,
-            minimum: 1,
-            title: 'Limit',
-            default: 10
-        },
-        sort_by: {
-            type: 'string',
-            pattern: '^(revenue|bookings)$',
-            title: 'Sort By',
-            default: 'revenue'
-        },
-        format: {
-            '$ref': '#/components/schemas/ReportFormat',
-            default: 'json'
-        }
-    },
-    type: 'object',
-    required: ['start_date', 'end_date'],
-    title: 'TopCustomersRequest'
 } as const;
 
 export const UpdatePasswordSchema = {

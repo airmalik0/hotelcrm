@@ -1,12 +1,12 @@
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import field_validator, model_validator
 from pydantic_core import core_schema
-from sqlalchemy import JSON, Column, ForeignKey, Uuid
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Uuid
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
@@ -172,8 +172,8 @@ class RoomBase(SQLModel):
 class Room(RoomBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     bookings: list["Booking"] = Relationship(back_populates="room")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def is_status_transition_valid(self, new_status: RoomStatus) -> bool:
         """Check if a room status transition is valid."""
@@ -246,10 +246,10 @@ class Customer(CustomerBase, table=True):
     bookings: list["Booking"] = Relationship(back_populates="customer")
     total_spent: float = Field(default=0.0)
     total_bookings: int = Field(default=0)
-    first_booking_date: datetime | None = None
-    last_booking_date: datetime | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    first_booking_date: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+    last_booking_date: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     tags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
 
 
@@ -333,9 +333,9 @@ class Booking(BookingBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     customer: Optional["Customer"] = Relationship(back_populates="bookings")
     room: Optional["Room"] = Relationship(back_populates="bookings")
-    booking_date: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    booking_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def calculate_total_amount(self, room_price_per_night: float) -> float:
         """Calculate total amount for the booking based on room price and discount."""
@@ -403,7 +403,7 @@ class AuditLog(SQLModel, table=True):
     description: str = Field(max_length=1000)
     old_values: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
     new_values: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
-    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)  # Index for sorting
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)  # Index for sorting
 
     # Relationship to get current username (no back_populates as User doesn't have audit_logs field)
     user: Optional["User"] = Relationship()
@@ -492,7 +492,7 @@ class ReportJob(ReportJobBase, table=True):
             index=True,
         )
     )
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     started_at: datetime | None = None
     completed_at: datetime | None = None
     expires_at: datetime | None = None  # When the report file will be deleted
@@ -504,7 +504,7 @@ class ReportJob(ReportJobBase, table=True):
     def is_expired(self) -> bool:
         """Check if the report has expired."""
         if self.expires_at:
-            return datetime.utcnow() > self.expires_at
+            return datetime.now(timezone.utc) > self.expires_at
         return False
 
     def can_transition_to(self, new_status: ReportJobStatus) -> bool:
@@ -568,7 +568,7 @@ class ReportHistory(ReportHistoryBase, table=True):
             index=True,
         )
     )
-    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationships
     job: Optional["ReportJob"] = Relationship(back_populates="history_entries")

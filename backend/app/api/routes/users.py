@@ -85,8 +85,8 @@ def update_user_me(
     # Get old and new values for audit
     old_values, new_values = get_change_values(current_user, user_data)
 
-    current_user.sqlmodel_update(user_data)
-    session.add(current_user)
+    # Use CRUD to update user
+    current_user = crud_user.update(session, db_obj=current_user, obj_in=user_in)
 
     # Log audit if there were changes
     if old_values:
@@ -121,9 +121,9 @@ def update_password_me(
         raise HTTPException(
             status_code=400, detail="New password cannot be the same as the current one"
         )
-    hashed_password = get_password_hash(body.new_password)
-    current_user.hashed_password = hashed_password
-    session.add(current_user)
+    # Update password through CRUD
+    update_data = UserUpdate(hashed_password=get_password_hash(body.new_password))
+    current_user = crud_user.update(session, db_obj=current_user, obj_in=update_data)
     session.flush()  # Use flush instead of commit
 
     # Log audit for password change in same transaction
@@ -171,7 +171,8 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         entity_name=entity_name,
     )
 
-    session.delete(current_user)
+    # Use CRUD to delete user
+    crud_user.delete(session, id=current_user.id)
     session.commit()
     return Message(message="User deleted successfully")
 
@@ -314,7 +315,7 @@ def delete_user(
         entity_name=entity_name,
     )
 
-    session.delete(user)
+    # Use CRUD to delete user
+    crud_user.delete(session, id=user.id)
     session.commit()
-    return Message(message="User deleted successfully")
     return Message(message="User deleted successfully")

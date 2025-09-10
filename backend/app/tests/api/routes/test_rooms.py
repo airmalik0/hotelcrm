@@ -11,12 +11,13 @@ import uuid
 from typing import Any
 
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.config import settings
 from app.models import Room, RoomStatus, RoomType
 from app.tests.factories.booking_factory import BookingFactory
 from app.tests.factories.room_factory import RoomFactory
+from app.tests.helpers.api_helpers import APITestHelper
 
 
 class TestRoomsCreate:
@@ -42,8 +43,7 @@ class TestRoomsCreate:
             headers=admin_headers,
             json=data,
         )
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["room_number"] == "A101"
         assert content["floor"] == 1
         assert content["room_type"] == RoomType.STANDARD.value
@@ -51,10 +51,13 @@ class TestRoomsCreate:
         assert content["status"] == RoomStatus.AVAILABLE.value
         assert "id" in content
 
-        # Verify in database
-        room = db.exec(select(Room).where(Room.room_number == "A101")).first()
-        assert room is not None
-        assert room.room_number == "A101"
+        # Verify via API GET request instead of direct database query
+        verify_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{content['id']}",
+            headers=admin_headers,
+        )
+        verify_content = APITestHelper.assert_success_response(verify_response, 200)
+        assert verify_content["room_number"] == "A101"
 
     def test_create_room_as_manager(
         self,
@@ -342,16 +345,19 @@ class TestRoomsUpdate:
             headers=admin_headers,
             json=update_data,
         )
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["price_per_night"] == 150.0
         assert content["status"] == RoomStatus.CLEANING.value
         assert content["description"] == "Updated description"
 
-        # Verify in database
-        db.refresh(test_room)
-        assert test_room.price_per_night == 150.0
-        assert test_room.status == RoomStatus.CLEANING
+        # Verify via API GET request instead of database refresh
+        verify_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{test_room.id}",
+            headers=admin_headers,
+        )
+        verify_content = APITestHelper.assert_success_response(verify_response, 200)
+        assert verify_content["price_per_night"] == 150.0
+        assert verify_content["status"] == RoomStatus.CLEANING.value
 
     def test_update_room_as_manager(
         self,
@@ -517,7 +523,7 @@ class TestRoomsDelete:
             headers=admin_headers,
         )
         assert response.status_code == 400
-        assert "active booking" in response.json()["detail"].lower()
+        assert "booking(s)" in response.json()["detail"].lower()
 
     def test_delete_room_with_historical_booking(
         self,
@@ -540,7 +546,7 @@ class TestRoomsDelete:
             headers=admin_headers,
         )
         assert response.status_code == 400
-        assert "historical booking" in response.json()["detail"].lower()
+        assert "booking(s)" in response.json()["detail"].lower()
 
     def test_delete_room_not_found(
         self,

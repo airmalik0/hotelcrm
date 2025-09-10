@@ -197,6 +197,10 @@ async def bg_task(job_id: UUID):
 - **Services**: Business validation (uniqueness, availability)
 - **Routers**: Request validation and error formatting
 
+
+**ALWAYS import `select` from `sqlmodel`, NOT `sqlalchemy`!**
+```
+
 ### Base CRUD Pattern
 ```python
 from typing import Generic, TypeVar
@@ -278,37 +282,95 @@ After creating new models:
 - Use `CurrentUser` dependency for protected routes
 - Passwords hashed with bcrypt
 
-### Testing
-- Tests mirror the app structure in `tests/`
-- Use pytest fixtures for setup
-- Mock external dependencies
-- Test both success and error cases
+### Testing Philosophy
+
+#### Core Principle: Tests Must Respect Architecture Layers
+Tests should validate behavior at their specific abstraction level without bypassing layers:
+
+```
+API Tests       → Test complete workflows via HTTP
+Service Tests   → Test business logic with mocked dependencies  
+CRUD Tests      → Test database operations directly
+```
+
+#### Testing Guidelines
+
+1. **API Integration Tests** - Test the full stack through endpoints:
+```python
+def test_create_booking_api(client, headers):
+    # Create ALL data via API
+    customer = client.post("/customers/", json=customer_data, headers=headers)
+    room = client.post("/rooms/", json=room_data, headers=headers)
+    
+    # Test the operation
+    booking_data = {
+        "customer_id": customer.json()["id"],
+        "room_id": room.json()["id"],
+        "total_amount": room.json()["price_per_night"] * nights  # Calculate!
+    }
+    response = client.post("/bookings/", json=booking_data, headers=headers)
+    
+    # Verify via API
+    assert response.status_code == 200
+    stats = client.get(f"/customers/{customer.json()['id']}", headers=headers)
+    assert stats.json()["total_bookings"] == 1
+```
+
+2. **Service Unit Tests** - Test business logic in isolation:
+```python
+def test_booking_service_logic():
+    # Mock all dependencies
+    mock_crud = Mock()
+    mock_crud.get_room.return_value = Room(status="available")
+    
+    # Test business logic
+    service = BookingService(session=Mock(), crud=mock_crud)
+    result = service.can_book_room(room_id)
+    
+    # Verify logic, not database
+    assert result == True
+    mock_crud.get_room.assert_called_once()
+```
+
+3. **CRUD Unit Tests** - Test database operations:
+```python
+def test_crud_get_by_phone(db_session):
+    # Direct database operations
+    customer = Customer(phone="+1234567890")
+    db_session.add(customer)
+    db_session.commit()
+    
+    # Test CRUD method
+    result = crud_customer.get_by_phone(db_session, phone="+1234567890")
+    
+    # Verify database state
+    assert result.id == customer.id
+```
+
+#### Common Anti-Patterns to Avoid
+
+❌ **Mixing abstraction levels**:
+```python
+# WRONG: Factory creates in DB, test via API
+booking = BookingFactory.create(db)  # Direct DB
+response = client.get(f"/bookings/{booking.id}")  # API call
+```
+
+❌ **Random test data**:
+```python
+# WRONG: Unpredictable values
+room = Room(price=random.randint(50, 500))
+```
+
+❌ **Bypassing business logic in factories**:
+```python
+# WRONG: Factory skips service layer
+BookingFactory.create(db)  # No stats update, no audit log
+```
 
 #### Testing New Features
 **IMPORTANT**: After implementing new functionality that works correctly, always ask the user:
 > "The feature is working. Would you like me to add tests for this functionality?"
-
-Example test structure for new API endpoint:
-```python
-from fastapi.testclient import TestClient
-from sqlmodel import Session
-from app.core.config import settings
-
-def test_create_item(
-    client: TestClient,
-    superuser_token_headers: dict[str, str],
-    db: Session
-) -> None:
-    data = {"title": "Test Item", "description": "Test Description"}
-    r = client.post(
-        f"{settings.API_V1_STR}/items/",
-        headers=superuser_token_headers,
-        json=data,
-    )
-    assert 200 <= r.status_code < 300
-    content = r.json()
-    assert content["title"] == data["title"]
-```
 
 ## Testing Best Practices
 

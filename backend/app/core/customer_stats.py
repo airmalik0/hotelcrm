@@ -2,7 +2,7 @@
 Customer statistics recalculation utilities
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlmodel import Session, func, select
@@ -55,7 +55,7 @@ def recalculate_customer_stats(session: Session, customer_id: uuid.UUID) -> None
         customer.first_booking_date = None
         customer.last_booking_date = None
 
-    customer.updated_at = datetime.utcnow()
+    customer.updated_at = datetime.now(timezone.utc)
     session.add(customer)
 
 
@@ -107,6 +107,6 @@ def update_customer_stats_on_booking_change(
         if not customer.last_booking_date or new_booking_date > customer.last_booking_date:
             customer.last_booking_date = new_booking_date
 
-    customer.updated_at = datetime.utcnow()
+    customer.updated_at = datetime.now(timezone.utc)
     session.add(customer)
 

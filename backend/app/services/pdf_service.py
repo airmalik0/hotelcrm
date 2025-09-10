@@ -1,5 +1,5 @@
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from reportlab.lib import colors
@@ -76,7 +76,7 @@ class PDFService:
         canvas.drawString(
             inch,
             0.5 * inch,
-            f"Generated on {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
+            f"Generated on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         )
 
         # Page number
@@ -348,7 +348,7 @@ class PDFService:
         story.append(Spacer(1, 12))
         story.append(
             Paragraph(
-                f"Generated on {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}",
+                f"Generated on {datetime.now(timezone.utc).strftime('%B %d, %Y at %H:%M UTC')}",
                 self.styles["Normal"]
             )
         )
@@ -439,7 +439,7 @@ class PDFService:
         story.append(Spacer(1, 12))
         story.append(
             Paragraph(
-                f"Generated on {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}",
+                f"Generated on {datetime.now(timezone.utc).strftime('%B %d, %Y at %H:%M UTC')}",
                 self.styles["Normal"]
             )
         )

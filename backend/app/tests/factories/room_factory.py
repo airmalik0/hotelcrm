@@ -4,11 +4,53 @@ from typing import Any
 
 from sqlmodel import Session
 
+from app.crud.room import room as crud_room
 from app.models import Room, RoomCreate, RoomStatus, RoomType, RoomUpdate
+from app.tests.factories.base import BaseFactory
 
 
-class RoomFactory:
-    """Factory for creating test rooms."""
+class RoomFactory(BaseFactory[Room, RoomCreate]):
+    """
+    Factory for creating test rooms.
+    
+    Uses CRUD layer for all database operations.
+    No business logic - just test data creation.
+    """
+    
+    model = Room
+    create_schema = RoomCreate
+    crud = crud_room
+    
+    @classmethod
+    def get_defaults(cls, **overrides: Any) -> dict[str, Any]:
+        """Get default values for room creation."""
+        # Determine room type first to set appropriate price
+        room_type = overrides.get("room_type", RoomType.STANDARD)
+        
+        if "price_per_night" not in overrides:
+            if room_type == RoomType.VIP:
+                price_per_night = random.uniform(150.0, 500.0)
+            else:
+                price_per_night = random.uniform(50.0, 150.0)
+        else:
+            price_per_night = overrides["price_per_night"]
+        
+        floor = overrides.get("floor", random.randint(1, 10))
+        
+        defaults = {
+            "room_number": f"R{random.randint(100, 999)}",
+            "floor": floor,
+            "room_type": room_type,
+            "price_per_night": price_per_night,
+            "status": RoomStatus.AVAILABLE,
+            "description": f"Test {room_type.value} room on floor {floor}",
+            "room_photo_paths": [],
+        }
+        
+        # Apply overrides
+        defaults.update(overrides)
+        
+        return defaults
 
     @staticmethod
     def create_test_room(
@@ -22,48 +64,27 @@ class RoomFactory:
         room_photo_paths: list[str] | None = None,
     ) -> Room:
         """
-        Create a test room.
-
-        Args:
-            session: Database session
-            room_number: Room number (auto-generated if None)
-            floor: Floor number (random 1-10 if None)
-            room_type: Type of room
-            price_per_night: Price per night (random based on type if None)
-            status: Room status
-            description: Room description
-            room_photo_paths: List of photo paths
-
-        Returns:
-            Created room
+        Create a test room (backward compatibility).
+        
+        DEPRECATED: Use RoomFactory.create() instead.
         """
-        if room_number is None:
-            room_number = f"R{random.randint(100, 999)}"
-
-        if floor is None:
-            floor = random.randint(1, 10)
-
-        if price_per_night is None:
-            if room_type == RoomType.VIP:
-                price_per_night = random.uniform(150.0, 500.0)
-            else:
-                price_per_night = random.uniform(50.0, 150.0)
-
-        room_in = RoomCreate(
-            room_number=room_number,
-            floor=floor,
-            room_type=room_type,
-            price_per_night=price_per_night,
-            status=status,
-            description=description or f"Test {room_type.value} room on floor {floor}",
-            room_photo_paths=room_photo_paths or [],
-        )
-
-        room = Room.model_validate(room_in)
-        session.add(room)
-        session.commit()
-        session.refresh(room)
-        return room
+        kwargs = {
+            "room_type": room_type,
+            "status": status,
+        }
+        
+        if room_number is not None:
+            kwargs["room_number"] = room_number
+        if floor is not None:
+            kwargs["floor"] = floor
+        if price_per_night is not None:
+            kwargs["price_per_night"] = price_per_night
+        if description is not None:
+            kwargs["description"] = description
+        if room_photo_paths is not None:
+            kwargs["room_photo_paths"] = room_photo_paths
+        
+        return RoomFactory.create(session, **kwargs)
 
     @staticmethod
     def create_standard_room(
@@ -73,13 +94,15 @@ class RoomFactory:
         status: RoomStatus = RoomStatus.AVAILABLE,
     ) -> Room:
         """Create a standard room."""
-        return RoomFactory.create_test_room(
-            session=session,
-            room_number=room_number,
-            room_type=RoomType.STANDARD,
-            price_per_night=price_per_night,
-            status=status,
-        )
+        kwargs = {
+            "room_type": RoomType.STANDARD,
+            "price_per_night": price_per_night,
+            "status": status,
+        }
+        if room_number is not None:
+            kwargs["room_number"] = room_number
+        
+        return RoomFactory.create(session, **kwargs)
 
     @staticmethod
     def create_vip_room(
@@ -89,13 +112,15 @@ class RoomFactory:
         status: RoomStatus = RoomStatus.AVAILABLE,
     ) -> Room:
         """Create a VIP room."""
-        return RoomFactory.create_test_room(
-            session=session,
-            room_number=room_number,
-            room_type=RoomType.VIP,
-            price_per_night=price_per_night,
-            status=status,
-        )
+        kwargs = {
+            "room_type": RoomType.VIP,
+            "price_per_night": price_per_night,
+            "status": status,
+        }
+        if room_number is not None:
+            kwargs["room_number"] = room_number
+        
+        return RoomFactory.create(session, **kwargs)
 
     @staticmethod
     def create_occupied_room(
@@ -103,11 +128,13 @@ class RoomFactory:
         room_number: str | None = None,
     ) -> Room:
         """Create an occupied room."""
-        return RoomFactory.create_test_room(
-            session=session,
-            room_number=room_number,
-            status=RoomStatus.OCCUPIED,
-        )
+        kwargs = {
+            "status": RoomStatus.OCCUPIED,
+        }
+        if room_number is not None:
+            kwargs["room_number"] = room_number
+        
+        return RoomFactory.create(session, **kwargs)
 
     @staticmethod
     def create_cleaning_room(
@@ -115,11 +142,13 @@ class RoomFactory:
         room_number: str | None = None,
     ) -> Room:
         """Create a room in cleaning status."""
-        return RoomFactory.create_test_room(
-            session=session,
-            room_number=room_number,
-            status=RoomStatus.CLEANING,
-        )
+        kwargs = {
+            "status": RoomStatus.CLEANING,
+        }
+        if room_number is not None:
+            kwargs["room_number"] = room_number
+        
+        return RoomFactory.create(session, **kwargs)
 
     @staticmethod
     def create_maintenance_room(
@@ -127,11 +156,13 @@ class RoomFactory:
         room_number: str | None = None,
     ) -> Room:
         """Create a room in maintenance status."""
-        return RoomFactory.create_test_room(
-            session=session,
-            room_number=room_number,
-            status=RoomStatus.MAINTENANCE,
-        )
+        kwargs = {
+            "status": RoomStatus.MAINTENANCE,
+        }
+        if room_number is not None:
+            kwargs["room_number"] = room_number
+        
+        return RoomFactory.create(session, **kwargs)
 
     @staticmethod
     def update_room(
@@ -139,14 +170,15 @@ class RoomFactory:
         room: Room,
         **kwargs: Any,
     ) -> Room:
-        """Update a room with given data."""
+        """
+        Update a room with given data.
+        
+        Uses CRUD layer for proper update handling.
+        """
         room_update = RoomUpdate(**kwargs)
-        update_dict = room_update.model_dump(exclude_unset=True)
-        room.sqlmodel_update(update_dict)
-        session.add(room)
-        session.commit()
-        session.refresh(room)
-        return room
+        updated = crud_room.update(session, db_obj=room, obj_in=room_update)
+        session.flush()
+        return updated
 
     @staticmethod
     def create_multiple_rooms(
@@ -156,13 +188,10 @@ class RoomFactory:
         room_type: RoomType | None = None,
     ) -> list[Room]:
         """Create multiple test rooms."""
-        rooms = []
-        for i in range(count):
-            room = RoomFactory.create_test_room(
-                session=session,
-                room_number=f"R{100 + i}",
-                floor=floor or (i % 5 + 1),
-                room_type=room_type or random.choice(list(RoomType)),
-            )
-            rooms.append(room)
-        return rooms
+        return RoomFactory.create_batch(
+            session,
+            count=count,
+            room_number=lambda i: f"R{100 + i}",
+            floor=floor if floor is not None else lambda i: (i % 5 + 1),
+            room_type=room_type if room_type is not None else lambda i: random.choice(list(RoomType)),
+        )

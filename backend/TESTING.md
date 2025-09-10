@@ -1,5 +1,105 @@
 # Testing Best Practices & Common Pitfalls
 
+## Core Testing Principles
+
+### 1. Single Level of Abstraction Principle
+**Each test should operate at ONE abstraction level only:**
+
+- **API Integration Tests**: Test ONLY through HTTP endpoints
+  - Create ALL test data via API calls
+  - Verify results via API responses
+  - Never access database directly
+  
+- **Service Unit Tests**: Test business logic in isolation
+  - Mock all external dependencies (CRUD, external APIs)
+  - Test only business rules and orchestration
+  - Never make actual database calls
+  
+- **CRUD Unit Tests**: Test database operations
+  - Use in-memory database or test database
+  - Test SQL queries and data persistence
+  - Never include business logic
+
+### 2. Test Isolation Hierarchy
+
+```
+API Tests (End-to-End)
+    ↓ Uses real
+Service Tests (Integration) 
+    ↓ Uses real
+CRUD Tests (Unit)
+    ↓ Uses real
+Database
+```
+
+**Key Rule**: Tests at each level should NEVER bypass the layer they're testing.
+
+### 3. Factory Pattern Guidelines
+
+#### ❌ WRONG: Factories that bypass business logic
+```python
+class BookingFactory:
+    @staticmethod
+    def create_booking(db):
+        # Creates booking directly in DB
+        booking = Booking(...)
+        db.add(booking)
+        db.commit()
+        # Problem: Skips business validation, stats update, audit logs
+        return booking
+```
+
+#### ✅ CORRECT: Factories that use appropriate layer
+```python
+class BookingFactory:
+    @staticmethod
+    def create_booking_via_api(client, headers):
+        # Creates booking through API
+        response = client.post("/bookings/", json=data, headers=headers)
+        return response.json()
+    
+    @staticmethod
+    def create_booking_via_service(session):
+        # Uses service layer
+        service = BookingService(session)
+        return service.create_booking(data)
+```
+
+### 4. Data Determinism
+
+**All test data must be predictable:**
+
+```python
+# ❌ WRONG: Random data breaks assertions
+room = Room(price=random.randint(50, 500))
+booking_data = {"total_amount": 200.0}  # Will fail validation
+
+# ✅ CORRECT: Fixed or calculated data
+room = Room(price=100.0)
+nights = 2
+booking_data = {"total_amount": room.price * nights}  # Always correct
+```
+
+### 5. Test Categories
+
+#### API Integration Tests
+- **Purpose**: Verify complete user workflows
+- **Scope**: Full stack (Router → Service → CRUD → DB)
+- **Data Creation**: Only via API endpoints
+- **Assertions**: On HTTP responses and status codes
+
+#### Service Unit Tests  
+- **Purpose**: Verify business logic
+- **Scope**: Service layer only
+- **Dependencies**: All mocked (CRUD, external services)
+- **Assertions**: On return values and exception handling
+
+#### CRUD Unit Tests
+- **Purpose**: Verify database operations
+- **Scope**: CRUD layer only
+- **Database**: Test database or in-memory
+- **Assertions**: On database state and query results
+
 ## Architecture Patterns
 
 ### Transaction Management

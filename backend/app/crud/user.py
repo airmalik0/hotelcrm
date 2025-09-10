@@ -48,8 +48,8 @@ def create_user(*, session: Session, user_create: UserCreate) -> User:
     return user.create(session, obj_in=user_create)
 
 
-def update_user(*, session: Session, user: User, user_in: UserUpdate) -> User:
-    return user.update(session, db_obj=user, obj_in=user_in)
+def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> User:
+    return user.update(session, db_obj=db_user, obj_in=user_in)
 
 
 def get_user_by_username(*, session: Session, username: str) -> User | None:

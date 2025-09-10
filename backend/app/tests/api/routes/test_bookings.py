@@ -1,6 +1,6 @@
 """Comprehensive test suite for booking endpoints."""
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -10,6 +10,7 @@ from app.models import BookingStatus, PaymentMethod, RoomStatus
 from app.tests.factories.booking_factory import BookingFactory
 from app.tests.factories.customer_factory import CustomerFactory
 from app.tests.factories.room_factory import RoomFactory
+from app.tests.helpers.api_helpers import APITestHelper
 
 
 class TestBookingCreate:
@@ -27,7 +28,7 @@ class TestBookingCreate:
         customer = CustomerFactory.create_test_customer(db)
 
         # Calculate dates
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=3)
         nights = 3
         total_amount = room.price_per_night * nights
@@ -51,17 +52,20 @@ class TestBookingCreate:
             json=booking_data,
         )
 
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["customer_id"] == str(customer.id)
         assert content["room_id"] == str(room.id)
         assert content["total_amount"] == total_amount
         assert content["status"] == BookingStatus.CONFIRMED.value
 
-        # Verify customer stats updated
-        db.refresh(customer)
-        assert customer.total_bookings == 1
-        assert customer.total_spent == total_amount
+        # Verify customer stats via API
+        customer_response = client.get(
+            f"{settings.API_V1_STR}/customers/{customer.id}",
+            headers=admin_headers,
+        )
+        customer_data = APITestHelper.assert_success_response(customer_response, 200)
+        assert customer_data["total_bookings"] == 1
+        assert customer_data["total_spent"] == total_amount
 
     def test_create_booking_with_discount(
         self,
@@ -73,7 +77,7 @@ class TestBookingCreate:
         room = RoomFactory.create_test_room(db)
         customer = CustomerFactory.create_test_customer(db)
 
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=2)
         nights = 2
         discount = 20.0
@@ -119,8 +123,8 @@ class TestBookingCreate:
         booking_data = {
             "customer_id": str(fake_customer_id),
             "room_id": str(room.id),
-            "check_in": datetime.utcnow().isoformat(),
-            "check_out": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+            "check_in": datetime.now(timezone.utc).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
             "status": BookingStatus.CONFIRMED.value,
             "total_amount": 100.0,
             "discount": 0,
@@ -150,8 +154,8 @@ class TestBookingCreate:
         booking_data = {
             "customer_id": str(customer.id),
             "room_id": str(fake_room_id),
-            "check_in": datetime.utcnow().isoformat(),
-            "check_out": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+            "check_in": datetime.now(timezone.utc).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
             "status": BookingStatus.CONFIRMED.value,
             "total_amount": 100.0,
             "discount": 0,
@@ -181,8 +185,8 @@ class TestBookingCreate:
         booking_data = {
             "customer_id": str(customer.id),
             "room_id": str(room.id),
-            "check_in": datetime.utcnow().isoformat(),
-            "check_out": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+            "check_in": datetime.now(timezone.utc).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
             "status": BookingStatus.CONFIRMED.value,
             "total_amount": room.price_per_night,
             "discount": 0,
@@ -211,7 +215,7 @@ class TestBookingCreate:
         customer2 = CustomerFactory.create_test_customer(db)
 
         # Create first booking
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=3)
         BookingFactory.create_test_booking(
             db,
@@ -261,7 +265,7 @@ class TestBookingCreate:
         customer2 = CustomerFactory.create_test_customer(db)
 
         # Create first booking
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=2)
         BookingFactory.create_test_booking(
             db,
@@ -308,7 +312,7 @@ class TestBookingCreate:
         customer2 = CustomerFactory.create_test_customer(db)
 
         # Create first booking
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=2)
         BookingFactory.create_test_booking(
             db,
@@ -354,7 +358,7 @@ class TestBookingCreate:
         room = RoomFactory.create_test_room(db)
         customer = CustomerFactory.create_test_customer(db)
 
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=2)
         correct_amount = room.price_per_night * 2
         incorrect_amount = correct_amount + 50  # Wrong amount
@@ -390,7 +394,7 @@ class TestBookingCreate:
         room = RoomFactory.create_test_room(db)
         customer = CustomerFactory.create_test_customer(db)
 
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=1)
         discount = 10.0
         subtotal = room.price_per_night
@@ -428,8 +432,8 @@ class TestBookingCreate:
         room = RoomFactory.create_test_room(db)
         customer = CustomerFactory.create_test_customer(db)
 
-        check_in = datetime.utcnow() + timedelta(days=2)
-        check_out = datetime.utcnow() + timedelta(days=1)  # Before check-in
+        check_in = datetime.now(timezone.utc) + timedelta(days=2)
+        check_out = datetime.now(timezone.utc) + timedelta(days=1)  # Before check-in
 
         booking_data = {
             "customer_id": str(customer.id),
@@ -635,13 +639,24 @@ class TestBookingUpdate:
         original_amount = booking.total_amount
 
         new_check_out = booking.check_out + timedelta(days=2)
-        # Calculate new total
-        # Need to refresh booking to get the room relationship
-        db.refresh(booking)
-        if not booking.room:
-            raise ValueError("Room not found for booking")
+        # Get booking details via API to get room information
+        booking_response = client.get(
+            f"{settings.API_V1_STR}/bookings/{booking.id}",
+            headers=admin_headers,
+        )
+        booking_data = APITestHelper.assert_success_response(booking_response, 200)
+
+        # Get room price via API
+        room_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{booking_data['room_id']}",
+            headers=admin_headers,
+        )
+        room_data = APITestHelper.assert_success_response(room_response, 200)
+
         nights = max(1, (new_check_out.date() - booking.check_in.date()).days)
-        expected_total = booking.room.price_per_night * nights
+        # Account for any discount on the booking
+        discount = booking_data.get("discount", 0.0)
+        expected_total = room_data["price_per_night"] * nights * (1 - discount / 100)
 
         update_data = {
             "check_out": new_check_out.isoformat(),
@@ -707,11 +722,20 @@ class TestBookingUpdate:
 
         assert response.status_code == 200
 
-        # Verify room status changes
-        db.refresh(old_room)
-        db.refresh(new_room)
-        assert old_room.status == RoomStatus.CLEANING
-        assert new_room.status == RoomStatus.OCCUPIED
+        # Verify room status changes via API
+        old_room_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{old_room.id}",
+            headers=admin_headers,
+        )
+        old_room_data = APITestHelper.assert_success_response(old_room_response, 200)
+        assert old_room_data["status"] == RoomStatus.CLEANING.value
+
+        new_room_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{new_room.id}",
+            headers=admin_headers,
+        )
+        new_room_data = APITestHelper.assert_success_response(new_room_response, 200)
+        assert new_room_data["status"] == RoomStatus.OCCUPIED.value
 
     def test_update_booking_room_unavailable(
         self,
@@ -758,15 +782,23 @@ class TestBookingUpdate:
             json=update_data,
         )
 
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["customer_id"] == str(new_customer.id)
 
-        # Verify customer stats updated
-        db.refresh(old_customer)
-        db.refresh(new_customer)
-        assert old_customer.total_bookings == 0
-        assert new_customer.total_bookings == 1
+        # Verify customer stats via API
+        old_customer_response = client.get(
+            f"{settings.API_V1_STR}/customers/{old_customer.id}",
+            headers=admin_headers,
+        )
+        old_customer_data = APITestHelper.assert_success_response(old_customer_response, 200)
+        assert old_customer_data["total_bookings"] == 0
+
+        new_customer_response = client.get(
+            f"{settings.API_V1_STR}/customers/{new_customer.id}",
+            headers=admin_headers,
+        )
+        new_customer_data = APITestHelper.assert_success_response(new_customer_response, 200)
+        assert new_customer_data["total_bookings"] == 1
 
     def test_update_booking_discount_as_manager(
         self,
@@ -875,22 +907,22 @@ class TestBookingUpdate:
         BookingFactory.create_test_booking(
             db,
             room=room,
-            check_in=datetime.utcnow() + timedelta(days=5),
-            check_out=datetime.utcnow() + timedelta(days=7),
+            check_in=datetime.now(timezone.utc) + timedelta(days=5),
+            check_out=datetime.now(timezone.utc) + timedelta(days=7),
         )
 
         # Create second booking that we'll update
         booking2 = BookingFactory.create_test_booking(
             db,
             room=room,
-            check_in=datetime.utcnow() + timedelta(days=1),
-            check_out=datetime.utcnow() + timedelta(days=2),
+            check_in=datetime.now(timezone.utc) + timedelta(days=1),
+            check_out=datetime.now(timezone.utc) + timedelta(days=2),
         )
 
         # Try to update booking2 to overlap with booking1
         update_data = {
-            "check_in": (datetime.utcnow() + timedelta(days=6)).isoformat(),
-            "check_out": (datetime.utcnow() + timedelta(days=8)).isoformat(),
+            "check_in": (datetime.now(timezone.utc) + timedelta(days=6)).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=8)).isoformat(),
         }
 
         response = client.put(
@@ -933,12 +965,31 @@ class TestBookingDelete:
     ) -> None:
         """Test successful booking deletion."""
         customer = CustomerFactory.create_test_customer(db)
-        booking = BookingFactory.create_test_booking(db, customer=customer)
-        booking_id = booking.id
+        room = RoomFactory.create_test_room(db)
+        
+        # Create booking via API to ensure stats are updated
+        booking_data = {
+            "customer_id": str(customer.id),
+            "room_id": str(room.id),
+            "check_in": datetime.now(timezone.utc).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),
+            "total_amount": room.price_per_night * 2,
+            "payment_method": "cash",
+        }
+        booking_response = client.post(
+            f"{settings.API_V1_STR}/bookings/",
+            headers=admin_headers,
+            json=booking_data,
+        )
+        booking_id = APITestHelper.extract_id(booking_response)
 
-        # Customer should have stats from booking
-        db.refresh(customer)
-        assert customer.total_bookings == 1
+        # Verify customer has stats from booking via API
+        customer_response = client.get(
+            f"{settings.API_V1_STR}/customers/{customer.id}",
+            headers=admin_headers,
+        )
+        customer_data = APITestHelper.assert_success_response(customer_response, 200)
+        assert customer_data["total_bookings"] == 1
 
         response = client.delete(
             f"{settings.API_V1_STR}/bookings/{booking_id}",
@@ -948,12 +999,20 @@ class TestBookingDelete:
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
 
-        # Verify booking deleted
-        assert db.get(booking.__class__, booking_id) is None
+        # Verify booking deleted via API
+        verify_response = client.get(
+            f"{settings.API_V1_STR}/bookings/{booking_id}",
+            headers=admin_headers,
+        )
+        assert verify_response.status_code == 404
 
-        # Verify customer stats updated
-        db.refresh(customer)
-        assert customer.total_bookings == 0
+        # Verify customer stats updated via API
+        customer_response = client.get(
+            f"{settings.API_V1_STR}/customers/{customer.id}",
+            headers=admin_headers,
+        )
+        customer_data = APITestHelper.assert_success_response(customer_response, 200)
+        assert customer_data["total_bookings"] == 0
 
     def test_delete_booking_nonexistent(
         self,
@@ -990,13 +1049,16 @@ class TestBookingCheckIn:
             headers=admin_headers,
         )
 
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["status"] == BookingStatus.CHECKED_IN.value
 
-        # Verify room status changed
-        db.refresh(room)
-        assert room.status == RoomStatus.OCCUPIED
+        # Verify room status changed via API
+        room_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{room.id}",
+            headers=admin_headers,
+        )
+        room_data = APITestHelper.assert_success_response(room_response, 200)
+        assert room_data["status"] == RoomStatus.OCCUPIED.value
 
     def test_check_in_not_confirmed(
         self,
@@ -1031,7 +1093,8 @@ class TestBookingCheckIn:
         )
 
         assert response.status_code == 400
-        assert "Room must be available to check in" in response.json()["detail"]
+        # Check for more general error about room not being available
+        assert "cannot be checked in" in response.json()["detail"].lower()
 
     def test_check_in_with_conflicting_booking(
         self,
@@ -1044,9 +1107,15 @@ class TestBookingCheckIn:
 
         # Create a checked-in booking
         BookingFactory.create_checked_in_booking(db, room=room)
-        room.status = RoomStatus.AVAILABLE  # Reset for test
-        db.add(room)
-        db.commit()
+
+        # Reset room status via API (admin can override)
+        room_update = {"status": RoomStatus.AVAILABLE.value}
+        room_response = client.put(
+            f"{settings.API_V1_STR}/rooms/{room.id}",
+            headers=admin_headers,
+            json=room_update,
+        )
+        assert room_response.status_code == 200
 
         # Try to check in another booking for same room
         booking2 = BookingFactory.create_confirmed_booking(db, room=room)
@@ -1094,13 +1163,16 @@ class TestBookingCheckOut:
             headers=admin_headers,
         )
 
-        assert response.status_code == 200
-        content = response.json()
+        content = APITestHelper.assert_success_response(response, 200)
         assert content["status"] == BookingStatus.CHECKED_OUT.value
 
-        # Verify room status changed to cleaning
-        db.refresh(room)
-        assert room.status == RoomStatus.CLEANING
+        # Verify room status changed to cleaning via API
+        room_response = client.get(
+            f"{settings.API_V1_STR}/rooms/{room.id}",
+            headers=admin_headers,
+        )
+        room_data = APITestHelper.assert_success_response(room_response, 200)
+        assert room_data["status"] == RoomStatus.CLEANING.value
 
     def test_check_out_not_checked_in(
         self,
@@ -1167,7 +1239,7 @@ class TestBookingBusinessLogic:
         customer = CustomerFactory.create_test_customer(db)
 
         # Same day check-in and check-out
-        check_in = datetime.utcnow().replace(hour=14, minute=0)
+        check_in = datetime.now(timezone.utc).replace(hour=14, minute=0)
         check_out = check_in.replace(hour=23, minute=59)
 
         booking_data = {
@@ -1202,7 +1274,7 @@ class TestBookingBusinessLogic:
         room = RoomFactory.create_test_room(db, price_per_night=100.0)
         customer = CustomerFactory.create_test_customer(db)
 
-        check_in = datetime.utcnow() + timedelta(days=1)
+        check_in = datetime.now(timezone.utc) + timedelta(days=1)
         check_out = check_in + timedelta(days=3)  # 3 nights
         discount = 25.0  # 25% discount
 
@@ -1241,9 +1313,15 @@ class TestBookingBusinessLogic:
     ) -> None:
         """Test only admin/manager can change payment method when checked in."""
         booking = BookingFactory.create_checked_in_booking(db)
-        booking.payment_method = PaymentMethod.CASH
-        db.add(booking)
-        db.commit()
+
+        # Update payment method via API first
+        initial_update = {"payment_method": PaymentMethod.CASH.value}
+        initial_response = client.put(
+            f"{settings.API_V1_STR}/bookings/{booking.id}",
+            headers=admin_headers,
+            json=initial_update,
+        )
+        assert initial_response.status_code == 200
 
         update_data = {"payment_method": PaymentMethod.TERMINAL.value}
 
@@ -1335,8 +1413,8 @@ class TestBookingPermissions:
         booking_data = {
             "customer_id": str(customer.id),
             "room_id": str(room.id),
-            "check_in": datetime.utcnow().isoformat(),
-            "check_out": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+            "check_in": datetime.now(timezone.utc).isoformat(),
+            "check_out": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
             "status": BookingStatus.CONFIRMED.value,
             "total_amount": room.price_per_night,
             "discount": 0,

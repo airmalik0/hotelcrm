@@ -1,9 +1,10 @@
 """Booking factory for creating test bookings."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlmodel import Session
 
+from app.crud.booking import booking as crud_booking
 from app.models import (
     Booking,
     BookingCreate,
@@ -13,10 +14,94 @@ from app.models import (
     PaymentMethod,
     Room,
 )
+from app.tests.factories.base import BaseFactory
 
 
-class BookingFactory:
-    """Factory for creating test bookings."""
+class BookingFactory(BaseFactory[Booking, BookingCreate]):
+    """
+    Factory for creating test bookings.
+    
+    Uses CRUD layer for all database operations.
+    NO business logic - customer stats should be updated by service layer.
+    """
+    
+    model = Booking
+    create_schema = BookingCreate
+    crud = crud_booking
+    
+    @classmethod
+    def get_defaults(cls, **overrides: Any) -> dict[str, Any]:
+        """Get default values for booking creation."""
+        # Import here to avoid circular imports
+        from app.tests.factories.customer_factory import CustomerFactory
+        from app.tests.factories.room_factory import RoomFactory
+        
+        # Get or create dependencies
+        session = overrides.get("_session")  # Internal use for dependencies
+        if session:
+            if "customer_id" not in overrides:
+                customer = CustomerFactory.create(session)
+                overrides["customer_id"] = customer.id
+            
+            if "room_id" not in overrides:
+                room = RoomFactory.create(session)
+                overrides["room_id"] = room.id
+        
+        # Calculate dates
+        check_in = overrides.get("check_in", datetime.now(timezone.utc))
+        check_out = overrides.get("check_out", check_in + timedelta(days=1))
+        
+        # Calculate total amount if not provided
+        if "total_amount" not in overrides:
+            # Simple default calculation
+            nights = max(1, (check_out.date() - check_in.date()).days)
+            total_amount = 100.0 * nights  # Default price
+        else:
+            total_amount = overrides["total_amount"]
+        
+        # Handle discount
+        discount = overrides.get("discount", 0.0)
+        discount_reason = overrides.get("discount_reason")
+        if discount > 0 and discount_reason is None:
+            discount_reason = "Test discount"
+        
+        defaults = {
+            "check_in": check_in,
+            "check_out": check_out,
+            "status": BookingStatus.CONFIRMED,
+            "total_amount": total_amount,
+            "discount": discount,
+            "discount_reason": discount_reason,
+            "payment_method": PaymentMethod.CASH,
+            "registration_need": True,
+        }
+        
+        # Apply overrides (excluding internal fields)
+        for key, value in overrides.items():
+            if not key.startswith("_"):
+                defaults[key] = value
+        
+        return defaults
+    
+    @classmethod
+    def create(cls, session: Session, **kwargs: Any) -> Booking:
+        """
+        Create and persist a booking via CRUD layer.
+        
+        NOTE: This does NOT update customer stats - that should be
+        handled by the service layer in production code.
+        """
+        # Pass session for dependency creation
+        kwargs["_session"] = session
+        obj_in = cls.build(**kwargs)
+        
+        # Create booking via CRUD
+        booking = cls.crud.create(session, obj_in=obj_in)
+        session.flush()
+        
+        # For testing purposes, if we need stats updated, 
+        # tests should call the service layer explicitly
+        return booking
 
     @staticmethod
     def create_test_booking(
@@ -34,81 +119,50 @@ class BookingFactory:
         auto_calculate_total: bool = True,
     ) -> Booking:
         """
-        Create a test booking.
-
-        Args:
-            session: Database session
-            customer: Customer for the booking (created if None)
-            room: Room for the booking (created if None)
-            check_in: Check-in date (now if None)
-            check_out: Check-out date (tomorrow if None)
-            status: Booking status
-            total_amount: Total amount (auto-calculated if None and auto_calculate_total is True)
-            discount: Discount percentage
-            discount_reason: Reason for discount
-            payment_method: Payment method
-            registration_need: Whether registration is needed
-            auto_calculate_total: Whether to auto-calculate total from room price
-
-        Returns:
-            Created booking
+        Create a test booking (backward compatibility).
+        
+        DEPRECATED: Use BookingFactory.create() instead.
+        
+        NOTE: This no longer updates customer stats. Tests should
+        use service layer if stats need to be updated.
         """
-        # Import factories here to avoid circular imports
+        # Import here to avoid circular imports
         from app.tests.factories.customer_factory import CustomerFactory
         from app.tests.factories.room_factory import RoomFactory
 
         if customer is None:
-            customer = CustomerFactory.create_test_customer(session)
+            customer = CustomerFactory.create(session)
 
         if room is None:
-            room = RoomFactory.create_test_room(session)
+            room = RoomFactory.create(session)
 
-        if check_in is None:
-            check_in = datetime.utcnow()
-
-        if check_out is None:
-            check_out = check_in + timedelta(days=1)
-
-        # Auto-calculate total if not provided
-        if total_amount is None and auto_calculate_total:
+        kwargs = {
+            "customer_id": customer.id,
+            "room_id": room.id,
+            "status": status,
+            "discount": discount,
+            "discount_reason": discount_reason,
+            "payment_method": payment_method,
+            "registration_need": registration_need,
+        }
+        
+        if check_in is not None:
+            kwargs["check_in"] = check_in
+        if check_out is not None:
+            kwargs["check_out"] = check_out
+        
+        # Calculate total if needed
+        if total_amount is not None:
+            kwargs["total_amount"] = total_amount
+        elif auto_calculate_total:
+            check_in = check_in or datetime.now(timezone.utc)
+            check_out = check_out or (check_in + timedelta(days=1))
             nights = max(1, (check_out.date() - check_in.date()).days)
             subtotal = room.price_per_night * nights
             discount_amount = subtotal * (discount / 100)
-            total_amount = subtotal - discount_amount
-
-        # Set discount reason if discount is applied
-        if discount > 0 and discount_reason is None:
-            discount_reason = "Test discount"
-
-        booking_in = BookingCreate(
-            customer_id=customer.id,
-            room_id=room.id,
-            check_in=check_in,
-            check_out=check_out,
-            status=status,
-            total_amount=total_amount or 100.0,
-            discount=discount,
-            discount_reason=discount_reason,
-            payment_method=payment_method,
-            registration_need=registration_need,
-        )
-
-        booking = Booking.model_validate(booking_in)
-        session.add(booking)
-
-        # Update customer stats if not cancelled
-        if status != BookingStatus.CANCELLED:
-            customer.total_bookings += 1
-            customer.total_spent += booking.total_amount
-            if not customer.first_booking_date or booking.booking_date < customer.first_booking_date:
-                customer.first_booking_date = booking.booking_date
-            if not customer.last_booking_date or booking.booking_date > customer.last_booking_date:
-                customer.last_booking_date = booking.booking_date
-            session.add(customer)
-
-        session.commit()
-        session.refresh(booking)
-        return booking
+            kwargs["total_amount"] = subtotal - discount_amount
+        
+        return BookingFactory.create(session, **kwargs)
 
     @staticmethod
     def create_confirmed_booking(
@@ -119,14 +173,18 @@ class BookingFactory:
         check_out: datetime | None = None,
     ) -> Booking:
         """Create a confirmed booking."""
-        return BookingFactory.create_test_booking(
-            session=session,
-            customer=customer,
-            room=room,
-            check_in=check_in,
-            check_out=check_out,
-            status=BookingStatus.CONFIRMED,
-        )
+        kwargs = {"status": BookingStatus.CONFIRMED}
+        
+        if customer:
+            kwargs["customer_id"] = customer.id
+        if room:
+            kwargs["room_id"] = room.id
+        if check_in:
+            kwargs["check_in"] = check_in
+        if check_out:
+            kwargs["check_out"] = check_out
+        
+        return BookingFactory.create(session, **kwargs)
 
     @staticmethod
     def create_checked_in_booking(
@@ -142,14 +200,17 @@ class BookingFactory:
         if room is None:
             room = RoomFactory.create_occupied_room(session)
 
-        return BookingFactory.create_test_booking(
-            session=session,
-            customer=customer,
-            room=room,
-            check_in=datetime.utcnow() - timedelta(hours=2),
-            check_out=datetime.utcnow() + timedelta(days=2),
-            status=BookingStatus.CHECKED_IN,
-        )
+        kwargs = {
+            "room_id": room.id,
+            "status": BookingStatus.CHECKED_IN,
+            "check_in": datetime.now(timezone.utc) - timedelta(hours=2),
+            "check_out": datetime.now(timezone.utc) + timedelta(days=2),
+        }
+        
+        if customer:
+            kwargs["customer_id"] = customer.id
+        
+        return BookingFactory.create(session, **kwargs)
 
     @staticmethod
     def create_checked_out_booking(
@@ -158,14 +219,18 @@ class BookingFactory:
         room: Room | None = None,
     ) -> Booking:
         """Create a checked-out booking."""
-        return BookingFactory.create_test_booking(
-            session=session,
-            customer=customer,
-            room=room,
-            check_in=datetime.utcnow() - timedelta(days=3),
-            check_out=datetime.utcnow() - timedelta(days=1),
-            status=BookingStatus.CHECKED_OUT,
-        )
+        kwargs = {
+            "status": BookingStatus.CHECKED_OUT,
+            "check_in": datetime.now(timezone.utc) - timedelta(days=3),
+            "check_out": datetime.now(timezone.utc) - timedelta(days=1),
+        }
+        
+        if customer:
+            kwargs["customer_id"] = customer.id
+        if room:
+            kwargs["room_id"] = room.id
+        
+        return BookingFactory.create(session, **kwargs)
 
     @staticmethod
     def create_cancelled_booking(
@@ -174,12 +239,14 @@ class BookingFactory:
         room: Room | None = None,
     ) -> Booking:
         """Create a cancelled booking."""
-        return BookingFactory.create_test_booking(
-            session=session,
-            customer=customer,
-            room=room,
-            status=BookingStatus.CANCELLED,
-        )
+        kwargs = {"status": BookingStatus.CANCELLED}
+        
+        if customer:
+            kwargs["customer_id"] = customer.id
+        if room:
+            kwargs["room_id"] = room.id
+        
+        return BookingFactory.create(session, **kwargs)
 
     @staticmethod
     def create_booking_with_discount(
@@ -190,13 +257,17 @@ class BookingFactory:
         discount_reason: str = "Loyalty discount",
     ) -> Booking:
         """Create a booking with discount."""
-        return BookingFactory.create_test_booking(
-            session=session,
-            customer=customer,
-            room=room,
-            discount=discount,
-            discount_reason=discount_reason,
-        )
+        kwargs = {
+            "discount": discount,
+            "discount_reason": discount_reason,
+        }
+        
+        if customer:
+            kwargs["customer_id"] = customer.id
+        if room:
+            kwargs["room_id"] = room.id
+        
+        return BookingFactory.create(session, **kwargs)
 
     @staticmethod
     def update_booking(
@@ -204,14 +275,15 @@ class BookingFactory:
         booking: Booking,
         **kwargs: Any,
     ) -> Booking:
-        """Update a booking with given data."""
+        """
+        Update a booking with given data.
+        
+        Uses CRUD layer for proper update handling.
+        """
         booking_update = BookingUpdate(**kwargs)
-        update_dict = booking_update.model_dump(exclude_unset=True)
-        booking.sqlmodel_update(update_dict)
-        session.add(booking)
-        session.commit()
-        session.refresh(booking)
-        return booking
+        updated = crud_booking.update(session, db_obj=booking, obj_in=booking_update)
+        session.flush()
+        return updated
 
     @staticmethod
     def create_overlapping_bookings(
@@ -228,25 +300,25 @@ class BookingFactory:
         from app.tests.factories.customer_factory import CustomerFactory
 
         if base_date is None:
-            base_date = datetime.utcnow()
+            base_date = datetime.now(timezone.utc)
 
-        customer1 = CustomerFactory.create_test_customer(session)
-        customer2 = CustomerFactory.create_test_customer(session)
+        customer1 = CustomerFactory.create(session)
+        customer2 = CustomerFactory.create(session)
 
         # First booking: today to 3 days from now
-        booking1 = BookingFactory.create_test_booking(
+        booking1 = BookingFactory.create(
             session=session,
-            customer=customer1,
-            room=room,
+            customer_id=customer1.id,
+            room_id=room.id,
             check_in=base_date,
             check_out=base_date + timedelta(days=3),
         )
 
         # Second booking: 2 days from now to 5 days from now (overlaps with first)
-        booking2 = BookingFactory.create_test_booking(
+        booking2 = BookingFactory.create(
             session=session,
-            customer=customer2,
-            room=room,
+            customer_id=customer2.id,
+            room_id=room.id,
             check_in=base_date + timedelta(days=2),
             check_out=base_date + timedelta(days=5),
             status=BookingStatus.CONFIRMED,  # Will conflict
@@ -270,25 +342,25 @@ class BookingFactory:
         from app.tests.factories.customer_factory import CustomerFactory
 
         if base_date is None:
-            base_date = datetime.utcnow()
+            base_date = datetime.now(timezone.utc)
 
-        customer1 = CustomerFactory.create_test_customer(session)
-        customer2 = CustomerFactory.create_test_customer(session)
+        customer1 = CustomerFactory.create(session)
+        customer2 = CustomerFactory.create(session)
 
         # First booking
-        booking1 = BookingFactory.create_test_booking(
+        booking1 = BookingFactory.create(
             session=session,
-            customer=customer1,
-            room=room,
+            customer_id=customer1.id,
+            room_id=room.id,
             check_in=base_date,
             check_out=base_date + timedelta(days=2),
         )
 
         # Second booking with proper buffer
-        booking2 = BookingFactory.create_test_booking(
+        booking2 = BookingFactory.create(
             session=session,
-            customer=customer2,
-            room=room,
+            customer_id=customer2.id,
+            room_id=room.id,
             check_in=base_date + timedelta(days=2, minutes=buffer_minutes),
             check_out=base_date + timedelta(days=4),
         )

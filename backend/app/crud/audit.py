@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import desc, func, select
-from sqlmodel import Session, or_
+from sqlalchemy import desc, func, text
+from sqlmodel import Session, or_, select
 
 from app.crud.base import CRUDBase
 from app.models import AuditLog, User
@@ -50,9 +50,13 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
             statement = statement.where(AuditLog.entity_id == entity_id)
 
         if search:
+            # Use text representation of JSON for PostgreSQL
             search_filter = or_(
                 AuditLog.entity_name.ilike(f"%{search}%"),
                 AuditLog.description.ilike(f"%{search}%"),
+                # Cast JSON to text for searching in PostgreSQL
+                text(f"CAST(new_values AS TEXT) ILIKE '%{search}%'"),
+                text(f"CAST(old_values AS TEXT) ILIKE '%{search}%'"),
             )
             statement = statement.where(search_filter)
 
@@ -69,7 +73,7 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
         statement = statement.offset(skip).limit(limit)
 
         # Execute the query and get audit logs as proper models
-        # SQLModel's exec returns proper model instances when selecting a single model
+        # SQLModel's exec returns proper model instances when using sqlmodel.select
         audit_logs = session.exec(statement).all()
         return audit_logs
 
@@ -107,9 +111,13 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
             statement = statement.where(AuditLog.entity_id == entity_id)
 
         if search:
+            # Use text representation of JSON for PostgreSQL
             search_filter = or_(
                 AuditLog.entity_name.ilike(f"%{search}%"),
                 AuditLog.description.ilike(f"%{search}%"),
+                # Cast JSON to text for searching in PostgreSQL
+                text(f"CAST(new_values AS TEXT) ILIKE '%{search}%'"),
+                text(f"CAST(old_values AS TEXT) ILIKE '%{search}%'"),
             )
             statement = statement.where(search_filter)
 
@@ -140,7 +148,7 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
     ) -> dict[str, Any]:
         """Get audit statistics for the last N days."""
         from datetime import timedelta
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Count by action
         action_counts = session.exec(
@@ -159,7 +167,8 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
         # Most active users
         user_counts = session.exec(
             select(User.username, func.count(AuditLog.id))
-            .join(User)
+            .select_from(AuditLog)
+            .join(User, AuditLog.user_id == User.id)
             .where(AuditLog.timestamp >= cutoff_date)
             .group_by(User.username)
             .order_by(desc(func.count(AuditLog.id)))
@@ -206,7 +215,7 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
             description=description,
             old_values=old_values,
             new_values=new_values,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
         session.add(audit_log)
         session.flush()

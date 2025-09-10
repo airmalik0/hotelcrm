@@ -2,7 +2,7 @@
 Booking service layer for centralizing booking business logic.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlmodel import Session
 
@@ -85,7 +85,7 @@ class BookingService:
             customer_id=booking_in.customer_id,
             amount_delta=booking_in.total_amount,
             booking_delta=1,
-            new_booking_date=datetime.utcnow()
+            new_booking_date=datetime.now(timezone.utc)
         )
 
         return booking
@@ -186,7 +186,7 @@ class BookingService:
                 customer_id=booking_in.customer_id,
                 amount_delta=booking.total_amount,
                 booking_delta=1,
-                new_booking_date=datetime.utcnow()
+                new_booking_date=datetime.now(timezone.utc)
             )
         elif booking.total_amount != old_amount:
             # Just amount changed

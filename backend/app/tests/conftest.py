@@ -3,21 +3,25 @@ Test configuration and fixtures.
 
 This module provides function-scoped fixtures for true test isolation.
 Each test gets its own transaction that's rolled back after the test.
+
+Architecture Testing Principles:
+- API tests should only verify responses, not database state
+- Service tests should mock CRUD layer
+- CRUD tests can verify database state directly
+- Single transaction per test with automatic rollback
 """
-# Create a test database URL - use localhost when running tests from host
-# The Docker compose exposes PostgreSQL on localhost:5432
 import os
 from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine
-from sqlmodel import Session, SQLModel, create_engine, delete
+from sqlalchemy import Engine, event
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.config import settings
 from app.core.db import init_db
 from app.main import app
-from app.models import AuditLog, Booking, Customer, Room, User
+from app.models import Booking, Customer, Room, User
 from app.tests.utils.user import authentication_token_from_username
 from app.tests.utils.utils import get_superuser_token_headers
 
@@ -49,27 +53,42 @@ def engine() -> Generator[Engine, None, None]:
 @pytest.fixture(scope="function")
 def db(engine: Engine) -> Generator[Session, None, None]:
     """
-    Provide a database session for tests.
+    Provide a transactional database session for tests.
 
-    Uses a simpler approach without nested transactions to avoid
-    conflicts with application-level commits.
+    Uses nested transactions to ensure complete isolation:
+    - Each test runs in its own transaction
+    - All changes are rolled back after the test
+    - No data persists between tests
     """
-    with Session(engine) as session:
-        # Initialize database with superuser
-        init_db(session)
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection)
 
-        yield session
+    # Set up nested transaction for automatic rollback
+    nested = connection.begin_nested()
 
-        # Clean up after test - rollback any uncommitted changes
-        session.rollback()
+    # If the application code calls session.commit(),
+    # it will only commit the nested transaction
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(_session, transaction):  # noqa: ARG001
+        """Restart savepoint after nested transaction ends"""
+        nonlocal nested
+        if transaction.nested and not transaction._parent.nested:
+            # Check if connection is still valid
+            if connection.closed:
+                return
+            nested = connection.begin_nested()
 
-        # Clean all data created during the test
-        session.execute(delete(AuditLog))
-        session.execute(delete(Booking))
-        session.execute(delete(Customer))
-        session.execute(delete(Room))
-        session.execute(delete(User))
-        session.commit()
+    # Initialize database with required data
+    init_db(session)
+
+    yield session
+
+    # Rollback everything - no need for explicit cleanup
+    session.close()
+    if not connection.closed:
+        transaction.rollback()
+        connection.close()
 
 
 @pytest.fixture(scope="function")
