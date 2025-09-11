@@ -1,30 +1,34 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router";
+import { AuthProvider } from "@/contexts/AuthContext"
+import { setupApiClient } from "@/lib/api-client"
+import { router } from "@/router"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import React, { useEffect } from "react"
+import { RouterProvider } from "react-router-dom"
 
 // Create a client
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+})
 
 function App() {
+  // Initialize API client configuration
+  useEffect(() => {
+    setupApiClient()
+  }, [])
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                  FastAPI Template
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Ready to build your application
-                </p>
-              </div>
-            </div>
-          } />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </QueryClientProvider>
-  );
+  )
 }
 
-export default App;
+export default App
