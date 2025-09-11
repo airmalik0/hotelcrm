@@ -1,4 +1,4 @@
-import { usersReadUsers } from "@/client"
+import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -14,10 +14,10 @@ import {
 import React from "react"
 
 export function AdminDashboard() {
-  // Fetch users data (this endpoint exists)
+  // Fetch users data using our API wrapper
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
-    queryFn: () => usersReadUsers({ query: { limit: 1000 } }),
+    queryFn: () => getUsers({ limit: 1000 }),
   })
 
   // Temporarily disabled until backend endpoints are created

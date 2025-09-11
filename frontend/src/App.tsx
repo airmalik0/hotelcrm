@@ -1,8 +1,8 @@
 import { AuthProvider } from "@/contexts/AuthContext"
-import { setupApiClient } from "@/lib/api-client"
+import "@/lib/axios" // Initialize axios on import
 import { router } from "@/router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import React, { useEffect } from "react"
+import React from "react"
 import { RouterProvider } from "react-router-dom"
 
 // Create a client
@@ -17,11 +17,6 @@ const queryClient = new QueryClient({
 })
 
 function App() {
-  // Initialize API client configuration
-  useEffect(() => {
-    setupApiClient()
-  }, [])
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

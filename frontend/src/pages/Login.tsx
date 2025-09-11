@@ -1,5 +1,4 @@
-import { loginTestToken } from "@/client"
-import { client } from "@/client"
+import { login as apiLogin, getCurrentUser } from "@/api/auth"
 import { useAuth } from "@/contexts/AuthContext"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { useMutation } from "@tanstack/react-query"
@@ -27,19 +26,8 @@ export function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
-      // Use axios directly for OAuth2 form-urlencoded
-      const formData = new URLSearchParams()
-      formData.append("grant_type", "password")
-      formData.append("username", credentials.username)
-      formData.append("password", credentials.password)
-      
-      const response = await client.instance.post("/api/v1/login/access-token", formData, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      })
-      
-      return response.data
+      // Use our API wrapper for OAuth2 authentication
+      return await apiLogin(credentials.username, credentials.password)
     },
     onSuccess: async (response) => {
       // Type guard to ensure we have a valid token response
@@ -53,10 +41,9 @@ export function Login() {
       try {
         // Set token temporarily to test it
         localStorage.setItem("hotel_crm_token", token)
-        const userResponse = await loginTestToken({ throwOnError: true })
+        const userData = await getCurrentUser()
 
-        // Login successful - extract user data from response
-        const userData = userResponse.data || userResponse
+        // Login successful
         login(token, userData)
 
         // Redirect based on role

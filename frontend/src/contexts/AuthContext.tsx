@@ -1,4 +1,5 @@
-import { type UserPublic, loginTestToken } from "@/client"
+import type { UserPublic } from "@/client/types.gen"
+import { getCurrentUser } from "@/api/auth"
 import {
   getStoredUser,
   getToken,
@@ -40,7 +41,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     error,
   } = useQuery({
     queryKey: ["auth", "me"],
-    queryFn: () => loginTestToken({ throwOnError: true }),
+    queryFn: getCurrentUser,
     enabled: !!getToken(),
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes

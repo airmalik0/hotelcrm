@@ -1,4 +1,4 @@
-import type { UserRole } from "@/client"
+import type { UserRole } from "@/client/types.gen"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function useRole() {

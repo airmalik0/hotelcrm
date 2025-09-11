@@ -1,7 +1,7 @@
 import { defineConfig } from "@hey-api/openapi-ts"
 
 export default defineConfig({
-  client: "@hey-api/client-axios",
+  client: false, // Don't generate client
   input: "./openapi.json",
   output: {
     path: "./src/client",
@@ -11,7 +11,6 @@ export default defineConfig({
   types: {
     enums: "javascript",
   },
-  services: {
-    asClass: true,
-  },
+  services: false, // Don't generate services
+  schemas: false, // Don't generate schemas
 })

@@ -1,4 +1,4 @@
-import type { UserRole } from "@/client"
+import type { UserRole } from "@/client/types.gen"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
 import React, { type ReactNode, useEffect } from "react"
