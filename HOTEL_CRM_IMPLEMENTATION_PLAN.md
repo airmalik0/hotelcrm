@@ -20,7 +20,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 - ✅ TypeScript client auto-generation from OpenAPI
 
 **Frontend Foundation:**
-- ✅ React 19 + TypeScript + Tailwind CSS + TanStack Query setup
+- ✅ React 18.3 + TypeScript + Tailwind CSS + TanStack Query setup
 - ✅ WowDash templates: 83 HTML files with extraction patterns documented for references
 - ✅ Specific templates identified: `sign-in.html`, `users-list.html`, `table-data.html`, etc.
 - ✅ Basic React patterns and component architecture
@@ -1146,10 +1146,10 @@ When creating components or patterns not found in WowDash templates, follow this
 ## Technical Architecture
 
 ### Frontend Stack
-- **Framework:** React 19 with TypeScript
+- **Framework:** React 18.3 with TypeScript
 - **Styling:** Tailwind CSS + WowDash design system
 - **State Management:** TanStack Query v5 (server state) + React built-in state (local state)
-- **Routing:** React Router v7 with role-based guards
+- **Routing:** React Router v6 with role-based guards
 - **Icons:** Lucide React (replacing Iconify)
 - **Charts:** Recharts (replacing ApexCharts)
 - **Date Handling:** date-fns

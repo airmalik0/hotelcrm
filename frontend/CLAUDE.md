@@ -1,10 +1,10 @@
 # Frontend Development Guidelines - Hotel CRM
 
 ## Stack
-Framework: React 19 with TypeScript
+Framework: React 18.3 with TypeScript
 Language: TypeScript (.tsx for components, .ts for utilities)
 UI: Tailwind CSS (WowDash HTML templates as reference)
-Routing: React Router v7
+Routing: React Router v6
 State: TanStack Query v5
 Package Manager: npm
 Build: Vite v7
@@ -136,3 +136,11 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
 - ALWAYS use Tailwind classes for styling
 - NEVER add custom CSS
 - COMMIT after completing features
+
+## Best Practices
+
+- Use stable React 18.3 with TypeScript
+- Use React Router v6 with createBrowserRouter pattern
+- Configure axios interceptors on instance.defaults
+- Handle OAuth2 with URLSearchParams directly
+- Use RouterProvider for route configuration

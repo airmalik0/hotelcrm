@@ -59,6 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [currentUser, error])
 
   const login = (token: string, userData: UserPublic) => {
+    console.log("AuthContext - Login called with user:", userData)
     setToken(token)
     setUser(userData)
     setStoredUser(userData)

@@ -1,9 +1,4 @@
-import {
-  bookingsReadBookings,
-  customersReadCustomers,
-  roomsReadRooms,
-  usersReadUsers,
-} from "@/client"
+import { usersReadUsers } from "@/client"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -19,26 +14,19 @@ import {
 import React from "react"
 
 export function AdminDashboard() {
-  // Fetch data for admin dashboard
+  // Fetch users data (this endpoint exists)
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
     queryFn: () => usersReadUsers({ query: { limit: 1000 } }),
   })
 
-  const { data: rooms, isLoading: roomsLoading } = useQuery({
-    queryKey: ["rooms"],
-    queryFn: () => roomsReadRooms({ query: { limit: 1000 } }),
-  })
-
-  const { data: customers, isLoading: customersLoading } = useQuery({
-    queryKey: ["customers"],
-    queryFn: () => customersReadCustomers({ query: { limit: 1000 } }),
-  })
-
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["bookings"],
-    queryFn: () => bookingsReadBookings({ query: { limit: 1000 } }),
-  })
+  // Temporarily disabled until backend endpoints are created
+  const rooms = { count: 0, data: [] }
+  const customers = { count: 0, data: [] }
+  const bookings = { data: [] }
+  const roomsLoading = false
+  const customersLoading = false
+  const bookingsLoading = false
 
   // Calculate metrics
   const totalRevenue =

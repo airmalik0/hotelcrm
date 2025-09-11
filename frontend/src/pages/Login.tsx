@@ -5,8 +5,8 @@ import { AuthLayout } from "@/layouts/AuthLayout"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import type React from "react"
-import { useState } from "react"
-import { Navigate, useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 export function Login() {
   const [formData, setFormData] = useState({
@@ -19,9 +19,11 @@ export function Login() {
   const { isAuthenticated, login } = useAuth()
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/", { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
@@ -51,10 +53,11 @@ export function Login() {
       try {
         // Set token temporarily to test it
         localStorage.setItem("hotel_crm_token", token)
-        const user = await loginTestToken({ throwOnError: true })
+        const userResponse = await loginTestToken({ throwOnError: true })
 
-        // Login successful
-        login(token, user)
+        // Login successful - extract user data from response
+        const userData = userResponse.data || userResponse
+        login(token, userData)
 
         // Redirect based on role
         navigate("/", { replace: true })

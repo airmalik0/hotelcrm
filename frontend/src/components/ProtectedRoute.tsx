@@ -1,8 +1,8 @@
 import type { UserRole } from "@/client"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
-import React, { type ReactNode } from "react"
-import { Navigate } from "react-router-dom"
+import React, { type ReactNode, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -15,6 +15,14 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth()
   const { hasAnyRole } = useRole()
+  const navigate = useNavigate()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login", { replace: true })
+    }
+  }, [isLoading, isAuthenticated, navigate])
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -28,9 +36,9 @@ export function ProtectedRoute({
     )
   }
 
-  // Redirect to login if not authenticated
+  // Don't render anything if not authenticated (navigation will happen via useEffect)
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return null
   }
 
   // Check role permissions if roles are specified

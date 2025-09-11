@@ -1,13 +1,17 @@
-import { useRole } from "@/hooks/useRole"
+import { useAuth } from "@/contexts/AuthContext"
 import React from "react"
 import { AdminDashboard } from "./dashboards/AdminDashboard"
 import { HostDashboard } from "./dashboards/HostDashboard"
 import { ManagerDashboard } from "./dashboards/ManagerDashboard"
 
 export function Dashboard() {
-  const { user } = useRole()
+  const { user } = useAuth()
+  
+  // Extract actual user data if it's wrapped in response
+  const userData = user?.data || user
+  console.log("Dashboard - Current user data:", userData) // Debug log
 
-  switch (user?.role) {
+  switch (userData?.role) {
     case "admin":
       return <AdminDashboard />
     case "manager":

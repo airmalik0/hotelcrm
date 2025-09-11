@@ -2,7 +2,7 @@
 
 ## Structure
 backend/    FastAPI (Python/uv)
-frontend/   React 19 + Tailwind CSS (WowDash HTML templates as reference)
+frontend/   React 18 + Tailwind CSS (WowDash HTML templates as reference)
 docker-compose.yml
 
 ## Commands
@@ -38,7 +38,7 @@ These hooks provide feedback but won't block your work - you can fix issues when
 
 ## Stack
 Backend: FastAPI, PostgreSQL, SQLModel, uv
-Frontend: React 19, Tailwind CSS, TanStack Query v5, React Router v7 (WowDash HTML templates as UI reference)
+Frontend: React 18.3, Tailwind CSS, TanStack Query v5, React Router v6 (WowDash HTML templates as UI reference)
 Auth: JWT
 Tests: pytest
 
@@ -85,3 +85,9 @@ This project uses Sentry for error monitoring in production.
 ## Production
 See DEPLOYMENT.md
 WARNING: Never use docker compose up in production
+
+## Best Practices
+- Use stable React 18.3 and React Router v6
+- Use RouterProvider with createBrowserRouter pattern
+- Handle OAuth2 with URLSearchParams directly
+- Configure axios interceptors on instance.defaults
