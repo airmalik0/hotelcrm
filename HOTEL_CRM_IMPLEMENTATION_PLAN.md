@@ -128,7 +128,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 **Dashboard:** Today's check-ins/check-outs, pending tasks only  
 **Calendar:** Create/Read bookings, check-in/check-out operations (no drag & drop, no discounts)  
 **Rooms:** Read-only view, see status (no editing, no creation)  
-**Customers:** Create/Read/Update/Delete customers, full profile access  
+**Customers:** Create/Read/Update customers (no delete), basic profile access  
 **Users:** Read-only view of own profile (no user management)  
 **Audit:** No access
 
@@ -224,7 +224,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 **Core Concept: Time Continuum**
 - **Week View:** 168 continuous hours (7 days × 24 hours)
-- **Month View:** ~744 continuous hours (31 days × 24 hours, varies by month)  
+- **Month View:** ~672-744 continuous hours (28-31 days × 24 hours, varies by month)  
 - **Booking positioning:** Percentage-based from period start
 - **No daily boundaries:** Bookings flow naturally across time
 
@@ -293,7 +293,7 @@ const positionBooking = (booking: BookingBlock, periodStart: Date, periodEnd: Da
 **Time Scale Generation:**
 ```typescript
 const generateTimeScale = (viewMode: 'week' | 'month', startDate: Date) => {
-  const totalHours = viewMode === 'week' ? 168 : 744  // 31 days max month
+  const totalHours = viewMode === 'week' ? 168 : getDaysInMonth(startDate) * 24  // Actual month days
   const tickInterval = viewMode === 'week' ? 6 : 24 // Every 6h for week, 24h for month
   
   const ticks = []
@@ -573,7 +573,7 @@ const ensureBookingGaps = (bookings: BookingBlock[], minGapMinutes: number = 15)
      const clickPercent = (clickX / timelineWidth) * 100
      
      // Convert to hours from period start
-     const totalPeriodHours = viewMode === 'week' ? 168 : 744
+     const totalPeriodHours = viewMode === 'week' ? 168 : getDaysInMonth(periodStart) * 24
      const clickOffsetHours = (clickPercent / 100) * totalPeriodHours
      
      // Calculate actual datetime
@@ -677,21 +677,24 @@ const ensureBookingGaps = (bookings: BookingBlock[], minGapMinutes: number = 15)
 
 ## WowDash Template Mapping
 
-### Template to Component Mapping
+### Template Reference Hierarchy
 
-| Hotel CRM Component | WowDash Template | Key Features Extracted |
-|-------------------|------------------|----------------------|
-| **Login Page** | `sign-in.html` | Two-column layout, icon inputs, auth forms |
-| **Dashboard** | `index.html`, `index-2.html`, `widgets.html` | Stats cards, KPI widgets with trends, metric charts, gradient backgrounds |
-| **Calendar Grid** | Custom implementation | Time continuum layout + percentage positioning (no suitable WowDash template) |
-| **Room Cards** | `card.html` | Image-based cards, flexible layouts, action buttons, status indicators |
-| **Room List** | `table-data.html` | Data tables, action buttons, filtering |
-| **Customer List** | `users-list.html` | User tables, search, pagination |
-| **Customer Profile** | `view-profile.html` | Profile layouts, tabs, activity feeds |
-| **User Management** | `add-user.html` | User creation forms, role selection |
-| **Audit Table** | `table-data.html` | Advanced tables, filtering, export |
-| **Navigation** | `_sidebar.html`, `_nav.html` | Sidebar menus, breadcrumbs, user dropdown |
-| **Modals** | Various | Quick booking modal (calendar), confirmations, detail views |
+Each component uses a **primary reference** for main structure, with **secondary references** for additional elements not found in the primary template. If no suitable reference exists, create components following existing WowDash patterns and consistency.
+
+| Hotel CRM Component | Primary Reference | Secondary References | Fallback Strategy |
+|-------------------|------------------|---------------------|------------------|
+| **Login Page** | `sign-in.html` | None needed | Follow exact template structure |
+| **Dashboard** | `index.html`, `index-2.html` | `widgets.html` for KPI cards | Adapt widget patterns for hotel metrics |
+| **Calendar Grid** | Custom implementation | Modal patterns from various templates | Follow WowDash grid layouts and color schemes |
+| **Room Cards** | `card.html` | `badges.html` for status indicators | Create room-specific content following card structure |
+| **Room List** | `table-data.html` | `badges.html` for room status | Adapt table columns for room-specific data |
+| **Customer List** | `users-list.html` | None needed | Direct adaptation of user table structure |
+| **Customer Profile** | `view-profile.html` | `table-data.html` for booking history, `widgets.html` for statistics | Integrate table patterns into profile layout |
+| **User Management** | `add-user.html` | `form.html` patterns if needed | Follow existing form validation and styling |
+| **Audit Table** | `table-data.html` | None needed | Direct adaptation for audit-specific columns |
+| **Audit Detail View** | `view-profile.html` for layout | Custom diff table following `table-data.html` styling | Create Before/After comparison using consistent table patterns |
+| **Navigation** | `_sidebar.html`, `_nav.html` | None needed | Follow exact navigation structure |
+| **Booking Modal** | Calendar modal patterns | `form.html` for form structure | Create customer search dropdown following existing dropdown patterns |
 
 ### Key Design Patterns Extracted
 
@@ -709,42 +712,199 @@ const ensureBookingGaps = (bookings: BookingBlock[], minGapMinutes: number = 15)
 .host-badge { @apply bg-cyan-100 text-cyan-700; }
 ```
 
-**Component Patterns:**
-```jsx
-// Status Badge Component (from badges.html)
-const StatusBadge = ({ status, children }) => (
-  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusClasses(status)}`}>
-    {children}
-  </span>
-)
+**Component Patterns (TypeScript + Pure Tailwind - Exact WowDash Reference):**
+```tsx
+import { Eye, Edit, Trash2, Users } from 'lucide-react';
 
-// Action Button Group (from table-data.html) 
-const ActionButtons = ({ onView, onEdit, onDelete, permissions }) => (
+// Status Badge Component (from badges.html - exact soft badge pattern)
+interface StatusBadgeProps {
+  status: 'success' | 'danger' | 'warning' | 'info' | 'primary' | 'purple';
+  children: React.ReactNode;
+}
+
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status, children }) => {
+  const statusClasses = {
+    success: 'text-success-600 bg-success-100 dark:bg-success-600/25 dark:text-success-400',
+    danger: 'text-danger-600 bg-danger-100 dark:bg-danger-600/25 dark:text-danger-400',
+    warning: 'text-warning-600 bg-warning-100 dark:bg-warning-600/25 dark:text-warning-400',
+    info: 'text-info-600 bg-info-100 dark:bg-info-600/25 dark:text-info-400',
+    primary: 'text-primary-600 bg-primary-100 dark:bg-primary-600/25 dark:text-primary-400',
+    purple: 'text-purple-600 bg-purple-100 dark:bg-purple-600/25 dark:text-purple-400'
+  };
+  
+  return (
+    <span className={`badge text-sm font-semibold px-5 py-1.5 rounded ${statusClasses[status]}`}>
+      {children}
+    </span>
+  );
+};
+
+// Action Button Group (from table-data.html - exact pattern)
+interface ActionButtonsProps {
+  onView?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  permissions: {
+    canEdit: boolean;
+    canDelete: boolean;
+  };
+}
+
+const ActionButtons: React.FC<ActionButtonsProps> = ({ 
+  onView, 
+  onEdit, 
+  onDelete, 
+  permissions 
+}) => (
   <div className="flex items-center gap-2">
-    <button className="w-8 h-8 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center">
-      <Eye className="w-4 h-4" />
-    </button>
-    {permissions.canEdit && (
-      <button className="w-8 h-8 bg-success-50 text-success-600 rounded-full flex items-center justify-center">
+    {onView && (
+      <button 
+        onClick={onView}
+        className="w-8 h-8 bg-primary-50 dark:bg-primary-600/10 text-primary-600 dark:text-primary-400 rounded-full inline-flex items-center justify-center"
+      >
+        <Eye className="w-4 h-4" />
+      </button>
+    )}
+    {permissions.canEdit && onEdit && (
+      <button 
+        onClick={onEdit}
+        className="w-8 h-8 bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 rounded-full inline-flex items-center justify-center"
+      >
         <Edit className="w-4 h-4" />
       </button>
     )}
+    {permissions.canDelete && onDelete && (
+      <button 
+        onClick={onDelete}
+        className="w-8 h-8 bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400 rounded-full inline-flex items-center justify-center"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    )}
   </div>
-)
+);
 
-// Card Layout (from card.html + users-grid.html)
-const DataCard = ({ title, value, trend, icon: Icon }) => (
-  <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-neutral-600">{title}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
+// Data Card Layout (from widgets.html - exact gradient pattern)
+interface DataCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  trend?: {
+    value: number;
+    label: string;
+    direction: 'up' | 'down';
+  };
+  color?: 'cyan' | 'purple' | 'primary' | 'success' | 'warning' | 'danger';
+}
+
+const DataCard: React.FC<DataCardProps> = ({ 
+  title, 
+  value, 
+  icon: Icon, 
+  trend,
+  color = 'cyan' 
+}) => (
+  <div className={`card shadow-none border border-gray-200 dark:border-neutral-600 dark:bg-neutral-700 rounded-lg h-full bg-gradient-to-r from-${color}-600/10 to-bg-white`}>
+    <div className="card-body p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-white mb-1">{title}</p>
+          <h6 className="mb-0 dark:text-white text-2xl font-bold">{value}</h6>
+          {trend && (
+            <p className="font-medium text-sm text-neutral-600 dark:text-white mt-3 mb-0 flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1 ${
+                trend.direction === 'up' ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'
+              }`}>
+                {trend.direction === 'up' ? '↑' : '↓'} {Math.abs(trend.value)}
+              </span>
+              {trend.label}
+            </p>
+          )}
+        </div>
+        <div className={`w-[50px] h-[50px] bg-${color}-600 rounded-full flex justify-center items-center`}>
+          <Icon className="text-white text-2xl" />
+        </div>
       </div>
-      <Icon className="w-8 h-8 text-primary-600" />
     </div>
   </div>
-)
+);
+
+// Card Container (from card.html - basic card structure)
+interface CardProps {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const Card: React.FC<CardProps> = ({ title, children, className = "" }) => (
+  <div className={`card h-full p-0 border-0 overflow-hidden ${className}`}>
+    {title && (
+      <div className="card-header border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 py-4 px-6">
+        <h6 className="text-lg font-semibold mb-0">{title}</h6>
+      </div>
+    )}
+    <div className="card-body p-6">
+      {children}
+    </div>
+  </div>
+);
 ```
+
+### **Implementation Guidelines for Non-Referenced Elements**
+
+When creating components or patterns not found in WowDash templates, follow this systematic approach to maintain consistency:
+
+**🔍 Pattern Discovery Process:**
+
+1. **Check HTML templates first:**
+   ```bash
+   # Search for similar UI patterns
+   grep -r "className" wowdash-templates-tailwand/pages/ | grep "pattern-name"
+   ```
+
+2. **Examine SCSS definitions:**
+   ```bash
+   # Look for component-specific SCSS files
+   ls wowdash-templates-tailwand/assets/scss/components/
+   # Check for utility classes and @apply directives
+   grep -r "@apply" wowdash-templates-tailwand/assets/scss/
+   ```
+
+3. **Understand class hierarchy:**
+   - **SCSS wrapper classes** (e.g., `.btn`, `.card`, `.form-control`) exist and use `@apply` with Tailwind utilities
+   - **These classes are valid** - don't assume they don't exist
+   - **Check SCSS files** to see what Tailwind classes they contain
+
+**⚠️ Critical Understanding:**
+- WowDash SCSS files define classes like `.btn-primary`, `.card-body`, `.form-control` using `@apply` with Tailwind utilities
+- These classes exist **ONLY in WowDash HTML templates** - they are NOT available in our React project
+- **DO NOT use these classes** - instead extract the underlying Tailwind utilities from the `@apply` directives
+- Our React project uses **pure Tailwind only** - no custom CSS classes
+
+**🎯 Class Selection Strategy:**
+
+1. **NEVER use WowDash CSS classes** (`.btn`, `.card`, `.form-control`) - they are not available in our React project
+2. **ALWAYS extract underlying Tailwind classes** from SCSS `@apply` directives 
+3. **Convert SCSS patterns to pure Tailwind** following the same visual patterns
+4. **Use only Tailwind utilities** with WowDash color variables from `tailwind.config.js`
+
+**📋 Consistency Checklist:**
+- ✅ Colors: Follow existing color variables from `tailwind.config.js`
+- ✅ Spacing: Match patterns from SCSS files (`p-4`, `p-6`, `mb-4`, `gap-6`)
+- ✅ Typography: Use font weights and sizes from templates
+- ✅ Interactions: Follow hover/focus/disabled patterns from SCSS
+- ✅ Dark mode: Include `dark:` variants as seen in templates
+- ✅ Responsiveness: Use established breakpoints and patterns
+
+**🔄 Conversion Process Example:**
+1. Find pattern in HTML: `<button class="btn btn-primary">Click me</button>`
+2. Check SCSS file: `.btn { @apply rounded-lg py-3 px-6 inline-flex transition; }`
+3. Check SCSS file: `.btn-primary { @apply bg-primary-600 text-white hover:bg-primary-700; }`
+4. Convert to React: `<button className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700">Click me</button>`
+
+**NEVER use the WowDash classes directly - always convert them to pure Tailwind utilities.**
+
+**The goal is to create elements that look and behave as if they were part of the original WowDash template set.**
 
 ---
 
@@ -806,7 +966,9 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 ## COMPONENT 3: Basic Dashboard (Role-specific)
 **Confidence:** ✅ High  
-**Templates:** `pages/index.html`, `pages/index-2.html`, `pages/widgets.html`
+**Primary Reference:** `pages/index.html`, `pages/index-2.html` for layout structure  
+**Secondary Reference:** `pages/widgets.html` for KPI cards and metrics  
+**Fallback Strategy:** Adapt widget patterns for hotel-specific metrics (occupancy, revenue, bookings)
 
 **What to build:**
 - **Admin:** System stats, user activity, revenue metrics
@@ -817,10 +979,10 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 - Basic stats from existing endpoints
 - Real-time data with TanStack Query
 
-**WowDash Patterns:**
-- Stats cards with icons
-- Simple charts (recharts)
-- Grid layouts
+**Implementation approach:**
+- Use dashboard layout from index templates
+- Integrate widget patterns from widgets.html for hotel KPIs
+- Create custom metrics following WowDash color and spacing patterns
 
 ---
 
@@ -849,20 +1011,26 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 ## COMPONENT 5: Customer Profile
 **Confidence:** ✅ High  
-**Templates:** `pages/view-profile.html`
+**Primary Reference:** `pages/view-profile.html` for main layout and profile structure  
+**Secondary References:** `pages/table-data.html` for booking history table, `pages/widgets.html` for customer statistics cards  
+**Fallback Strategy:** Create booking history section using table patterns, integrate statistics cards following widget styling
 
 **What to build:**
-- Individual customer page
-- Booking history display
-- Customer statistics
-- Edit customer details
-- Basic photo upload placeholder
+- Individual customer page using profile layout
+- Booking history section (integrate table patterns from table-data.html)
+- Customer statistics cards (adapt patterns from widgets.html)
+- Edit customer details (use existing profile form patterns)
+- Photo upload (follow existing avatar upload patterns)
 
 **API Integration:**
 - `GET /api/v1/customers/{id}`
-- Customer's booking history
+- Customer's booking history from bookings endpoint
 
-**File Upload:** Research needed for photo implementation
+**Implementation approach:**
+- Use view-profile.html as base structure 
+- Add booking history table section following table-data.html styling
+- Create statistics cards using widget patterns for visits/spend metrics
+- Maintain consistency with existing profile form patterns
 
 ---
 
@@ -902,7 +1070,9 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 
 ## COMPONENT 8: Calendar Grid (Research Phase)
 **Confidence:** ❓ Medium (requires research)  
-**Templates:** Custom implementation (calendar-main.html not suitable - uses FullCalendar for events, not room-based continuum)
+**Primary Reference:** Custom implementation required (calendar-main.html uses FullCalendar for events, not suitable for room-based time continuum)  
+**Secondary References:** Modal patterns from various templates for booking interactions, `pages/table-data.html` for time scale headers  
+**Fallback Strategy:** Follow WowDash grid layouts (`grid grid-cols-12`), use consistent color schemes for booking statuses, maintain responsive breakpoints
 
 **Research Phase:**
 1. Percentage-based positioning for time continuum
@@ -911,15 +1081,20 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 4. Real-time sync strategy
 
 **What to build:**
-- Time continuum container (25 rooms × timeline)
+- Time continuum container (25 rooms × timeline) using WowDash grid patterns
 - Booking block visualization with percentage positioning
-- Click-to-create booking interactions
-- Time scale markers and room headers
+- Click-to-create booking interactions using modal patterns
+- Time scale markers following table header styling
 
 **Major Research Areas:**
 - Dynamic percentage positioning calculations
-- Conflict detection UI
+- Conflict detection UI following WowDash alert patterns
 - Performance with multiple bookings
+
+**Implementation approach:**
+- Use WowDash responsive grid classes for container structure
+- Apply consistent color schemes from existing templates for booking statuses
+- Follow WowDash spacing and border patterns for visual consistency
 
 ---
 
@@ -973,12 +1148,12 @@ const DataCard = ({ title, value, trend, icon: Icon }) => (
 ### Frontend Stack
 - **Framework:** React 19 with TypeScript
 - **Styling:** Tailwind CSS + WowDash design system
-- **State Management:** TanStack Query v5 + Zustand
+- **State Management:** TanStack Query v5 (server state) + React built-in state (local state)
 - **Routing:** React Router v7 with role-based guards
 - **Icons:** Lucide React (replacing Iconify)
 - **Charts:** Recharts (replacing ApexCharts)
 - **Date Handling:** date-fns
-- **Forms:** React Hook Form + Zod validation
+- **Forms:** React controlled components with native validation
 
 ### Backend Integration (FastAPI)
 - **API Client:** Auto-generated TypeScript client from OpenAPI
@@ -1008,27 +1183,21 @@ HotelCalendar/
 
 **State Management:**
 ```typescript
-// Calendar Store (Zustand)
-interface CalendarState {
-  // View state
+// Calendar State Management (React built-in state + TanStack Query)
+// Server state: Managed by TanStack Query (rooms, bookings, customers)  
+// UI state: Managed by React useState/useReducer
+
+interface CalendarUIState {
   currentDate: Date
   viewMode: 'week' | 'month'
   selectedRooms: string[]
-  
-  // Data
-  rooms: Room[]
-  bookings: BookingBlock[]
-  customers: Customer[]
-  
-  // UI state
   draggedBooking: BookingBlock | null
-  selectedBooking: BookingBlock | null  
+  selectedBooking: BookingBlock | null
   conflictingBookings: BookingBlock[]
-  
-  // Permissions
-  userRole: UserRole
-  permissions: PermissionSet
 }
+
+// Usage: const [calendarState, setCalendarState] = useState<CalendarUIState>({...})
+// Server data: const { data: rooms } = useQuery({ queryKey: ['rooms'], queryFn: fetchRooms })
 ```
 
 ### Database Optimization (Max 25 Rooms)

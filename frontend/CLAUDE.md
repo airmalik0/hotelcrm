@@ -61,6 +61,16 @@ wowdash-templates-tailwand/  # HTML reference templates (83 files)
 3. **Convert logic**: Transform any JS concepts into React hooks/state patterns
 4. **Implement**: Create React component using extracted Tailwind classes
 
+### SCSS to Tailwind Conversion Process
+**IMPORTANT**: WowDash CSS classes (`.btn`, `.card`, `.form-control`) are NOT available in our React project. Always convert to pure Tailwind:
+
+1. Find pattern in HTML: `<button class="btn btn-primary">Click me</button>`
+2. Check SCSS file: `.btn { @apply rounded-lg py-3 px-6 inline-flex transition; }`
+3. Check SCSS file: `.btn-primary { @apply bg-primary-600 text-white hover:bg-primary-700; }`
+4. Convert to React: `<button className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700">Click me</button>`
+
+**NEVER use WowDash CSS classes directly - always extract the underlying Tailwind utilities from @apply directives.**
+
 Available HTML templates in `wowdash-templates-tailwand/pages/`:
 - **Auth**: sign-in, sign-up, forgot-password
 - **Dashboards**: index (main), index-2 through index-9 (variants)
