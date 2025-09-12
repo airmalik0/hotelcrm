@@ -1,6 +1,6 @@
-import { bookingsReadBookings, customersReadCustomers } from "@/client"
+// import { bookingsReadBookings, customersReadCustomers } from "@/client"
 import { KPICard } from "@/components/dashboard/KPICard"
-import { useQuery } from "@tanstack/react-query"
+// import { useQuery } from "@tanstack/react-query"
 import {
   Calendar,
   ClipboardList,
@@ -12,16 +12,11 @@ import {
 import React from "react"
 
 export function HostDashboard() {
-  // Fetch data for host dashboard
-  const { data: customers, isLoading: customersLoading } = useQuery({
-    queryKey: ["customers"],
-    queryFn: () => customersReadCustomers({ query: { limit: 1000 } }),
-  })
-
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["bookings"],
-    queryFn: () => bookingsReadBookings({ query: { limit: 1000 } }),
-  })
+  // Temporarily disabled until API endpoints are created
+  const customers = { data: [] }
+  const bookings = { data: [] }
+  const customersLoading = false
+  const bookingsLoading = false
 
   // Calculate today's metrics
   const today = new Date().toDateString()

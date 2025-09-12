@@ -1,10 +1,10 @@
-import {
-  bookingsReadBookings,
-  customersReadCustomers,
-  roomsReadRooms,
-} from "@/client"
+// import {
+//   bookingsReadBookings,
+//   customersReadCustomers,
+//   roomsReadRooms,
+// } from "@/client"
 import { KPICard } from "@/components/dashboard/KPICard"
-import { useQuery } from "@tanstack/react-query"
+// import { useQuery } from "@tanstack/react-query"
 import {
   Building2,
   Calendar,
@@ -16,21 +16,13 @@ import {
 import React from "react"
 
 export function ManagerDashboard() {
-  // Fetch data for manager dashboard
-  const { data: rooms, isLoading: roomsLoading } = useQuery({
-    queryKey: ["rooms"],
-    queryFn: () => roomsReadRooms({ query: { limit: 1000 } }),
-  })
-
-  const { data: customers, isLoading: customersLoading } = useQuery({
-    queryKey: ["customers"],
-    queryFn: () => customersReadCustomers({ query: { limit: 1000 } }),
-  })
-
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["bookings"],
-    queryFn: () => bookingsReadBookings({ query: { limit: 1000 } }),
-  })
+  // Temporarily disabled until API endpoints are created
+  const rooms = { data: [] }
+  const customers = { data: [] }
+  const bookings = { data: [] }
+  const roomsLoading = false
+  const customersLoading = false
+  const bookingsLoading = false
 
   // Calculate metrics
   const totalRevenue =
@@ -80,11 +72,6 @@ export function ManagerDashboard() {
           icon={Building2}
           color="primary"
           loading={roomsLoading}
-          trend={{
-            value: 5,
-            label: "vs yesterday",
-            direction: "up",
-          }}
         />
 
         <KPICard
@@ -93,11 +80,6 @@ export function ManagerDashboard() {
           icon={Calendar}
           color="success"
           loading={bookingsLoading}
-          trend={{
-            value: 3,
-            label: "vs yesterday",
-            direction: "up",
-          }}
         />
 
         <KPICard
@@ -106,11 +88,6 @@ export function ManagerDashboard() {
           icon={DollarSign}
           color="warning"
           loading={bookingsLoading}
-          trend={{
-            value: 12,
-            label: "this month",
-            direction: "up",
-          }}
         />
 
         <KPICard

@@ -53,12 +53,6 @@ export function AdminDashboard() {
             System overview and management tools
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-sm text-success-600 dark:text-success-400">
-            <div className="w-2 h-2 bg-success-600 rounded-full" />
-            System Healthy
-          </div>
-        </div>
       </div>
 
       {/* KPI Cards */}
@@ -69,11 +63,6 @@ export function AdminDashboard() {
           icon={Users}
           color="primary"
           loading={usersLoading}
-          trend={{
-            value: 12,
-            label: "vs last month",
-            direction: "up",
-          }}
         />
 
         <KPICard
@@ -90,11 +79,6 @@ export function AdminDashboard() {
           icon={Users}
           color="warning"
           loading={customersLoading}
-          trend={{
-            value: 8,
-            label: "vs last month",
-            direction: "up",
-          }}
         />
 
         <KPICard
@@ -103,11 +87,6 @@ export function AdminDashboard() {
           icon={DollarSign}
           color="purple"
           loading={bookingsLoading}
-          trend={{
-            value: 15,
-            label: "vs last month",
-            direction: "up",
-          }}
         />
       </div>
 
@@ -177,29 +156,10 @@ export function AdminDashboard() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Database
-                </span>
-                <span className="text-sm font-medium text-success-600 dark:text-success-400">
-                  Healthy
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  API Response
-                </span>
-                <span className="text-sm font-medium text-success-600 dark:text-success-400">
-                  Fast
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Storage
-                </span>
-                <span className="text-sm font-medium text-warning-600 dark:text-warning-400">
-                  75% Used
-                </span>
+              <div className="text-center py-4">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                  System metrics will be available soon
+                </p>
               </div>
             </div>
           </div>
