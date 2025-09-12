@@ -17,7 +17,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 - ✅ All API endpoints ready: `/api/v1/users/`, `/api/v1/customers/`, `/api/v1/rooms/`, `/api/v1/bookings/`, `/api/v1/audit/`
 - ✅ RBAC system: `require_admin`, `require_admin_or_manager` decorators
 - ✅ Models: User, Customer, Room, Booking, AuditLog with relationships
-- ✅ TypeScript client auto-generation from OpenAPI
+- ✅ TypeScript types auto-generation from OpenAPI (only types, not client functions)
 
 **Frontend Foundation:**
 - ✅ React 18.3 + TypeScript + Tailwind CSS + TanStack Query setup

@@ -7,6 +7,8 @@ from pydantic import field_validator
 from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
+from .common import District
+
 if TYPE_CHECKING:
     from .booking import Booking
 
@@ -16,7 +18,7 @@ class CustomerBase(SQLModel):
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(default=None, max_length=20, unique=True, index=True)
     date_of_birth: datetime | None = None
-    district: str | None = Field(default=None, max_length=200)
+    district: District | None = None
     passport_photo_path: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None, max_length=1000)
 
@@ -31,10 +33,34 @@ class CustomerBase(SQLModel):
     @classmethod
     def validate_phone(cls, v: str | None) -> str | None:
         if v:
+            # Extract only digits for storage (normalize)
             digits_only = re.sub(r'\D', '', v)
             if len(digits_only) < 7 or len(digits_only) > 15:
                 raise ValueError("Phone number must contain between 7 and 15 digits")
-            return v.strip()
+            # Store only digits to ensure uniqueness
+            return digits_only
+        return v
+    
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_date_of_birth(cls, v: datetime | None) -> datetime | None:
+        if v:
+            # Make datetime timezone-aware if it isn't already
+            if v.tzinfo is None:
+                v = v.replace(tzinfo=timezone.utc)
+            
+            now = datetime.now(timezone.utc)
+            
+            # Ensure date is not in the future
+            if v > now:
+                raise ValueError("Date of birth cannot be in the future")
+            # Ensure date is reasonable (not before 1900)
+            if v.year < 1900:
+                raise ValueError("Date of birth must be after year 1900")
+            # Ensure person is not impossibly old (e.g., over 150 years)
+            age = (now - v).days / 365.25
+            if age > 150:
+                raise ValueError("Invalid date of birth (age over 150 years)")
         return v
 
 
@@ -59,7 +85,7 @@ class CustomerUpdate(SQLModel):
     last_name: str | None = None
     phone: str | None = None
     date_of_birth: datetime | None = None
-    district: str | None = None
+    district: District | None = None
     passport_photo_path: str | None = None
     tags: list[str] | None = None
     notes: str | None = None
@@ -77,10 +103,34 @@ class CustomerUpdate(SQLModel):
     @classmethod
     def validate_phone(cls, v: str | None) -> str | None:
         if v:
+            # Extract only digits for storage (normalize)
             digits_only = re.sub(r'\D', '', v)
             if len(digits_only) < 7 or len(digits_only) > 15:
                 raise ValueError("Phone number must contain between 7 and 15 digits")
-            return v.strip()
+            # Store only digits to ensure uniqueness
+            return digits_only
+        return v
+    
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_date_of_birth(cls, v: datetime | None) -> datetime | None:
+        if v:
+            # Make datetime timezone-aware if it isn't already
+            if v.tzinfo is None:
+                v = v.replace(tzinfo=timezone.utc)
+            
+            now = datetime.now(timezone.utc)
+            
+            # Ensure date is not in the future
+            if v > now:
+                raise ValueError("Date of birth cannot be in the future")
+            # Ensure date is reasonable (not before 1900)
+            if v.year < 1900:
+                raise ValueError("Date of birth must be after year 1900")
+            # Ensure person is not impossibly old (e.g., over 150 years)
+            age = (now - v).days / 365.25
+            if age > 150:
+                raise ValueError("Invalid date of birth (age over 150 years)")
         return v
 
 

@@ -25,13 +25,13 @@ Password: See .env
 1. NEVER use python or pip - ALWAYS use uv run
 2. ALWAYS reference WowDash HTML templates for UI patterns
 3. Context docs auto-load: frontend/CLAUDE.md and backend/CLAUDE.md
-4. Linters run every 3rd edit (ruff/mypy for backend, biome for frontend)
+4. Linters run every 10th edit (ruff/mypy for backend, biome for frontend)
 5. API client regenerates when models.py changes
 6. ALWAYS commit after completing features
 7. After new backend features: ask "Should I add tests?"
 
 ## Automation Hooks
-Linters: Every 3rd file edit
+Linters: Every 10th file edit
 Schema: Auto-regenerates on models.py change
 Context: Loads backend/frontend docs automatically
 These hooks provide feedback but won't block your work - you can fix issues when convenient.
@@ -53,14 +53,14 @@ cd backend && uv run ruff check .
 cd backend && uv run python -m mypy .
 cd frontend && npm run lint
 ./scripts/generate-client.sh  # Manual API client regeneration
-# Flow: models.py → OpenAPI JSON → @hey-api/openapi-ts → src/client/
-# Setup: setupApiClient() in App.tsx configures BASE, TOKEN, interceptors
+# Flow: models.py → OpenAPI JSON → @hey-api/openapi-ts → src/client/types.gen.ts
+# Setup: axios interceptors in lib/axios.ts handle token injection and auth
 ```
 
 ## Database
-Port: localhost:5432
+Port: localhost:5433 (development), localhost:5432 (production)
 Credentials: See .env
-Direct: psql -h localhost -U postgres -d app
+Direct: psql -h localhost -p 5433 -U postgres -d app
 Containers: hotelcrm-backend-1, hotelcrm-db-1
 
 ## Git

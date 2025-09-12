@@ -88,7 +88,7 @@ export type CustomerCreate = {
     last_name: string;
     phone?: (string | null);
     date_of_birth?: (string | null);
-    district?: (string | null);
+    district?: (District | null);
     passport_photo_path?: (string | null);
     notes?: (string | null);
 };
@@ -98,7 +98,7 @@ export type CustomerPublic = {
     last_name: string;
     phone?: (string | null);
     date_of_birth?: (string | null);
-    district?: (string | null);
+    district?: (District | null);
     passport_photo_path?: (string | null);
     notes?: (string | null);
     id: string;
@@ -119,11 +119,16 @@ export type CustomerUpdate = {
     last_name?: (string | null);
     phone?: (string | null);
     date_of_birth?: (string | null);
-    district?: (string | null);
+    district?: (District | null);
     passport_photo_path?: (string | null);
     tags?: (Array<(string)> | null);
     notes?: (string | null);
 };
+
+/**
+ * Districts of Tashkent
+ */
+export type District = 'Almazar' | 'Bektemir' | 'Mirabad' | 'Mirzo Ulugbek' | 'Sergeli' | 'Uchtepa' | 'Chilanzar' | 'Shaykhantakhur' | 'Yunusabad' | 'Yakkasaray' | 'Yashnabad' | 'Yangihayot';
 
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;

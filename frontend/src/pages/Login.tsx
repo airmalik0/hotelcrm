@@ -4,7 +4,7 @@ import { AuthLayout } from "@/layouts/AuthLayout"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 export function Login() {
@@ -49,13 +49,14 @@ export function Login() {
         // Redirect based on role
         navigate("/", { replace: true })
       } catch (error) {
-        console.error("Failed to get user info:", error)
+        // Clean up token if user fetch fails
         localStorage.removeItem("hotel_crm_token")
-        throw error
+        throw new Error("Authentication failed")
       }
     },
-    onError: (error) => {
-      console.error("Login failed:", error)
+    onError: (error: any) => {
+      // Don't log authentication errors to console (security best practice)
+      // Error will be shown in UI instead
     },
   })
 

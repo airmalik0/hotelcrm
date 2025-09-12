@@ -1108,7 +1108,7 @@
       return (
         void 0 !== w.daysContainer &&
         -1 === e.className.indexOf("hidden") &&
-          -1 === e.className.indexOf("flatpickr-disabled") &&
+        -1 === e.className.indexOf("flatpickr-disabled") &&
         w.daysContainer.contains(e)
       )
     }

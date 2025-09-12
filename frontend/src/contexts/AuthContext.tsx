@@ -1,5 +1,5 @@
-import type { UserPublic } from "@/client/types.gen"
 import { getCurrentUser } from "@/api/auth"
+import type { UserPublic } from "@/client/types.gen"
 import {
   getStoredUser,
   getToken,
@@ -60,7 +60,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [currentUser, error])
 
   const login = (token: string, userData: UserPublic) => {
-    console.log("AuthContext - Login called with user:", userData)
     setToken(token)
     setUser(userData)
     setStoredUser(userData)

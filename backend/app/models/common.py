@@ -40,6 +40,22 @@ class CustomerTag(str, Enum):
     PROBLEMATIC = "problematic"
 
 
+class District(str, Enum):
+    """Districts of Tashkent"""
+    Almazar = "Almazar"
+    Bektemir = "Bektemir"
+    Mirabad = "Mirabad"
+    Mirzo_Ulugbek = "Mirzo Ulugbek"
+    Sergeli = "Sergeli"
+    Uchtepa = "Uchtepa"
+    Chilanzar = "Chilanzar"
+    Shaykhantakhur = "Shaykhantakhur"
+    Yunusabad = "Yunusabad"
+    Yakkasaray = "Yakkasaray"
+    Yashnabad = "Yashnabad"
+    Yangihayot = "Yangihayot"
+
+
 class Message(SQLModel):
     message: str
 

@@ -1,8 +1,8 @@
-"""Initial migration - create all tables
+"""Initial migration with all tables and district enum
 
-Revision ID: a9b2919e612d
+Revision ID: a5a3a5a1380c
 Revises: 
-Create Date: 2025-09-11 11:19:30.242597
+Create Date: 2025-09-12 19:45:42.770602
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = 'a9b2919e612d'
+revision = 'a5a3a5a1380c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,7 +24,7 @@ def upgrade():
     sa.Column('last_name', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
     sa.Column('date_of_birth', sa.DateTime(), nullable=True),
-    sa.Column('district', sqlmodel.sql.sqltypes.AutoString(length=200), nullable=True),
+    sa.Column('district', sa.Enum('ALMAZAR', 'BEKTEMIR', 'MIRABAD', 'MIRZO_ULUGBEK', 'SERGELI', 'UCHTEPA', 'CHILANZAR', 'SHAYKHANTAKHUR', 'YUNUSABAD', 'YAKKASARAY', 'YASHNABAD', 'YANGIHAYOT', name='district'), nullable=True),
     sa.Column('passport_photo_path', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(length=1000), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),

@@ -248,6 +248,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
   - Create models: API input for creation (e.g., `UserCreate`)
   - Update models: API input for updates (e.g., `UserUpdate`)
   - Public models: API output (e.g., `UserPublic`)
+- **Enums**: Use matching names and values (e.g., `Almazar = "Almazar"`) to avoid migration issues
 
 #### Creating New Tables
 ```python
@@ -278,11 +279,12 @@ After creating new models:
 4. **Important**: The frontend TypeScript client will auto-regenerate when you save changes to models.py (via hook → generate-client.sh)
 
 ### Database Connection
-- PostgreSQL runs in Docker: `localhost:5432`
+- PostgreSQL runs in Docker: `localhost:5433` (development), `localhost:5432` (production)
 - Credentials in `.env`: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- Direct connection: `psql -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}`
-- Connection string format: `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost/${POSTGRES_DB}`
+- Direct connection: `psql -h localhost -p 5433 -U ${POSTGRES_USER} -d ${POSTGRES_DB}`
+- Connection string format: `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5433/${POSTGRES_DB}`
 - Default values from .env: user=`postgres`, password=(from .env), db=`app`
+- Note: Port 5433 is used in development to avoid conflicts with local PostgreSQL
 
 ### Authentication
 - JWT-based authentication

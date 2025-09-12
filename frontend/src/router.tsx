@@ -1,8 +1,10 @@
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { MainLayout } from "@/layouts/MainLayout"
+import { CustomerList } from "@/pages/CustomerList"
+import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
 import { Login } from "@/pages/Login"
-import { createBrowserRouter, Navigate } from "react-router-dom"
+import { Navigate, createBrowserRouter } from "react-router-dom"
 
 export const router = createBrowserRouter([
   {
@@ -58,14 +60,27 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
-              Customer Database
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Customer management interface coming soon...
-            </p>
-          </div>
+          <CustomerList />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/customers/:customerId",
+    element: (
+      <ProtectedRoute>
+        <MainLayout>
+          <CustomerProfile />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/customers/:customerId/edit",
+    element: (
+      <ProtectedRoute>
+        <MainLayout>
+          <CustomerProfile />
         </MainLayout>
       </ProtectedRoute>
     ),

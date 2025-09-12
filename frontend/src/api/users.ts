@@ -1,4 +1,4 @@
-import type { UserPublic, UserCreate, UserUpdate } from "@/client/types.gen"
+import type { UserCreate, UserPublic, UserUpdate } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
 interface PaginatedResponse<T> {
@@ -13,12 +13,15 @@ export async function getUsers(params?: {
   skip?: number
   limit?: number
 }): Promise<PaginatedResponse<UserPublic>> {
-  const response = await apiClient.get<PaginatedResponse<UserPublic>>("/api/v1/users/", {
-    params: {
-      skip: params?.skip || 0,
-      limit: params?.limit || 100,
+  const response = await apiClient.get<PaginatedResponse<UserPublic>>(
+    "/api/v1/users/",
+    {
+      params: {
+        skip: params?.skip || 0,
+        limit: params?.limit || 100,
+      },
     },
-  })
+  )
   return response.data
 }
 
@@ -41,8 +44,14 @@ export async function createUser(data: UserCreate): Promise<UserPublic> {
 /**
  * Update user
  */
-export async function updateUser(userId: string, data: UserUpdate): Promise<UserPublic> {
-  const response = await apiClient.patch<UserPublic>(`/api/v1/users/${userId}`, data)
+export async function updateUser(
+  userId: string,
+  data: UserUpdate,
+): Promise<UserPublic> {
+  const response = await apiClient.patch<UserPublic>(
+    `/api/v1/users/${userId}`,
+    data,
+  )
   return response.data
 }
 

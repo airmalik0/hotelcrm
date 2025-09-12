@@ -24,7 +24,9 @@ npm run generate-client  # Regenerate API client
 src/pages/*.tsx          # Page components (to be created)
 src/components/*.tsx     # Reusable components (to be created)
 src/layouts/*.tsx        # Layout components (to be created)
-src/client/*.gen.ts      # Generated API client (DO NOT EDIT)
+src/api/*.ts             # Custom API wrapper functions
+src/lib/axios.ts         # Configured axios instance with interceptors
+src/client/types.gen.ts  # Auto-generated TypeScript types (DO NOT EDIT)
 wowdash-templates-tailwand/  # HTML reference templates (83 files)
 ```
 
@@ -32,12 +34,21 @@ wowdash-templates-tailwand/  # HTML reference templates (83 files)
 
 **⚠️ MANDATORY: Read `wowdash-templates-tailwand/wowdash.md` FIRST before creating ANY components!**
 
+**🔴 CRITICAL: When you see custom classes in HTML like `.form-control`, `.card`, `.btn` - ALWAYS check SCSS files FIRST!**
+   ```bash
+   # Check SCSS definitions for custom classes:
+   cat wowdash-templates-tailwand/assets/scss/components/_form.scss
+   cat wowdash-templates-tailwand/assets/scss/components/_card.scss
+   cat wowdash-templates-tailwand/assets/scss/components/_button.scss
+   ```
+
 1. ALWAYS check WowDash HTML templates first for patterns:
    ```bash
    ls wowdash-templates-tailwand/pages/ | grep -i "keyword"
    ```
-2. Extract Tailwind classes from HTML templates
-3. Convert to React components with:
+2. **CHECK SCSS FILES** for any custom classes found in HTML (`.form-control`, `.card`, etc.)
+3. Extract the @apply Tailwind utilities from SCSS and use them directly
+4. Convert to React components with:
    - React hooks instead of jQuery
    - lucide-react icons instead of iconify
    - recharts instead of ApexCharts
@@ -91,32 +102,53 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
 
 ## Key Patterns
 
-### API Integration
+### API Integration Architecture
 
-**Flow:** `backend/models.py` → auto-generates → `src/client/` → use in components
+**Current Architecture:**
+- **Types only**: `@hey-api/openapi-ts` generates only TypeScript types (no client functions)
+- **Custom wrappers**: API calls implemented manually in `src/api/*.ts`
+- **Axios client**: Centralized axios instance in `src/lib/axios.ts` with auth interceptors
 
-1. **Usage in components:**
+**API URL Configuration (VITE_API_URL):**
+
+**Development Mode:**
+- **Local dev**: Empty/not set → Vite proxy handles `/api/*` requests → forwards to `http://localhost:8000`
+- **Docker dev**: `VITE_API_URL=http://localhost:8000` (set in docker-compose.override.yml)
+- **Vite proxy**: Configured in `vite.config.js` to proxy `/api` to backend
+
+**Production Mode:**
+- **Docker prod**: `VITE_API_URL=https://api.${DOMAIN}` (set during build in Dockerfile)
+- **Build time**: Variable is embedded into the built JavaScript bundle
+- **Runtime**: axios uses `import.meta.env.VITE_API_URL || ""` as baseURL
+
+**Flow:** `backend/models.py` → auto-generates → `src/client/types.gen.ts` → use in API wrappers → use in components
+
+1. **Usage in components with custom API wrappers:**
    ```typescript
-   import { usersReadUsers, type UserPublic } from "@/client"
+   import { getUsers } from "@/api/users"
+   import type { UserPublic } from "@/client/types.gen"
    import { useQuery } from "@tanstack/react-query"
 
    const { data, error, isLoading } = useQuery({
      queryKey: ["users"],
-     queryFn: () => usersReadUsers({ limit: 100 }),
+     queryFn: () => getUsers({ limit: 100 }),
    })
    ```
 
-2. **Alternative client usage:**
+2. **Direct axios client usage:**
    ```typescript
-   import { client } from "@/client"
+   import { apiClient } from "@/lib/axios"
+   import type { UserPublic } from "@/client/types.gen"
 
    const { data, error, isLoading } = useQuery({
      queryKey: ["users"],
-     queryFn: () => client.get('/api/v1/users/', { params: { limit: 100 } }),
+     queryFn: () => apiClient.get<{ data: UserPublic[], count: number }>('/api/v1/users/', { 
+       params: { limit: 100 } 
+     }).then(res => res.data),
    })
    ```
 
-3. **Auto-generation:** When `models.py` changes, client regenerates via hook
+3. **Auto-generation:** When `models.py` changes, TypeScript types regenerate via hook (only types, not functions)
 
 ### Authentication
 - JWT token in localStorage

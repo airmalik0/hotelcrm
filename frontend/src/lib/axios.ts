@@ -27,13 +27,14 @@ apiClient.interceptors.request.use(
     }
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 )
 
 // Add response interceptor for 401 handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       removeToken()
       // Only redirect if we're not already on the login page
@@ -41,8 +42,18 @@ apiClient.interceptors.response.use(
         window.location.href = "/login"
       }
     }
+
+    // Don't log authentication errors on login page
+    if (
+      window.location.pathname === "/login" &&
+      error.response?.status === 401
+    ) {
+      // Silently reject without logging
+      return Promise.reject(error)
+    }
+
     return Promise.reject(error)
-  }
+  },
 )
 
-console.log("API client configured with base URL:", apiClient.defaults.baseURL)
+// API client initialized

@@ -1,4 +1,5 @@
 
+import re
 from uuid import UUID
 
 from sqlalchemy.orm import joinedload
@@ -37,11 +38,21 @@ class CRUDCustomer(CRUDBase[Customer, CustomerCreate, CustomerUpdate]):
         statement = select(Customer)
 
         if search:
-            search_filter = or_(
-                col(Customer.first_name).ilike(f"%{search}%"),
-                col(Customer.last_name).ilike(f"%{search}%"),
-                col(Customer.phone).ilike(f"%{search}%"),
-            )
+            # Check if search term looks like a phone number (contains digits)
+            if any(c.isdigit() for c in search):
+                # Normalize the search term for phone search (keep only digits)
+                normalized_search = re.sub(r'\D', '', search)
+                search_filter = or_(
+                    col(Customer.first_name).ilike(f"%{search}%"),
+                    col(Customer.last_name).ilike(f"%{search}%"),
+                    col(Customer.phone).ilike(f"%{normalized_search}%"),  # Search normalized
+                )
+            else:
+                # Regular search for names only
+                search_filter = or_(
+                    col(Customer.first_name).ilike(f"%{search}%"),
+                    col(Customer.last_name).ilike(f"%{search}%"),
+                )
             statement = statement.where(search_filter)
 
         statement = statement.offset(skip).limit(limit)
@@ -51,11 +62,21 @@ class CRUDCustomer(CRUDBase[Customer, CustomerCreate, CustomerUpdate]):
         statement = select(func.count()).select_from(Customer)
 
         if search:
-            search_filter = or_(
-                col(Customer.first_name).ilike(f"%{search}%"),
-                col(Customer.last_name).ilike(f"%{search}%"),
-                col(Customer.phone).ilike(f"%{search}%"),
-            )
+            # Check if search term looks like a phone number (contains digits)
+            if any(c.isdigit() for c in search):
+                # Normalize the search term for phone search (keep only digits)
+                normalized_search = re.sub(r'\D', '', search)
+                search_filter = or_(
+                    col(Customer.first_name).ilike(f"%{search}%"),
+                    col(Customer.last_name).ilike(f"%{search}%"),
+                    col(Customer.phone).ilike(f"%{normalized_search}%"),  # Search normalized
+                )
+            else:
+                # Regular search for names only
+                search_filter = or_(
+                    col(Customer.first_name).ilike(f"%{search}%"),
+                    col(Customer.last_name).ilike(f"%{search}%"),
+                )
             statement = statement.where(search_filter)
 
         return session.exec(statement).one()

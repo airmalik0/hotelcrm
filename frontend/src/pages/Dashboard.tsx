@@ -6,10 +6,9 @@ import { ManagerDashboard } from "./dashboards/ManagerDashboard"
 
 export function Dashboard() {
   const { user } = useAuth()
-  
+
   // Extract actual user data if it's wrapped in response
   const userData = user?.data || user
-  console.log("Dashboard - Current user data:", userData) // Debug log
 
   switch (userData?.role) {
     case "admin":
