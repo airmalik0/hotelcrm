@@ -81,13 +81,17 @@ export function CalendarGrid({
     setShowDetailModal(true)
   }, [])
 
+  // Constants for better maintainability
+  const DAYS_IN_WEEK = 7
+  const MS_PER_DAY = 24 * 60 * 60 * 1000
+
   // Generate day columns for visual shading
   const dayColumns = useMemo(() => {
     const columns: Array<{ leftPercent: number; widthPercent: number; isEven: boolean }> = []
 
     if (viewMode === "week") {
-      // 7 days for week view
-      for (let day = 0; day < 7; day++) {
+      // Generate columns for each day of the week
+      for (let day = 0; day < DAYS_IN_WEEK; day++) {
         const dayStart = new Date(viewStart)
         dayStart.setDate(viewStart.getDate() + day)
         dayStart.setHours(0, 0, 0, 0)
@@ -107,7 +111,7 @@ export function CalendarGrid({
       }
     } else {
       // Days for month view
-      const totalDays = Math.ceil((viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60 * 24))
+      const totalDays = Math.ceil((viewEnd.getTime() - viewStart.getTime()) / MS_PER_DAY)
       for (let day = 0; day < totalDays; day++) {
         const dayStart = new Date(viewStart)
         dayStart.setDate(viewStart.getDate() + day)

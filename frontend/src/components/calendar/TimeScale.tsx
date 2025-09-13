@@ -13,6 +13,13 @@ interface TimeScaleProps {
   currentDate: Date
 }
 
+// Constants for better maintainability
+const HOURS_PER_DAY = 24
+const MS_PER_HOUR = 60 * 60 * 1000
+const MS_PER_DAY = HOURS_PER_DAY * MS_PER_HOUR
+const LABEL_CENTER_OFFSET_HOURS = 12 // Center labels at noon
+const SUBTLE_MARKER_INTERVAL_HOURS = 6
+
 export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
   const { viewStart, viewEnd, timeMarkers } = useMemo(() => {
     const start =
@@ -26,7 +33,7 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
     // Generate time markers based on view mode
     const markers: Array<{ position: number; label: string; isMain: boolean }> =
       []
-    const totalHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    const totalDuration = end.getTime() - start.getTime()
 
     if (viewMode === "week") {
       // For week view: show day boundaries and labels
@@ -39,10 +46,10 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
         dayEnd.setDate(dayStart.getDate() + 1)
 
         // Position of day boundary (start of day)
-        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100
+        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / totalDuration) * 100
 
         // Position for label (center of day)
-        const labelPosition = ((dayStart.getTime() + 12 * 60 * 60 * 1000 - start.getTime()) / (end.getTime() - start.getTime())) * 100
+        const labelPosition = ((dayStart.getTime() + LABEL_CENTER_OFFSET_HOURS * MS_PER_HOUR - start.getTime()) / totalDuration) * 100
 
         // Add boundary line (no label)
         if (day > 0) {  // Skip first boundary as it's at position 0
@@ -68,12 +75,12 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
           isMain: false  // Labels don't have lines
         })
 
-        // Add subtle 6-hour markers
-        for (let hour = 6; hour < 24; hour += 6) {
+        // Add subtle markers at regular intervals
+        for (let hour = SUBTLE_MARKER_INTERVAL_HOURS; hour < HOURS_PER_DAY; hour += SUBTLE_MARKER_INTERVAL_HOURS) {
           if (hour !== 0) {  // Skip midnight (already have boundary)
             const markerTime = new Date(dayStart)
             markerTime.setHours(hour)
-            const markerPosition = ((markerTime.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100
+            const markerPosition = ((markerTime.getTime() - start.getTime()) / totalDuration) * 100
 
             if (markerPosition > 0 && markerPosition < 100) {
               markers.push({
@@ -94,7 +101,7 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
       })
     } else {
       // For month view: show day boundaries and centered labels
-      const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      const totalDays = Math.ceil(totalDuration / MS_PER_DAY)
 
       for (let day = 0; day <= totalDays; day++) {
         const dayStart = new Date(start)
@@ -102,7 +109,7 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
         dayStart.setHours(0, 0, 0, 0)
 
         // Position of day boundary
-        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100
+        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / totalDuration) * 100
 
         if (boundaryPosition <= 100) {
           const dayNum = dayStart.getDate()
@@ -118,9 +125,9 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
             })
           }
 
-          // Add label at center of day cell (12 hours offset)
+          // Add label at center of day cell
           if (day < totalDays) {  // Don't add label for last boundary
-            const labelPosition = ((dayStart.getTime() + 12 * 60 * 60 * 1000 - start.getTime()) / (end.getTime() - start.getTime())) * 100
+            const labelPosition = ((dayStart.getTime() + LABEL_CENTER_OFFSET_HOURS * MS_PER_HOUR - start.getTime()) / totalDuration) * 100
 
             if (labelPosition <= 100) {
               const label = isFirstOfMonth
@@ -199,11 +206,9 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
       {(() => {
         const now = new Date()
         if (now >= viewStart && now <= viewEnd) {
-          const totalHours =
-            (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
-          const currentOffset =
-            (now.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
-          const position = (currentOffset / totalHours) * 100
+          const totalDuration = viewEnd.getTime() - viewStart.getTime()
+          const currentOffset = now.getTime() - viewStart.getTime()
+          const position = (currentOffset / totalDuration) * 100
 
           return (
             <div

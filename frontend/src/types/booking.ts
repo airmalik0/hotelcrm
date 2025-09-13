@@ -238,11 +238,36 @@ export function getTimeFromClick(
 
   const clickTime = new Date(viewStart.getTime() + clickMs)
 
-  // For better UX, snap to the start of the clicked day at a reasonable hour
-  const clickedDay = new Date(clickTime)
-  clickedDay.setHours(14, 0, 0, 0)  // Default to 2 PM for check-in
+  // Get the day boundaries
+  const dayStart = new Date(clickTime)
+  dayStart.setHours(0, 0, 0, 0)
 
-  return clickedDay
+  const dayEnd = new Date(dayStart)
+  dayEnd.setDate(dayEnd.getDate() + 1)
+
+  // Calculate position within the day (0 to 1)
+  const msIntoDay = clickTime.getTime() - dayStart.getTime()
+  const dayDurationMs = 24 * 60 * 60 * 1000
+  const positionInDay = msIntoDay / dayDurationMs
+
+  // Set time based on position in day
+  // Morning (0-0.5): Set to morning time (10 AM - 2 PM)
+  // Afternoon (0.5-1): Set to afternoon time (2 PM - 6 PM)
+  let hour = 14 // Default 2 PM
+  if (positionInDay < 0.25) {
+    hour = 10 // 10 AM for early morning clicks
+  } else if (positionInDay < 0.5) {
+    hour = 12 // 12 PM for late morning clicks
+  } else if (positionInDay < 0.75) {
+    hour = 14 // 2 PM for early afternoon clicks
+  } else {
+    hour = 16 // 4 PM for late afternoon clicks
+  }
+
+  const result = new Date(dayStart)
+  result.setHours(hour, 0, 0, 0)
+
+  return result
 }
 
 /**
