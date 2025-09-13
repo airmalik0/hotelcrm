@@ -4,6 +4,7 @@ import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
 import { Login } from "@/pages/Login"
+import { UserList } from "@/pages/UserList"
 import { Navigate, createBrowserRouter } from "react-router-dom"
 
 export const router = createBrowserRouter([
@@ -90,14 +91,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin"]}>
         <MainLayout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
-              User Management
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              User management interface coming soon...
-            </p>
-          </div>
+          <UserList />
         </MainLayout>
       </ProtectedRoute>
     ),
