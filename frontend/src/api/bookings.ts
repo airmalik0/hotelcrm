@@ -7,6 +7,7 @@ import type {
   Message,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
+import { getRoom } from "./rooms"
 
 export interface BookingParams {
   skip?: number
