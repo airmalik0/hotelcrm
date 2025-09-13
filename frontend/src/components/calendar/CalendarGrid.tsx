@@ -156,7 +156,7 @@ export function CalendarGrid({
               ))}
             </div>
           )
-        }}
+        })}
 
         {/* Current time indicator line */}
         {(() => {
