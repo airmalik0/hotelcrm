@@ -18,7 +18,9 @@ import { useParams } from "react-router-dom"
 
 export function CustomerProfile() {
   const { customerId } = useParams<{ customerId: string }>()
-  const [activeTab, setActiveTab] = useState<"details" | "bookings" | "edit">("details")
+  const [activeTab, setActiveTab] = useState<"details" | "bookings" | "edit">(
+    "details",
+  )
 
   // Fetch customer data
   const { data: customer, isLoading: customerLoading } = useQuery({
@@ -87,7 +89,7 @@ export function CustomerProfile() {
       {/* Left Column - Customer Info */}
       <div className="col-span-12 lg:col-span-4">
         <div className="relative border border-neutral-200 dark:border-neutral-600 rounded-2xl overflow-hidden bg-white dark:bg-neutral-700 h-full shadow-sm">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32"></div>
+          <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
           <div className="pb-6 px-6 -mt-16">
             <div className="text-center border-b border-neutral-200 dark:border-neutral-600 pb-6">
               <div className="w-32 h-32 rounded-full bg-white dark:bg-neutral-800 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
@@ -156,14 +158,18 @@ export function CustomerProfile() {
                   <p className="text-2xl font-bold text-success-600 dark:text-success-400">
                     {formatCurrency(customer.total_spent)}
                   </p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Spent</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Total Spent
+                  </p>
                 </div>
                 <div className="bg-info-100 dark:bg-info-600/25 rounded-lg p-4">
                   <ShoppingBag className="w-8 h-8 text-info-600 dark:text-info-400 mb-2" />
                   <p className="text-2xl font-bold text-info-600 dark:text-info-400">
                     {customer.total_bookings}
                   </p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Bookings</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Total Bookings
+                  </p>
                 </div>
               </div>
               <div className="mt-4 space-y-2">
@@ -187,8 +193,8 @@ export function CustomerProfile() {
 
       {/* Right Column - Tabs */}
       <div className="col-span-12 lg:col-span-8">
-        <div className="card h-full border-0">
-          <div className="card-body p-6">
+        <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600 h-full border-0">
+          <div className="px-6 py-5 p-6">
             {/* Tab Navigation */}
             <div className="flex flex-wrap border-b border-neutral-200 dark:border-neutral-600 mb-6">
               <button
@@ -304,7 +310,9 @@ export function CustomerProfile() {
                         </p>
                         <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
                           {customer.total_bookings > 0
-                            ? formatCurrency(customer.total_spent / customer.total_bookings)
+                            ? formatCurrency(
+                                customer.total_spent / customer.total_bookings,
+                              )
                             : "$0"}
                         </p>
                       </div>
@@ -328,12 +336,16 @@ export function CustomerProfile() {
                     Booking History
                   </h5>
                   {bookingsLoading ? (
-                    <div className="text-center py-8 text-neutral-500">Loading bookings...</div>
+                    <div className="text-center py-8 text-neutral-500">
+                      Loading bookings...
+                    </div>
                   ) : bookingsData?.data.length === 0 ? (
-                    <div className="text-center py-8 text-neutral-500">No bookings found</div>
+                    <div className="text-center py-8 text-neutral-500">
+                      No bookings found
+                    </div>
                   ) : (
-                    <div className="table-responsive">
-                      <table className="table table-auto w-full">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600 table-auto">
                         <thead>
                           <tr className="border-b border-neutral-200 dark:border-neutral-600">
                             <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
@@ -387,7 +399,7 @@ export function CustomerProfile() {
                               <td className="py-3 px-2 text-center">
                                 <span
                                   className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                                    booking.status || ""
+                                    booking.status || "",
                                   )}`}
                                 >
                                   {booking.status}

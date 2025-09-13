@@ -1,7 +1,11 @@
 import { deleteCustomer, getCustomers } from "@/api/customers"
 import type { CustomerPublic } from "@/client/types.gen"
 import { CustomerCreateModal } from "@/components/customer/CustomerCreateModal"
-import { formatCurrency, formatDate, formatPhoneNumber } from "@/utils/formatters"
+import {
+  formatCurrency,
+  formatDate,
+  formatPhoneNumber,
+} from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react"
 import type React from "react"
@@ -35,7 +39,11 @@ export function CustomerList() {
   })
 
   const handleDelete = (customer: CustomerPublic) => {
-    if (window.confirm(`Are you sure you want to delete ${customer.first_name} ${customer.last_name}?`)) {
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${customer.first_name} ${customer.last_name}?`,
+      )
+    ) {
       deleteMutation.mutate(customer.id)
     }
   }
@@ -51,12 +59,14 @@ export function CustomerList() {
     <>
       <div className="grid grid-cols-12">
         <div className="col-span-12">
-          <div className="card h-full p-0 rounded-xl border-0 overflow-hidden">
-            <div className="card-header border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 py-4 px-6 flex items-center flex-wrap gap-3 justify-between">
+          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600 h-full p-0 rounded-xl border-0 overflow-hidden">
+            <div className="border-b border-neutral-200 dark:border-neutral-600 px-4 md:px-6 py-3 bg-white dark:bg-neutral-700 py-4 px-6 flex items-center flex-wrap gap-3 justify-between">
               <div className="flex items-center flex-wrap gap-3">
-                <span className="text-base font-medium text-neutral-600 dark:text-neutral-400 mb-0">Show</span>
+                <span className="text-base font-medium text-neutral-600 dark:text-neutral-400 mb-0">
+                  Show
+                </span>
                 <select
-                  className="form-select form-select-sm w-auto dark:bg-neutral-600 dark:text-white border-neutral-200 dark:border-neutral-500 rounded-lg px-3 py-2"
+                  className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-600 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value))
@@ -82,15 +92,15 @@ export function CustomerList() {
               </div>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="btn btn-primary text-sm px-3 py-2.5 rounded-lg flex items-center gap-2 bg-primary-600 text-white hover:bg-primary-700"
+                className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700 text-sm px-3 py-2.5 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add New Customer
               </button>
             </div>
-            <div className="card-body p-6">
-              <div className="table-responsive">
-                <table className="table table-auto w-full">
+            <div className="px-6 py-5 p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600 table-auto">
                   <thead>
                     <tr className="border-b border-neutral-200 dark:border-neutral-600">
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
@@ -122,21 +132,30 @@ export function CustomerList() {
                   <tbody>
                     {isLoading && (
                       <tr>
-                        <td colSpan={8} className="text-center py-8 text-neutral-500">
+                        <td
+                          colSpan={8}
+                          className="text-center py-8 text-neutral-500"
+                        >
                           Loading customers...
                         </td>
                       </tr>
                     )}
                     {error && (
                       <tr>
-                        <td colSpan={8} className="text-center py-8 text-danger-600">
+                        <td
+                          colSpan={8}
+                          className="text-center py-8 text-danger-600"
+                        >
                           Error loading customers
                         </td>
                       </tr>
                     )}
                     {data?.data.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="text-center py-8 text-neutral-500">
+                        <td
+                          colSpan={8}
+                          className="text-center py-8 text-neutral-500"
+                        >
                           No customers found
                         </td>
                       </tr>
@@ -217,8 +236,11 @@ export function CustomerList() {
                 <div className="flex items-center justify-between mt-6">
                   <div className="text-sm text-neutral-600 dark:text-neutral-400">
                     Showing {currentPage * itemsPerPage + 1} to{" "}
-                    {Math.min((currentPage + 1) * itemsPerPage, data?.count || 0)} of{" "}
-                    {data?.count || 0} entries
+                    {Math.min(
+                      (currentPage + 1) * itemsPerPage,
+                      data?.count || 0,
+                    )}{" "}
+                    of {data?.count || 0} entries
                   </div>
                   <div className="flex items-center gap-2">
                     <button
