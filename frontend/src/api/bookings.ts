@@ -82,13 +82,21 @@ export async function deleteBooking(bookingId: string): Promise<Message> {
 }
 
 /**
+ * Parameters for getting bookings by date range
+ */
+export interface BookingDateRangeParams {
+  startDate: Date | string
+  endDate: Date | string
+  roomId?: string
+}
+
+/**
  * Get bookings for a specific date range
  */
 export async function getBookingsByDateRange(
-  startDate: Date | string,
-  endDate: Date | string,
-  roomId?: string
+  params: BookingDateRangeParams
 ): Promise<BookingsPublic> {
+  const { startDate, endDate, roomId } = params
   const start = typeof startDate === "string" ? startDate : startDate.toISOString()
   const end = typeof endDate === "string" ? endDate : endDate.toISOString()
 
@@ -104,15 +112,27 @@ export async function getBookingsByDateRange(
 }
 
 /**
+ * Parameters for checking room availability
+ */
+export interface RoomAvailabilityParams {
+  roomId: string
+  checkIn: Date | string
+  checkOut: Date | string
+  excludeBookingId?: string
+}
+
+/**
  * Check if a room is available for a specific time period
  */
 export async function checkRoomAvailability(
-  roomId: string,
-  checkIn: Date | string,
-  checkOut: Date | string,
-  excludeBookingId?: string
+  params: RoomAvailabilityParams
 ): Promise<boolean> {
-  const bookings = await getBookingsByDateRange(checkIn, checkOut, roomId)
+  const { roomId, checkIn, checkOut, excludeBookingId } = params
+  const bookings = await getBookingsByDateRange({
+    startDate: checkIn,
+    endDate: checkOut,
+    roomId
+  })
 
   const checkInTime = typeof checkIn === "string" ? new Date(checkIn) : checkIn
   const checkOutTime = typeof checkOut === "string" ? new Date(checkOut) : checkOut
