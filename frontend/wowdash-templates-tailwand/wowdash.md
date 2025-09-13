@@ -7,7 +7,7 @@
 
 ## CRITICAL RULES
 1. NEVER copy @@include syntax - it's for static HTML only
-2. CHECK assets/scss/ for class definitions before converting  
+2. CHECK assets/scss/ for class definitions before converting
 3. JS FILES ARE REFERENCE ONLY - all have warning comments at top
 4. NEVER copy jQuery, Bootstrap JS, vanilla DOM patterns from JS files
 5. EXTRACT ONLY business logic concepts from JS, implement with React patterns
@@ -15,6 +15,7 @@
 7. REPLACE ApexCharts → recharts (extract config patterns only)
 8. NO Bootstrap/jQuery - pure React + Tailwind only
 9. ALWAYS include dark: variants from templates
+10. **NEVER USE WowDash CSS class names** (like `.card`, `.btn`, `.table`, `.alert`) - use ONLY the Tailwind utilities from their @apply definitions
 
 ## WHERE_TO_WORK
 - READ_ONLY: `./wowdash-templates-tailwand/pages/` (HTML templates)
@@ -181,49 +182,111 @@ pages/terms-condition.html → Terms and conditions
 
 ## EXTRACTION_PATTERNS
 
+⚠️ **IMPORTANT**: The patterns below show WowDash SCSS class definitions. DO NOT use the class names (`.btn`, `.card`, etc.) in your React code - use ONLY the Tailwind utilities from the @apply directives!
+
 ### BUTTON_PATTERN
 ```
 SOURCE: pages/button.html + assets/scss/components/_button.scss
-SCSS DEFINITION: 
+
+HTML IN WOWDASH: <button class="btn btn-primary-600">Click</button>
+
+SCSS DEFINITION:
   .btn { @apply rounded-lg py-3 px-6 inline-flex transition; }
   .btn-primary-600 { @apply bg-primary-600 text-white hover:bg-primary-700; }
-CONVERT TO: rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700
-REACT: <button className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700">
+
+❌ WRONG (DO NOT USE): className="btn btn-primary-600"
+✅ CORRECT: className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700"
+
+REACT EXAMPLE:
+<button className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700">
+  Click
+</button>
+
 VARIANTS: outline (border border-{color}-600), rounded-full, soft (bg-{color}-100 dark:bg-{color}-600/25)
 ```
 
 ### CARD_PATTERN
 ```
 SOURCE: pages/card.html + assets/scss/components/_card.scss
+
+HTML IN WOWDASH:
+<div class="card">
+  <div class="card-header">Title</div>
+  <div class="card-body">Content</div>
+</div>
+
 SCSS DEFINITIONS:
   .card { @apply bg-white dark:bg-dark-2 rounded-lg border border-neutral-600; }
   .card-header { @apply border-b border-neutral-200 dark:border-neutral-600 px-4 md:px-6 py-3; }
   .card-body { @apply px-6 py-5; }
-CONVERT TO: bg-white dark:bg-dark-2 rounded-lg border border-neutral-600
-HEADER: border-b border-neutral-200 dark:border-neutral-600 px-4 md:px-6 py-3
-BODY: px-6 py-5
-REACT: <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600">
+
+❌ WRONG (DO NOT USE): className="card", className="card-header", className="card-body"
+✅ CORRECT: Use the Tailwind utilities from @apply
+
+REACT EXAMPLE:
+<div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600">
+  <div className="border-b border-neutral-200 dark:border-neutral-600 px-4 md:px-6 py-3">Title</div>
+  <div className="px-6 py-5">Content</div>
+</div>
 ```
 
 ### FORM_INPUT_PATTERN
 ```
 SOURCE: pages/form.html + assets/scss/components/_form.scss
+
+HTML IN WOWDASH:
+<select class="form-select form-select-sm">...</select>
+<input class="form-control" type="text">
+
 SCSS DEFINITIONS:
   .form-control { @apply border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full; }
-  .icon-field { @apply relative; }
-  .icon { @apply absolute top-3 start-0 w-10 flex justify-center items-center text-[20px]; }
-CONVERT TO: border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full
-ICON_WRAPPER: relative
-ICON: absolute top-3 start-0 w-10 flex justify-center items-center text-[20px]
-REACT: <input type="text" className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full" />
+  .form-select { @apply border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full; }
+  .form-select-sm { @apply ps-3 pe-5 py-1.5 text-sm; }
+
+❌ WRONG (DO NOT USE): className="form-control", className="form-select form-select-sm"
+✅ CORRECT: Use the Tailwind utilities from @apply
+
+REACT EXAMPLES:
+<input
+  type="text"
+  className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full"
+/>
+
+<select
+  className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent ps-3 pe-5 py-1.5 text-sm w-full"
+>
+  <option>Option 1</option>
+</select>
 ```
 
-### TABLE_ACTION_PATTERN
+### TABLE_PATTERN
 ```
-SOURCE: pages/table-data.html
-EXTRACT: w-8 h-8 bg-{color}-50 dark:bg-{color}-600/25 text-{color}-600 rounded-full inline-flex items-center justify-center
+SOURCE: pages/table-basic.html + assets/scss/components/_table.scss
+
+HTML IN WOWDASH:
+<div class="table-responsive">
+  <table class="table">
+    ...
+  </table>
+</div>
+
+SCSS DEFINITIONS:
+  .table-responsive { @apply overflow-x-auto; }
+  .table { @apply w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600; }
+
+❌ WRONG (DO NOT USE): className="table-responsive", className="table"
+✅ CORRECT: Use the Tailwind utilities from @apply
+
+REACT EXAMPLE:
+<div className="overflow-x-auto">
+  <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600">
+    ...
+  </table>
+</div>
+
+TABLE ACTION BUTTONS:
 ACTIONS: view (primary), edit (success), delete (danger)
-REACT: <button className="w-8 h-8 bg-primary-50 dark:bg-primary-600/25 text-primary-600 rounded-full inline-flex items-center justify-center">
+BUTTON: className="w-8 h-8 bg-{color}-50 dark:bg-{color}-600/25 text-{color}-600 rounded-full inline-flex items-center justify-center"
 ```
 
 ### BADGE_PATTERN
@@ -236,8 +299,16 @@ REACT: <span className="bg-success-100 dark:bg-success-600/25 text-success-600 d
 ### ALERT_PATTERN
 ```
 SOURCE: pages/alert.html
-EXTRACT: alert bg-{color}-100 dark:bg-{color}-600/25 text-{color}-600 dark:text-{color}-400 border border-{color}-200 dark:border-{color}-600/50 px-4 py-3 rounded-lg
-REACT: <div className="alert bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-600/50 px-4 py-3 rounded-lg">
+
+HTML IN WOWDASH: <div class="alert alert-success">...</div>
+
+❌ WRONG (DO NOT USE): className="alert alert-success"
+✅ CORRECT: Use only Tailwind utilities
+
+REACT EXAMPLE:
+<div className="bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-600/50 px-4 py-3 rounded-lg">
+  Alert message
+</div>
 ```
 
 ### DROPDOWN_PATTERN

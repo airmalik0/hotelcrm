@@ -59,14 +59,14 @@ export function CustomerList() {
     <>
       <div className="grid grid-cols-12">
         <div className="col-span-12">
-          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600 h-full p-0 rounded-xl border-0 overflow-hidden">
-            <div className="border-b border-neutral-200 dark:border-neutral-600 px-4 md:px-6 py-3 bg-white dark:bg-neutral-700 py-4 px-6 flex items-center flex-wrap gap-3 justify-between">
+          <div className="bg-white dark:bg-dark-2 rounded-xl shadow-sm dark:shadow-none h-full overflow-hidden">
+            <div className="border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-6 py-4 flex items-center flex-wrap gap-3 justify-between">
               <div className="flex items-center flex-wrap gap-3">
                 <span className="text-base font-medium text-neutral-600 dark:text-neutral-400 mb-0">
                   Show
                 </span>
                 <select
-                  className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-600 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
+                  className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value))
@@ -82,7 +82,7 @@ export function CustomerList() {
                 <form onSubmit={handleSearch} className="relative">
                   <input
                     type="text"
-                    className="bg-white dark:bg-neutral-700 h-10 w-64 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-neutral-500"
+                    className="bg-white dark:bg-neutral-700 h-10 w-64 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-neutral-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
                     placeholder="Search customers..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -92,15 +92,15 @@ export function CustomerList() {
               </div>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700 text-sm px-3 py-2.5 flex items-center gap-2"
+                className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium shadow-sm hover:shadow-md"
               >
                 <Plus className="w-4 h-4" />
                 Add New Customer
               </button>
             </div>
-            <div className="px-6 py-5 p-6">
+            <div className="p-6">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600 table-auto">
+                <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600">
                   <thead>
                     <tr className="border-b border-neutral-200 dark:border-neutral-600">
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">

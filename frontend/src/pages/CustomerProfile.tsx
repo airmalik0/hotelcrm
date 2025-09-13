@@ -193,8 +193,8 @@ export function CustomerProfile() {
 
       {/* Right Column - Tabs */}
       <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600 h-full border-0">
-          <div className="px-6 py-5 p-6">
+        <div className="bg-white dark:bg-dark-2 rounded-lg h-full border-0">
+          <div className="p-6">
             {/* Tab Navigation */}
             <div className="flex flex-wrap border-b border-neutral-200 dark:border-neutral-600 mb-6">
               <button
@@ -345,7 +345,7 @@ export function CustomerProfile() {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600 table-auto">
+                      <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600">
                         <thead>
                           <tr className="border-b border-neutral-200 dark:border-neutral-600">
                             <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">

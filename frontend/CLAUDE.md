@@ -34,12 +34,13 @@ wowdash-templates-tailwand/  # HTML reference templates (83 files)
 
 **⚠️ MANDATORY: Read `wowdash-templates-tailwand/wowdash.md` FIRST before creating ANY components!**
 
-**🔴 CRITICAL: When you see custom classes in HTML like `.form-control`, `.card`, `.btn` - ALWAYS check SCSS files FIRST!**
+**🔴 CRITICAL: When you see custom classes in HTML like `.form-control`, `.card`, `.btn`, `.table`, `.alert` - ALWAYS check SCSS files FIRST to extract Tailwind utilities, but NEVER use these class names in React!**
    ```bash
    # Check SCSS definitions for custom classes:
    cat wowdash-templates-tailwand/assets/scss/components/_form.scss
    cat wowdash-templates-tailwand/assets/scss/components/_card.scss
    cat wowdash-templates-tailwand/assets/scss/components/_button.scss
+   cat wowdash-templates-tailwand/assets/scss/components/_table.scss
    ```
 
 1. ALWAYS check WowDash HTML templates first for patterns:
@@ -47,7 +48,7 @@ wowdash-templates-tailwand/  # HTML reference templates (83 files)
    ls wowdash-templates-tailwand/pages/ | grep -i "keyword"
    ```
 2. **CHECK SCSS FILES** for any custom classes found in HTML (`.form-control`, `.card`, etc.)
-3. Extract the @apply Tailwind utilities from SCSS and use them directly
+3. Extract the @apply Tailwind utilities from SCSS and use ONLY those utilities (NOT the class names)
 4. Convert to React components with:
    - React hooks instead of jQuery
    - lucide-react icons instead of iconify
@@ -73,14 +74,72 @@ wowdash-templates-tailwand/  # HTML reference templates (83 files)
 4. **Implement**: Create React component using extracted Tailwind classes
 
 ### SCSS to Tailwind Conversion Process
-**IMPORTANT**: WowDash CSS classes (`.btn`, `.card`, `.form-control`) are NOT available in our React project. Always convert to pure Tailwind:
+**IMPORTANT**: WowDash CSS classes (`.btn`, `.card`, `.form-control`, `.table`, `.alert`) are NOT available in our React project. Always convert to pure Tailwind:
 
-1. Find pattern in HTML: `<button class="btn btn-primary">Click me</button>`
-2. Check SCSS file: `.btn { @apply rounded-lg py-3 px-6 inline-flex transition; }`
-3. Check SCSS file: `.btn-primary { @apply bg-primary-600 text-white hover:bg-primary-700; }`
-4. Convert to React: `<button className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700">Click me</button>`
+#### ⚠️ CRITICAL: DO NOT USE WowDash class names in React components!
 
-**NEVER use WowDash CSS classes directly - always extract the underlying Tailwind utilities from @apply directives.**
+**Example 1 - Button:**
+```html
+<!-- WowDash HTML (DO NOT COPY AS-IS) -->
+<button class="btn btn-primary">Click me</button>
+```
+```scss
+/* SCSS definitions (for reference only) */
+.btn { @apply rounded-lg py-3 px-6 inline-flex transition; }
+.btn-primary { @apply bg-primary-600 text-white hover:bg-primary-700; }
+```
+```jsx
+// ❌ WRONG - Never use WowDash classes
+<button className="btn btn-primary">Click me</button>
+
+// ✅ CORRECT - Use only Tailwind utilities
+<button className="rounded-lg py-3 px-6 inline-flex transition bg-primary-600 text-white hover:bg-primary-700">
+  Click me
+</button>
+```
+
+**Example 2 - Card:**
+```jsx
+// ❌ WRONG
+<div className="card">
+  <div className="card-header">Title</div>
+  <div className="card-body">Content</div>
+</div>
+
+// ✅ CORRECT
+<div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-600">
+  <div className="border-b border-neutral-200 dark:border-neutral-600 px-4 md:px-6 py-3">Title</div>
+  <div className="px-6 py-5">Content</div>
+</div>
+```
+
+**Example 3 - Table:**
+```jsx
+// ❌ WRONG
+<div className="table-responsive">
+  <table className="table">...</table>
+</div>
+
+// ✅ CORRECT
+<div className="overflow-x-auto">
+  <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600">
+    ...
+  </table>
+</div>
+```
+
+**Example 4 - Form Controls:**
+```jsx
+// ❌ WRONG
+<select className="form-select form-select-sm">...</select>
+
+// ✅ CORRECT
+<select className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent ps-3 pe-5 py-1.5 text-sm w-full">
+  ...
+</select>
+```
+
+**Remember:** The SCSS files are ONLY for understanding what styles to apply. Never use the class names themselves!
 
 Available HTML templates in `wowdash-templates-tailwand/pages/`:
 - **Auth**: sign-in, sign-up, forgot-password
