@@ -81,31 +81,54 @@ export function CalendarGrid({
     setShowDetailModal(true)
   }, [])
 
-  // Generate grid lines for visual guidance
-  const gridLines = useMemo(() => {
-    const lines: Array<{ position: number; isMain: boolean }> = []
-    const totalHours = (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
+  // Generate day columns for visual shading
+  const dayColumns = useMemo(() => {
+    const columns: Array<{ leftPercent: number; widthPercent: number; isEven: boolean }> = []
 
     if (viewMode === "week") {
-      // Show lines every 6 hours for week view
-      for (let hour = 0; hour <= totalHours; hour += 6) {
-        const isMain = hour % 24 === 0 // Main lines at midnight
-        lines.push({ position: (hour / totalHours) * 100, isMain })
+      // 7 days for week view
+      for (let day = 0; day < 7; day++) {
+        const dayStart = new Date(viewStart)
+        dayStart.setDate(viewStart.getDate() + day)
+        dayStart.setHours(0, 0, 0, 0)
+
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayStart.getDate() + 1)
+
+        const leftPercent = ((dayStart.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100
+        const rightPercent = ((dayEnd.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100
+        const widthPercent = rightPercent - leftPercent
+
+        columns.push({
+          leftPercent,
+          widthPercent,
+          isEven: day % 2 === 0
+        })
       }
     } else {
-      // Show lines every day for month view
-      for (let day = 0; day <= Math.ceil(totalHours / 24); day++) {
-        const hour = day * 24
-        const position = (hour / totalHours) * 100
-        if (position <= 100) {
-          const date = new Date(viewStart.getTime() + hour * 60 * 60 * 1000)
-          const isMain = date.getDay() === 0 || date.getDate() === 1 // Sundays and 1st of month
-          lines.push({ position, isMain })
-        }
+      // Days for month view
+      const totalDays = Math.ceil((viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60 * 24))
+      for (let day = 0; day < totalDays; day++) {
+        const dayStart = new Date(viewStart)
+        dayStart.setDate(viewStart.getDate() + day)
+        dayStart.setHours(0, 0, 0, 0)
+
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayStart.getDate() + 1)
+
+        const leftPercent = ((dayStart.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100
+        const rightPercent = Math.min(100, ((dayEnd.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100)
+        const widthPercent = rightPercent - leftPercent
+
+        columns.push({
+          leftPercent,
+          widthPercent,
+          isEven: day % 2 === 0
+        })
       }
     }
 
-    return lines
+    return columns
   }, [viewMode, viewStart, viewEnd])
 
   return (
@@ -121,14 +144,27 @@ export function CalendarGrid({
               className={`
                 calendar-row relative h-[60px] border-b border-neutral-200 dark:border-neutral-600
                 ${canCreate ? "cursor-crosshair" : ""}
-                ${index % 2 === 0
-                  ? "bg-white/50 dark:bg-dark-2/50"
-                  : "bg-neutral-50/50 dark:bg-dark-3/50"}
-                hover:bg-neutral-100/50 dark:hover:bg-dark-3/70 transition-colors
+                hover:bg-neutral-100/30 dark:hover:bg-dark-3/30 transition-colors
               `}
               onClick={(e) => handleEmptySlotClick(e, room.id)}
               data-room-id={room.id}
             >
+              {/* Day column backgrounds for chess-board effect */}
+              {dayColumns.map((column, colIndex) => (
+                <div
+                  key={`col-${colIndex}`}
+                  className={`absolute top-0 bottom-0 pointer-events-none ${
+                    column.isEven
+                      ? "bg-neutral-50/50 dark:bg-dark-3/30"
+                      : "bg-white dark:bg-dark-2"
+                  }`}
+                  style={{
+                    left: `${column.leftPercent}%`,
+                    width: `${column.widthPercent}%`,
+                  }}
+                />
+              ))}
+
               {/* Booking blocks */}
               {roomBookings.map((booking) => (
                 <BookingBlock

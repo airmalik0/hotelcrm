@@ -238,10 +238,11 @@ export function getTimeFromClick(
 
   const clickTime = new Date(viewStart.getTime() + clickMs)
 
-  // Round to nearest hour for convenience
-  clickTime.setMinutes(0, 0, 0)
+  // For better UX, snap to the start of the clicked day at a reasonable hour
+  const clickedDay = new Date(clickTime)
+  clickedDay.setHours(14, 0, 0, 0)  // Default to 2 PM for check-in
 
-  return clickTime
+  return clickedDay
 }
 
 /**

@@ -29,61 +29,114 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
     const totalHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
 
     if (viewMode === "week") {
-      // For week view: show clean day markers
-      for (let day = 0; day <= 7; day++) {
-        const hour = day * 24
-        if (hour <= totalHours) {
-          const markerDate = new Date(start.getTime() + hour * 60 * 60 * 1000)
-          const position = (hour / totalHours) * 100
+      // For week view: show day boundaries and labels
+      for (let day = 0; day < 7; day++) {
+        const dayStart = new Date(start)
+        dayStart.setDate(start.getDate() + day)
+        dayStart.setHours(0, 0, 0, 0)
 
-          // Clean format: "Mon, Sep 8"
-          const weekday = markerDate.toLocaleDateString("en-US", {
-            weekday: "short",
-          })
-          const month = markerDate.toLocaleDateString("en-US", {
-            month: "short",
-          })
-          const dayNum = markerDate.getDate()
-          const label = `${weekday}, ${month} ${dayNum}`
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayStart.getDate() + 1)
 
-          markers.push({ position, label, isMain: true })
+        // Position of day boundary (start of day)
+        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100
+
+        // Position for label (center of day)
+        const labelPosition = ((dayStart.getTime() + 12 * 60 * 60 * 1000 - start.getTime()) / (end.getTime() - start.getTime())) * 100
+
+        // Add boundary line (no label)
+        if (day > 0) {  // Skip first boundary as it's at position 0
+          markers.push({
+            position: boundaryPosition,
+            label: "",
+            isMain: true
+          })
         }
 
-        // Add subtle 6-hour markers without labels
-        for (let subHour = 6; subHour < 24; subHour += 6) {
-          const totalHour = day * 24 + subHour
-          if (totalHour <= totalHours) {
-            const subPosition = (totalHour / totalHours) * 100
-            markers.push({ position: subPosition, label: "", isMain: false })
+        // Add label at center of day
+        const weekday = dayStart.toLocaleDateString("en-US", {
+          weekday: "short",
+        })
+        const month = dayStart.toLocaleDateString("en-US", {
+          month: "short",
+        })
+        const dayNum = dayStart.getDate()
+
+        markers.push({
+          position: labelPosition,
+          label: `${weekday}, ${month} ${dayNum}`,
+          isMain: false  // Labels don't have lines
+        })
+
+        // Add subtle 6-hour markers
+        for (let hour = 6; hour < 24; hour += 6) {
+          if (hour !== 0) {  // Skip midnight (already have boundary)
+            const markerTime = new Date(dayStart)
+            markerTime.setHours(hour)
+            const markerPosition = ((markerTime.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100
+
+            if (markerPosition > 0 && markerPosition < 100) {
+              markers.push({
+                position: markerPosition,
+                label: "",
+                isMain: false
+              })
+            }
           }
         }
       }
+
+      // Add final boundary at end of week
+      markers.push({
+        position: 100,
+        label: "",
+        isMain: true
+      })
     } else {
-      // For month view: show just day numbers
-      const totalDays = Math.ceil(totalHours / 24)
+      // For month view: show day boundaries and centered labels
+      const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+
       for (let day = 0; day <= totalDays; day++) {
-        const markerDate = new Date(start.getTime() + day * 24 * 60 * 60 * 1000)
-        const hour = day * 24
-        const position = (hour / totalHours) * 100
+        const dayStart = new Date(start)
+        dayStart.setDate(start.getDate() + day)
+        dayStart.setHours(0, 0, 0, 0)
 
-        if (position <= 100) {
-          // Simple format: just day number for most days
-          const dayNum = markerDate.getDate()
+        // Position of day boundary
+        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100
+
+        if (boundaryPosition <= 100) {
+          const dayNum = dayStart.getDate()
           const isFirstOfMonth = dayNum === 1
-          const isSunday = markerDate.getDay() === 0
+          const isSunday = dayStart.getDay() === 0
 
-          // Show "Sep 1" for first of month, otherwise just number
-          const label = isFirstOfMonth
-            ? markerDate.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
+          // Add boundary line (vertical separator)
+          if (day > 0 || isFirstOfMonth) {
+            markers.push({
+              position: boundaryPosition,
+              label: "",
+              isMain: isSunday || isFirstOfMonth
+            })
+          }
+
+          // Add label at center of day cell (12 hours offset)
+          if (day < totalDays) {  // Don't add label for last boundary
+            const labelPosition = ((dayStart.getTime() + 12 * 60 * 60 * 1000 - start.getTime()) / (end.getTime() - start.getTime())) * 100
+
+            if (labelPosition <= 100) {
+              const label = isFirstOfMonth
+                ? dayStart.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })
+                : dayNum.toString()
+
+              markers.push({
+                position: labelPosition,
+                label,
+                isMain: false  // Labels don't have lines
               })
-            : dayNum.toString()
-
-          // Mark Sundays and 1st of month as main
-          const isMain = isSunday || isFirstOfMonth
-
-          markers.push({ position, label, isMain })
+            }
+          }
         }
       }
     }
@@ -100,44 +153,46 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
       {/* Timeline scale */}
       <div className="relative h-full">
         {/* Time markers */}
-        {timeMarkers.map((marker, index) => (
-          <div
-            key={`marker-${index}`}
-            className="absolute top-0 h-full flex items-center"
-            style={{ left: `${marker.position}%` }}
-          >
-            {/* Vertical line extending into grid */}
-            <div
-              className={`
-                absolute top-full w-px h-screen pointer-events-none
-                ${
-                  marker.isMain
-                    ? "bg-neutral-300 dark:bg-neutral-600"
-                    : "bg-neutral-200 dark:bg-neutral-700"
-                }
-              `}
-            />
+        {timeMarkers.map((marker, index) => {
+          // Render lines only for markers without labels, or main markers with empty labels
+          const shouldRenderLine = marker.label === "" || (marker.isMain && marker.label === "")
 
-            {/* Time label */}
-            {marker.label && (
-              <div
-                className={`
-                  absolute whitespace-nowrap px-1
-                  ${
-                    marker.isMain
-                      ? "text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                      : "text-xs text-neutral-500 dark:text-neutral-400"
-                  }
-                  ${marker.position < 5 ? "left-0" : ""}
-                  ${marker.position > 95 ? "right-0" : ""}
-                  ${marker.position >= 5 && marker.position <= 95 ? "-translate-x-1/2" : ""}
-                `}
-              >
-                {marker.label}
-              </div>
-            )}
-          </div>
-        ))}
+          return (
+            <div
+              key={`marker-${index}`}
+              className="absolute top-0 h-full flex items-center"
+              style={{ left: `${marker.position}%` }}
+            >
+              {/* Vertical line extending into grid - only for boundary markers */}
+              {shouldRenderLine && (
+                <div
+                  className={`
+                    absolute top-full w-px h-screen pointer-events-none
+                    ${
+                      marker.isMain
+                        ? "bg-neutral-300 dark:bg-neutral-600"
+                        : "bg-neutral-200 dark:bg-neutral-700"
+                    }
+                  `}
+                />
+              )}
+
+              {/* Time label - only for markers with labels */}
+              {marker.label && (
+                <div
+                  className={`
+                    absolute whitespace-nowrap px-1 text-xs font-medium text-neutral-700 dark:text-neutral-300
+                    ${marker.position < 5 ? "left-0" : ""}
+                    ${marker.position > 95 ? "right-0" : ""}
+                    ${marker.position >= 5 && marker.position <= 95 ? "-translate-x-1/2" : ""}
+                  `}
+                >
+                  {marker.label}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Current time indicator */}
