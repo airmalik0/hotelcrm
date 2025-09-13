@@ -80,3 +80,95 @@ export async function deleteBooking(bookingId: string): Promise<Message> {
   )
   return response.data
 }
+
+/**
+ * Get bookings for a specific date range
+ */
+export async function getBookingsByDateRange(
+  startDate: Date | string,
+  endDate: Date | string,
+  roomId?: string
+): Promise<BookingsPublic> {
+  const start = typeof startDate === "string" ? startDate : startDate.toISOString()
+  const end = typeof endDate === "string" ? endDate : endDate.toISOString()
+
+  const response = await apiClient.get<BookingsPublic>("/api/v1/bookings/", {
+    params: {
+      date_from: start.split("T")[0], // Backend expects YYYY-MM-DD format
+      date_to: end.split("T")[0],
+      room_id: roomId,
+      limit: 500 // High limit to get all bookings in range
+    }
+  })
+  return response.data
+}
+
+/**
+ * Check if a room is available for a specific time period
+ */
+export async function checkRoomAvailability(
+  roomId: string,
+  checkIn: Date | string,
+  checkOut: Date | string,
+  excludeBookingId?: string
+): Promise<boolean> {
+  const bookings = await getBookingsByDateRange(checkIn, checkOut, roomId)
+
+  const checkInTime = typeof checkIn === "string" ? new Date(checkIn) : checkIn
+  const checkOutTime = typeof checkOut === "string" ? new Date(checkOut) : checkOut
+
+  // Check for conflicts
+  const hasConflict = bookings.data.some(booking => {
+    // Skip if it's the same booking we're editing
+    if (excludeBookingId && booking.id === excludeBookingId) {
+      return false
+    }
+
+    const existingCheckIn = new Date(booking.check_in)
+    const existingCheckOut = new Date(booking.check_out)
+
+    // Check for overlap
+    return !(checkOutTime <= existingCheckIn || checkInTime >= existingCheckOut)
+  })
+
+  return !hasConflict
+}
+
+/**
+ * Quick booking creation with smart defaults
+ */
+export async function createQuickBooking(
+  customerId: string,
+  roomId: string,
+  checkIn: Date,
+  checkOut?: Date
+): Promise<BookingPublic> {
+  // Default checkout is next day at noon if not provided
+  const actualCheckOut = checkOut || (() => {
+    const nextDay = new Date(checkIn)
+    nextDay.setDate(nextDay.getDate() + 1)
+    nextDay.setHours(12, 0, 0, 0)
+    return nextDay
+  })()
+
+  const bookingData: BookingCreate = {
+    customer_id: customerId,
+    room_id: roomId,
+    check_in: checkIn.toISOString(),
+    check_out: actualCheckOut.toISOString(),
+    status: "confirmed",
+    total_amount: 0 // Will be calculated by backend
+  }
+
+  return createBooking(bookingData)
+}
+
+/**
+ * Update booking status (check-in, check-out, cancel)
+ */
+export async function updateBookingStatus(
+  bookingId: string,
+  status: BookingStatus
+): Promise<BookingPublic> {
+  return updateBooking(bookingId, { status })
+}

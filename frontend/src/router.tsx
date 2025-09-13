@@ -1,5 +1,6 @@
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { MainLayout } from "@/layouts/MainLayout"
+import { Calendar } from "@/pages/Calendar"
 import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
@@ -28,14 +29,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
-              Calendar Module
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Time continuum calendar implementation coming soon...
-            </p>
-          </div>
+          <Calendar />
         </MainLayout>
       </ProtectedRoute>
     ),
