@@ -51,29 +51,27 @@ export function CalendarHeader({
         {/* Left side: Navigation and View Mode */}
         <div className="flex items-center gap-3">
           {/* Navigation Buttons */}
-          <div className="flex items-center">
+          <div className="inline-flex rounded-md shadow-sm">
             <button
               onClick={onNavigatePrevious}
-              className="p-1.5 rounded-l-md border border-r-0 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-dark-3 hover:bg-neutral-50 dark:hover:bg-dark-2 transition-colors"
-              title="Previous"
+              className="px-2 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-dark-3 border border-neutral-300 dark:border-neutral-600 rounded-l-md hover:bg-neutral-50 dark:hover:bg-dark-2 focus:z-10"
+              title={viewMode === "week" ? "Previous Week" : "Previous Month"}
             >
-              <ChevronLeft className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={onNavigateToday}
-              className="px-3 py-1.5 border-y border-neutral-300 dark:border-neutral-600 bg-white dark:bg-dark-3 hover:bg-neutral-50 dark:hover:bg-dark-2 transition-colors"
-              title="Today"
+              className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-dark-3 border-t border-b border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-dark-2 focus:z-10"
+              title="Go to Today"
             >
-              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Today
-              </span>
+              Today
             </button>
             <button
               onClick={onNavigateNext}
-              className="p-1.5 rounded-r-md border border-l-0 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-dark-3 hover:bg-neutral-50 dark:hover:bg-dark-2 transition-colors"
-              title="Next"
+              className="px-2 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-dark-3 border border-neutral-300 dark:border-neutral-600 rounded-r-md hover:bg-neutral-50 dark:hover:bg-dark-2 focus:z-10"
+              title={viewMode === "week" ? "Next Week" : "Next Month"}
             >
-              <ChevronRight className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
