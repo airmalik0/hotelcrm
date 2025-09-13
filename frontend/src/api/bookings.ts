@@ -177,13 +177,32 @@ export async function createQuickBooking(
     return nextDay
   })()
 
+  // Get room details to calculate total amount
+  const room = await getRoom(roomId)
+
+  // Calculate number of nights exactly like backend
+  // Backend logic: nights = (check_out.date() - check_in.date()).days; nights = max(1, nights)
+  const checkInDate = new Date(checkIn.getTime())
+  const checkOutDate = new Date(actualCheckOut.getTime())
+
+  // Reset time to match backend .date() behavior
+  checkInDate.setHours(0, 0, 0, 0)
+  checkOutDate.setHours(0, 0, 0, 0)
+
+  // Calculate days difference and ensure minimum 1 night
+  const nightsDiff = Math.floor((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+  const nights = Math.max(1, nightsDiff)
+
+  // Calculate total amount (no discount for quick booking)
+  const totalAmount = room.price_per_night * nights
+
   const bookingData: BookingCreate = {
     customer_id: customerId,
     room_id: roomId,
     check_in: checkIn.toISOString(),
     check_out: actualCheckOut.toISOString(),
     status: "confirmed",
-    total_amount: 0 // Will be calculated by backend
+    total_amount: totalAmount
   }
 
   return createBooking(bookingData)

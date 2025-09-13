@@ -52,8 +52,9 @@ class BookingService:
         if not room:
             raise ValueError("Room not found")
 
-        if room.status != RoomStatus.AVAILABLE:
-            raise ValueError(f"Room is currently {room.status.value} and cannot be booked")
+        # Only prevent booking if room is under maintenance
+        if room.status == RoomStatus.MAINTENANCE:
+            raise ValueError("Room is currently under maintenance and cannot be booked")
 
         # Check for overlapping bookings
         overlapping = self.crud_booking.get_overlapping(
@@ -121,9 +122,9 @@ class BookingService:
                 if old_room:
                     self.crud_room.update_status(self.session, room=old_room, status=RoomStatus.CLEANING)
 
-                # New room must be available
-                if new_room.status != RoomStatus.AVAILABLE:
-                    raise ValueError(f"New room is {new_room.status.value} and cannot be used")
+                # New room must not be under maintenance
+                if new_room.status == RoomStatus.MAINTENANCE:
+                    raise ValueError("New room is under maintenance and cannot be used")
 
                 # New room becomes occupied
                 self.crud_room.update_status(self.session, room=new_room, status=RoomStatus.OCCUPIED)
@@ -228,8 +229,8 @@ class BookingService:
         if not room:
             raise ValueError("Room not found")
 
-        if room.status != RoomStatus.AVAILABLE:
-            raise ValueError(f"Room is {room.status.value} and cannot be checked in")
+        if room.status == RoomStatus.MAINTENANCE:
+            raise ValueError("Room is under maintenance and cannot be checked in")
 
         # Check for conflicts
         overlapping = self.crud_booking.get_overlapping(
