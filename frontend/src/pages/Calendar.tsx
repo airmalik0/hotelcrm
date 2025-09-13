@@ -1,5 +1,6 @@
 import { CalendarGrid } from "@/components/calendar/CalendarGrid"
 import { CalendarHeader } from "@/components/calendar/CalendarHeader"
+import { GeneralBookingModal } from "@/components/calendar/GeneralBookingModal"
 import { RoomSidebar } from "@/components/calendar/RoomSidebar"
 import { TimeScale } from "@/components/calendar/TimeScale"
 import { useCalendarData, useCalendarView } from "@/hooks/useCalendarData"
@@ -36,6 +37,9 @@ export function Calendar() {
   // Filter state
   const [selectedRoomType, setSelectedRoomType] = useState<"all" | "standard" | "vip">("all")
   const [selectedFloor, setSelectedFloor] = useState<number | "all">("all")
+
+  // Modal state
+  const [showGeneralBookingModal, setShowGeneralBookingModal] = useState(false)
 
   // Filter rooms based on selection
   const filteredRooms = rooms.filter(room => {
@@ -105,6 +109,7 @@ export function Calendar() {
             onFloorChange={setSelectedFloor}
             availableFloors={[...new Set(rooms.map(r => r.floor))].sort()}
             canCreate={canCreate}
+            onNewBooking={() => setShowGeneralBookingModal(true)}
           />
         </div>
       </div>
@@ -161,6 +166,13 @@ export function Calendar() {
           </>
         )}
       </div>
+
+      {/* General Booking Modal */}
+      <GeneralBookingModal
+        isOpen={showGeneralBookingModal}
+        onClose={() => setShowGeneralBookingModal(false)}
+        rooms={rooms}
+      />
     </div>
   )
 }

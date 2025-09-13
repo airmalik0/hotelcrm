@@ -47,7 +47,7 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         title={`
-          ${booking.customer?.full_name || "Unknown Customer"}
+          ${booking.customer ? `${booking.customer.first_name} ${booking.customer.last_name}` : "Unknown Customer"}
           ${formatTime(checkIn)} - ${formatTime(checkOut)}
           Status: ${booking.status}
           ${booking.room?.room_number ? `Room: ${booking.room.room_number}` : ""}
@@ -59,7 +59,7 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
           <div className="flex items-center gap-1 mb-0.5">
             <User className="w-3 h-3 flex-shrink-0 opacity-70" />
             <span className="text-xs font-semibold truncate">
-              {booking.customer?.full_name || "Unknown"}
+              {booking.customer ? `${booking.customer.first_name} ${booking.customer.last_name}` : "Unknown"}
             </span>
           </div>
 
@@ -95,7 +95,7 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
                transform: "translateX(-50%)"
              }}>
           <div className="font-semibold mb-1">
-            {booking.customer?.full_name || "Unknown Customer"}
+            {booking.customer ? `${booking.customer.first_name} ${booking.customer.last_name}` : "Unknown Customer"}
           </div>
           <div className="mb-1">
             {formatTime(checkIn)} - {formatTime(checkOut)}

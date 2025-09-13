@@ -25,6 +25,7 @@ interface CalendarHeaderProps {
   onFloorChange: (floor: number | "all") => void
   availableFloors: number[]
   canCreate: boolean
+  onNewBooking?: () => void
 }
 
 export function CalendarHeader({
@@ -38,7 +39,8 @@ export function CalendarHeader({
   selectedFloor,
   onFloorChange,
   availableFloors,
-  canCreate
+  canCreate,
+  onNewBooking
 }: CalendarHeaderProps) {
   const [showFilters, setShowFilters] = useState(false)
 
@@ -141,8 +143,9 @@ export function CalendarHeader({
           {/* Add Booking Button */}
           {canCreate && (
             <button
-              onClick={() => {/* Will implement with QuickBookingModal */}}
-              className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+              onClick={onNewBooking}
+              className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!onNewBooking}
             >
               <Plus className="w-4 h-4 inline mr-2" />
               New Booking

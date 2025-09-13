@@ -57,7 +57,7 @@ export function BookingDetailModal({
 
     return customersData.data.map(customer => ({
       value: customer.id,
-      label: `${customer.full_name} (${customer.email})`
+      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`
     }))
   }, [customersData])
 
@@ -325,14 +325,16 @@ export function BookingDetailModal({
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-neutral-900 dark:text-white">
-                    {booking.customer?.full_name || "Unknown Customer"}
+                    {booking.customer ? `${booking.customer.first_name} ${booking.customer.last_name}` : "Unknown Customer"}
                   </h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {booking.customer?.email || "No email provided"}
-                  </p>
                   {booking.customer?.phone && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       {booking.customer.phone}
+                    </p>
+                  )}
+                  {booking.customer?.date_of_birth && (
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      DOB: {new Date(booking.customer.date_of_birth).toLocaleDateString()}
                     </p>
                   )}
                 </div>

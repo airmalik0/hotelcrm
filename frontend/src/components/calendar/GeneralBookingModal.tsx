@@ -4,40 +4,44 @@ import type { RoomPublic } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
 import { getDefaultCheckoutTime } from "@/types/booking"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarDays, Clock, DollarSign, User, X } from "lucide-react"
+import { CalendarDays, Clock, DollarSign, Home, User, X } from "lucide-react"
 import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 
-interface QuickBookingModalProps {
+interface GeneralBookingModalProps {
   isOpen: boolean
   onClose: () => void
-  roomId: string
-  initialCheckIn: Date
   rooms: RoomPublic[]
 }
 
-export function QuickBookingModal({
+export function GeneralBookingModal({
   isOpen,
   onClose,
-  roomId,
-  initialCheckIn,
   rooms
-}: QuickBookingModalProps) {
+}: GeneralBookingModalProps) {
   const queryClient = useQueryClient()
+
+  // Form state
+  const [roomId, setRoomId] = useState<string | null>(null)
+  const [checkIn, setCheckIn] = useState(() => {
+    const now = new Date()
+    now.setMinutes(0, 0, 0) // Round to nearest hour
+    return now.toISOString().slice(0, 16)
+  })
+  const [checkOut, setCheckOut] = useState(() => {
+    const now = new Date()
+    now.setMinutes(0, 0, 0)
+    const tomorrow = getDefaultCheckoutTime(now)
+    return tomorrow.toISOString().slice(0, 16)
+  })
+  const [customerId, setCustomerId] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Find the selected room
   const selectedRoom = useMemo(() =>
-    rooms.find(room => room.id === roomId),
+    roomId ? rooms.find(room => room.id === roomId) : null,
     [rooms, roomId]
   )
-
-  // Form state
-  const [checkIn, setCheckIn] = useState(initialCheckIn.toISOString().slice(0, 16))
-  const [checkOut, setCheckOut] = useState(
-    getDefaultCheckoutTime(initialCheckIn).toISOString().slice(0, 16)
-  )
-  const [customerId, setCustomerId] = useState<string | null>(null)
-  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Calculate total amount
   const totalAmount = useMemo(() => {
@@ -67,6 +71,14 @@ export function QuickBookingModal({
       label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`
     }))
   }, [customersData])
+
+  // Room options for SearchableSelect
+  const roomOptions = useMemo(() => {
+    return rooms.map(room => ({
+      value: room.id,
+      label: `Room ${room.room_number} (Floor ${room.floor}) - ${room.room_type.toUpperCase()} - $${room.price_per_night}/night`
+    }))
+  }, [rooms])
 
   // Create booking mutation
   const createMutation = useMutation({
@@ -108,6 +120,10 @@ export function QuickBookingModal({
       newErrors.customer_id = "Please select a customer"
     }
 
+    if (!roomId) {
+      newErrors.room_id = "Please select a room"
+    }
+
     const checkInDate = new Date(checkIn)
     const checkOutDate = new Date(checkOut)
 
@@ -126,7 +142,7 @@ export function QuickBookingModal({
 
     createMutation.mutate(
       customerId!,
-      roomId,
+      roomId!,
       checkInDate,
       checkOutDate
     )
@@ -135,12 +151,15 @@ export function QuickBookingModal({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setCheckIn(initialCheckIn.toISOString().slice(0, 16))
-      setCheckOut(getDefaultCheckoutTime(initialCheckIn).toISOString().slice(0, 16))
+      const now = new Date()
+      now.setMinutes(0, 0, 0)
+      setCheckIn(now.toISOString().slice(0, 16))
+      setCheckOut(getDefaultCheckoutTime(now).toISOString().slice(0, 16))
+      setRoomId(null)
       setCustomerId(null)
       setErrors({})
     }
-  }, [isOpen, initialCheckIn])
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -152,10 +171,10 @@ export function QuickBookingModal({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-                Quick Booking
+                Create New Booking
               </h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Room {selectedRoom?.room_number} • Floor {selectedRoom?.floor}
+                Book any available room
               </p>
             </div>
             <button
@@ -177,6 +196,21 @@ export function QuickBookingModal({
               </p>
             </div>
           )}
+
+          {/* Room Selection */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Room *
+            </label>
+            <SearchableSelect
+              value={roomId}
+              onChange={setRoomId}
+              options={roomOptions}
+              placeholder="Search and select room"
+              error={errors.room_id}
+              icon={<Home className="w-4 h-4" />}
+            />
+          </div>
 
           {/* Customer Selection */}
           <div>
@@ -254,27 +288,29 @@ export function QuickBookingModal({
           </div>
 
           {/* Price Calculation */}
-          <div className="p-4 rounded-lg bg-neutral-50 dark:bg-dark-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                Room Rate
-              </span>
-              <span className="text-sm font-medium">
-                ${selectedRoom?.price_per_night}/night
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-600" />
-                <span className="text-lg font-bold text-neutral-900 dark:text-white">
-                  Total Amount
+          {selectedRoom && (
+            <div className="p-4 rounded-lg bg-neutral-50 dark:bg-dark-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Room Rate
+                </span>
+                <span className="text-sm font-medium">
+                  ${selectedRoom.price_per_night}/night
                 </span>
               </div>
-              <span className="text-lg font-bold text-green-600">
-                ${totalAmount.toFixed(2)}
-              </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <span className="text-lg font-bold text-neutral-900 dark:text-white">
+                    Total Amount
+                  </span>
+                </div>
+                <span className="text-lg font-bold text-green-600">
+                  ${totalAmount.toFixed(2)}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </form>
 
         {/* Footer */}
