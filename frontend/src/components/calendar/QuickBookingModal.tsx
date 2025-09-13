@@ -1,4 +1,4 @@
-import { createQuickBooking, type QuickBookingParams } from "@/api/bookings"
+import { type QuickBookingParams, createQuickBooking } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import type { RoomPublic } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
@@ -21,20 +21,22 @@ export function QuickBookingModal({
   onClose,
   roomId,
   initialCheckIn,
-  rooms
+  rooms,
 }: QuickBookingModalProps) {
   const queryClient = useQueryClient()
 
   // Find the selected room
-  const selectedRoom = useMemo(() =>
-    rooms.find(room => room.id === roomId),
-    [rooms, roomId]
+  const selectedRoom = useMemo(
+    () => rooms.find((room) => room.id === roomId),
+    [rooms, roomId],
   )
 
   // Form state
-  const [checkIn, setCheckIn] = useState(initialCheckIn.toISOString().slice(0, 16))
+  const [checkIn, setCheckIn] = useState(
+    initialCheckIn.toISOString().slice(0, 16),
+  )
   const [checkOut, setCheckOut] = useState(
-    getDefaultCheckoutTime(initialCheckIn).toISOString().slice(0, 16)
+    getDefaultCheckoutTime(initialCheckIn).toISOString().slice(0, 16),
   )
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -45,7 +47,8 @@ export function QuickBookingModal({
 
     const checkInDate = new Date(checkIn)
     const checkOutDate = new Date(checkOut)
-    const hours = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
+    const hours =
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
     const days = Math.max(1, Math.ceil(hours / 24))
 
     return selectedRoom.price_per_night * days
@@ -55,16 +58,16 @@ export function QuickBookingModal({
   const { data: customersData, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", "search"],
     queryFn: () => getCustomers({ limit: 100 }),
-    enabled: isOpen
+    enabled: isOpen,
   })
 
   // Customer options for SearchableSelect
   const customerOptions = useMemo(() => {
     if (!customersData?.data) return []
 
-    return customersData.data.map(customer => ({
+    return customersData.data.map((customer) => ({
       value: customer.id,
-      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`
+      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`,
     }))
   }, [customersData])
 
@@ -93,7 +96,7 @@ export function QuickBookingModal({
       } else {
         setErrors({ general: "Failed to create booking" })
       }
-    }
+    },
   })
 
   // Handle form submission
@@ -128,7 +131,7 @@ export function QuickBookingModal({
       customerId: customerId!,
       roomId: roomId,
       checkIn: checkInDate,
-      checkOut: checkOutDate
+      checkOut: checkOutDate,
     })
   }
 
@@ -136,7 +139,9 @@ export function QuickBookingModal({
   useEffect(() => {
     if (isOpen) {
       setCheckIn(initialCheckIn.toISOString().slice(0, 16))
-      setCheckOut(getDefaultCheckoutTime(initialCheckIn).toISOString().slice(0, 16))
+      setCheckOut(
+        getDefaultCheckoutTime(initialCheckIn).toISOString().slice(0, 16),
+      )
       setCustomerId(null)
       setErrors({})
     }
@@ -187,7 +192,11 @@ export function QuickBookingModal({
               value={customerId}
               onChange={setCustomerId}
               options={customerOptions}
-              placeholder={customersLoading ? "Loading customers..." : "Search and select customer"}
+              placeholder={
+                customersLoading
+                  ? "Loading customers..."
+                  : "Search and select customer"
+              }
               error={errors.customer_id}
               icon={<User className="w-4 h-4" />}
             />
@@ -206,9 +215,10 @@ export function QuickBookingModal({
                 onChange={(e) => setCheckIn(e.target.value)}
                 className={`
                   w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors
-                  ${errors.check_in
-                    ? "border-red-300 dark:border-red-600"
-                    : "border-neutral-300 dark:border-neutral-600"
+                  ${
+                    errors.check_in
+                      ? "border-red-300 dark:border-red-600"
+                      : "border-neutral-300 dark:border-neutral-600"
                   }
                   bg-white dark:bg-transparent
                   focus:outline-none focus:ring-2 focus:ring-primary-500
@@ -236,9 +246,10 @@ export function QuickBookingModal({
                 onChange={(e) => setCheckOut(e.target.value)}
                 className={`
                   w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors
-                  ${errors.check_out
-                    ? "border-red-300 dark:border-red-600"
-                    : "border-neutral-300 dark:border-neutral-600"
+                  ${
+                    errors.check_out
+                      ? "border-red-300 dark:border-red-600"
+                      : "border-neutral-300 dark:border-neutral-600"
                   }
                   bg-white dark:bg-transparent
                   focus:outline-none focus:ring-2 focus:ring-primary-500

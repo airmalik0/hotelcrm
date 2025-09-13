@@ -95,10 +95,11 @@ export interface BookingDateRangeParams {
  * Get bookings for a specific date range
  */
 export async function getBookingsByDateRange(
-  params: BookingDateRangeParams
+  params: BookingDateRangeParams,
 ): Promise<BookingsPublic> {
   const { startDate, endDate, roomId } = params
-  const start = typeof startDate === "string" ? startDate : startDate.toISOString()
+  const start =
+    typeof startDate === "string" ? startDate : startDate.toISOString()
   const end = typeof endDate === "string" ? endDate : endDate.toISOString()
 
   const response = await apiClient.get<BookingsPublic>("/api/v1/bookings/", {
@@ -106,8 +107,8 @@ export async function getBookingsByDateRange(
       date_from: start.split("T")[0], // Backend expects YYYY-MM-DD format
       date_to: end.split("T")[0],
       room_id: roomId,
-      limit: 500 // High limit to get all bookings in range
-    }
+      limit: 500, // High limit to get all bookings in range
+    },
   })
   return response.data
 }
@@ -126,20 +127,21 @@ export interface RoomAvailabilityParams {
  * Check if a room is available for a specific time period
  */
 export async function checkRoomAvailability(
-  params: RoomAvailabilityParams
+  params: RoomAvailabilityParams,
 ): Promise<boolean> {
   const { roomId, checkIn, checkOut, excludeBookingId } = params
   const bookings = await getBookingsByDateRange({
     startDate: checkIn,
     endDate: checkOut,
-    roomId
+    roomId,
   })
 
   const checkInTime = typeof checkIn === "string" ? new Date(checkIn) : checkIn
-  const checkOutTime = typeof checkOut === "string" ? new Date(checkOut) : checkOut
+  const checkOutTime =
+    typeof checkOut === "string" ? new Date(checkOut) : checkOut
 
   // Check for conflicts
-  const hasConflict = bookings.data.some(booking => {
+  const hasConflict = bookings.data.some((booking) => {
     // Skip if it's the same booking we're editing
     if (excludeBookingId && booking.id === excludeBookingId) {
       return false
@@ -166,17 +168,19 @@ export interface QuickBookingParams {
 }
 
 export async function createQuickBooking(
-  params: QuickBookingParams
+  params: QuickBookingParams,
 ): Promise<BookingPublic> {
   const { customerId, roomId, checkIn, checkOut } = params
 
   // Default checkout is next day at noon if not provided
-  const actualCheckOut = checkOut || (() => {
-    const nextDay = new Date(checkIn)
-    nextDay.setDate(nextDay.getDate() + 1)
-    nextDay.setHours(12, 0, 0, 0)
-    return nextDay
-  })()
+  const actualCheckOut =
+    checkOut ||
+    (() => {
+      const nextDay = new Date(checkIn)
+      nextDay.setDate(nextDay.getDate() + 1)
+      nextDay.setHours(12, 0, 0, 0)
+      return nextDay
+    })()
 
   // Get room details to calculate total amount
   const room = await getRoom(roomId)
@@ -191,7 +195,9 @@ export async function createQuickBooking(
   checkOutDate.setHours(0, 0, 0, 0)
 
   // Calculate days difference and ensure minimum 1 night
-  const nightsDiff = Math.floor((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+  const nightsDiff = Math.floor(
+    (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
+  )
   const nights = Math.max(1, nightsDiff)
 
   // Calculate total amount (no discount for quick booking)
@@ -203,7 +209,7 @@ export async function createQuickBooking(
     check_in: checkIn.toISOString(),
     check_out: actualCheckOut.toISOString(),
     status: "confirmed",
-    total_amount: totalAmount
+    total_amount: totalAmount,
   }
 
   return createBooking(bookingData)
@@ -214,7 +220,7 @@ export async function createQuickBooking(
  */
 export async function updateBookingStatus(
   bookingId: string,
-  status: BookingStatus
+  status: BookingStatus,
 ): Promise<BookingPublic> {
   return updateBooking(bookingId, { status })
 }

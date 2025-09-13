@@ -2,7 +2,12 @@ import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import type { BookingWithPosition, CalendarViewMode } from "@/types/booking"
-import { getMonthEnd, getMonthStart, getWeekEnd, getWeekStart } from "@/types/booking"
+import {
+  getMonthEnd,
+  getMonthStart,
+  getWeekEnd,
+  getWeekStart,
+} from "@/types/booking"
 import { processBookingsForCalendar } from "@/utils/calendar"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
@@ -29,7 +34,7 @@ export function useCalendarData({
   viewMode,
   currentDate,
   autoRefresh = false,
-  refreshInterval = 30000 // 30 seconds
+  refreshInterval = 30000, // 30 seconds
 }: UseCalendarDataOptions): CalendarData {
   const queryClient = useQueryClient()
 
@@ -38,13 +43,12 @@ export function useCalendarData({
     if (viewMode === "week") {
       return {
         viewStart: getWeekStart(currentDate),
-        viewEnd: getWeekEnd(currentDate)
+        viewEnd: getWeekEnd(currentDate),
       }
-    } else {
-      return {
-        viewStart: getMonthStart(currentDate),
-        viewEnd: getMonthEnd(currentDate)
-      }
+    }
+    return {
+      viewStart: getMonthStart(currentDate),
+      viewEnd: getMonthEnd(currentDate),
     }
   }, [viewMode, currentDate])
 
@@ -52,12 +56,12 @@ export function useCalendarData({
   const {
     data: roomsData,
     isLoading: roomsLoading,
-    error: roomsError
+    error: roomsError,
   } = useQuery({
     queryKey: ["rooms", "calendar"],
     queryFn: () => getRooms({ limit: 100 }),
     staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
-    refetchInterval: autoRefresh ? refreshInterval : false
+    refetchInterval: autoRefresh ? refreshInterval : false,
   })
 
   // Fetch bookings for the period
@@ -65,12 +69,17 @@ export function useCalendarData({
     data: bookingsData,
     isLoading: bookingsLoading,
     error: bookingsError,
-    refetch: refetchBookings
+    refetch: refetchBookings,
   } = useQuery({
-    queryKey: ["bookings", "calendar", viewStart.toISOString(), viewEnd.toISOString()],
+    queryKey: [
+      "bookings",
+      "calendar",
+      viewStart.toISOString(),
+      viewEnd.toISOString(),
+    ],
     queryFn: () => getBookings({ limit: 500 }), // High limit to get all bookings
     staleTime: 2 * 60 * 1000, // Consider data stale after 2 minutes
-    refetchInterval: autoRefresh ? refreshInterval : false
+    refetchInterval: autoRefresh ? refreshInterval : false,
   })
 
   // Process bookings for calendar display
@@ -80,7 +89,7 @@ export function useCalendarData({
     }
 
     // Filter bookings that overlap with the view period
-    const relevantBookings = bookingsData.data.filter(booking => {
+    const relevantBookings = bookingsData.data.filter((booking) => {
       const checkIn = new Date(booking.check_in)
       const checkOut = new Date(booking.check_out)
       return checkOut > viewStart && checkIn < viewEnd
@@ -90,7 +99,7 @@ export function useCalendarData({
       relevantBookings,
       roomsData.data,
       viewStart,
-      viewEnd
+      viewEnd,
     )
   }, [bookingsData?.data, roomsData?.data, viewStart, viewEnd])
 
@@ -116,7 +125,7 @@ export function useCalendarData({
     bookings: processedBookings,
     isLoading: roomsLoading || bookingsLoading,
     error: roomsError || bookingsError,
-    refetch
+    refetch,
   }
 }
 
@@ -128,7 +137,7 @@ export function useCalendarView(initialMode: CalendarViewMode = "week") {
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const navigatePrevious = () => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev)
       if (viewMode === "week") {
         newDate.setDate(newDate.getDate() - 7)
@@ -140,7 +149,7 @@ export function useCalendarView(initialMode: CalendarViewMode = "week") {
   }
 
   const navigateNext = () => {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev)
       if (viewMode === "week") {
         newDate.setDate(newDate.getDate() + 7)
@@ -165,7 +174,7 @@ export function useCalendarView(initialMode: CalendarViewMode = "week") {
     navigatePrevious,
     navigateNext,
     navigateToday,
-    changeViewMode
+    changeViewMode,
   }
 }
 
@@ -173,7 +182,9 @@ export function useCalendarView(initialMode: CalendarViewMode = "week") {
  * Hook to handle booking selection and actions
  */
 export function useBookingSelection() {
-  const [selectedBooking, setSelectedBooking] = useState<BookingPublic | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<BookingPublic | null>(
+    null,
+  )
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
@@ -201,6 +212,6 @@ export function useBookingSelection() {
     isEditModalOpen,
     selectBooking,
     editBooking,
-    closeModals
+    closeModals,
   }
 }

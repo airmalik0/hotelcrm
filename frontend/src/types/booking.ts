@@ -29,10 +29,14 @@ export interface BookingConflict {
  */
 export function getBookingStatusColor(status?: BookingStatus): string {
   const statusColors: Record<BookingStatus, string> = {
-    confirmed: "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-600/25 dark:border-blue-600/50 dark:text-blue-400",
-    checked_in: "bg-green-100 border-green-300 text-green-700 dark:bg-green-600/25 dark:border-green-600/50 dark:text-green-400",
-    checked_out: "bg-neutral-100 border-neutral-300 text-neutral-700 dark:bg-neutral-600/25 dark:border-neutral-600/50 dark:text-neutral-400",
-    cancelled: "bg-red-100 border-red-300 text-red-700 dark:bg-red-600/25 dark:border-red-600/50 dark:text-red-400",
+    confirmed:
+      "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-600/25 dark:border-blue-600/50 dark:text-blue-400",
+    checked_in:
+      "bg-green-100 border-green-300 text-green-700 dark:bg-green-600/25 dark:border-green-600/50 dark:text-green-400",
+    checked_out:
+      "bg-neutral-100 border-neutral-300 text-neutral-700 dark:bg-neutral-600/25 dark:border-neutral-600/50 dark:text-neutral-400",
+    cancelled:
+      "bg-red-100 border-red-300 text-red-700 dark:bg-red-600/25 dark:border-red-600/50 dark:text-red-400",
   }
 
   return status ? statusColors[status] : statusColors.confirmed
@@ -41,7 +45,10 @@ export function getBookingStatusColor(status?: BookingStatus): string {
 /**
  * Calculate booking duration in hours
  */
-export function calculateDurationHours(checkIn: string | Date, checkOut: string | Date): number {
+export function calculateDurationHours(
+  checkIn: string | Date,
+  checkOut: string | Date,
+): number {
   const start = typeof checkIn === "string" ? new Date(checkIn) : checkIn
   const end = typeof checkOut === "string" ? new Date(checkOut) : checkOut
   return (end.getTime() - start.getTime()) / (1000 * 60 * 60)
@@ -53,14 +60,16 @@ export function calculateDurationHours(checkIn: string | Date, checkOut: string 
 export function calculateBookingPosition(
   booking: BookingPublic,
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ): { leftPercent: number; widthPercent: number } {
-  const totalHours = (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
+  const totalHours =
+    (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
   const checkIn = new Date(booking.check_in)
   const checkOut = new Date(booking.check_out)
 
   // Calculate start position
-  let bookingStartOffset = (checkIn.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
+  let bookingStartOffset =
+    (checkIn.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
 
   // Handle bookings that start before view period
   if (bookingStartOffset < 0) {
@@ -68,7 +77,8 @@ export function calculateBookingPosition(
   }
 
   // Calculate duration within view
-  let bookingEndOffset = (checkOut.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
+  let bookingEndOffset =
+    (checkOut.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
 
   // Handle bookings that end after view period
   if (bookingEndOffset > totalHours) {
@@ -82,7 +92,7 @@ export function calculateBookingPosition(
 
   return {
     leftPercent: Math.max(0, Math.min(100, leftPercent)),
-    widthPercent: Math.max(0, Math.min(100 - leftPercent, widthPercent))
+    widthPercent: Math.max(0, Math.min(100 - leftPercent, widthPercent)),
   }
 }
 
@@ -91,7 +101,7 @@ export function calculateBookingPosition(
  */
 export function doBookingsOverlap(
   booking1: BookingPublic,
-  booking2: BookingPublic
+  booking2: BookingPublic,
 ): boolean {
   const start1 = new Date(booking1.check_in)
   const end1 = new Date(booking1.check_out)
@@ -107,7 +117,7 @@ export function doBookingsOverlap(
 export function findBookingConflicts(
   booking: BookingPublic,
   roomBookings: BookingPublic[],
-  minGapMinutes = 15
+  minGapMinutes = 15,
 ): BookingConflict[] {
   const conflicts: BookingConflict[] = []
   const checkIn = new Date(booking.check_in)
@@ -125,18 +135,20 @@ export function findBookingConflicts(
       conflicts.push({
         booking: existing,
         type: "overlap",
-        message: `Overlaps with booking from ${formatDateTime(existingStart)} to ${formatDateTime(existingEnd)}`
+        message: `Overlaps with booking from ${formatDateTime(existingStart)} to ${formatDateTime(existingEnd)}`,
       })
     }
     // Check if too close (less than minimum gap)
     else if (
-      (checkOut > existingStart && checkOut.getTime() + gapMs > existingStart.getTime()) ||
-      (checkIn < existingEnd && checkIn.getTime() - gapMs < existingEnd.getTime())
+      (checkOut > existingStart &&
+        checkOut.getTime() + gapMs > existingStart.getTime()) ||
+      (checkIn < existingEnd &&
+        checkIn.getTime() - gapMs < existingEnd.getTime())
     ) {
       conflicts.push({
         booking: existing,
         type: "too_close",
-        message: `Too close to booking (minimum ${minGapMinutes} minutes gap required)`
+        message: `Too close to booking (minimum ${minGapMinutes} minutes gap required)`,
       })
     }
   }
@@ -153,7 +165,7 @@ export function formatDateTime(date: Date): string {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true
+    hour12: true,
   })
 }
 
@@ -164,7 +176,7 @@ export function formatTime(date: Date): string {
   return date.toLocaleString("en-US", {
     hour: "numeric",
     minute: "2-digit",
-    hour12: true
+    hour12: true,
   })
 }
 
@@ -218,7 +230,7 @@ export function getTimeFromClick(
   clickX: number,
   containerWidth: number,
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ): Date {
   const percentX = (clickX / containerWidth) * 100
   const totalMs = viewEnd.getTime() - viewStart.getTime()

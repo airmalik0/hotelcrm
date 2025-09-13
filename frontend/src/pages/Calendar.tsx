@@ -23,7 +23,7 @@ export function Calendar() {
     navigatePrevious,
     navigateNext,
     navigateToday,
-    changeViewMode
+    changeViewMode,
   } = useCalendarView("week")
 
   // Fetch calendar data
@@ -31,18 +31,20 @@ export function Calendar() {
     viewMode,
     currentDate,
     autoRefresh: true,
-    refreshInterval: 30000 // Refresh every 30 seconds
+    refreshInterval: 30000, // Refresh every 30 seconds
   })
 
   // Filter state
-  const [selectedRoomType, setSelectedRoomType] = useState<"all" | "standard" | "vip">("all")
+  const [selectedRoomType, setSelectedRoomType] = useState<
+    "all" | "standard" | "vip"
+  >("all")
   const [selectedFloor, setSelectedFloor] = useState<number | "all">("all")
 
   // Modal state
   const [showGeneralBookingModal, setShowGeneralBookingModal] = useState(false)
 
   // Filter rooms based on selection
-  const filteredRooms = rooms.filter(room => {
+  const filteredRooms = rooms.filter((room) => {
     if (selectedRoomType !== "all" && room.room_type !== selectedRoomType) {
       return false
     }
@@ -53,8 +55,8 @@ export function Calendar() {
   })
 
   // Filter bookings to only show those for filtered rooms
-  const filteredBookings = bookings.filter(booking =>
-    filteredRooms.some(room => room.id === booking.room_id)
+  const filteredBookings = bookings.filter((booking) =>
+    filteredRooms.some((room) => room.id === booking.room_id),
   )
 
   const periodLabel = getCalendarPeriodLabel(viewMode, currentDate)
@@ -78,25 +80,30 @@ export function Calendar() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      {/* Header */}
+    <div className="flex flex-col h-[calc(100vh-8rem)] bg-neutral-50 dark:bg-dark-1">
+      {/* Compact Header */}
       <div className="flex-shrink-0 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <CalendarIcon className="w-6 h-6 text-primary-600" />
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                Booking Calendar
-              </h1>
-              <span className="text-lg text-neutral-600 dark:text-neutral-400">
+        <div className="px-4 py-3">
+          {/* Title and Period */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-primary-600" />
+                <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Booking Calendar
+                </h1>
+              </div>
+              <div className="h-5 w-px bg-neutral-300 dark:bg-neutral-600" />
+              <span className="text-base font-medium text-neutral-700 dark:text-neutral-300">
                 {periodLabel}
               </span>
             </div>
             {isLoading && (
-              <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
+              <Loader2 className="w-4 h-4 text-primary-600 animate-spin" />
             )}
           </div>
 
+          {/* Controls */}
           <CalendarHeader
             viewMode={viewMode}
             onViewModeChange={changeViewMode}
@@ -107,7 +114,7 @@ export function Calendar() {
             onRoomTypeChange={setSelectedRoomType}
             selectedFloor={selectedFloor}
             onFloorChange={setSelectedFloor}
-            availableFloors={[...new Set(rooms.map(r => r.floor))].sort()}
+            availableFloors={[...new Set(rooms.map((r) => r.floor))].sort()}
             canCreate={canCreate}
             onNewBooking={() => setShowGeneralBookingModal(true)}
           />
@@ -115,44 +122,41 @@ export function Calendar() {
       </div>
 
       {/* Calendar Body */}
-      <div className="flex-1 flex overflow-hidden bg-neutral-50 dark:bg-dark-1">
+      <div className="flex-1 flex overflow-hidden">
         {isLoading && rooms.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center bg-white dark:bg-dark-2">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto mb-4" />
+              <Loader2 className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-3" />
               <p className="text-neutral-600 dark:text-neutral-400">
                 Loading calendar...
               </p>
             </div>
           </div>
         ) : filteredRooms.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center bg-white dark:bg-dark-2">
             <div className="text-center">
-              <CalendarIcon className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+              <CalendarIcon className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
               <p className="text-neutral-600 dark:text-neutral-400">
                 No rooms match your filters
               </p>
             </div>
           </div>
         ) : (
-          <>
+          <div className="flex w-full h-full">
             {/* Room Sidebar */}
-            <div className="flex-shrink-0 w-48 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600">
+            <div className="flex-shrink-0 w-40 md:w-48 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600">
               <RoomSidebar rooms={filteredRooms} />
             </div>
 
             {/* Calendar Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Time Scale */}
-              <div className="flex-shrink-0 h-12 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
-                <TimeScale
-                  viewMode={viewMode}
-                  currentDate={currentDate}
-                />
+              {/* Time Scale Header */}
+              <div className="flex-shrink-0 h-12">
+                <TimeScale viewMode={viewMode} currentDate={currentDate} />
               </div>
 
               {/* Calendar Grid */}
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto bg-white dark:bg-dark-2">
                 <CalendarGrid
                   rooms={filteredRooms}
                   bookings={filteredBookings}
@@ -163,7 +167,7 @@ export function Calendar() {
                 />
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 

@@ -17,7 +17,11 @@ interface RoomEditModalProps {
   viewOnly?: boolean
 }
 
-export function RoomEditModal({ room, onClose, viewOnly = false }: RoomEditModalProps) {
+export function RoomEditModal({
+  room,
+  onClose,
+  viewOnly = false,
+}: RoomEditModalProps) {
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<RoomUpdate>({
     room_number: room.room_number,

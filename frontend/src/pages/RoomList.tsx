@@ -7,7 +7,7 @@ import { useRole } from "@/hooks/useRole"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Building2, Filter, Plus, Search } from "lucide-react"
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useMemo, useState } from "react"
 
 export function RoomList() {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -44,7 +44,7 @@ export function RoomList() {
       if (
         searchTerm &&
         !room.room_number.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !(room.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+        !room.description?.toLowerCase().includes(searchTerm.toLowerCase())
       ) {
         return false
       }
@@ -294,11 +294,14 @@ export function RoomList() {
             No rooms found
           </p>
           <p className="text-sm text-neutral-500 dark:text-neutral-500">
-            {searchTerm || filterStatus !== "all" || filterType !== "all" || filterFloor !== "all"
+            {searchTerm ||
+            filterStatus !== "all" ||
+            filterType !== "all" ||
+            filterFloor !== "all"
               ? "Try adjusting your filters"
               : canEdit
-              ? "Add your first room to get started"
-              : "No rooms have been added yet"}
+                ? "Add your first room to get started"
+                : "No rooms have been added yet"}
           </p>
         </div>
       ) : (

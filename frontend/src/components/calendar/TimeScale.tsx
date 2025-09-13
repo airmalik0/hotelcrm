@@ -1,6 +1,10 @@
 import type { CalendarViewMode } from "@/types/booking"
-import { getMonthEnd, getMonthStart, getWeekEnd, getWeekStart } from "@/types/booking"
-import { generateTimeScale } from "@/utils/calendar"
+import {
+  getMonthEnd,
+  getMonthStart,
+  getWeekEnd,
+  getWeekStart,
+} from "@/types/booking"
 import type React from "react"
 import { useMemo } from "react"
 
@@ -10,60 +14,147 @@ interface TimeScaleProps {
 }
 
 export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
-  const { viewStart, markers } = useMemo(() => {
-    const start = viewMode === "week"
-      ? getWeekStart(currentDate)
-      : getMonthStart(currentDate)
+  const { viewStart, viewEnd, timeMarkers } = useMemo(() => {
+    const start =
+      viewMode === "week"
+        ? getWeekStart(currentDate)
+        : getMonthStart(currentDate)
+
+    const end =
+      viewMode === "week" ? getWeekEnd(currentDate) : getMonthEnd(currentDate)
+
+    // Generate time markers based on view mode
+    const markers: Array<{ position: number; label: string; isMain: boolean }> =
+      []
+    const totalHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+
+    if (viewMode === "week") {
+      // For week view: show major marks every day and minor every 6 hours
+      for (let hour = 0; hour <= totalHours; hour += 6) {
+        const markerDate = new Date(start.getTime() + hour * 60 * 60 * 1000)
+        const position = (hour / totalHours) * 100
+        const isMain = hour % 24 === 0 // Main marker at midnight
+
+        let label = ""
+        if (isMain) {
+          // Show day and date for main markers
+          label = markerDate.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })
+        } else {
+          // Show time for minor markers
+          const hours = markerDate.getHours()
+          if (hours === 6) label = "6 AM"
+          else if (hours === 12) label = "12 PM"
+          else if (hours === 18) label = "6 PM"
+        }
+
+        if (label) {
+          markers.push({ position, label, isMain })
+        }
+      }
+    } else {
+      // For month view: show every day
+      const totalDays = Math.ceil(totalHours / 24)
+      for (let day = 0; day <= totalDays; day++) {
+        const markerDate = new Date(start.getTime() + day * 24 * 60 * 60 * 1000)
+        const hour = day * 24
+        const position = (hour / totalHours) * 100
+
+        if (position <= 100) {
+          const label = markerDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          })
+
+          // Mark Sundays and 1st of month as main
+          const isMain = markerDate.getDay() === 0 || markerDate.getDate() === 1
+
+          markers.push({ position, label, isMain })
+        }
+      }
+    }
 
     return {
       viewStart: start,
-      markers: generateTimeScale(viewMode, start)
+      viewEnd: end,
+      timeMarkers: markers,
     }
   }, [viewMode, currentDate])
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      {/* Timeline container */}
-      <div className="absolute inset-0 flex items-center">
-        {/* Markers */}
-        {markers.map((marker, index) => (
+    <div className="relative h-full w-full bg-neutral-50 dark:bg-dark-3 border-b border-neutral-200 dark:border-neutral-600">
+      {/* Timeline scale */}
+      <div className="relative h-full">
+        {/* Time markers */}
+        {timeMarkers.map((marker, index) => (
           <div
-            key={`${marker.date.toISOString()}-${index}`}
-            className="absolute flex flex-col items-center"
+            key={`marker-${index}`}
+            className="absolute top-0 h-full"
             style={{ left: `${marker.position}%` }}
           >
-            {/* Tick mark */}
-            <div className="w-px h-3 bg-neutral-300 dark:bg-neutral-600" />
+            {/* Vertical line extending into grid */}
+            <div
+              className={`
+                absolute top-0 w-px h-full
+                ${
+                  marker.isMain
+                    ? "bg-neutral-300 dark:bg-neutral-600"
+                    : "bg-neutral-200 dark:bg-neutral-700"
+                }
+              `}
+            />
 
-            {/* Label */}
-            <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 whitespace-nowrap transform -translate-x-1/2">
+            {/* Time label */}
+            <div
+              className={`
+                absolute top-1/2 -translate-y-1/2 whitespace-nowrap
+                ${
+                  marker.isMain
+                    ? "text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                    : "text-xs text-neutral-500 dark:text-neutral-400"
+                }
+                ${marker.position < 5 ? "left-1" : ""}
+                ${marker.position > 95 ? "right-1" : ""}
+                ${marker.position >= 5 && marker.position <= 95 ? "-translate-x-1/2" : ""}
+              `}
+            >
               {marker.label}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Current time indicator (optional) */}
+      {/* Current time indicator */}
       {(() => {
         const now = new Date()
-        const viewEnd = viewMode === "week"
-          ? getWeekEnd(currentDate)
-          : getMonthEnd(currentDate)
-
-        // Check if current time is within view
         if (now >= viewStart && now <= viewEnd) {
-          const totalHours = (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
-          const currentOffset = (now.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
+          const totalHours =
+            (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
+          const currentOffset =
+            (now.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
           const position = (currentOffset / totalHours) * 100
 
           return (
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-red-500 dark:bg-red-400 z-10"
+              className="absolute top-0 h-full pointer-events-none z-20"
               style={{ left: `${position}%` }}
-              title={`Current time: ${now.toLocaleTimeString()}`}
             >
-              {/* Current time dot */}
-              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-red-500 dark:bg-red-400 rounded-full" />
+              <div className="relative h-full">
+                {/* Red line */}
+                <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 dark:bg-red-400" />
+
+                {/* Current time label */}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-red-500 dark:bg-red-400 text-white text-xs px-1.5 py-0.5 rounded whitespace-nowrap">
+                  {now.toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                </div>
+              </div>
             </div>
           )
         }

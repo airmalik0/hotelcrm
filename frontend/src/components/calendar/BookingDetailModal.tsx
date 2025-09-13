@@ -1,8 +1,16 @@
-import { deleteBooking, updateBooking, updateBookingStatus } from "@/api/bookings"
+import {
+  deleteBooking,
+  updateBooking,
+  updateBookingStatus,
+} from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import type { BookingPublic, BookingStatus } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
-import { calculateDurationHours, formatDateTime, getBookingStatusColor } from "@/types/booking"
+import {
+  calculateDurationHours,
+  formatDateTime,
+  getBookingStatusColor,
+} from "@/types/booking"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   CalendarDays,
@@ -16,7 +24,7 @@ import {
   Trash2,
   User,
   X,
-  XCircle
+  XCircle,
 } from "lucide-react"
 import type React from "react"
 import { useMemo, useState } from "react"
@@ -32,7 +40,7 @@ export function BookingDetailModal({
   isOpen,
   onClose,
   booking,
-  canEdit
+  canEdit,
 }: BookingDetailModalProps) {
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
@@ -40,7 +48,7 @@ export function BookingDetailModal({
     check_in: booking.check_in.slice(0, 16),
     check_out: booking.check_out.slice(0, 16),
     customer_id: booking.customer_id,
-    total_amount: booking.total_amount
+    total_amount: booking.total_amount,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -48,16 +56,16 @@ export function BookingDetailModal({
   const { data: customersData } = useQuery({
     queryKey: ["customers", "search"],
     queryFn: () => getCustomers({ limit: 100 }),
-    enabled: isEditing
+    enabled: isEditing,
   })
 
   // Customer options for SearchableSelect
   const customerOptions = useMemo(() => {
     if (!customersData?.data) return []
 
-    return customersData.data.map(customer => ({
+    return customersData.data.map((customer) => ({
       value: customer.id,
-      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`
+      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`,
     }))
   }, [customersData])
 
@@ -93,16 +101,17 @@ export function BookingDetailModal({
       } else {
         setErrors({ general: "Failed to update booking" })
       }
-    }
+    },
   })
 
   // Status change mutation
   const statusMutation = useMutation({
-    mutationFn: (status: BookingStatus) => updateBookingStatus(booking.id, status),
+    mutationFn: (status: BookingStatus) =>
+      updateBookingStatus(booking.id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] })
       queryClient.invalidateQueries({ queryKey: ["bookings", "calendar"] })
-    }
+    },
   })
 
   // Delete booking mutation
@@ -112,7 +121,7 @@ export function BookingDetailModal({
       queryClient.invalidateQueries({ queryKey: ["bookings"] })
       queryClient.invalidateQueries({ queryKey: ["bookings", "calendar"] })
       onClose()
-    }
+    },
   })
 
   // Handle edit submit
@@ -143,7 +152,7 @@ export function BookingDetailModal({
       check_in: new Date(editData.check_in).toISOString(),
       check_out: new Date(editData.check_out).toISOString(),
       customer_id: editData.customer_id,
-      total_amount: editData.total_amount
+      total_amount: editData.total_amount,
     })
   }
 
@@ -154,7 +163,11 @@ export function BookingDetailModal({
 
   // Handle delete
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this booking? This action cannot be undone.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this booking? This action cannot be undone.",
+      )
+    ) {
       deleteMutation.mutate()
     }
   }
@@ -168,13 +181,17 @@ export function BookingDetailModal({
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${statusColor.includes('bg-blue') ? 'bg-blue-500' : statusColor.includes('bg-green') ? 'bg-green-500' : statusColor.includes('bg-red') ? 'bg-red-500' : 'bg-neutral-500'}`} />
+              <div
+                className={`w-3 h-3 rounded-full ${statusColor.includes("bg-blue") ? "bg-blue-500" : statusColor.includes("bg-green") ? "bg-green-500" : statusColor.includes("bg-red") ? "bg-red-500" : "bg-neutral-500"}`}
+              />
               <div>
                 <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
                   Booking Details
                 </h2>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {booking.room?.room_number ? `Room ${booking.room.room_number}` : "Unknown Room"}
+                  {booking.room?.room_number
+                    ? `Room ${booking.room.room_number}`
+                    : "Unknown Room"}
                   {booking.room?.floor && ` • Floor ${booking.room.floor}`}
                 </p>
               </div>
@@ -208,7 +225,12 @@ export function BookingDetailModal({
                 </label>
                 <SearchableSelect
                   value={editData.customer_id}
-                  onChange={(value) => setEditData(prev => ({ ...prev, customer_id: value || "" }))}
+                  onChange={(value) =>
+                    setEditData((prev) => ({
+                      ...prev,
+                      customer_id: value || "",
+                    }))
+                  }
                   options={customerOptions}
                   placeholder="Search and select customer"
                   error={errors.customer_id}
@@ -226,12 +248,18 @@ export function BookingDetailModal({
                   <input
                     type="datetime-local"
                     value={editData.check_in}
-                    onChange={(e) => setEditData(prev => ({ ...prev, check_in: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        check_in: e.target.value,
+                      }))
+                    }
                     className={`
                       w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors
-                      ${errors.check_in
-                        ? "border-red-300 dark:border-red-600"
-                        : "border-neutral-300 dark:border-neutral-600"
+                      ${
+                        errors.check_in
+                          ? "border-red-300 dark:border-red-600"
+                          : "border-neutral-300 dark:border-neutral-600"
                       }
                       bg-white dark:bg-transparent
                       focus:outline-none focus:ring-2 focus:ring-primary-500
@@ -251,12 +279,18 @@ export function BookingDetailModal({
                   <input
                     type="datetime-local"
                     value={editData.check_out}
-                    onChange={(e) => setEditData(prev => ({ ...prev, check_out: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        check_out: e.target.value,
+                      }))
+                    }
                     className={`
                       w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors
-                      ${errors.check_out
-                        ? "border-red-300 dark:border-red-600"
-                        : "border-neutral-300 dark:border-neutral-600"
+                      ${
+                        errors.check_out
+                          ? "border-red-300 dark:border-red-600"
+                          : "border-neutral-300 dark:border-neutral-600"
                       }
                       bg-white dark:bg-transparent
                       focus:outline-none focus:ring-2 focus:ring-primary-500
@@ -283,7 +317,12 @@ export function BookingDetailModal({
                     step="0.01"
                     min="0"
                     value={editData.total_amount}
-                    onChange={(e) => setEditData(prev => ({ ...prev, total_amount: parseFloat(e.target.value) }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        total_amount: Number.parseFloat(e.target.value),
+                      }))
+                    }
                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -300,7 +339,7 @@ export function BookingDetailModal({
                       check_in: booking.check_in.slice(0, 16),
                       check_out: booking.check_out.slice(0, 16),
                       customer_id: booking.customer_id,
-                      total_amount: booking.total_amount
+                      total_amount: booking.total_amount,
                     })
                   }}
                   className="flex-1 px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors"
@@ -325,7 +364,9 @@ export function BookingDetailModal({
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-neutral-900 dark:text-white">
-                    {booking.customer ? `${booking.customer.first_name} ${booking.customer.last_name}` : "Unknown Customer"}
+                    {booking.customer
+                      ? `${booking.customer.first_name} ${booking.customer.last_name}`
+                      : "Unknown Customer"}
                   </h3>
                   {booking.customer?.phone && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -334,7 +375,10 @@ export function BookingDetailModal({
                   )}
                   {booking.customer?.date_of_birth && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      DOB: {new Date(booking.customer.date_of_birth).toLocaleDateString()}
+                      DOB:{" "}
+                      {new Date(
+                        booking.customer.date_of_birth,
+                      ).toLocaleDateString()}
                     </p>
                   )}
                 </div>
@@ -343,14 +387,18 @@ export function BookingDetailModal({
               {/* Booking Details */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3">
-                  <h4 className="font-medium text-neutral-900 dark:text-white">Check-in</h4>
+                  <h4 className="font-medium text-neutral-900 dark:text-white">
+                    Check-in
+                  </h4>
                   <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                     <CalendarDays className="w-4 h-4" />
                     {formatDateTime(checkInDate)}
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <h4 className="font-medium text-neutral-900 dark:text-white">Check-out</h4>
+                  <h4 className="font-medium text-neutral-900 dark:text-white">
+                    Check-out
+                  </h4>
                   <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                     <Clock className="w-4 h-4" />
                     {formatDateTime(checkOutDate)}
@@ -361,17 +409,21 @@ export function BookingDetailModal({
               {/* Duration & Payment */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3">
-                  <h4 className="font-medium text-neutral-900 dark:text-white">Duration</h4>
+                  <h4 className="font-medium text-neutral-900 dark:text-white">
+                    Duration
+                  </h4>
                   <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                     <Clock className="w-4 h-4" />
                     {duration.toFixed(1)} hours
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <h4 className="font-medium text-neutral-900 dark:text-white">Total Amount</h4>
+                  <h4 className="font-medium text-neutral-900 dark:text-white">
+                    Total Amount
+                  </h4>
                   <div className="flex items-center gap-2 text-lg font-bold text-green-600">
-                    <DollarSign className="w-5 h-5" />
-                    ${booking.total_amount.toFixed(2)}
+                    <DollarSign className="w-5 h-5" />$
+                    {booking.total_amount.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -385,7 +437,9 @@ export function BookingDetailModal({
                       Room {booking.room.room_number}
                     </h4>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Floor {booking.room.floor} • {booking.room.room_type.toUpperCase()} • ${booking.room.price_per_night}/night
+                      Floor {booking.room.floor} •{" "}
+                      {booking.room.room_type.toUpperCase()} • $
+                      {booking.room.price_per_night}/night
                     </p>
                   </div>
                 </div>
@@ -394,7 +448,9 @@ export function BookingDetailModal({
               {/* Status Actions */}
               {canEdit && (
                 <div className="space-y-3">
-                  <h4 className="font-medium text-neutral-900 dark:text-white">Actions</h4>
+                  <h4 className="font-medium text-neutral-900 dark:text-white">
+                    Actions
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {booking.status === "confirmed" && (
                       <button
@@ -418,7 +474,8 @@ export function BookingDetailModal({
                       </button>
                     )}
 
-                    {(booking.status === "confirmed" || booking.status === "checked_in") && (
+                    {(booking.status === "confirmed" ||
+                      booking.status === "checked_in") && (
                       <button
                         onClick={() => handleStatusChange("cancelled")}
                         disabled={statusMutation.isPending}

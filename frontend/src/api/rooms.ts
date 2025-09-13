@@ -2,8 +2,8 @@ import type {
   Message,
   RoomCreate,
   RoomPublic,
-  RoomsPublic,
   RoomUpdate,
+  RoomsPublic,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
@@ -31,15 +31,12 @@ export async function getRooms(params?: RoomParams): Promise<RoomsPublic> {
 export async function getAvailableRooms(
   params?: RoomParams,
 ): Promise<RoomsPublic> {
-  const response = await apiClient.get<RoomsPublic>(
-    "/api/v1/rooms/available",
-    {
-      params: {
-        skip: params?.skip || 0,
-        limit: params?.limit || 100,
-      },
+  const response = await apiClient.get<RoomsPublic>("/api/v1/rooms/available", {
+    params: {
+      skip: params?.skip || 0,
+      limit: params?.limit || 100,
     },
-  )
+  })
   return response.data
 }
 

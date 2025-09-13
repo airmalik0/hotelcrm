@@ -1,6 +1,9 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import type { BookingWithPosition, CalendarViewMode } from "@/types/booking"
-import { calculateBookingPosition, calculateDurationHours } from "@/types/booking"
+import {
+  calculateBookingPosition,
+  calculateDurationHours,
+} from "@/types/booking"
 
 /**
  * Generate time scale markers for the calendar
@@ -13,7 +16,7 @@ export interface TimeMarker {
 
 export function generateTimeScale(
   viewMode: CalendarViewMode,
-  startDate: Date
+  startDate: Date,
 ): TimeMarker[] {
   const markers: TimeMarker[] = []
 
@@ -29,18 +32,22 @@ export function generateTimeScale(
       markers.push({
         position,
         label: formatTimeLabel(markerDate, hour % 24 === 0),
-        date: markerDate
+        date: markerDate,
       })
     }
   } else {
     // For month view: show every day at noon
     const endDate = new Date(startDate)
     endDate.setMonth(endDate.getMonth() + 1)
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    const totalDays = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    )
     const totalHours = totalDays * 24
 
     for (let day = 0; day <= totalDays; day++) {
-      const markerDate = new Date(startDate.getTime() + day * 24 * 60 * 60 * 1000)
+      const markerDate = new Date(
+        startDate.getTime() + day * 24 * 60 * 60 * 1000,
+      )
       markerDate.setHours(12, 0, 0, 0)
       const hour = day * 24 + 12
       const position = (hour / totalHours) * 100
@@ -48,7 +55,7 @@ export function generateTimeScale(
       markers.push({
         position,
         label: formatMonthLabel(markerDate),
-        date: markerDate
+        date: markerDate,
       })
     }
   }
@@ -65,13 +72,13 @@ function formatTimeLabel(date: Date, showDay: boolean): string {
     return date.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
-      day: "numeric"
+      day: "numeric",
     })
   }
   // Show just time for other markers
   return date.toLocaleTimeString("en-US", {
     hour: "numeric",
-    hour12: true
+    hour12: true,
   })
 }
 
@@ -81,7 +88,7 @@ function formatTimeLabel(date: Date, showDay: boolean): string {
 function formatMonthLabel(date: Date): string {
   return date.toLocaleDateString("en-US", {
     month: "short",
-    day: "numeric"
+    day: "numeric",
   })
 }
 
@@ -92,20 +99,23 @@ export function processBookingsForCalendar(
   bookings: BookingPublic[],
   rooms: RoomPublic[],
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ): BookingWithPosition[] {
   const roomIndexMap = new Map(rooms.map((room, index) => [room.id, index]))
 
   return bookings
-    .filter(booking => {
+    .filter((booking) => {
       // Filter bookings that are visible in the current view
       const checkIn = new Date(booking.check_in)
       const checkOut = new Date(booking.check_out)
       return checkOut > viewStart && checkIn < viewEnd
     })
-    .map(booking => {
+    .map((booking) => {
       const position = calculateBookingPosition(booking, viewStart, viewEnd)
-      const durationHours = calculateDurationHours(booking.check_in, booking.check_out)
+      const durationHours = calculateDurationHours(
+        booking.check_in,
+        booking.check_out,
+      )
       const rowIndex = roomIndexMap.get(booking.room_id) ?? 0
 
       return {
@@ -113,7 +123,7 @@ export function processBookingsForCalendar(
         durationHours,
         leftPercent: position.leftPercent,
         widthPercent: position.widthPercent,
-        rowIndex
+        rowIndex,
       }
     })
     .sort((a, b) => {
@@ -129,7 +139,7 @@ export function processBookingsForCalendar(
  * Group bookings by room for easier rendering
  */
 export function groupBookingsByRoom(
-  bookings: BookingWithPosition[]
+  bookings: BookingWithPosition[],
 ): Map<string, BookingWithPosition[]> {
   const grouped = new Map<string, BookingWithPosition[]>()
 
@@ -147,7 +157,9 @@ export function groupBookingsByRoom(
 /**
  * Calculate optimal row height based on content
  */
-export function calculateRowHeight(bookingsInRow: BookingWithPosition[]): number {
+export function calculateRowHeight(
+  bookingsInRow: BookingWithPosition[],
+): number {
   const baseHeight = 60 // Base height in pixels
   const maxOverlaps = calculateMaxOverlaps(bookingsInRow)
   return Math.max(baseHeight, baseHeight * Math.ceil(maxOverlaps / 2))
@@ -192,7 +204,7 @@ function calculateMaxOverlaps(bookings: BookingWithPosition[]): number {
  */
 export function getCalendarPeriodLabel(
   viewMode: CalendarViewMode,
-  currentDate: Date
+  currentDate: Date,
 ): string {
   if (viewMode === "week") {
     const weekStart = new Date(currentDate)
@@ -203,13 +215,22 @@ export function getCalendarPeriodLabel(
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
 
-    const startMonth = weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    const endMonth = weekEnd.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    const startMonth = weekStart.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+    const endMonth = weekEnd.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
 
     return `${startMonth} - ${endMonth}`
-  } else {
-    return currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
   }
+  return currentDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  })
 }
 
 /**
@@ -218,7 +239,7 @@ export function getCalendarPeriodLabel(
 export function navigatePeriod(
   currentDate: Date,
   viewMode: CalendarViewMode,
-  direction: "prev" | "next"
+  direction: "prev" | "next",
 ): Date {
   const newDate = new Date(currentDate)
 

@@ -1,4 +1,4 @@
-import { createQuickBooking, type QuickBookingParams } from "@/api/bookings"
+import { type QuickBookingParams, createQuickBooking } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import type { RoomPublic } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
@@ -17,7 +17,7 @@ interface GeneralBookingModalProps {
 export function GeneralBookingModal({
   isOpen,
   onClose,
-  rooms
+  rooms,
 }: GeneralBookingModalProps) {
   const queryClient = useQueryClient()
 
@@ -38,9 +38,9 @@ export function GeneralBookingModal({
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Find the selected room
-  const selectedRoom = useMemo(() =>
-    roomId ? rooms.find(room => room.id === roomId) : null,
-    [rooms, roomId]
+  const selectedRoom = useMemo(
+    () => (roomId ? rooms.find((room) => room.id === roomId) : null),
+    [rooms, roomId],
   )
 
   // Calculate total amount
@@ -49,7 +49,8 @@ export function GeneralBookingModal({
 
     const checkInDate = new Date(checkIn)
     const checkOutDate = new Date(checkOut)
-    const hours = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
+    const hours =
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
     const days = Math.max(1, Math.ceil(hours / 24))
 
     return selectedRoom.price_per_night * days
@@ -59,24 +60,24 @@ export function GeneralBookingModal({
   const { data: customersData, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", "search"],
     queryFn: () => getCustomers({ limit: 100 }),
-    enabled: isOpen
+    enabled: isOpen,
   })
 
   // Customer options for SearchableSelect
   const customerOptions = useMemo(() => {
     if (!customersData?.data) return []
 
-    return customersData.data.map(customer => ({
+    return customersData.data.map((customer) => ({
       value: customer.id,
-      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`
+      label: `${customer.first_name} ${customer.last_name}${customer.phone ? ` (${customer.phone})` : ""}`,
     }))
   }, [customersData])
 
   // Room options for SearchableSelect
   const roomOptions = useMemo(() => {
-    return rooms.map(room => ({
+    return rooms.map((room) => ({
       value: room.id,
-      label: `Room ${room.room_number} (Floor ${room.floor}) - ${room.room_type.toUpperCase()} - $${room.price_per_night}/night`
+      label: `Room ${room.room_number} (Floor ${room.floor}) - ${room.room_type.toUpperCase()} - $${room.price_per_night}/night`,
     }))
   }, [rooms])
 
@@ -105,7 +106,7 @@ export function GeneralBookingModal({
       } else {
         setErrors({ general: "Failed to create booking" })
       }
-    }
+    },
   })
 
   // Handle form submission
@@ -144,7 +145,7 @@ export function GeneralBookingModal({
       customerId: customerId!,
       roomId: roomId!,
       checkIn: checkInDate,
-      checkOut: checkOutDate
+      checkOut: checkOutDate,
     })
   }
 
@@ -221,7 +222,11 @@ export function GeneralBookingModal({
               value={customerId}
               onChange={setCustomerId}
               options={customerOptions}
-              placeholder={customersLoading ? "Loading customers..." : "Search and select customer"}
+              placeholder={
+                customersLoading
+                  ? "Loading customers..."
+                  : "Search and select customer"
+              }
               error={errors.customer_id}
               icon={<User className="w-4 h-4" />}
             />
@@ -240,9 +245,10 @@ export function GeneralBookingModal({
                 onChange={(e) => setCheckIn(e.target.value)}
                 className={`
                   w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors
-                  ${errors.check_in
-                    ? "border-red-300 dark:border-red-600"
-                    : "border-neutral-300 dark:border-neutral-600"
+                  ${
+                    errors.check_in
+                      ? "border-red-300 dark:border-red-600"
+                      : "border-neutral-300 dark:border-neutral-600"
                   }
                   bg-white dark:bg-transparent
                   focus:outline-none focus:ring-2 focus:ring-primary-500
@@ -270,9 +276,10 @@ export function GeneralBookingModal({
                 onChange={(e) => setCheckOut(e.target.value)}
                 className={`
                   w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors
-                  ${errors.check_out
-                    ? "border-red-300 dark:border-red-600"
-                    : "border-neutral-300 dark:border-neutral-600"
+                  ${
+                    errors.check_out
+                      ? "border-red-300 dark:border-red-600"
+                      : "border-neutral-300 dark:border-neutral-600"
                   }
                   bg-white dark:bg-transparent
                   focus:outline-none focus:ring-2 focus:ring-primary-500
