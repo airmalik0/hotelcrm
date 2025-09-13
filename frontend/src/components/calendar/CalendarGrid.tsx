@@ -111,22 +111,6 @@ export function CalendarGrid({
   return (
     <>
       <div ref={gridRef} className="relative w-full bg-white dark:bg-dark-2">
-        {/* Grid lines for visual guidance - must match TimeScale positions */}
-        <div className="absolute inset-0 pointer-events-none">
-          {gridLines.map((line, index) => (
-            <div
-              key={index}
-              className={`
-                absolute top-0 bottom-0 w-px
-                ${line.isMain
-                  ? "bg-neutral-300 dark:bg-neutral-600 opacity-100"
-                  : "bg-neutral-200 dark:bg-neutral-700 opacity-75"}
-              `}
-              style={{ left: `${line.position}%` }}
-            />
-          ))}
-        </div>
-
         {/* Room rows */}
         {rooms.map((room, index) => {
           const roomBookings = bookingsByRoom.get(room.id) || []
@@ -157,27 +141,6 @@ export function CalendarGrid({
             </div>
           )
         })}
-
-        {/* Current time indicator line */}
-        {(() => {
-          const now = new Date()
-          if (now >= viewStart && now <= viewEnd) {
-            const totalHours = (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
-            const currentOffset = (now.getTime() - viewStart.getTime()) / (1000 * 60 * 60)
-            const position = (currentOffset / totalHours) * 100
-
-            return (
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 dark:bg-red-400 z-30 pointer-events-none shadow-lg"
-                style={{
-                  left: `${position}%`,
-                  boxShadow: "0 0 8px rgba(239, 68, 68, 0.5)"
-                }}
-              />
-            )
-          }
-          return null
-        })()}
       </div>
 
       {/* Quick Booking Modal */}

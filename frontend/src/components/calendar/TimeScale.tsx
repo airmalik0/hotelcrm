@@ -29,18 +29,22 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
     const totalHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
 
     if (viewMode === "week") {
-      // For week view: show only day markers
+      // For week view: show clean day markers
       for (let day = 0; day <= 7; day++) {
         const hour = day * 24
         if (hour <= totalHours) {
           const markerDate = new Date(start.getTime() + hour * 60 * 60 * 1000)
           const position = (hour / totalHours) * 100
 
-          const label = markerDate.toLocaleDateString("en-US", {
+          // Clean format: "Mon, Sep 8"
+          const weekday = markerDate.toLocaleDateString("en-US", {
             weekday: "short",
-            month: "short",
-            day: "numeric",
           })
+          const month = markerDate.toLocaleDateString("en-US", {
+            month: "short",
+          })
+          const dayNum = markerDate.getDate()
+          const label = `${weekday}, ${month} ${dayNum}`
 
           markers.push({ position, label, isMain: true })
         }
@@ -55,7 +59,7 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
         }
       }
     } else {
-      // For month view: show every day
+      // For month view: show just day numbers
       const totalDays = Math.ceil(totalHours / 24)
       for (let day = 0; day <= totalDays; day++) {
         const markerDate = new Date(start.getTime() + day * 24 * 60 * 60 * 1000)
@@ -63,13 +67,21 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
         const position = (hour / totalHours) * 100
 
         if (position <= 100) {
-          const label = markerDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
+          // Simple format: just day number for most days
+          const dayNum = markerDate.getDate()
+          const isFirstOfMonth = dayNum === 1
+          const isSunday = markerDate.getDay() === 0
+
+          // Show "Sep 1" for first of month, otherwise just number
+          const label = isFirstOfMonth
+            ? markerDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })
+            : dayNum.toString()
 
           // Mark Sundays and 1st of month as main
-          const isMain = markerDate.getDay() === 0 || markerDate.getDate() === 1
+          const isMain = isSunday || isFirstOfMonth
 
           markers.push({ position, label, isMain })
         }
@@ -84,20 +96,20 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
   }, [viewMode, currentDate])
 
   return (
-    <div className="relative h-full w-full bg-neutral-50 dark:bg-dark-3 border-b border-neutral-200 dark:border-neutral-600">
+    <div className="relative h-10 w-full bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
       {/* Timeline scale */}
       <div className="relative h-full">
         {/* Time markers */}
         {timeMarkers.map((marker, index) => (
           <div
             key={`marker-${index}`}
-            className="absolute top-0 h-full"
+            className="absolute top-0 h-full flex items-center"
             style={{ left: `${marker.position}%` }}
           >
             {/* Vertical line extending into grid */}
             <div
               className={`
-                absolute top-0 w-px h-full
+                absolute top-full w-px h-screen pointer-events-none
                 ${
                   marker.isMain
                     ? "bg-neutral-300 dark:bg-neutral-600"
@@ -107,21 +119,23 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
             />
 
             {/* Time label */}
-            <div
-              className={`
-                absolute top-1/2 -translate-y-1/2 whitespace-nowrap
-                ${
-                  marker.isMain
-                    ? "text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-                    : "text-xs text-neutral-500 dark:text-neutral-400"
-                }
-                ${marker.position < 5 ? "left-1" : ""}
-                ${marker.position > 95 ? "right-1" : ""}
-                ${marker.position >= 5 && marker.position <= 95 ? "-translate-x-1/2" : ""}
-              `}
-            >
-              {marker.label}
-            </div>
+            {marker.label && (
+              <div
+                className={`
+                  absolute whitespace-nowrap px-1
+                  ${
+                    marker.isMain
+                      ? "text-xs font-medium text-neutral-700 dark:text-neutral-300"
+                      : "text-xs text-neutral-500 dark:text-neutral-400"
+                  }
+                  ${marker.position < 5 ? "left-0" : ""}
+                  ${marker.position > 95 ? "right-0" : ""}
+                  ${marker.position >= 5 && marker.position <= 95 ? "-translate-x-1/2" : ""}
+                `}
+              >
+                {marker.label}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -138,21 +152,15 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
 
           return (
             <div
-              className="absolute top-0 h-full pointer-events-none z-20"
+              className="absolute top-0 h-full pointer-events-none z-40"
               style={{ left: `${position}%` }}
             >
-              <div className="relative h-full">
-                {/* Red line */}
-                <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 dark:bg-red-400" />
+              <div className="relative h-full flex items-center">
+                {/* Red line extending down */}
+                <div className="absolute top-full w-0.5 h-screen bg-red-500 dark:bg-red-400" />
 
-                {/* Current time label */}
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-red-500 dark:bg-red-400 text-white text-xs px-1.5 py-0.5 rounded whitespace-nowrap">
-                  {now.toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
-                </div>
+                {/* Current time dot */}
+                <div className="w-2 h-2 bg-red-500 dark:bg-red-400 rounded-full" />
               </div>
             </div>
           )

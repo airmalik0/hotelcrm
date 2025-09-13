@@ -149,14 +149,14 @@ export function Calendar() {
             </div>
 
             {/* Calendar Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Time Scale Header */}
-              <div className="flex-shrink-0 h-12">
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+              {/* Time Scale Header - positioned absolutely */}
+              <div className="absolute top-0 left-0 right-0 z-30 h-10">
                 <TimeScale viewMode={viewMode} currentDate={currentDate} />
               </div>
 
-              {/* Calendar Grid */}
-              <div className="flex-1 overflow-auto bg-white dark:bg-dark-2">
+              {/* Calendar Grid - with padding top for header */}
+              <div className="flex-1 overflow-auto bg-white dark:bg-dark-2 pt-10">
                 <CalendarGrid
                   rooms={filteredRooms}
                   bookings={filteredBookings}
