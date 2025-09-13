@@ -38,8 +38,8 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
     if (viewMode === "week") {
       // For week view: show all day boundaries and labels
       for (let day = 0; day <= 7; day++) {
-        const dayStart = new Date(start)
-        dayStart.setDate(start.getDate() + day)
+        // Use milliseconds for accurate date calculation
+        const dayStart = new Date(start.getTime() + day * MS_PER_DAY)
         dayStart.setHours(0, 0, 0, 0)
 
         // Position of day boundary (start of day)
@@ -96,8 +96,8 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
       const totalDays = Math.ceil(totalDuration / MS_PER_DAY)
 
       for (let day = 0; day <= totalDays; day++) {
-        const dayStart = new Date(start)
-        dayStart.setDate(start.getDate() + day)
+        // Use milliseconds for accurate date calculation
+        const dayStart = new Date(start.getTime() + day * MS_PER_DAY)
         dayStart.setHours(0, 0, 0, 0)
 
         // Position of day boundary

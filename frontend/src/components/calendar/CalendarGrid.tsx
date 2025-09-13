@@ -92,12 +92,11 @@ export function CalendarGrid({
     if (viewMode === "week") {
       // Generate columns for each day of the week
       for (let day = 0; day < DAYS_IN_WEEK; day++) {
-        const dayStart = new Date(viewStart)
-        dayStart.setDate(viewStart.getDate() + day)
+        // Use milliseconds for accurate date calculation
+        const dayStart = new Date(viewStart.getTime() + day * MS_PER_DAY)
         dayStart.setHours(0, 0, 0, 0)
 
-        const dayEnd = new Date(dayStart)
-        dayEnd.setDate(dayStart.getDate() + 1)
+        const dayEnd = new Date(dayStart.getTime() + MS_PER_DAY)
 
         const leftPercent = ((dayStart.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100
         const rightPercent = ((dayEnd.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100
@@ -113,12 +112,11 @@ export function CalendarGrid({
       // Days for month view
       const totalDays = Math.ceil((viewEnd.getTime() - viewStart.getTime()) / MS_PER_DAY)
       for (let day = 0; day < totalDays; day++) {
-        const dayStart = new Date(viewStart)
-        dayStart.setDate(viewStart.getDate() + day)
+        // Use milliseconds for accurate date calculation
+        const dayStart = new Date(viewStart.getTime() + day * MS_PER_DAY)
         dayStart.setHours(0, 0, 0, 0)
 
-        const dayEnd = new Date(dayStart)
-        dayEnd.setDate(dayStart.getDate() + 1)
+        const dayEnd = new Date(dayStart.getTime() + MS_PER_DAY)
 
         const leftPercent = ((dayStart.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100
         const rightPercent = Math.min(100, ((dayEnd.getTime() - viewStart.getTime()) / (viewEnd.getTime() - viewStart.getTime())) * 100)
