@@ -1,4 +1,4 @@
-import { createQuickBooking } from "@/api/bookings"
+import { createQuickBooking, type QuickBookingParams } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import type { RoomPublic } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
@@ -140,12 +140,12 @@ export function GeneralBookingModal({
       return
     }
 
-    createMutation.mutate(
-      customerId!,
-      roomId!,
-      checkInDate,
-      checkOutDate
-    )
+    createMutation.mutate({
+      customerId: customerId!,
+      roomId: roomId!,
+      checkIn: checkInDate,
+      checkOut: checkOutDate
+    })
   }
 
   // Reset form when modal opens/closes

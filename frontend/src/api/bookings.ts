@@ -137,12 +137,18 @@ export async function checkRoomAvailability(
 /**
  * Quick booking creation with smart defaults
  */
-export async function createQuickBooking(
-  customerId: string,
-  roomId: string,
-  checkIn: Date,
+export interface QuickBookingParams {
+  customerId: string
+  roomId: string
+  checkIn: Date
   checkOut?: Date
+}
+
+export async function createQuickBooking(
+  params: QuickBookingParams
 ): Promise<BookingPublic> {
+  const { customerId, roomId, checkIn, checkOut } = params
+
   // Default checkout is next day at noon if not provided
   const actualCheckOut = checkOut || (() => {
     const nextDay = new Date(checkIn)
