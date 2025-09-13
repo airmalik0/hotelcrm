@@ -37,13 +37,15 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
 
     if (viewMode === "week") {
       // For week view: show all day boundaries and labels
+      // We need 8 boundaries for 7 days (including start and end)
       for (let day = 0; day <= 7; day++) {
-        // Use milliseconds for accurate date calculation
-        const dayStart = new Date(start.getTime() + day * MS_PER_DAY)
+        // Use milliseconds to avoid month boundary issues
+        const dayStartMs = start.getTime() + (day * MS_PER_DAY)
+        const dayStart = new Date(dayStartMs)
         dayStart.setHours(0, 0, 0, 0)
 
         // Position of day boundary (start of day)
-        const boundaryPosition = ((dayStart.getTime() - start.getTime()) / totalDuration) * 100
+        const boundaryPosition = ((dayStartMs - start.getTime()) / totalDuration) * 100
 
         // Add boundary line for all day boundaries
         if (boundaryPosition <= 100) {
