@@ -88,7 +88,7 @@ export function CustomerProfile() {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* Left Column - Customer Info */}
       <div className="col-span-12 lg:col-span-4">
-        <div className="relative border border-neutral-200 dark:border-neutral-600 rounded-2xl overflow-hidden bg-white dark:bg-neutral-700 h-full shadow-sm">
+        <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-dark-2 h-full shadow-sm dark:shadow-none">
           <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
           <div className="pb-6 px-6 -mt-16">
             <div className="text-center border-b border-neutral-200 dark:border-neutral-600 pb-6">
@@ -193,7 +193,7 @@ export function CustomerProfile() {
 
       {/* Right Column - Tabs */}
       <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white dark:bg-dark-2 rounded-lg h-full border-0">
+        <div className="bg-white dark:bg-dark-2 rounded-xl h-full shadow-sm dark:shadow-none">
           <div className="p-6">
             {/* Tab Navigation */}
             <div className="flex flex-wrap border-b border-neutral-200 dark:border-neutral-600 mb-6">

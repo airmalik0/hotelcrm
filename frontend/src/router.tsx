@@ -4,6 +4,7 @@ import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
 import { Login } from "@/pages/Login"
+import { RoomList } from "@/pages/RoomList"
 import { UserList } from "@/pages/UserList"
 import { Navigate, createBrowserRouter } from "react-router-dom"
 
@@ -44,14 +45,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
-              Room Management
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Room management interface coming soon...
-            </p>
-          </div>
+          <RoomList />
         </MainLayout>
       </ProtectedRoute>
     ),
