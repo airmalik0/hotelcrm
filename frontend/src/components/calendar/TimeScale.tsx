@@ -36,23 +36,17 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
     const totalDuration = end.getTime() - start.getTime()
 
     if (viewMode === "week") {
-      // For week view: show day boundaries and labels
-      for (let day = 0; day < 7; day++) {
+      // For week view: show all day boundaries and labels
+      for (let day = 0; day <= 7; day++) {
         const dayStart = new Date(start)
         dayStart.setDate(start.getDate() + day)
         dayStart.setHours(0, 0, 0, 0)
 
-        const dayEnd = new Date(dayStart)
-        dayEnd.setDate(dayStart.getDate() + 1)
-
         // Position of day boundary (start of day)
         const boundaryPosition = ((dayStart.getTime() - start.getTime()) / totalDuration) * 100
 
-        // Position for label (center of day)
-        const labelPosition = ((dayStart.getTime() + LABEL_CENTER_OFFSET_HOURS * MS_PER_HOUR - start.getTime()) / totalDuration) * 100
-
-        // Add boundary line (no label)
-        if (day > 0) {  // Skip first boundary as it's at position 0
+        // Add boundary line for all day boundaries
+        if (boundaryPosition <= 100) {
           markers.push({
             position: boundaryPosition,
             label: "",
@@ -60,24 +54,29 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
           })
         }
 
-        // Add label at center of day
-        const weekday = dayStart.toLocaleDateString("en-US", {
-          weekday: "short",
-        })
-        const month = dayStart.toLocaleDateString("en-US", {
-          month: "short",
-        })
-        const dayNum = dayStart.getDate()
+        // Add label at center of day (but not for the last boundary)
+        if (day < 7) {
+          const labelPosition = ((dayStart.getTime() + LABEL_CENTER_OFFSET_HOURS * MS_PER_HOUR - start.getTime()) / totalDuration) * 100
 
-        markers.push({
-          position: labelPosition,
-          label: `${weekday}, ${month} ${dayNum}`,
-          isMain: false  // Labels don't have lines
-        })
+          // Add label at center of day
+          const weekday = dayStart.toLocaleDateString("en-US", {
+            weekday: "short",
+          })
+          const month = dayStart.toLocaleDateString("en-US", {
+            month: "short",
+          })
+          const dayNum = dayStart.getDate()
 
-        // Add subtle markers at regular intervals
-        for (let hour = SUBTLE_MARKER_INTERVAL_HOURS; hour < HOURS_PER_DAY; hour += SUBTLE_MARKER_INTERVAL_HOURS) {
-          if (hour !== 0) {  // Skip midnight (already have boundary)
+          markers.push({
+            position: labelPosition,
+            label: `${weekday}, ${month} ${dayNum}`,
+            isMain: false  // Labels don't have lines
+          })
+        }
+
+        // Add subtle markers at regular intervals within this day
+        if (day < 7) {
+          for (let hour = SUBTLE_MARKER_INTERVAL_HOURS; hour < HOURS_PER_DAY; hour += SUBTLE_MARKER_INTERVAL_HOURS) {
             const markerTime = new Date(dayStart)
             markerTime.setHours(hour)
             const markerPosition = ((markerTime.getTime() - start.getTime()) / totalDuration) * 100
@@ -92,13 +91,6 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
           }
         }
       }
-
-      // Add final boundary at end of week
-      markers.push({
-        position: 100,
-        label: "",
-        isMain: true
-      })
     } else {
       // For month view: show day boundaries and centered labels
       const totalDays = Math.ceil(totalDuration / MS_PER_DAY)
@@ -116,26 +108,20 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
           const isFirstOfMonth = dayNum === 1
           const isSunday = dayStart.getDay() === 0
 
-          // Add boundary line (vertical separator)
-          if (day > 0 || isFirstOfMonth) {
-            markers.push({
-              position: boundaryPosition,
-              label: "",
-              isMain: isSunday || isFirstOfMonth
-            })
-          }
+          // Add boundary line for every day
+          markers.push({
+            position: boundaryPosition,
+            label: "",
+            isMain: isSunday || isFirstOfMonth  // Sundays and 1st of month get thicker lines
+          })
 
           // Add label at center of day cell
           if (day < totalDays) {  // Don't add label for last boundary
             const labelPosition = ((dayStart.getTime() + LABEL_CENTER_OFFSET_HOURS * MS_PER_HOUR - start.getTime()) / totalDuration) * 100
 
             if (labelPosition <= 100) {
-              const label = isFirstOfMonth
-                ? dayStart.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })
-                : dayNum.toString()
+              // Just show day number, no month prefix
+              const label = dayNum.toString()
 
               markers.push({
                 position: labelPosition,

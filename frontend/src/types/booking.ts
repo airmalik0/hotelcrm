@@ -250,18 +250,16 @@ export function getTimeFromClick(
   const dayDurationMs = 24 * 60 * 60 * 1000
   const positionInDay = msIntoDay / dayDurationMs
 
-  // Set time based on position in day
-  // Morning (0-0.5): Set to morning time (10 AM - 2 PM)
-  // Afternoon (0.5-1): Set to afternoon time (2 PM - 6 PM)
+  // Set time based on position in day - more intuitive hotel check-in times
   let hour = 14 // Default 2 PM
   if (positionInDay < 0.25) {
-    hour = 10 // 10 AM for early morning clicks
+    hour = 2 // 2 AM for very early clicks (late night check-in)
   } else if (positionInDay < 0.5) {
-    hour = 12 // 12 PM for late morning clicks
+    hour = 8 // 8 AM for morning clicks (early check-in)
   } else if (positionInDay < 0.75) {
-    hour = 14 // 2 PM for early afternoon clicks
+    hour = 14 // 2 PM for afternoon clicks (standard check-in)
   } else {
-    hour = 16 // 4 PM for late afternoon clicks
+    hour = 22 // 10 PM for evening clicks (late check-in)
   }
 
   const result = new Date(dayStart)
