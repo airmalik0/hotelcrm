@@ -2,8 +2,7 @@ import type { BookingPublic } from "@/client/types.gen"
 import type { BookingWithPosition } from "@/types/booking"
 import { formatTime, getBookingStatusColor } from "@/types/booking"
 import { Clock, User } from "lucide-react"
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 
 interface BookingBlockProps {
   booking: BookingWithPosition
@@ -12,12 +11,30 @@ interface BookingBlockProps {
 }
 
 export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
-  const [isHovered, setIsHovered] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent triggering the empty slot click
-    onClick(booking)
+    // Left click opens detail modal
+    if (e.button === 0) {
+      onClick(booking)
+    }
   }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault() // Prevent browser context menu
+    e.stopPropagation()
+    setShowTooltip(!showTooltip) // Toggle tooltip on right-click
+  }
+
+  // Close tooltip when clicking elsewhere
+  React.useEffect(() => {
+    const handleClickOutside = () => setShowTooltip(false)
+    if (showTooltip) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showTooltip])
 
   const checkIn = new Date(booking.check_in)
   const checkOut = new Date(booking.check_out)
@@ -44,8 +61,8 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
           absolute top-1.5 bottom-1.5 rounded-lg
           transition-all duration-200 cursor-pointer z-10
           ${statusColor}
-          ${isHovered ? "shadow-xl scale-[1.02] z-20 ring-2 ring-primary-400/50" : "shadow-md"}
-          ${canEdit ? "hover:shadow-xl hover:scale-[1.02]" : ""}
+          ${showTooltip ? "shadow-xl scale-[1.02] z-20 ring-2 ring-primary-400/50" : "shadow-md"}
+          ${canEdit ? "hover:shadow-lg" : ""}
         `}
         style={{
           left: `${booking.leftPercent}%`,
@@ -53,8 +70,7 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
           minWidth: isVeryNarrow ? "24px" : isNarrow ? "48px" : "72px",
         }}
         onClick={handleClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onContextMenu={handleContextMenu}
       >
         {/* Content based on width */}
         <div className="h-full flex items-center px-1.5 overflow-hidden">
@@ -112,14 +128,14 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
         </div>
       </div>
 
-      {/* Enhanced tooltip for all bookings on hover */}
-      {isHovered && (
+      {/* Enhanced tooltip on right-click */}
+      {showTooltip && (
         <div
           className="absolute z-40 bg-white dark:bg-dark-2 text-neutral-900 dark:text-white rounded-lg shadow-2xl border border-neutral-200 dark:border-neutral-600 pointer-events-none"
           style={{
-            left: `${Math.min(booking.leftPercent + booking.widthPercent / 2, 90)}%`,
-            top: booking.leftPercent > 50 ? "auto" : "-85px",
-            bottom: booking.leftPercent > 50 ? "-85px" : "auto",
+            left: `${Math.min(booking.leftPercent + booking.widthPercent / 2, 85)}%`,
+            top: "60px", // Always show below the booking
+            zIndex: 50,
             transform: "translateX(-50%)",
             minWidth: "200px",
           }}
@@ -175,17 +191,11 @@ export function BookingBlock({ booking, onClick, canEdit }: BookingBlockProps) {
             </div>
           </div>
 
-          {/* Arrow */}
+          {/* Arrow pointing up */}
           <div
-            className={`
-              absolute left-1/2 transform -translate-x-1/2 w-0 h-0
-              border-l-[6px] border-r-[6px] border-transparent
-              ${
-                booking.leftPercent > 50
-                  ? "top-full border-b-[6px] border-b-white dark:border-b-dark-2"
-                  : "bottom-full border-t-[6px] border-t-white dark:border-t-dark-2"
-              }
-            `}
+            className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0
+              border-l-[6px] border-r-[6px] border-b-[6px]
+              border-transparent border-b-white dark:border-b-dark-2"
           />
         </div>
       )}

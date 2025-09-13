@@ -29,30 +29,29 @@ export function TimeScale({ viewMode, currentDate }: TimeScaleProps) {
     const totalHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
 
     if (viewMode === "week") {
-      // For week view: show major marks every day and minor every 6 hours
-      for (let hour = 0; hour <= totalHours; hour += 6) {
-        const markerDate = new Date(start.getTime() + hour * 60 * 60 * 1000)
-        const position = (hour / totalHours) * 100
-        const isMain = hour % 24 === 0 // Main marker at midnight
+      // For week view: show only day markers
+      for (let day = 0; day <= 7; day++) {
+        const hour = day * 24
+        if (hour <= totalHours) {
+          const markerDate = new Date(start.getTime() + hour * 60 * 60 * 1000)
+          const position = (hour / totalHours) * 100
 
-        let label = ""
-        if (isMain) {
-          // Show day and date for main markers
-          label = markerDate.toLocaleDateString("en-US", {
+          const label = markerDate.toLocaleDateString("en-US", {
             weekday: "short",
             month: "short",
             day: "numeric",
           })
-        } else {
-          // Show time for minor markers
-          const hours = markerDate.getHours()
-          if (hours === 6) label = "6 AM"
-          else if (hours === 12) label = "12 PM"
-          else if (hours === 18) label = "6 PM"
+
+          markers.push({ position, label, isMain: true })
         }
 
-        if (label) {
-          markers.push({ position, label, isMain })
+        // Add subtle 6-hour markers without labels
+        for (let subHour = 6; subHour < 24; subHour += 6) {
+          const totalHour = day * 24 + subHour
+          if (totalHour <= totalHours) {
+            const subPosition = (totalHour / totalHours) * 100
+            markers.push({ position: subPosition, label: "", isMain: false })
+          }
         }
       }
     } else {
