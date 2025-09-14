@@ -6,7 +6,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 **System Features:**
 - **Role-based access control** (Admin/Manager/Host)  
-- **Time continuum booking calendar** (weekly/monthly views, max 25 rooms)
+- **Time continuum booking grid** (weekly/monthly views, max 25 rooms)
 - **Customer database with individual profiles**
 - **Room management module**
 - **Comprehensive audit trail** (admin only)
@@ -30,7 +30,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 **WowDash Integration:**
 - ❓ Dark mode toggle mechanism in practice
 
-**Calendar Module (most complex):**
+**Booking Grid Module (most complex):**
 - ❓ HTML5 Drag & Drop implementation for room changes
 - ❓ Time continuum positioning with percentage-based layout
 - ❓ Real-time synchronization between users
@@ -46,7 +46,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 1. [Current Backend Analysis](#current-backend-analysis)
 2. [Role-Based Access Control](#role-based-access-control)  
 3. [System Modules](#system-modules)
-4. [Time Continuum Calendar Implementation](#time-continuum-calendar-implementation)
+4. [Time Continuum Booking Grid Implementation](#time-continuum-booking-grid-implementation)
 5. [Audit Module Design](#audit-module-design)
 6. [UX Flow Design](#ux-flow-design)
 7. [WowDash Template Mapping](#wowdash-template-mapping)
@@ -93,7 +93,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 - User action logging with timestamps
 - Audit statistics and filtering APIs
 
-### 🔧 Ready for Calendar Integration
+### 🔧 Ready for Booking Grid Integration
 
 **Database Structure:**
 - `Booking` model with timezone-aware `check_in`/`check_out` datetime fields
@@ -108,8 +108,8 @@ This plan implements a Hotel CRM system component by component, where each compo
 ## Role-Based Access Control Matrix
 
 ### ADMIN (Full System Access)
-**Dashboard:** System stats, user activity, financial metrics, system health  
-**Calendar:** Create/Read/Update/Delete bookings, drag & drop (room changes), discount management  
+**Dashboard:** System stats, user activity, financial metrics, system health
+**Booking Grid:** Create/Read/Update/Delete bookings, drag & drop (room changes), discount management  
 **Rooms:** Create/Read/Update/Delete rooms, status management, pricing  
 **Customers:** Create/Read/Update/Delete customers, full profile access  
   
@@ -117,16 +117,16 @@ This plan implements a Hotel CRM system component by component, where each compo
 **Audit:** View all audit logs, filter/search, export audit data  
 
 ### MANAGER (Operations Management)
-**Dashboard:** Room occupancy, today's bookings, revenue metrics (no system internals)  
-**Calendar:** Create/Read/Update/Delete bookings, drag & drop (room changes), discount management  
+**Dashboard:** Room occupancy, today's bookings, revenue metrics (no system internals)
+**Booking Grid:** Create/Read/Update/Delete bookings, drag & drop (room changes), discount management  
 **Rooms:** Create/Read/Update/Delete rooms, status management, pricing  
 **Customers:** Create/Read/Update/Delete customers, full profile access  
 **Users:** Read-only view of own profile (no user management)  
 **Audit:** No access  
 
 ### HOST (Front Desk Operations)
-**Dashboard:** Today's check-ins/check-outs, pending tasks only  
-**Calendar:** Create/Read bookings, check-in/check-out operations (no drag & drop, no discounts)  
+**Dashboard:** Today's check-ins/check-outs, pending tasks only
+**Booking Grid:** Create/Read bookings, check-in/check-out operations (no drag & drop, no discounts)  
 **Rooms:** Read-only view, see status (no editing, no creation)  
 **Customers:** Create/Read/Update customers (no delete), basic profile access  
 **Users:** Read-only view of own profile (no user management)  
@@ -175,8 +175,8 @@ This plan implements a Hotel CRM system component by component, where each compo
   - **Manager:** Room occupancy, revenue trends, staff performance  
   - **Host:** Today's schedule, pending check-ins, quick booking
 
-### 3. Calendar Module (Primary Feature)
-- **Purpose:** Chess-board booking calendar visualization  
+### 3. Booking Grid Module (Primary Feature)
+- **Purpose:** Chess-board booking grid visualization  
 - **Features:**
   - Weekly and monthly view modes
   - Max 25 rooms as rows
@@ -218,7 +218,7 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 ---
 
-## Time Continuum Calendar Implementation
+## Time Continuum Booking Grid Implementation
 
 ### Technical Architecture: Time as Continuous Flow
 
@@ -230,13 +230,13 @@ This plan implements a Hotel CRM system component by component, where each compo
 
 **Container Layout (≤25 rooms = No virtualization needed):**
 ```css
-.calendar-container {
+.booking-grid-container {
   position: relative;
   width: 100%;
   height: calc(25 * 60px + 40px); /* 25 rooms + header */
 }
 
-.calendar-timeline {
+.booking-grid-timeline {
   position: absolute;
   top: 40px; /* Header height */
   left: 200px; /* Room sidebar width */
@@ -536,12 +536,12 @@ const ensureBookingGaps = (bookings: BookingBlock[], minGapMinutes: number = 15)
    └─────────────────────────────────┘
 ```
 
-### Calendar Module Flow
+### Booking Grid Module Flow
 
 ```
-1. CALENDAR ENTRY:
+1. BOOKING GRID ENTRY:
    ┌─────────────────────────────────────────────┐
-   │            BOOKING CALENDAR                 │
+   │            BOOKING GRID                     │
    │ View: [Week] [Month]  Filters: [Room Type]   │
    │ Quick Actions: [+ New Booking]              │
    │                                             │
@@ -685,7 +685,7 @@ Each component uses a **primary reference** for main structure, with **secondary
 |-------------------|------------------|---------------------|------------------|
 | **Login Page** | `sign-in.html` | None needed | Follow exact template structure |
 | **Dashboard** | `index.html`, `index-2.html` | `widgets.html` for KPI cards | Adapt widget patterns for hotel metrics |
-| **Calendar Grid** | Custom implementation | Modal patterns from various templates | Follow WowDash grid layouts and color schemes |
+| **Booking Grid** | Custom implementation | Modal patterns from various templates | Follow WowDash grid layouts and color schemes |
 | **Room Cards** | `card.html` | `badges.html` for status indicators | Create room-specific content following card structure |
 | **Room List** | `table-data.html` | `badges.html` for room status | Adapt table columns for room-specific data |
 | **Customer List** | `users-list.html` | None needed | Direct adaptation of user table structure |
@@ -694,7 +694,7 @@ Each component uses a **primary reference** for main structure, with **secondary
 | **Audit Table** | `table-data.html` | None needed | Direct adaptation for audit-specific columns |
 | **Audit Detail View** | `view-profile.html` for layout | Custom diff table following `table-data.html` styling | Create Before/After comparison using consistent table patterns |
 | **Navigation** | `_sidebar.html`, `_nav.html` | None needed | Follow exact navigation structure |
-| **Booking Modal** | Calendar modal patterns | `form.html` for form structure | Create customer search dropdown following existing dropdown patterns |
+| **Booking Modal** | Booking grid modal patterns | `form.html` for form structure | Create customer search dropdown following existing dropdown patterns |
 
 ### Key Design Patterns Extracted
 
@@ -1068,45 +1068,589 @@ When creating components or patterns not found in WowDash templates, follow this
 
 ---
 
-## COMPONENT 8: Calendar Grid (Research Phase)
-**Confidence:** ❓ Medium (requires research)  
-**Primary Reference:** Custom implementation required (calendar-main.html uses FullCalendar for events, not suitable for room-based time continuum)  
-**Secondary References:** Modal patterns from various templates for booking interactions, `pages/table-data.html` for time scale headers  
-**Fallback Strategy:** Follow WowDash grid layouts (`grid grid-cols-12`), use consistent color schemes for booking statuses, maintain responsive breakpoints
+## COMPONENT 8: Modern Booking Grid - Core Layout
+**Confidence:** ✅ High (detailed architecture provided)
+**Primary Reference:** Custom implementation with bnovo-inspired modern UX
+**Templates:** Modal patterns from `form.html`, badges from `badges.html`, tooltips from various templates
+**Design:** Minimalist grid with Time Continuum Core preserved
 
-**Research Phase:**
-1. Percentage-based positioning for time continuum
-2. HTML5 Drag & Drop API for room changes only
-3. Touch events for mobile
-4. Real-time sync strategy
+### Visual Design Specifications
 
-**What to build:**
-- Time continuum container (25 rooms × timeline) using WowDash grid patterns
-- Booking block visualization with percentage positioning
-- Click-to-create booking interactions using modal patterns
-- Time scale markers following table header styling
+**Grid Container Layout:**
+```css
+/* Main container - sticky headers, scrollable content */
+.booking-grid-container {
+  height: calc(100vh - 160px); /* Full height minus header/nav */
+  display: grid;
+  grid-template-columns: 200px 1fr; /* Room sidebar + timeline */
+  grid-template-rows: 60px 1fr; /* Date header + room rows */
+  background: white; /* dark:bg-dark-1 */
+  border: 1px solid #e5e7eb; /* dark:border-neutral-600 */
+  border-radius: 8px;
+  overflow: hidden;
+}
 
-**Major Research Areas:**
-- Dynamic percentage positioning calculations
-- Conflict detection UI following WowDash alert patterns
-- Performance with multiple bookings
+/* Room rows - optimal density */
+.room-row {
+  height: 48px;
+  border-bottom: 1px solid #f3f4f6; /* dark:border-neutral-700 */
+  position: relative;
+}
 
-**Implementation approach:**
-- Use WowDash responsive grid classes for container structure
-- Apply consistent color schemes from existing templates for booking statuses
-- Follow WowDash spacing and border patterns for visual consistency
+/* Grid lines - subtle visual separation */
+.day-separator {
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background: #e5e7eb; /* dark:bg-neutral-600 */
+  opacity: 0.5;
+}
+```
+
+**Color System (Tailwind classes):**
+```typescript
+const bookingColors = {
+  confirmed: 'bg-emerald-500 text-white border-emerald-600',
+  pending: 'bg-amber-500 text-white border-amber-600',
+  checkedIn: 'bg-blue-500 text-white border-blue-600',
+  checkedOut: 'bg-violet-500 text-white border-violet-600',
+  maintenance: 'bg-gray-500 text-white border-gray-600',
+  cancelled: 'bg-red-100 text-red-700 border-red-300',
+  // Hover states
+  hoverOverlay: 'hover:bg-black/5 dark:hover:bg-white/5',
+  // Selection states
+  selected: 'ring-2 ring-primary-500 ring-offset-2',
+  dragging: 'opacity-50 cursor-grabbing',
+}
+```
+
+### Component File Structure
+
+**EXACT file paths to create:**
+```
+frontend/src/components/booking-grid/
+├── BookingGrid.tsx                 # Main container component
+├── GridHeader.tsx                  # Sticky date headers with week/month navigation
+├── RoomSidebar.tsx                 # Room list with status indicators
+├── TimelineGrid.tsx                # The actual grid with time continuum
+├── BookingBlock.tsx                # Individual booking visualization
+├── GridOverlay.tsx                 # Selection/drag overlay layer
+├── QuickBookingPopover.tsx         # Inline booking creation form
+├── BookingTooltip.tsx              # Hover preview with guest details
+├── TodayIndicator.tsx              # Vertical line for current time
+├── hooks/
+│   ├── useGridInteractions.ts      # Click, hover, keyboard events
+│   ├── useBookingDrag.ts           # Drag & drop logic
+│   ├── useGridViewport.ts          # Visible area optimization
+│   ├── useBookingPositions.ts      # Percentage calculations
+│   └── useBookingConflicts.ts      # Overlap detection
+└── utils/
+    ├── gridCalculations.ts          # Position/size math
+    ├── dateHelpers.ts               # Date/time utilities
+    └── bookingColors.ts             # Color mapping functions
+```
+
+### Core Implementation Code
+
+**BookingGrid.tsx - Main container:**
+```typescript
+import { useState, useRef, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { GridHeader } from './GridHeader'
+import { RoomSidebar } from './RoomSidebar'
+import { TimelineGrid } from './TimelineGrid'
+import { TodayIndicator } from './TodayIndicator'
+import { getRooms } from '@/api/rooms'
+import { getBookings } from '@/api/bookings'
+import type { RoomPublic, BookingPublic } from '@/client/types.gen'
+
+export function BookingGrid() {
+  const [view, setView] = useState<'week' | 'month'>('week')
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  // Calculate date range based on view
+  const dateRange = calculateDateRange(currentDate, view)
+
+  // Fetch data
+  const { data: rooms = [] } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: getRooms,
+  })
+
+  const { data: bookings = [] } = useQuery({
+    queryKey: ['bookings', dateRange],
+    queryFn: () => getBookings(dateRange),
+  })
+
+  return (
+    <div className="booking-grid-container">
+      <div className="col-span-2 border-b border-neutral-200 dark:border-neutral-600">
+        <GridHeader
+          view={view}
+          currentDate={currentDate}
+          onViewChange={setView}
+          onDateChange={setCurrentDate}
+        />
+      </div>
+
+      <div className="border-r border-neutral-200 dark:border-neutral-600">
+        <RoomSidebar rooms={rooms} />
+      </div>
+
+      <div className="relative overflow-auto" ref={gridRef}>
+        <TimelineGrid
+          rooms={rooms}
+          bookings={bookings}
+          dateRange={dateRange}
+          view={view}
+        />
+        <TodayIndicator dateRange={dateRange} />
+      </div>
+    </div>
+  )
+}
+```
+
+**BookingBlock.tsx - Smart booking visualization:**
+```typescript
+import { useMemo, useState } from 'react'
+import { BookingTooltip } from './BookingTooltip'
+import { calculatePosition } from './utils/gridCalculations'
+import { getBookingColor } from './utils/bookingColors'
+import type { BookingPublic } from '@/client/types.gen'
+
+interface BookingBlockProps {
+  booking: BookingPublic
+  dateRange: { start: Date; end: Date }
+  onEdit: (booking: BookingPublic) => void
+  onDragStart: (booking: BookingPublic) => void
+}
+
+export function BookingBlock({ booking, dateRange, onEdit, onDragStart }: BookingBlockProps) {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  // Calculate position using Time Continuum
+  const position = useMemo(() =>
+    calculatePosition(booking, dateRange), [booking, dateRange]
+  )
+
+  // Smart display based on block width
+  const showFullInfo = position.width > 100 // Show name if wide enough
+  const showMiniInfo = position.width > 60  // Show initials if medium
+
+  return (
+    <>
+      <div
+        className={`
+          absolute rounded-md px-2 py-1 cursor-pointer
+          transition-all duration-200 ease-in-out
+          hover:-translate-y-0.5 hover:shadow-lg hover:z-10
+          ${getBookingColor(booking.status)}
+        `}
+        style={{
+          left: `${position.left}%`,
+          width: `${position.width}%`,
+          top: '4px',
+          bottom: '4px',
+        }}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => onEdit(booking)}
+        draggable
+        onDragStart={() => onDragStart(booking)}
+      >
+        <div className="flex items-center justify-between h-full">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Status indicator dot */}
+            <div className={`
+              w-2 h-2 rounded-full flex-shrink-0
+              ${booking.status === 'checked_in' ? 'bg-green-400 animate-pulse' : ''}
+              ${booking.status === 'pending' ? 'bg-yellow-400' : ''}
+            `} />
+
+            {/* Guest name or initials */}
+            <span className="text-xs font-medium truncate">
+              {showFullInfo ? booking.customer.full_name :
+               showMiniInfo ? getInitials(booking.customer.full_name) : ''}
+            </span>
+          </div>
+
+          {/* Nights count for longer stays */}
+          {booking.nights > 2 && showFullInfo && (
+            <span className="text-xs opacity-75">
+              {booking.nights}N
+            </span>
+          )}
+        </div>
+
+        {/* Progress bar for long stays */}
+        {booking.nights > 7 && (
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/20">
+            <div
+              className="h-full bg-white/50"
+              style={{ width: `${getStayProgress(booking)}%` }}
+            />
+          </div>
+        )}
+      </div>
+
+      {showTooltip && (
+        <BookingTooltip
+          booking={booking}
+          position={position}
+        />
+      )}
+    </>
+  )
+}
+```
+
+**useGridInteractions.ts - Smart interaction handling:**
+```typescript
+import { useCallback, useRef } from 'react'
+
+export function useGridInteractions(
+  rooms: RoomPublic[],
+  dateRange: { start: Date; end: Date },
+  view: 'week' | 'month'
+) {
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  // Click empty cell to create booking
+  const handleCellClick = useCallback((e: MouseEvent) => {
+    const cell = e.target as HTMLElement
+    if (!cell.classList.contains('grid-cell')) return
+
+    const roomId = cell.dataset.roomId
+    const rect = cell.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const percentX = (clickX / rect.width) * 100
+
+    // Convert click position to datetime
+    const totalHours = view === 'week' ? 168 : getDaysInMonth(dateRange.start) * 24
+    const clickHours = (percentX / 100) * totalHours
+    const checkIn = new Date(dateRange.start.getTime() + clickHours * 60 * 60 * 1000)
+
+    // Round to nearest hour
+    checkIn.setMinutes(0, 0, 0)
+
+    // Default checkout: next day 12:00
+    const checkOut = new Date(checkIn)
+    checkOut.setDate(checkOut.getDate() + 1)
+    checkOut.setHours(12, 0, 0, 0)
+
+    openQuickBooking({ roomId, checkIn, checkOut })
+  }, [rooms, dateRange, view])
+
+  // Click & drag to create multi-day booking
+  const handleDragSelect = useCallback((startX: number, endX: number, roomId: string) => {
+    const duration = Math.abs(endX - startX)
+    if (duration < 20) return // Minimum drag distance
+
+    // Calculate date range from drag
+    const startPercent = Math.min(startX, endX)
+    const endPercent = Math.max(startX, endX)
+
+    // Convert to dates and open booking modal
+    // ... calculation logic
+  }, [])
+
+  return {
+    handleCellClick,
+    handleDragSelect,
+    gridRef,
+  }
+}
+```
 
 ---
 
-## COMPONENT 9: Calendar Interactions  
-**Confidence:** ❓ Medium (depends on Component 8 research)
+## COMPONENT 9: Booking Grid - Advanced Interactions
+**Confidence:** ✅ High (detailed specifications provided)
 
-**What to build:**
-- Click to create booking
-  - **Quick booking modal:** Customer search/create + time selection + room (pre-filled)
-- Booking detail tooltips
-- Status-based coloring
-- Basic drag & drop for room changes only (research dependent)
+### Enhanced UX Features
+
+**QuickBookingPopover.tsx - Instant booking creation:**
+```typescript
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import { createBooking } from '@/api/bookings'
+import type { CustomerPublic } from '@/client/types.gen'
+
+interface QuickBookingPopoverProps {
+  roomId: string
+  checkIn: Date
+  checkOut: Date
+  onClose: () => void
+  position: { x: number; y: number }
+}
+
+export function QuickBookingPopover({
+  roomId,
+  checkIn,
+  checkOut,
+  onClose,
+  position
+}: QuickBookingPopoverProps) {
+  const [customer, setCustomer] = useState<CustomerPublic | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const queryClient = useQueryClient()
+
+  const createMutation = useMutation({
+    mutationFn: createBooking,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bookings'])
+      onClose()
+    }
+  })
+
+  return (
+    <div
+      className="absolute z-50 bg-white dark:bg-dark-2 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-600 p-4 w-80"
+      style={{ left: position.x, top: position.y }}
+    >
+      <h3 className="text-sm font-semibold mb-3">Quick Booking</h3>
+
+      {/* Customer search with create option */}
+      <SearchableSelect
+        label="Guest"
+        placeholder="Search or create guest..."
+        onSelect={setCustomer}
+        onCreate={(name) => createCustomer(name).then(setCustomer)}
+        className="mb-3"
+      />
+
+      {/* Time display with inline edit */}
+      <div className="flex gap-2 mb-3 text-sm">
+        <input
+          type="datetime-local"
+          value={formatDateTime(checkIn)}
+          onChange={(e) => setCheckIn(new Date(e.target.value))}
+          className="flex-1 px-2 py-1 border border-neutral-300 dark:border-neutral-500 rounded"
+        />
+        <span className="self-center">→</span>
+        <input
+          type="datetime-local"
+          value={formatDateTime(checkOut)}
+          onChange={(e) => setCheckOut(new Date(e.target.value))}
+          className="flex-1 px-2 py-1 border border-neutral-300 dark:border-neutral-500 rounded"
+        />
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => createMutation.mutate({
+            customer_id: customer?.id,
+            room_id: roomId,
+            check_in: checkIn,
+            check_out: checkOut,
+            payment_method: paymentMethod,
+          })}
+          disabled={!customer}
+          className="flex-1 px-3 py-1.5 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
+        >
+          Create
+        </button>
+        <button
+          onClick={onClose}
+          className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+```
+
+**Drag & Drop Implementation:**
+```typescript
+// useBookingDrag.ts - Modern drag & drop with visual feedback
+import { useState, useCallback } from 'react'
+
+export function useBookingDrag(
+  rooms: RoomPublic[],
+  bookings: BookingPublic[],
+  onRoomChange: (bookingId: string, newRoomId: string) => Promise<void>
+) {
+  const [draggedBooking, setDraggedBooking] = useState<BookingPublic | null>(null)
+  const [validDropZones, setValidDropZones] = useState<Set<string>>(new Set())
+
+  const handleDragStart = useCallback((booking: BookingPublic, e: DragEvent) => {
+    setDraggedBooking(booking)
+
+    // Add ghost image
+    const ghost = document.createElement('div')
+    ghost.className = 'bg-primary-600 text-white px-3 py-1 rounded-md shadow-lg'
+    ghost.textContent = booking.customer.full_name
+    document.body.appendChild(ghost)
+    e.dataTransfer?.setDragImage(ghost, 0, 0)
+    setTimeout(() => ghost.remove(), 0)
+
+    // Calculate valid drop zones
+    const valid = new Set<string>()
+    rooms.forEach(room => {
+      if (room.id === booking.room_id) return
+
+      const hasConflict = bookings.some(b =>
+        b.room_id === room.id &&
+        b.id !== booking.id &&
+        !(booking.check_out <= b.check_in || booking.check_in >= b.check_out)
+      )
+
+      if (!hasConflict) valid.add(room.id)
+    })
+
+    setValidDropZones(valid)
+
+    // Visual feedback on valid rooms
+    requestAnimationFrame(() => {
+      rooms.forEach(room => {
+        const element = document.querySelector(`[data-room-id="${room.id}"]`)
+        if (!element) return
+
+        if (valid.has(room.id)) {
+          element.classList.add('bg-green-50', 'dark:bg-green-900/20', 'transition-colors')
+        } else if (room.id !== booking.room_id) {
+          element.classList.add('bg-red-50', 'dark:bg-red-900/20', 'opacity-50')
+        }
+      })
+    })
+  }, [rooms, bookings])
+
+  const handleDrop = useCallback(async (roomId: string, e: DragEvent) => {
+    e.preventDefault()
+
+    if (!draggedBooking || !validDropZones.has(roomId)) {
+      clearDragStyles()
+      return
+    }
+
+    // Optimistic update with rollback on error
+    try {
+      await onRoomChange(draggedBooking.id, roomId)
+    } catch (error) {
+      // Show error toast
+      console.error('Failed to move booking:', error)
+    }
+
+    clearDragStyles()
+  }, [draggedBooking, validDropZones, onRoomChange])
+
+  const clearDragStyles = () => {
+    document.querySelectorAll('[data-room-id]').forEach(el => {
+      el.classList.remove(
+        'bg-green-50', 'dark:bg-green-900/20',
+        'bg-red-50', 'dark:bg-red-900/20',
+        'opacity-50', 'transition-colors'
+      )
+    })
+    setDraggedBooking(null)
+    setValidDropZones(new Set())
+  }
+
+  return {
+    handleDragStart,
+    handleDrop,
+    handleDragOver: (e: DragEvent) => e.preventDefault(),
+    draggedBooking,
+    validDropZones,
+  }
+}
+```
+
+### Animations & Micro-interactions
+
+**styles/booking-grid.css - Modern animations:**
+```css
+/* Smooth booking block transitions */
+.booking-block {
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s ease,
+    opacity 0.2s ease;
+  will-change: transform;
+}
+
+.booking-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+/* Drag states */
+.booking-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* Today indicator animation */
+.today-indicator {
+  animation: pulse-line 2s ease-in-out infinite;
+}
+
+@keyframes pulse-line {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Selection animation */
+.cell-selecting {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: selection-wave 0.5s ease-out;
+}
+
+@keyframes selection-wave {
+  0% { background-position: -100% 0; }
+  100% { background-position: 100% 0; }
+}
+```
+
+### Performance Optimizations
+
+**Implementation strategies:**
+```typescript
+// Use React.memo for room rows
+const RoomRow = React.memo(({ room, bookings, dateRange }) => {
+  // Component logic
+}, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if bookings for this room changed
+  return prevProps.room.id === nextProps.room.id &&
+         prevProps.bookings === nextProps.bookings
+})
+
+// Virtualization for > 25 rooms (future-proof)
+const VirtualizedGrid = () => {
+  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 25 })
+
+  // Only render visible rooms + buffer
+  const visibleRooms = rooms.slice(
+    Math.max(0, visibleRange.start - 3),
+    Math.min(rooms.length, visibleRange.end + 3)
+  )
+
+  return (
+    <div onScroll={handleScroll}>
+      {visibleRooms.map(room => <RoomRow key={room.id} room={room} />)}
+    </div>
+  )
+}
+
+// Debounced drag updates
+const debouncedDragUpdate = useMemo(
+  () => debounce(updateDragPosition, 16), // 60fps
+  []
+)
+```
 
 
 ---
@@ -1133,7 +1677,7 @@ When creating components or patterns not found in WowDash templates, follow this
 
 **Key Principle:** If any component proves more complex than expected, we break it down further or research first.
 
-**Example:** If Calendar Grid (Component 8) research shows high complexity, we split into:
+**Example:** If Booking Grid (Component 8) research shows high complexity, we split into:
 - 8a: Static Grid Layout
 - 8b: Booking Block Positioning  
 - 8c: Interaction Layer
@@ -1158,20 +1702,20 @@ When creating components or patterns not found in WowDash templates, follow this
 ### Backend Integration (FastAPI)
 - **API Client:** Auto-generated TypeScript client from OpenAPI
 - **Authentication:** JWT with automatic refresh
-- **Real-time:** Server-Sent Events for calendar updates
+- **Real-time:** Server-Sent Events for booking grid updates
 - **File Upload:** Multipart forms for photos/documents
 - **Caching:** React Query with smart invalidation
 
-### Calendar-Specific Architecture
+### Booking Grid-Specific Architecture
 
 **Component Hierarchy:**
 ```
-HotelCalendar/
-├── CalendarContainer.tsx        # Main orchestrator
-├── CalendarHeader.tsx           # Navigation, filters, actions
-├── TimeScale.tsx                # Timeline markers (week/month ticks)  
+HotelBookingGrid/
+├── BookingGridContainer.tsx     # Main orchestrator
+├── BookingGridHeader.tsx        # Navigation, filters, actions
+├── TimeScale.tsx                # Timeline markers (week/month ticks)
 ├── RoomSidebar.tsx              # Room list with statuses
-├── CalendarGrid.tsx             # Main booking grid
+├── BookingGrid.tsx              # Main booking grid
 │   ├── BookingBlock.tsx         # Individual booking
 │   ├── AvailableSlot.tsx        # Empty clickable slots  
 │   ├── ConflictIndicator.tsx    # Overlap warnings
@@ -1183,11 +1727,11 @@ HotelCalendar/
 
 **State Management:**
 ```typescript
-// Calendar State Management (React built-in state + TanStack Query)
-// Server state: Managed by TanStack Query (rooms, bookings, customers)  
+// Booking Grid State Management (React built-in state + TanStack Query)
+// Server state: Managed by TanStack Query (rooms, bookings, customers)
 // UI state: Managed by React useState/useReducer
 
-interface CalendarUIState {
+interface BookingGridUIState {
   currentDate: Date
   viewMode: 'week' | 'month'
   selectedRooms: string[]
@@ -1196,7 +1740,7 @@ interface CalendarUIState {
   conflictingBookings: BookingBlock[]
 }
 
-// Usage: const [calendarState, setCalendarState] = useState<CalendarUIState>({...})
+// Usage: const [bookingGridState, setBookingGridState] = useState<BookingGridUIState>({...})
 // Server data: const { data: rooms } = useQuery({ queryKey: ['rooms'], queryFn: fetchRooms })
 ```
 
@@ -1244,8 +1788,8 @@ Response: {
 ## Success Metrics
 
 ### Technical Metrics
-- **Calendar Performance:** <100ms interaction response time
-- **Data Loading:** <2s full calendar load (25 rooms × 7 days)
+- **Booking Grid Performance:** <100ms interaction response time
+- **Data Loading:** <2s full booking grid load (25 rooms × 7 days)
 - **Real-time Sync:** <1s booking update propagation
 - **Mobile Responsiveness:** 100% feature parity on tablet/mobile
 
@@ -1266,7 +1810,7 @@ Response: {
 ## Risk Mitigation
 
 ### Technical Risks
-- **Calendar Complexity:** Gradual implementation with MVP first
+- **Booking Grid Complexity:** Gradual implementation with MVP first
 - **Real-time Sync:** Graceful degradation to manual refresh
 - **Mobile Performance:** Progressive Web App fallback
 - **Data Loss:** Optimistic updates with server confirmation
@@ -1287,7 +1831,7 @@ Response: {
 
 ## Conclusion
 
-This implementation plan provides a comprehensive roadmap for building a modern, role-based Hotel CRM system with a unique time continuum booking calendar. The combination of the existing robust FastAPI backend and the WowDash design system creates a solid foundation for rapid development.
+This implementation plan provides a comprehensive roadmap for building a modern, role-based Hotel CRM system with a unique time continuum booking grid. The combination of the existing robust FastAPI backend and the WowDash design system creates a solid foundation for rapid development.
 
 **Key Success Factors:**
 1. **Proven Backend:** 90% of backend functionality already implemented
@@ -1301,4 +1845,4 @@ This implementation plan provides a comprehensive roadmap for building a modern,
 **Technical Risk:** Low (proven technologies, clear requirements)
 **Business Impact:** High (significant operational efficiency gains)
 
-The time continuum calendar represents a significant competitive advantage over traditional daily-view booking systems, providing unprecedented visibility into room utilization and operational efficiency with natural time flow visualization.
+The time continuum booking grid represents a significant competitive advantage over traditional daily-view booking systems, providing unprecedented visibility into room utilization and operational efficiency with natural time flow visualization.
