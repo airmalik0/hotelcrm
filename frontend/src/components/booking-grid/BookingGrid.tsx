@@ -12,6 +12,7 @@ import { TimeScale } from "./TimeScale"
 import { RoomRow } from "./RoomRow"
 import { TodayLine } from "./TodayLine"
 import { QuickBookingModal } from "./QuickBookingModal"
+import { BookingDetailModal } from "./BookingDetailModal"
 import { Loader2 } from "lucide-react"
 
 export function BookingGrid() {
@@ -26,6 +27,8 @@ export function BookingGrid() {
     checkIn?: Date
     checkOut?: Date
   }>({ isOpen: false })
+
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
 
   // Calculate view range
   const { start: viewStart, end: viewEnd } = useMemo(
@@ -96,8 +99,7 @@ export function BookingGrid() {
 
   const handleBookingClick = (booking: BookingPublic) => {
     setSelectedBookingId(booking.id)
-    // TODO: Open booking detail modal
-    console.log("Booking clicked:", booking)
+    setDetailModalOpen(true)
   }
 
   const handleEmptyClick = (room: RoomPublic, checkIn: Date, checkOut: Date) => {
@@ -201,6 +203,16 @@ export function BookingGrid() {
         room={quickBookingModal.room}
         checkIn={quickBookingModal.checkIn}
         checkOut={quickBookingModal.checkOut}
+      />
+
+      {/* Booking Detail Modal */}
+      <BookingDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false)
+          setSelectedBookingId(null)
+        }}
+        bookingId={selectedBookingId}
       />
     </div>
   )
