@@ -28,9 +28,8 @@ export function GridHeader({
   onViewModeChange,
   onAddBooking,
 }: GridHeaderProps) {
-  const dateRangeText = viewMode === "week"
-    ? `${format(viewStart, "MMM d")} - ${format(viewEnd, "MMM d, yyyy")}`
-    : format(currentDate, "MMMM yyyy")
+  // Always show date range for both modes
+  const dateRangeText = `${format(viewStart, "MMM d")} - ${format(viewEnd, "MMM d, yyyy")}`
 
   return (
     <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-4 py-3">
@@ -107,7 +106,7 @@ export function GridHeader({
               )}
             >
               <LayoutGrid className="w-4 h-4" />
-              Week
+              3 Days
             </button>
             <button
               onClick={() => onViewModeChange("month")}
@@ -119,7 +118,7 @@ export function GridHeader({
               )}
             >
               <CalendarDays className="w-4 h-4" />
-              Month
+              15 Days
             </button>
           </div>
 

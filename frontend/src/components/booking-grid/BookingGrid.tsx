@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { addWeeks, addMonths, subWeeks, subMonths } from "date-fns"
+import { addDays } from "date-fns"
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
@@ -70,13 +70,13 @@ export function BookingGrid() {
   // Navigation handlers
   const handlePrevious = () => {
     setCurrentDate((prev) =>
-      viewMode === "week" ? subWeeks(prev, 1) : subMonths(prev, 1)
+      viewMode === "week" ? addDays(prev, -3) : addDays(prev, -15)
     )
   }
 
   const handleNext = () => {
     setCurrentDate((prev) =>
-      viewMode === "week" ? addWeeks(prev, 1) : addMonths(prev, 1)
+      viewMode === "week" ? addDays(prev, 3) : addDays(prev, 15)
     )
   }
 

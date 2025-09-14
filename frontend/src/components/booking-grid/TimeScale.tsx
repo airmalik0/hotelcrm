@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react"
 import { generateTimeScale } from "@/utils/date-helpers"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
@@ -9,10 +10,28 @@ interface TimeScaleProps {
 }
 
 export function TimeScale({ viewStart, viewEnd, viewMode }: TimeScaleProps) {
-  const markers = generateTimeScale(viewStart, viewEnd, viewMode)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = useState<number>()
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width)
+      }
+    })
+
+    resizeObserver.observe(containerRef.current)
+    setContainerWidth(containerRef.current.offsetWidth)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  const markers = generateTimeScale(viewStart, viewEnd, viewMode, containerWidth)
 
   return (
-    <div className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2">
+    <div ref={containerRef} className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2">
       {/* Time markers */}
       {markers.map((marker, index) => (
         <div

@@ -15,22 +15,23 @@ import {
   endOfDay,
 } from "date-fns"
 
-export type ViewMode = "week" | "month"
+export type ViewMode = "week" | "month" // "week" = 3 days, "month" = 15 days
 
 /**
  * Get the start and end dates for the current view
+ * Week mode shows 3 days, Month mode shows 15 days
  */
 export function getViewDateRange(date: Date, view: ViewMode) {
   if (view === "week") {
-    return {
-      start: startOfWeek(date, { weekStartsOn: 1 }), // Monday
-      end: endOfWeek(date, { weekStartsOn: 1 }),
-    }
+    // Show 3 days centered on the date
+    const start = startOfDay(addDays(date, -1))
+    const end = endOfDay(addDays(date, 1))
+    return { start, end }
   }
-  return {
-    start: startOfMonth(date),
-    end: endOfMonth(date),
-  }
+  // Show 15 days starting from the date
+  const start = startOfDay(date)
+  const end = endOfDay(addDays(date, 14))
+  return { start, end }
 }
 
 /**
@@ -74,12 +75,46 @@ export function calculateBookingPosition(
 }
 
 /**
- * Generate time scale markers
+ * Generate time scale markers with responsive formatting
  */
-export function generateTimeScale(viewStart: Date, viewEnd: Date, view: ViewMode) {
+export function generateTimeScale(
+  viewStart: Date,
+  viewEnd: Date,
+  view: ViewMode,
+  containerWidth?: number
+) {
   const markers = []
   const totalHours = getViewTotalHours(viewStart, viewEnd)
-  const interval = view === "week" ? 6 : 24 // Every 6h for week, 24h for month
+
+  // Adaptive intervals based on container width
+  let interval: number
+  let formatStr: string
+
+  if (view === "week") {
+    // For 3-day view, adjust based on container width
+    if (!containerWidth || containerWidth > 1200) {
+      interval = 6 // Every 6 hours for large screens
+      formatStr = "EEE HH:mm"
+    } else if (containerWidth > 800) {
+      interval = 12 // Every 12 hours for medium screens
+      formatStr = "EEE HH:mm"
+    } else {
+      interval = 24 // Daily for small screens
+      formatStr = "EEE" // Just day name
+    }
+  } else {
+    // For 15-day view
+    if (!containerWidth || containerWidth > 1400) {
+      interval = 24 // Daily with full format
+      formatStr = "dd MMM"
+    } else if (containerWidth > 1000) {
+      interval = 48 // Every 2 days
+      formatStr = "dd MMM" // Still show month for clarity
+    } else {
+      interval = 72 // Every 3 days for small screens
+      formatStr = "dd" // Just day number
+    }
+  }
 
   for (let hour = 0; hour <= totalHours; hour += interval) {
     const markerDate = addHours(viewStart, hour)
@@ -87,9 +122,7 @@ export function generateTimeScale(viewStart: Date, viewEnd: Date, view: ViewMode
 
     markers.push({
       position: `${position}%`,
-      label: view === "week"
-        ? format(markerDate, "EEE HH:mm") // Always show day for clarity
-        : format(markerDate, "dd MMM"),
+      label: format(markerDate, formatStr),
       date: markerDate,
       isToday: isSameDay(markerDate, new Date()),
     })
