@@ -106,7 +106,7 @@ export function GridHeader({
               )}
             >
               <LayoutGrid className="w-4 h-4" />
-              3 Days
+              Week
             </button>
             <button
               onClick={() => onViewModeChange("month")}
@@ -118,7 +118,7 @@ export function GridHeader({
               )}
             >
               <CalendarDays className="w-4 h-4" />
-              15 Days
+              Month
             </button>
           </div>
 

@@ -67,16 +67,20 @@ export function BookingGrid() {
     [rooms, bookingsData, viewStart, viewEnd]
   )
 
-  // Navigation handlers
+  // Navigation handlers - move by half of the view period
   const handlePrevious = () => {
     setCurrentDate((prev) =>
-      viewMode === "week" ? addDays(prev, -3) : addDays(prev, -15)
+      viewMode === "week"
+        ? addDays(prev, -3)  // Move 3 days back (roughly half a week)
+        : addDays(prev, -15) // Move 15 days back (half a month)
     )
   }
 
   const handleNext = () => {
     setCurrentDate((prev) =>
-      viewMode === "week" ? addDays(prev, 3) : addDays(prev, 15)
+      viewMode === "week"
+        ? addDays(prev, 3)   // Move 3 days forward (roughly half a week)
+        : addDays(prev, 15)  // Move 15 days forward (half a month)
     )
   }
 

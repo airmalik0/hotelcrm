@@ -15,23 +15,25 @@ import {
   endOfDay,
 } from "date-fns"
 
-export type ViewMode = "week" | "month" // "week" = 3 days, "month" = 15 days
+export type ViewMode = "week" | "month"
 
 /**
  * Get the start and end dates for the current view
- * Week mode shows 3 days, Month mode shows 15 days
+ * Week mode shows full week, Month mode shows full month
  */
 export function getViewDateRange(date: Date, view: ViewMode) {
   if (view === "week") {
-    // Show 3 days centered on the date
-    const start = startOfDay(addDays(date, -1))
-    const end = endOfDay(addDays(date, 1))
-    return { start, end }
+    // Show full week (Monday to Sunday)
+    return {
+      start: startOfWeek(date, { weekStartsOn: 1 }), // Monday
+      end: endOfWeek(date, { weekStartsOn: 1 }),
+    }
   }
-  // Show 15 days starting from the date
-  const start = startOfDay(date)
-  const end = endOfDay(addDays(date, 14))
-  return { start, end }
+  // Show full month
+  return {
+    start: startOfMonth(date),
+    end: endOfMonth(date),
+  }
 }
 
 /**
@@ -91,28 +93,31 @@ export function generateTimeScale(
   let formatStr: string
 
   if (view === "week") {
-    // For 3-day view, adjust based on container width
-    if (!containerWidth || containerWidth > 1200) {
-      interval = 6 // Every 6 hours for large screens
+    // For week view (7 days), adjust based on container width
+    if (!containerWidth || containerWidth > 1400) {
+      interval = 12 // Every 12 hours for large screens
       formatStr = "EEE HH:mm"
-    } else if (containerWidth > 800) {
-      interval = 12 // Every 12 hours for medium screens
+    } else if (containerWidth > 1000) {
+      interval = 24 // Daily for medium screens
       formatStr = "EEE HH:mm"
     } else {
       interval = 24 // Daily for small screens
-      formatStr = "EEE" // Just day name
+      formatStr = "EEE" // Just day name, no time
     }
   } else {
-    // For 15-day view
-    if (!containerWidth || containerWidth > 1400) {
-      interval = 24 // Daily with full format
+    // For month view (~30 days)
+    if (!containerWidth || containerWidth > 1600) {
+      interval = 24 // Daily with full format for very large screens
       formatStr = "dd MMM"
-    } else if (containerWidth > 1000) {
-      interval = 48 // Every 2 days
-      formatStr = "dd MMM" // Still show month for clarity
+    } else if (containerWidth > 1200) {
+      interval = 48 // Every 2 days for large screens
+      formatStr = "dd MMM"
+    } else if (containerWidth > 800) {
+      interval = 72 // Every 3 days for medium screens
+      formatStr = "dd"
     } else {
-      interval = 72 // Every 3 days for small screens
-      formatStr = "dd" // Just day number
+      interval = 96 // Every 4 days for small screens
+      formatStr = "dd"
     }
   }
 
