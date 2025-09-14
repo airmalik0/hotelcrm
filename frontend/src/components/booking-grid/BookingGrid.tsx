@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { addDays } from "date-fns"
+import { addDays, addWeeks, addMonths } from "date-fns"
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
@@ -67,20 +67,21 @@ export function BookingGrid() {
     [rooms, bookingsData, viewStart, viewEnd]
   )
 
-  // Navigation handlers - move by half of the view period
+  // Navigation handlers - use full week jump and full month jump
+  // Because startOfWeek/startOfMonth snap to period boundaries
   const handlePrevious = () => {
     setCurrentDate((prev) =>
       viewMode === "week"
-        ? addDays(prev, -3)  // Move 3 days back (roughly half a week)
-        : addDays(prev, -15) // Move 15 days back (half a month)
+        ? addWeeks(prev, -1)  // Jump to previous week
+        : addMonths(prev, -1) // Jump to previous month
     )
   }
 
   const handleNext = () => {
     setCurrentDate((prev) =>
       viewMode === "week"
-        ? addDays(prev, 3)   // Move 3 days forward (roughly half a week)
-        : addDays(prev, 15)  // Move 15 days forward (half a month)
+        ? addWeeks(prev, 1)   // Jump to next week
+        : addMonths(prev, 1)  // Jump to next month
     )
   }
 
