@@ -1,9 +1,9 @@
 import { memo, useState, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, setHours, setMinutes, addDays } from "date-fns"
-import type { BookingCreate, RoomPublic, CustomerPublic } from "@/client/types.gen"
+import type { BookingCreate, RoomPublic, CustomerPublic, CustomerCreate } from "@/client/types.gen"
 import { createBooking } from "@/api/bookings"
-import { getCustomers } from "@/api/customers"
+import { getCustomers, createCustomer } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { X, Calendar, Clock, User, DollarSign, Search, Plus, Bed } from "lucide-react"
 import clsx from "clsx"
@@ -28,6 +28,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerPublic | null>(null)
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomPublic | null>(null)
+  const [showCreateCustomer, setShowCreateCustomer] = useState(false)
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    first_name: "",
+    last_name: "",
+    phone: "",
+  })
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -107,6 +113,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     setSelectedCustomer(null)
     setSelectedRoom(null)
     setShowCustomerDropdown(false)
+    setShowCreateCustomer(false)
+    setNewCustomerForm({
+      first_name: "",
+      last_name: "",
+      phone: "",
+    })
     setFormData({
       checkIn: "",
       checkOut: "",
@@ -126,6 +138,35 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       onClose()
     },
   })
+
+  // Create customer mutation
+  const createCustomerMutation = useMutation({
+    mutationFn: (data: CustomerCreate) => createCustomer(data),
+    onSuccess: (newCustomer) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      setSelectedCustomer(newCustomer)
+      setSearchTerm(`${newCustomer.first_name} ${newCustomer.last_name}`)
+      setShowCreateCustomer(false)
+      setNewCustomerForm({
+        first_name: "",
+        last_name: "",
+        phone: "",
+      })
+    },
+  })
+
+  const handleCreateCustomer = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCustomerForm.first_name.trim() || !newCustomerForm.last_name.trim()) return
+
+    const customerData: CustomerCreate = {
+      first_name: newCustomerForm.first_name.trim(),
+      last_name: newCustomerForm.last_name.trim(),
+      phone: newCustomerForm.phone.trim() || null,
+    }
+
+    createCustomerMutation.mutate(customerData)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -244,6 +285,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 </div>
                 <button
                   type="button"
+                  onClick={() => setShowCreateCustomer(true)}
                   className="p-2 bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/35 transition-colors"
                   title="Create new customer"
                 >
@@ -254,24 +296,24 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               {/* Customer dropdown */}
               {showCustomerDropdown && searchTerm && customersData?.data && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg max-h-48 overflow-auto z-10">
-                  {customersData.data.length > 0 ? (
+                  {customersData.data?.length > 0 ? (
                     customersData.data.map((customer) => (
                       <button
                         key={customer.id}
                         type="button"
                         onClick={() => {
                           setSelectedCustomer(customer)
-                          setSearchTerm(customer.full_name)
+                          setSearchTerm(`${customer.first_name} ${customer.last_name}`)
                           setShowCustomerDropdown(false)
                         }}
                         className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
                       >
                         <div className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {customer.full_name}
+                          {customer.first_name} {customer.last_name}
                         </div>
-                        {customer.email && (
+                        {customer.phone && (
                           <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {customer.email}
+                            {customer.phone}
                           </div>
                         )}
                       </button>
@@ -281,6 +323,81 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       No customers found
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Create Customer Form */}
+              {showCreateCustomer && (
+                <div className="mt-3 p-4 border border-primary-200 dark:border-primary-600/50 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-neutral-900 dark:text-white">Create New Customer</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateCustomer(false)
+                        setNewCustomerForm({
+                          first_name: "",
+                          last_name: "",
+                          phone: "",
+                        })
+                      }}
+                      className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateCustomer} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={newCustomerForm.first_name}
+                          onChange={(e) => setNewCustomerForm(prev => ({ ...prev, first_name: e.target.value }))}
+                          className="w-full px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={newCustomerForm.last_name}
+                          onChange={(e) => setNewCustomerForm(prev => ({ ...prev, last_name: e.target.value }))}
+                          className="w-full px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                        Phone (optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={newCustomerForm.phone}
+                        onChange={(e) => setNewCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="+1234567890"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="submit"
+                        disabled={createCustomerMutation.isPending}
+                        className="flex-1 px-3 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
             </div>
