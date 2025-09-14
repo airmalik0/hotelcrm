@@ -64,17 +64,11 @@ export function filterRooms(
     filtered = filtered.filter(room => roomTypeFilters.includes(room.room_type))
   }
 
-  // If we have search/status filters applied, only show rooms that have matching bookings
-  // Unless no rooms would be shown (then show all to maintain grid structure)
-  const roomsWithBookings = new Set(filteredBookings.map(b => b.room_id))
-  const roomsWithMatchingBookings = filtered.filter(room => roomsWithBookings.has(room.id))
-
-  // Show all filtered rooms if we don't have bookings, or if showing rooms with bookings would result in empty grid
-  if (filteredBookings.length === 0 || roomsWithMatchingBookings.length === 0) {
-    return filtered
-  }
-
-  return roomsWithMatchingBookings
+  // ALWAYS show all rooms (even without bookings) for:
+  // 1. Click to book in empty rooms
+  // 2. Drag & drop targets
+  // 3. Complete chess-board visualization
+  return filtered
 }
 
 /**
