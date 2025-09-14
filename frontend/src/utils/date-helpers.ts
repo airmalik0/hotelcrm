@@ -37,7 +37,9 @@ export function getViewDateRange(date: Date, view: ViewMode) {
  * Get total hours in the current view
  */
 export function getViewTotalHours(viewStart: Date, viewEnd: Date): number {
-  return differenceInHours(viewEnd, viewStart) + 24 // Include the last day
+  // differenceInHours gives us the exact hours between dates
+  // For a week view: Sunday 23:59 - Monday 00:00 = ~168 hours
+  return differenceInHours(viewEnd, viewStart)
 }
 
 /**
@@ -79,14 +81,14 @@ export function generateTimeScale(viewStart: Date, viewEnd: Date, view: ViewMode
   const totalHours = getViewTotalHours(viewStart, viewEnd)
   const interval = view === "week" ? 6 : 24 // Every 6h for week, 24h for month
 
-  for (let hour = 0; hour < totalHours; hour += interval) {
+  for (let hour = 0; hour <= totalHours; hour += interval) {
     const markerDate = addHours(viewStart, hour)
     const position = (hour / totalHours) * 100
 
     markers.push({
       position: `${position}%`,
       label: view === "week"
-        ? format(markerDate, isSameDay(markerDate, viewStart) ? "EEE HH:mm" : "HH:mm")
+        ? format(markerDate, "EEE HH:mm") // Always show day for clarity
         : format(markerDate, "dd MMM"),
       date: markerDate,
       isToday: isSameDay(markerDate, new Date()),

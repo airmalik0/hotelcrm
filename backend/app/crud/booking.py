@@ -4,8 +4,9 @@ from uuid import UUID
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, and_, func, select
 
+from app.core.retry import db_retry
 from app.crud.base import CRUDBase
-from app.models import Booking, BookingCreate, BookingStatus, BookingUpdate
+from app.models import Booking, BookingCreate, BookingStatus, BookingUpdate, Room
 
 
 class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
@@ -91,6 +92,56 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
     def update_status(self, session: Session, *, booking: Booking, status: BookingStatus) -> Booking:
         """Update booking status."""
         booking.status = status
+        session.add(booking)
+        session.flush()
+        return booking
+
+    @db_retry(max_attempts=3)
+    def create(self, session: Session, *, obj_in: BookingCreate) -> Booking:
+        """
+        Create booking with room lock to prevent race conditions.
+        This ensures no concurrent bookings can be created for the same room.
+        ALL validations happen atomically while room is locked.
+        Includes retry logic for transient database failures.
+
+        Args:
+            session: Database session
+            obj_in: Booking creation data
+        """
+        # Lock the room for update to prevent concurrent modifications
+        room = session.exec(
+            select(Room).where(Room.id == obj_in.room_id).with_for_update()
+        ).first()
+
+        if not room:
+            raise ValueError("Room not found")
+
+        # Always validate total amount
+        temp_booking = Booking.model_validate(obj_in)
+        calculated_total = temp_booking.calculate_total_amount(room.price_per_night)
+        if abs(obj_in.total_amount - calculated_total) > 1:
+            raise ValueError(
+                f"Total amount mismatch. Expected: {calculated_total:.2f}, got: {obj_in.total_amount:.2f}"
+            )
+
+        # Check room status
+        from app.models import RoomStatus
+        if room.status == RoomStatus.MAINTENANCE:
+            raise ValueError("Room is currently under maintenance and cannot be booked")
+
+        # Now check for overlapping bookings while room is locked
+        overlapping = self.get_overlapping(
+            session,
+            room_id=obj_in.room_id,
+            check_in=obj_in.check_in,
+            check_out=obj_in.check_out
+        )
+
+        if overlapping:
+            raise ValueError("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
+
+        # Create the booking - safe now as room is locked
+        booking = Booking.model_validate(obj_in)
         session.add(booking)
         session.flush()
         return booking

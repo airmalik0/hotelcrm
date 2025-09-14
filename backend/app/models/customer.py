@@ -40,7 +40,7 @@ class CustomerBase(SQLModel):
             # Store only digits to ensure uniqueness
             return digits_only
         return v
-    
+
     @field_validator("date_of_birth")
     @classmethod
     def validate_date_of_birth(cls, v: datetime | None) -> datetime | None:
@@ -48,9 +48,9 @@ class CustomerBase(SQLModel):
             # Make datetime timezone-aware if it isn't already
             if v.tzinfo is None:
                 v = v.replace(tzinfo=timezone.utc)
-            
+
             now = datetime.now(timezone.utc)
-            
+
             # Ensure date is not in the future
             if v > now:
                 raise ValueError("Date of birth cannot be in the future")
@@ -74,6 +74,7 @@ class Customer(CustomerBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     tags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    version: int = Field(default=0, index=True)
 
 
 class CustomerCreate(CustomerBase):
@@ -110,7 +111,7 @@ class CustomerUpdate(SQLModel):
             # Store only digits to ensure uniqueness
             return digits_only
         return v
-    
+
     @field_validator("date_of_birth")
     @classmethod
     def validate_date_of_birth(cls, v: datetime | None) -> datetime | None:
@@ -118,9 +119,9 @@ class CustomerUpdate(SQLModel):
             # Make datetime timezone-aware if it isn't already
             if v.tzinfo is None:
                 v = v.replace(tzinfo=timezone.utc)
-            
+
             now = datetime.now(timezone.utc)
-            
+
             # Ensure date is not in the future
             if v > now:
                 raise ValueError("Date of birth cannot be in the future")

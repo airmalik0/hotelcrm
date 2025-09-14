@@ -3,11 +3,11 @@ import { useRole } from "@/hooks/useRole"
 import {
   ArrowRight,
   Building2,
-  Calendar,
   ChevronDown,
   ChevronRight,
   FileText,
   Home,
+  LayoutGrid,
   LogOut,
   Menu,
   Moon,
@@ -42,10 +42,10 @@ const menuItems: MenuItem[] = [
     roles: ["admin", "manager", "host"],
   },
   {
-    key: "calendar",
-    label: "Calendar",
-    icon: Calendar,
-    href: "/calendar",
+    key: "booking-grid",
+    label: "Booking Grid",
+    icon: LayoutGrid,
+    href: "/booking-grid",
     roles: ["admin", "manager", "host"],
   },
   {

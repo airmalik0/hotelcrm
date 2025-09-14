@@ -37,6 +37,7 @@ class Room(RoomBase, table=True):
     bookings: list["Booking"] = Relationship(back_populates="room")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
+    version: int = Field(default=0, index=True)
 
     def is_status_transition_valid(self, new_status: RoomStatus) -> bool:
         valid_transitions = {

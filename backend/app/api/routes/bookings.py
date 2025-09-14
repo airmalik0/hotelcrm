@@ -1,10 +1,12 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
+from app.core.rate_limit import RateLimits, limiter
+from app.crud.base import ConcurrentUpdateError
 from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
@@ -20,7 +22,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=BookingsPublic)
+@limiter.limit(RateLimits.READ_LIST)
 def read_bookings(
+    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
     skip: int = 0,
@@ -65,8 +69,10 @@ def read_booking(
 
 
 @router.post("/", response_model=BookingPublic)
+@limiter.limit(RateLimits.BOOKING_CREATE)
 def create_booking(
     *,
+    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,
     booking_in: BookingCreate,
@@ -98,6 +104,8 @@ def create_booking(
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ConcurrentUpdateError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.put("/{booking_id}", response_model=BookingPublic)
@@ -183,6 +191,8 @@ def update_booking(
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ConcurrentUpdateError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 
@@ -257,6 +267,8 @@ def check_in_booking(
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ConcurrentUpdateError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.post("/{booking_id}/check-out", response_model=BookingPublic)
@@ -297,3 +309,5 @@ def check_out_booking(
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ConcurrentUpdateError as e:
+        raise HTTPException(status_code=409, detail=str(e))

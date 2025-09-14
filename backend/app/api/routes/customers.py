@@ -1,10 +1,12 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.audit import get_change_values, get_entity_name, log_audit
+from app.core.rate_limit import RateLimits, limiter
+from app.crud.base import ConcurrentUpdateError
 from app.crud.customer import customer as crud_customer
 from app.models import (
     CustomerCreate,
@@ -19,7 +21,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=CustomersPublic)
+@limiter.limit(RateLimits.READ_LIST)
 def read_customers(
+    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
     skip: int = 0,
@@ -110,6 +114,8 @@ def update_customer(
         customer = service.update_customer(customer, customer_in)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ConcurrentUpdateError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
     # Log audit if there were changes
     if old_values:

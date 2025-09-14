@@ -1,15 +1,23 @@
 # Main FastAPI application entry point
+import logging
+
 import sentry_sdk
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.consistency import run_all_consistency_checks
 from app.core.db_events import setup_db_events
+from app.core.rate_limit import custom_rate_limit_exceeded_handler, ip_blocker, limiter
+
+logger = logging.getLogger(__name__)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -35,6 +43,32 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
 )
+
+# Configure rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+# Add IP blocking middleware
+@app.middleware("http")
+async def block_banned_ips(request: Request, call_next):  # type: ignore[no-untyped-def]
+    """Middleware to block banned IPs."""
+    from app.core.rate_limit import get_real_client_ip
+
+    client_ip = get_real_client_ip(request)
+    if ip_blocker.is_blocked(client_ip):
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"detail": "Your IP has been temporarily blocked due to excessive requests"}
+        )
+
+    # Store user info in request state for rate limiting
+    if hasattr(request.state, "user"):
+        request.state.user_id = getattr(request.state.user, "id", None)
+        request.state.is_admin = getattr(request.state.user, "is_superuser", False) or \
+                                getattr(request.state.user, "role", None) == "admin"
+
+    response = await call_next(request)
+    return response
 
 # Set all CORS enabled origins
 if settings.all_cors_origins:
@@ -102,3 +136,40 @@ async def integrity_exception_handler(request: Request, exc: IntegrityError) -> 
         status_code=status.HTTP_409_CONFLICT,
         content={"detail": detail}
     )
+
+
+# Setup scheduler for background tasks
+scheduler = AsyncIOScheduler()
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    """Configure and start background tasks."""
+    # Schedule consistency checks - run every hour
+    scheduler.add_job(
+        run_all_consistency_checks,
+        'interval',
+        hours=1,
+        id='consistency_check',
+        name='Data consistency verification',
+        replace_existing=True
+    )
+
+    # Also run on startup after a delay to let the app fully initialize
+    scheduler.add_job(
+        run_all_consistency_checks,
+        'date',
+        run_date=None,  # Run immediately
+        id='startup_consistency_check',
+        name='Startup consistency check'
+    )
+
+    scheduler.start()
+    logger.info("Background scheduler started")
+
+
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
+    """Cleanup on shutdown."""
+    scheduler.shutdown()
+    logger.info("Background scheduler stopped")

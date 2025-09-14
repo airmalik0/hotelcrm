@@ -47,37 +47,8 @@ class BookingService:
         if not customer:
             raise ValueError("Customer not found")
 
-        # Verify room exists and is available
-        room = self.crud_room.get(self.session, id=booking_in.room_id)
-        if not room:
-            raise ValueError("Room not found")
-
-        # Only prevent booking if room is under maintenance
-        if room.status == RoomStatus.MAINTENANCE:
-            raise ValueError("Room is currently under maintenance and cannot be booked")
-
-        # Check for overlapping bookings
-        overlapping = self.crud_booking.get_overlapping(
-            self.session,
-            room_id=booking_in.room_id,
-            check_in=booking_in.check_in,
-            check_out=booking_in.check_out
-        )
-
-        if overlapping:
-            raise ValueError("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
-
-        # Create temporary booking to validate total amount
-        temp_booking = Booking.model_validate(booking_in)
-        expected_total = temp_booking.calculate_total_amount(room.price_per_night)
-
-        # Allow small difference for rounding (1 currency unit)
-        if abs(booking_in.total_amount - expected_total) > 1:
-            raise ValueError(
-                f"Total amount mismatch. Expected: {expected_total:.2f}, got: {booking_in.total_amount:.2f}"
-            )
-
-        # Create booking
+        # Create booking with room lock to prevent race conditions
+        # This handles ALL validations atomically: room check, status check, overlapping check, total amount
         booking = self.crud_booking.create(self.session, obj_in=booking_in)
 
         # Update customer statistics (use check_in semantics)

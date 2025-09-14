@@ -11,12 +11,21 @@ import { GridHeader } from "./GridHeader"
 import { TimeScale } from "./TimeScale"
 import { RoomRow } from "./RoomRow"
 import { TodayLine } from "./TodayLine"
+import { QuickBookingModal } from "./QuickBookingModal"
 import { Loader2 } from "lucide-react"
 
 export function BookingGrid() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
+
+  // Modal state
+  const [quickBookingModal, setQuickBookingModal] = useState<{
+    isOpen: boolean
+    room?: RoomPublic
+    checkIn?: Date
+    checkOut?: Date
+  }>({ isOpen: false })
 
   // Calculate view range
   const { start: viewStart, end: viewEnd } = useMemo(
@@ -77,8 +86,12 @@ export function BookingGrid() {
   }
 
   const handleAddBooking = () => {
-    // TODO: Open quick booking modal
-    console.log("Add booking")
+    // Open modal without pre-filled data
+    setQuickBookingModal({
+      isOpen: true,
+      checkIn: new Date(),
+      checkOut: undefined,
+    })
   }
 
   const handleBookingClick = (booking: BookingPublic) => {
@@ -88,8 +101,13 @@ export function BookingGrid() {
   }
 
   const handleEmptyClick = (room: RoomPublic, checkIn: Date, checkOut: Date) => {
-    // TODO: Open quick booking modal with pre-filled data
-    console.log("Empty click:", { room, checkIn, checkOut })
+    // Open modal with pre-filled room and times
+    setQuickBookingModal({
+      isOpen: true,
+      room,
+      checkIn,
+      checkOut,
+    })
   }
 
   const handleBookingHover = (booking: BookingPublic, event: React.MouseEvent) => {
@@ -175,6 +193,15 @@ export function BookingGrid() {
           </div>
         )}
       </div>
+
+      {/* Quick Booking Modal */}
+      <QuickBookingModal
+        isOpen={quickBookingModal.isOpen}
+        onClose={() => setQuickBookingModal({ isOpen: false })}
+        room={quickBookingModal.room}
+        checkIn={quickBookingModal.checkIn}
+        checkOut={quickBookingModal.checkOut}
+      />
     </div>
   )
 }

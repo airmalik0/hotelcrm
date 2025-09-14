@@ -1,6 +1,6 @@
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { MainLayout } from "@/layouts/MainLayout"
-import { Calendar } from "@/pages/Calendar"
+import { BookingGrid } from "@/pages/BookingGrid"
 import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
@@ -25,11 +25,11 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/calendar",
+    path: "/booking-grid",
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <Calendar />
+          <BookingGrid />
         </MainLayout>
       </ProtectedRoute>
     ),

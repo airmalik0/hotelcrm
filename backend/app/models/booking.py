@@ -51,6 +51,7 @@ class Booking(BookingBase, table=True):
     booking_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
+    version: int = Field(default=0, index=True)
 
     def calculate_total_amount(self, room_price_per_night: float) -> float:
         nights = (self.check_out.date() - self.check_in.date()).days

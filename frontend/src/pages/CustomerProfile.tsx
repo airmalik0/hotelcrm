@@ -1,6 +1,4 @@
-import { getBookings } from "@/api/bookings"
 import { getCustomer } from "@/api/customers"
-import type { BookingPublic } from "@/client/types.gen"
 import { CustomerEditForm } from "@/components/customer/CustomerEditForm"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -29,12 +27,6 @@ export function CustomerProfile() {
     enabled: !!customerId,
   })
 
-  // Fetch customer bookings
-  const { data: bookingsData, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["bookings", customerId],
-    queryFn: () => getBookings({ customer_id: customerId!, limit: 100 }),
-    enabled: !!customerId,
-  })
 
   const formatDate = (date: string | null | undefined) => {
     if (!date) return "N/A"
@@ -335,82 +327,17 @@ export function CustomerProfile() {
                   <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
                     Booking History
                   </h5>
-                  {bookingsLoading ? (
-                    <div className="text-center py-8 text-neutral-500">
-                      Loading bookings...
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-20 h-20 bg-primary-100 dark:bg-primary-600/25 rounded-full flex items-center justify-center mb-4">
+                      <Calendar className="w-10 h-10 text-primary-600 dark:text-primary-400" />
                     </div>
-                  ) : bookingsData?.data.length === 0 ? (
-                    <div className="text-center py-8 text-neutral-500">
-                      No bookings found
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600">
-                        <thead>
-                          <tr className="border-b border-neutral-200 dark:border-neutral-600">
-                            <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                              Booking ID
-                            </th>
-                            <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                              Room
-                            </th>
-                            <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                              Check In
-                            </th>
-                            <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                              Check Out
-                            </th>
-                            <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                              Amount
-                            </th>
-                            <th className="text-center py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                              Status
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {bookingsData?.data.map((booking: BookingPublic) => (
-                            <tr
-                              key={booking.id}
-                              className="border-b border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                            >
-                              <td className="py-3 px-2 text-neutral-600 dark:text-neutral-300">
-                                #{booking.id.slice(0, 8)}
-                              </td>
-                              <td className="py-3 px-2 text-neutral-900 dark:text-white">
-                                {booking.room?.room_number || "N/A"}
-                              </td>
-                              <td className="py-3 px-2 text-neutral-600 dark:text-neutral-300">
-                                {formatDateTime(booking.check_in)}
-                              </td>
-                              <td className="py-3 px-2 text-neutral-600 dark:text-neutral-300">
-                                {formatDateTime(booking.check_out)}
-                              </td>
-                              <td className="py-3 px-2">
-                                <span className="font-semibold text-success-600 dark:text-success-400">
-                                  {formatCurrency(booking.total_amount)}
-                                </span>
-                                {booking.discount && booking.discount > 0 && (
-                                  <span className="ml-2 text-sm text-warning-600 dark:text-warning-400">
-                                    (-{booking.discount}%)
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3 px-2 text-center">
-                                <span
-                                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                                    booking.status || "",
-                                  )}`}
-                                >
-                                  {booking.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                      Booking Grid System Coming Soon
+                    </p>
+                    <p className="text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">
+                      We're rebuilding the booking management system with advanced features for better tracking and visualization of customer bookings.
+                    </p>
+                  </div>
                 </div>
               )}
 
