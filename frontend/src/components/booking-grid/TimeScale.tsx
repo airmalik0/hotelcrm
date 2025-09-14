@@ -1,0 +1,48 @@
+import { generateTimeScale } from "@/utils/date-helpers"
+import type { ViewMode } from "@/utils/date-helpers"
+import clsx from "clsx"
+
+interface TimeScaleProps {
+  viewStart: Date
+  viewEnd: Date
+  viewMode: ViewMode
+}
+
+export function TimeScale({ viewStart, viewEnd, viewMode }: TimeScaleProps) {
+  const markers = generateTimeScale(viewStart, viewEnd, viewMode)
+
+  return (
+    <div className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2">
+      {/* Time markers */}
+      {markers.map((marker, index) => (
+        <div
+          key={index}
+          className="absolute top-0 h-full flex items-center"
+          style={{ left: marker.position }}
+        >
+          {/* Vertical line */}
+          <div
+            className={clsx(
+              "absolute top-full w-px h-screen pointer-events-none",
+              marker.isToday
+                ? "bg-primary-500 dark:bg-primary-400 z-10"
+                : "bg-neutral-200 dark:bg-neutral-700"
+            )}
+          />
+
+          {/* Time label */}
+          <div
+            className={clsx(
+              "px-2 text-xs font-medium whitespace-nowrap",
+              marker.isToday
+                ? "text-primary-600 dark:text-primary-400"
+                : "text-neutral-600 dark:text-neutral-400"
+            )}
+          >
+            {marker.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
