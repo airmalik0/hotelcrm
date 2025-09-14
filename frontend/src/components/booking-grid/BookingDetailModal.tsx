@@ -29,12 +29,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     totalAmount: number
     discount: number
     discountReason: string
-    paymentMethod: "CASH" | "CARD" | "ONLINE"
+    paymentMethod: "cash" | "transfer" | "terminal"
   }>({
     totalAmount: 0,
     discount: 0,
     discountReason: "",
-    paymentMethod: "CASH",
+    paymentMethod: "cash",
   })
 
   // Fetch booking details
@@ -51,7 +51,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         totalAmount: booking.total_amount,
         discount: booking.discount || 0,
         discountReason: booking.discount_reason || "",
-        paymentMethod: booking.payment_method || "CASH",
+        paymentMethod: booking.payment_method || "cash",
       })
     }
   }, [booking])
@@ -330,7 +330,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       Payment Method
                     </label>
                     <div className="grid grid-cols-3 gap-2">
-                      {(["CASH", "CARD", "ONLINE"] as const).map((method) => (
+                      {(["cash", "terminal", "transfer"] as const).map((method) => (
                         <button
                           key={method}
                           type="button"
@@ -342,7 +342,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3"
                           )}
                         >
-                          {method}
+                          {method === "cash" ? "Cash" : method === "terminal" ? "Terminal" : "Transfer"}
                         </button>
                       ))}
                     </div>

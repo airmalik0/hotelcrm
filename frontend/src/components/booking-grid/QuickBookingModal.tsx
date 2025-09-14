@@ -42,14 +42,14 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     totalAmount: number
     discount: number
     discountReason: string
-    paymentMethod: "CASH" | "CARD" | "ONLINE"
+    paymentMethod: "cash" | "transfer" | "terminal"
   }>({
     checkIn: "",
     checkOut: "",
     totalAmount: 0,
     discount: 0,
     discountReason: "",
-    paymentMethod: "CASH",
+    paymentMethod: "cash",
   })
 
   // Set initial room
@@ -125,7 +125,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       totalAmount: 0,
       discount: 0,
       discountReason: "",
-      paymentMethod: "CASH",
+      paymentMethod: "cash",
     })
   }
 
@@ -477,7 +477,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 Payment Method
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {(["CASH", "CARD", "ONLINE"] as const).map((method) => (
+                {(["cash", "terminal", "transfer"] as const).map((method) => (
                   <button
                     key={method}
                     type="button"
@@ -489,7 +489,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                         : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3"
                     )}
                   >
-                    {method}
+                    {method === "cash" ? "Cash" : method === "terminal" ? "Terminal" : "Transfer"}
                   </button>
                 ))}
               </div>
