@@ -1,11 +1,12 @@
 import { memo, useState, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, setHours, setMinutes, addDays } from "date-fns"
-import type { BookingCreate, RoomPublic, CustomerPublic, CustomerCreate } from "@/client/types.gen"
+import type { BookingCreate, RoomPublic, CustomerPublic } from "@/client/types.gen"
 import { createBooking } from "@/api/bookings"
-import { getCustomers, createCustomer } from "@/api/customers"
+import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
-import { X, Calendar, Clock, User, DollarSign, Search, Plus, Bed } from "lucide-react"
+import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { X, Calendar, Clock, User, DollarSign, Search, Plus, Bed, Phone as PhoneIcon, XCircle } from "lucide-react"
 import clsx from "clsx"
 
 interface QuickBookingModalProps {
@@ -28,17 +29,16 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerPublic | null>(null)
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomPublic | null>(null)
-  const [showCreateCustomer, setShowCreateCustomer] = useState(false)
-  const [newCustomerForm, setNewCustomerForm] = useState({
-    first_name: "",
-    last_name: "",
-    phone: "",
-  })
+  const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState<{
     checkIn: string
     checkOut: string
+    checkInDate: string
+    checkInTime: string
+    checkOutDate: string
+    checkOutTime: string
     totalAmount: number
     discount: number
     discountReason: string
@@ -46,11 +46,17 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   }>({
     checkIn: "",
     checkOut: "",
+    checkInDate: "",
+    checkInTime: "",
+    checkOutDate: "",
+    checkOutTime: "",
     totalAmount: 0,
     discount: 0,
     discountReason: "",
     paymentMethod: "cash",
   })
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Set initial room
   useEffect(() => {
@@ -66,6 +72,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
         ...prev,
         checkIn: format(initialCheckIn, "yyyy-MM-dd'T'HH:mm"),
         checkOut: format(initialCheckOut, "yyyy-MM-dd'T'HH:mm"),
+        checkInDate: format(initialCheckIn, "yyyy-MM-dd"),
+        checkInTime: format(initialCheckIn, "HH:mm"),
+        checkOutDate: format(initialCheckOut, "yyyy-MM-dd"),
+        checkOutTime: format(initialCheckOut, "HH:mm"),
       }))
     } else if (initialCheckIn) {
       // Default checkout: next day at 12:00
@@ -74,9 +84,32 @@ export const QuickBookingModal = memo(function QuickBookingModal({
         ...prev,
         checkIn: format(initialCheckIn, "yyyy-MM-dd'T'HH:mm"),
         checkOut: format(defaultCheckOut, "yyyy-MM-dd'T'HH:mm"),
+        checkInDate: format(initialCheckIn, "yyyy-MM-dd"),
+        checkInTime: format(initialCheckIn, "HH:mm"),
+        checkOutDate: format(defaultCheckOut, "yyyy-MM-dd"),
+        checkOutTime: format(defaultCheckOut, "HH:mm"),
       }))
     }
   }, [initialCheckIn, initialCheckOut])
+
+  // Update combined datetime when date or time changes
+  useEffect(() => {
+    if (formData.checkInDate && formData.checkInTime) {
+      setFormData(prev => ({
+        ...prev,
+        checkIn: `${formData.checkInDate}T${formData.checkInTime}`,
+      }))
+    }
+  }, [formData.checkInDate, formData.checkInTime])
+
+  useEffect(() => {
+    if (formData.checkOutDate && formData.checkOutTime) {
+      setFormData(prev => ({
+        ...prev,
+        checkOut: `${formData.checkOutDate}T${formData.checkOutTime}`,
+      }))
+    }
+  }, [formData.checkOutDate, formData.checkOutTime])
 
   // Calculate total amount when dates or room change
   useEffect(() => {
@@ -113,20 +146,20 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     setSelectedCustomer(null)
     setSelectedRoom(null)
     setShowCustomerDropdown(false)
-    setShowCreateCustomer(false)
-    setNewCustomerForm({
-      first_name: "",
-      last_name: "",
-      phone: "",
-    })
+    setShowCreateCustomerModal(false)
     setFormData({
       checkIn: "",
       checkOut: "",
+      checkInDate: "",
+      checkInTime: "",
+      checkOutDate: "",
+      checkOutTime: "",
       totalAmount: 0,
       discount: 0,
       discountReason: "",
       paymentMethod: "cash",
     })
+    setErrors({})
   }
 
   // Create booking mutation
@@ -139,40 +172,29 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     },
   })
 
-  // Create customer mutation
-  const createCustomerMutation = useMutation({
-    mutationFn: (data: CustomerCreate) => createCustomer(data),
-    onSuccess: (newCustomer) => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] })
-      setSelectedCustomer(newCustomer)
-      setSearchTerm(`${newCustomer.first_name} ${newCustomer.last_name}`)
-      setShowCreateCustomer(false)
-      setNewCustomerForm({
-        first_name: "",
-        last_name: "",
-        phone: "",
-      })
-    },
-  })
-
-  const handleCreateCustomer = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newCustomerForm.first_name.trim() || !newCustomerForm.last_name.trim()) return
-
-    const customerData: CustomerCreate = {
-      first_name: newCustomerForm.first_name.trim(),
-      last_name: newCustomerForm.last_name.trim(),
-      phone: newCustomerForm.phone.trim() || null,
-    }
-
-    createCustomerMutation.mutate(customerData)
+  // Handle customer creation success
+  const handleCustomerCreated = (newCustomer: CustomerPublic) => {
+    setSelectedCustomer(newCustomer)
+    setSearchTerm("")
+    setShowCreateCustomerModal(false)
+    setShowCustomerDropdown(false)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setErrors({})
 
     const activeRoom = room || selectedRoom
-    if (!selectedCustomer || !activeRoom) return
+    if (!selectedCustomer || !activeRoom) {
+      setErrors({ customer: "Please select a customer" })
+      return
+    }
+
+    // Validate discount reason
+    if (formData.discount > 0 && !formData.discountReason.trim()) {
+      setErrors({ discountReason: "Discount reason is required when discount is applied" })
+      return
+    }
 
     const bookingData: BookingCreate = {
       customer_id: selectedCustomer.id,
@@ -181,7 +203,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       check_out: new Date(formData.checkOut).toISOString(),
       total_amount: formData.totalAmount,
       discount: formData.discount || undefined,
-      discount_reason: formData.discountReason || undefined,
+      discount_reason: formData.discount > 0 ? formData.discountReason : undefined,
       payment_method: formData.paymentMethod,
       status: "confirmed",
     }
@@ -265,169 +287,163 @@ export const QuickBookingModal = memo(function QuickBookingModal({
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
               Guest
             </label>
-            <div className="relative">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <input
-                    type="text"
-                    value={selectedCustomer ? selectedCustomer.full_name : searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value)
-                      setShowCustomerDropdown(true)
-                      if (selectedCustomer) setSelectedCustomer(null)
-                    }}
-                    onFocus={() => setShowCustomerDropdown(true)}
-                    placeholder="Search or select guest"
-                    className="w-full pl-10 pr-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    required
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateCustomer(true)}
-                  className="p-2 bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/35 transition-colors"
-                  title="Create new customer"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
 
-              {/* Customer dropdown */}
-              {showCustomerDropdown && searchTerm && customersData?.data && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg max-h-48 overflow-auto z-10">
-                  {customersData.data?.length > 0 ? (
-                    customersData.data.map((customer) => (
-                      <button
-                        key={customer.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCustomer(customer)
-                          setSearchTerm(`${customer.first_name} ${customer.last_name}`)
-                          setShowCustomerDropdown(false)
-                        }}
-                        className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
-                      >
-                        <div className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {customer.first_name} {customer.last_name}
-                        </div>
-                        {customer.phone && (
-                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {customer.phone}
-                          </div>
-                        )}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400">
-                      No customers found
+            {selectedCustomer ? (
+              // Selected customer display
+              <div className="flex items-center gap-2 p-3 border border-primary-500 dark:border-primary-600 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                    <span className="font-medium text-neutral-900 dark:text-white">
+                      {selectedCustomer.first_name} {selectedCustomer.last_name}
+                    </span>
+                  </div>
+                  {selectedCustomer.phone && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <PhoneIcon className="w-3 h-3 text-neutral-500 dark:text-neutral-400" />
+                      <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                        {selectedCustomer.phone}
+                      </span>
                     </div>
                   )}
                 </div>
-              )}
-
-              {/* Create Customer Form */}
-              {showCreateCustomer && (
-                <div className="mt-3 p-4 border border-primary-200 dark:border-primary-600/50 rounded-lg bg-primary-50 dark:bg-primary-900/20">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-medium text-neutral-900 dark:text-white">Create New Customer</h4>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCreateCustomer(false)
-                        setNewCustomerForm({
-                          first_name: "",
-                          last_name: "",
-                          phone: "",
-                        })
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCustomer(null)
+                    setSearchTerm("")
+                  }}
+                  className="p-1 hover:bg-primary-200 dark:hover:bg-primary-700/30 rounded-full transition-colors"
+                  title="Clear selection"
+                >
+                  <XCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                </button>
+              </div>
+            ) : (
+              // Customer search
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value)
+                        setShowCustomerDropdown(true)
                       }}
-                      className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                      onFocus={() => setShowCustomerDropdown(true)}
+                      placeholder="Search for guest..."
+                      className={`w-full pl-10 pr-3 py-2 border ${
+                        errors.customer
+                          ? 'border-danger-500 focus:ring-danger-500'
+                          : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                      } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                    />
                   </div>
-
-                  <form onSubmit={handleCreateCustomer} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                          First Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={newCustomerForm.first_name}
-                          onChange={(e) => setNewCustomerForm(prev => ({ ...prev, first_name: e.target.value }))}
-                          className="w-full px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                          Last Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={newCustomerForm.last_name}
-                          onChange={(e) => setNewCustomerForm(prev => ({ ...prev, last_name: e.target.value }))}
-                          className="w-full px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Phone (optional)
-                      </label>
-                      <input
-                        type="tel"
-                        value={newCustomerForm.phone}
-                        onChange={(e) => setNewCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="+1234567890"
-                      />
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        type="submit"
-                        disabled={createCustomerMutation.isPending}
-                        className="flex-1 px-3 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
-                      </button>
-                    </div>
-                  </form>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateCustomerModal(true)}
+                    className="p-2 bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/35 transition-colors"
+                    title="Create new customer"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
-            </div>
+
+                {/* Customer dropdown */}
+                {showCustomerDropdown && searchTerm && customersData?.data && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg max-h-48 overflow-auto z-10">
+                    {customersData.data?.length > 0 ? (
+                      customersData.data.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCustomer(customer)
+                            setSearchTerm("")
+                            setShowCustomerDropdown(false)
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
+                        >
+                          <div className="text-sm font-medium text-neutral-900 dark:text-white">
+                            {customer.first_name} {customer.last_name}
+                          </div>
+                          {customer.phone && (
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {customer.phone}
+                            </div>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400">
+                        No customers found. Click + to create new.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {errors.customer && (
+              <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.customer}</p>
+            )}
           </div>
 
           {/* Date/Time Selection */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Check-in
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.checkIn}
-                onChange={(e) => setFormData(prev => ({ ...prev, checkIn: e.target.value }))}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Check-out
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.checkOut}
-                onChange={(e) => setFormData(prev => ({ ...prev, checkOut: e.target.value }))}
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              />
+          <div>
+            <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Check-in & Check-out
+            </h3>
+
+            <div className="space-y-3">
+              {/* Check-in */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                  Check-in
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={formData.checkInDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, checkInDate: e.target.value }))}
+                    className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                  <input
+                    type="time"
+                    value={formData.checkInTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, checkInTime: e.target.value }))}
+                    className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Check-out */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                  Check-out
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={formData.checkOutDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, checkOutDate: e.target.value }))}
+                    className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                  <input
+                    type="time"
+                    value={formData.checkOutTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, checkOutTime: e.target.value }))}
+                    className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -448,26 +464,39 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Discount
                 </label>
-                <input
-                  type="number"
-                  value={formData.discount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, discount: Number(e.target.value) }))}
-                  min="0"
-                  max={formData.totalAmount}
-                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    value={formData.discount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, discount: Number(e.target.value) }))}
+                    min="0"
+                    max={formData.totalAmount}
+                    className="w-full pl-8 pr-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Reason
+                  Reason {formData.discount > 0 && <span className="text-danger-600 dark:text-danger-400">*</span>}
                 </label>
                 <input
                   type="text"
                   value={formData.discountReason}
                   onChange={(e) => setFormData(prev => ({ ...prev, discountReason: e.target.value }))}
-                  placeholder="Optional"
-                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder={formData.discount > 0 ? "Required" : "Optional"}
+                  className={`w-full px-3 py-2 border ${
+                    errors.discountReason
+                      ? 'border-danger-500 focus:ring-danger-500'
+                      : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                  } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                  required={formData.discount > 0}
                 />
+                {errors.discountReason && (
+                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.discountReason}</p>
+                )}
               </div>
             </div>
 
@@ -515,6 +544,15 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           </div>
         </form>
       </div>
+
+      {/* Create Customer Modal */}
+      {showCreateCustomerModal && (
+        <CreateCustomerModal
+          isOpen={showCreateCustomerModal}
+          onClose={() => setShowCreateCustomerModal(false)}
+          onSuccess={handleCustomerCreated}
+        />
+      )}
     </div>
   )
 })

@@ -1,6 +1,6 @@
 import { deleteCustomer, getCustomers } from "@/api/customers"
 import type { CustomerPublic } from "@/client/types.gen"
-import { CustomerCreateModal } from "@/components/customer/CustomerCreateModal"
+import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
 import {
   formatCurrency,
   formatDate,
@@ -283,16 +283,14 @@ export function CustomerList() {
       </div>
 
       {/* Create Customer Modal */}
-      {showCreateModal && (
-        <CustomerCreateModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            setShowCreateModal(false)
-            queryClient.invalidateQueries({ queryKey: ["customers"] })
-          }}
-        />
-      )}
+      <CreateCustomerModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false)
+          // queryClient.invalidateQueries is already called inside CreateCustomerModal
+        }}
+      />
     </>
   )
 }
