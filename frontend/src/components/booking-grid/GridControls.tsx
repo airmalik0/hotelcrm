@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { format, addDays, subDays } from "date-fns"
 import type { BookingStatus } from "@/client/types.gen"
 import {
-  Search, Filter, Calendar, Users, Bed, BarChart3,
+  Search, Users, Bed, BarChart3,
   CheckCircle, Clock, LogOut, XCircle, X, ChevronDown
 } from "lucide-react"
 import clsx from "clsx"
@@ -14,8 +13,6 @@ interface GridControlsProps {
   onStatusFilterChange: (statuses: BookingStatus[]) => void
   roomTypeFilters: string[]
   onRoomTypeFilterChange: (types: string[]) => void
-  dateRange: { start: Date; end: Date }
-  onDateRangeChange: (range: { start: Date; end: Date }) => void
   availableRoomTypes: string[]
   totalBookings: number
   occupancyRate: number
@@ -52,14 +49,11 @@ export function GridControls({
   onStatusFilterChange,
   roomTypeFilters,
   onRoomTypeFilterChange,
-  dateRange,
-  onDateRangeChange,
   availableRoomTypes,
   totalBookings,
   occupancyRate,
   onClearAllFilters,
 }: GridControlsProps) {
-  const [showDatePicker, setShowDatePicker] = useState(false)
   const [showRoomTypeFilter, setShowRoomTypeFilter] = useState(false)
 
   const hasActiveFilters = statusFilters.length > 0 || roomTypeFilters.length > 0 || searchTerm.length > 0
@@ -80,13 +74,6 @@ export function GridControls({
     }
   }
 
-  const getQuickDateRange = (days: number) => {
-    const today = new Date()
-    return {
-      start: days < 0 ? addDays(today, days) : today,
-      end: days < 0 ? today : addDays(today, days)
-    }
-  }
 
   return (
     <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-4 py-3">
@@ -182,79 +169,6 @@ export function GridControls({
             )}
           </div>
 
-          {/* Date Range Picker */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-dark-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2 transition-colors flex items-center gap-2 text-sm font-medium"
-            >
-              <Calendar className="w-4 h-4" />
-              {format(dateRange.start, "MMM d")} - {format(dateRange.end, "MMM d")}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-
-            {showDatePicker && (
-              <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-20">
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                      <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                        From
-                      </label>
-                      <input
-                        type="date"
-                        value={format(dateRange.start, "yyyy-MM-dd")}
-                        onChange={(e) => onDateRangeChange({
-                          start: new Date(e.target.value),
-                          end: dateRange.end
-                        })}
-                        className="w-full px-2 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-dark-3 text-neutral-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                        To
-                      </label>
-                      <input
-                        type="date"
-                        value={format(dateRange.end, "yyyy-MM-dd")}
-                        onChange={(e) => onDateRangeChange({
-                          start: dateRange.start,
-                          end: new Date(e.target.value)
-                        })}
-                        className="w-full px-2 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-dark-3 text-neutral-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200 dark:border-neutral-600 pt-3">
-                    <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">Quick Ranges</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {[
-                        { label: "Today", days: 0 },
-                        { label: "Tomorrow", days: 1 },
-                        { label: "Next 3 days", days: 3 },
-                        { label: "Next 7 days", days: 7 },
-                        { label: "Last 7 days", days: -7 },
-                        { label: "Next 30 days", days: 30 }
-                      ].map(({ label, days }) => (
-                        <button
-                          key={label}
-                          onClick={() => {
-                            onDateRangeChange(getQuickDateRange(days))
-                            setShowDatePicker(false)
-                          }}
-                          className="px-2 py-1.5 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3 rounded transition-colors text-left"
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Clear Filters */}
           {hasActiveFilters && (
@@ -283,13 +197,7 @@ export function GridControls({
         </div>
       </div>
 
-      {/* Click outside handlers */}
-      {showDatePicker && (
-        <div
-          className="fixed inset-0 z-10"
-          onClick={() => setShowDatePicker(false)}
-        />
-      )}
+      {/* Click outside handler */}
       {showRoomTypeFilter && (
         <div
           className="fixed inset-0 z-10"

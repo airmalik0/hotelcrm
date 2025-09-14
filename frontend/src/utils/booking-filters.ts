@@ -4,10 +4,6 @@ export interface BookingFilters {
   searchTerm: string
   statusFilters: BookingStatus[]
   roomTypeFilters: string[]
-  dateRange: {
-    start: Date
-    end: Date
-  }
 }
 
 /**
@@ -48,15 +44,6 @@ export function filterBookings(
       }
     }
 
-    // Date range filter - check if booking overlaps with the date range
-    const bookingStart = new Date(booking.check_in)
-    const bookingEnd = new Date(booking.check_out)
-    const rangeStart = filters.dateRange.start
-    const rangeEnd = filters.dateRange.end
-
-    if (bookingEnd < rangeStart || bookingStart > rangeEnd) {
-      return false
-    }
 
     return true
   })
@@ -142,19 +129,20 @@ export function getSearchSuggestions(
 export function calculateFilteredStats(
   filteredBookings: BookingPublic[],
   filteredRooms: RoomPublic[],
-  dateRange: { start: Date; end: Date }
+  viewStart: Date,
+  viewEnd: Date
 ) {
   const totalBookings = filteredBookings.length
 
   // Calculate occupancy rate for filtered data
   const totalRoomDays = filteredRooms.length * Math.ceil(
-    (dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24)
+    (viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60 * 24)
   )
 
   let occupiedRoomDays = 0
   filteredBookings.forEach(booking => {
-    const bookingStart = Math.max(new Date(booking.check_in).getTime(), dateRange.start.getTime())
-    const bookingEnd = Math.min(new Date(booking.check_out).getTime(), dateRange.end.getTime())
+    const bookingStart = Math.max(new Date(booking.check_in).getTime(), viewStart.getTime())
+    const bookingEnd = Math.min(new Date(booking.check_out).getTime(), viewEnd.getTime())
     const days = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60 * 24))
     occupiedRoomDays += Math.max(0, days)
   })

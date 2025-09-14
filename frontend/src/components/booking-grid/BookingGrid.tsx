@@ -39,10 +39,6 @@ export function BookingGrid() {
     searchTerm: "",
     statusFilters: [],
     roomTypeFilters: [],
-    dateRange: {
-      start: new Date(),
-      end: addDays(new Date(), 7)
-    }
   })
 
   // Calculate view range
@@ -96,8 +92,8 @@ export function BookingGrid() {
   )
 
   const filteredStats = useMemo(
-    () => calculateFilteredStats(filteredBookings, filteredRooms, filters.dateRange),
-    [filteredBookings, filteredRooms, filters.dateRange]
+    () => calculateFilteredStats(filteredBookings, filteredRooms, viewStart, viewEnd),
+    [filteredBookings, filteredRooms, viewStart, viewEnd]
   )
 
   // Drag & Drop functionality
@@ -156,19 +152,12 @@ export function BookingGrid() {
     setFilters(prev => ({ ...prev, roomTypeFilters }))
   }
 
-  const handleDateRangeChange = (dateRange: { start: Date; end: Date }) => {
-    setFilters(prev => ({ ...prev, dateRange }))
-  }
 
   const handleClearAllFilters = () => {
     setFilters({
       searchTerm: "",
       statusFilters: [],
       roomTypeFilters: [],
-      dateRange: {
-        start: new Date(),
-        end: addDays(new Date(), 7)
-      }
     })
   }
 
@@ -232,8 +221,6 @@ export function BookingGrid() {
         onStatusFilterChange={handleStatusFilterChange}
         roomTypeFilters={filters.roomTypeFilters}
         onRoomTypeFilterChange={handleRoomTypeFilterChange}
-        dateRange={filters.dateRange}
-        onDateRangeChange={handleDateRangeChange}
         availableRoomTypes={availableRoomTypes}
         totalBookings={filteredStats.totalBookings}
         occupancyRate={filteredStats.occupancyRate}
