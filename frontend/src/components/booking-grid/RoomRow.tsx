@@ -16,7 +16,15 @@ interface RoomRowProps {
   onEmptyClick: (room: RoomPublic, checkIn: Date, checkOut: Date) => void
   onBookingHover?: (booking: BookingPublic, event: React.MouseEvent) => void
   onBookingLeave?: () => void
+  onBookingDragStart?: (e: React.DragEvent, booking: BookingPublic) => void
+  onBookingDragEnd?: (e: React.DragEvent) => void
+  onRoomDragOver?: (e: React.DragEvent, room: RoomPublic) => void
+  onRoomDragLeave?: (e: React.DragEvent) => void
+  onRoomDrop?: (e: React.DragEvent, room: RoomPublic) => void
   selectedBookingId?: string
+  isDraggedBooking?: (bookingId: string) => boolean
+  isDropTarget?: boolean
+  isValidDropTarget?: boolean
 }
 
 export const RoomRow = memo(function RoomRow({
@@ -28,7 +36,15 @@ export const RoomRow = memo(function RoomRow({
   onEmptyClick,
   onBookingHover,
   onBookingLeave,
+  onBookingDragStart,
+  onBookingDragEnd,
+  onRoomDragOver,
+  onRoomDragLeave,
+  onRoomDrop,
   selectedBookingId,
+  isDraggedBooking,
+  isDropTarget = false,
+  isValidDropTarget = false,
 }: RoomRowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const roomName = formatRoomName(room)
@@ -55,7 +71,12 @@ export const RoomRow = memo(function RoomRow({
   }
 
   return (
-    <div className="flex border-b border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors">
+    <div className={clsx(
+      "flex border-b border-neutral-200 dark:border-neutral-700 transition-colors",
+      isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-900/20",
+      isDropTarget && !isValidDropTarget && "bg-red-50 dark:bg-red-900/20",
+      !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3"
+    )}>
       {/* Room info sidebar - fixed width */}
       <div className="w-48 flex-shrink-0 p-3 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-dark-2">
         <div className="flex items-start justify-between">
@@ -93,8 +114,14 @@ export const RoomRow = memo(function RoomRow({
       {/* Booking container - full width, relative positioning */}
       <div
         ref={containerRef}
-        className="flex-1 relative h-16 cursor-pointer"
+        className={clsx(
+          "flex-1 relative h-16 cursor-pointer room-drop-zone",
+          isDropTarget && "transition-colors duration-200"
+        )}
         onClick={handleEmptyClick}
+        onDragOver={(e) => onRoomDragOver?.(e, room)}
+        onDragLeave={onRoomDragLeave}
+        onDrop={(e) => onRoomDrop?.(e, room)}
       >
         {/* Render bookings */}
         {bookings.map((booking) => {
@@ -118,6 +145,9 @@ export const RoomRow = memo(function RoomRow({
               onClick={onBookingClick}
               onMouseEnter={onBookingHover}
               onMouseLeave={onBookingLeave}
+              onDragStart={onBookingDragStart}
+              onDragEnd={onBookingDragEnd}
+              isDragging={isDraggedBooking?.(booking.id) || false}
               isSelected={booking.id === selectedBookingId}
             />
           )

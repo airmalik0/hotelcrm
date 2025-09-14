@@ -1,19 +1,20 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { addDays, addWeeks, addMonths } from "date-fns"
+import { addDays, addWeeks, addMonths, subWeeks, subMonths } from "date-fns"
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
 import { groupBookingsByRoom, sortRoomsByNumber, calculateOccupancy } from "@/utils/booking-grid"
 import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
+import { useBookingDrag } from "@/hooks/useBookingDrag"
 import { GridHeader } from "./GridHeader"
 import { TimeScale } from "./TimeScale"
 import { RoomRow } from "./RoomRow"
 import { TodayLine } from "./TodayLine"
 import { QuickBookingModal } from "./QuickBookingModal"
 import { BookingDetailModal } from "./BookingDetailModal"
-import { Loader2 } from "lucide-react"
+import { Loader2, GripHorizontal } from "lucide-react"
 
 export function BookingGrid() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -66,6 +67,23 @@ export function BookingGrid() {
     () => calculateOccupancy(rooms, bookingsData?.data || [], viewStart, viewEnd),
     [rooms, bookingsData, viewStart, viewEnd]
   )
+
+  // Drag & Drop functionality
+  const {
+    dragState,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd,
+    createDragImageContainer,
+    isUpdating,
+  } = useBookingDrag(bookingsData?.data || [])
+
+  // Create drag image container on mount
+  useEffect(() => {
+    createDragImageContainer()
+  }, [createDragImageContainer])
 
   // Navigation handlers - use full week jump and full month jump
   // Because startOfWeek/startOfMonth snap to period boundaries
@@ -192,7 +210,15 @@ export function BookingGrid() {
                     onEmptyClick={handleEmptyClick}
                     onBookingHover={handleBookingHover}
                     onBookingLeave={handleBookingLeave}
+                    onBookingDragStart={handleDragStart}
+                    onBookingDragEnd={handleDragEnd}
+                    onRoomDragOver={handleDragOver}
+                    onRoomDragLeave={handleDragLeave}
+                    onRoomDrop={handleDrop}
                     selectedBookingId={selectedBookingId}
+                    isDraggedBooking={(id) => dragState.draggedBooking?.id === id}
+                    isDropTarget={dragState.dragOverRoomId === room.id}
+                    isValidDropTarget={dragState.dragOverRoomId === room.id && dragState.isValidDrop}
                   />
                 ))}
               </div>
@@ -219,6 +245,16 @@ export function BookingGrid() {
         }}
         bookingId={selectedBookingId}
       />
+
+      {/* Drag indicator */}
+      {dragState.isDragging && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
+          <GripHorizontal className="w-4 h-4" />
+          <span className="text-sm font-medium">
+            {isUpdating ? "Moving booking..." : "Drag to another room"}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

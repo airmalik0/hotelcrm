@@ -16,8 +16,11 @@ interface BookingBlockProps {
   onClick: (booking: BookingPublic) => void
   onMouseEnter?: (booking: BookingPublic, event: React.MouseEvent) => void
   onMouseLeave?: () => void
+  onDragStart?: (e: React.DragEvent, booking: BookingPublic) => void
+  onDragEnd?: (e: React.DragEvent) => void
   isDragging?: boolean
   isSelected?: boolean
+  isDraggable?: boolean
 }
 
 export const BookingBlock = memo(function BookingBlock({
@@ -26,8 +29,11 @@ export const BookingBlock = memo(function BookingBlock({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  onDragStart,
+  onDragEnd,
   isDragging = false,
   isSelected = false,
+  isDraggable = true,
 }: BookingBlockProps) {
   const guestName = booking.customer?.full_name || "Guest"
   const initials = getGuestInitials(guestName)
@@ -39,14 +45,19 @@ export const BookingBlock = memo(function BookingBlock({
   // Calculate if we should show full name or initials based on width
   const showFullName = parseFloat(position.width) > 10 // Show full name if width > 10%
 
+  // Only allow dragging for confirmed bookings (not checked in/out)
+  const canDrag = isDraggable && booking.status === "confirmed"
+
   return (
     <div
       className={clsx(
-        "absolute top-1 bottom-1 rounded-md border cursor-pointer transition-all duration-200",
+        "absolute top-1 bottom-1 rounded-md border transition-all duration-200",
         "flex items-center gap-1 px-2 py-1 overflow-hidden",
         "shadow-sm hover:shadow-md hover:z-10",
         statusColor,
         hoverColor,
+        canDrag && "cursor-move",
+        !canDrag && "cursor-pointer",
         isDragging && "opacity-50 cursor-grabbing",
         isSelected && "ring-2 ring-primary-500 ring-offset-1"
       )}
@@ -55,6 +66,9 @@ export const BookingBlock = memo(function BookingBlock({
         width: position.width,
         minWidth: "60px",
       }}
+      draggable={canDrag}
+      onDragStart={(e) => canDrag && onDragStart?.(e, booking)}
+      onDragEnd={onDragEnd}
       onClick={() => onClick(booking)}
       onMouseEnter={(e) => onMouseEnter?.(booking, e)}
       onMouseLeave={onMouseLeave}
