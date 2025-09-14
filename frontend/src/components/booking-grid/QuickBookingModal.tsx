@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { memo, useState, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, setHours, setMinutes, addDays } from "date-fns"
 import type { BookingCreate, RoomPublic, CustomerPublic } from "@/client/types.gen"
@@ -16,7 +16,7 @@ interface QuickBookingModalProps {
   checkOut?: Date
 }
 
-export function QuickBookingModal({
+export const QuickBookingModal = memo(function QuickBookingModal({
   isOpen,
   onClose,
   room,
@@ -400,4 +400,4 @@ export function QuickBookingModal({
       </div>
     </div>
   )
-}
+})

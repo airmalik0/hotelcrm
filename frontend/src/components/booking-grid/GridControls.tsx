@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { memo, useState } from "react"
 import type { BookingStatus } from "@/client/types.gen"
 import {
   Search, Users, Bed, BarChart3,
@@ -42,7 +42,7 @@ const statusConfig = {
   },
 }
 
-export function GridControls({
+export const GridControls = memo(function GridControls({
   searchTerm,
   onSearchChange,
   statusFilters,
@@ -206,4 +206,4 @@ export function GridControls({
       )}
     </div>
   )
-}
+})

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { memo, useState, useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
@@ -15,7 +15,7 @@ interface BookingDetailModalProps {
   bookingId: string | null
 }
 
-export function BookingDetailModal({
+export const BookingDetailModal = memo(function BookingDetailModal({
   isOpen,
   onClose,
   bookingId,
@@ -474,4 +474,4 @@ export function BookingDetailModal({
       </div>
     </div>
   )
-}
+})

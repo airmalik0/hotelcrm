@@ -10,6 +10,7 @@ import type { BookingFilters } from "@/utils/booking-filters"
 import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
+import { useDebounce } from "@/hooks/useDebounce"
 import { GridHeader } from "./GridHeader"
 import { GridControls } from "./GridControls"
 import { TimeScale } from "./TimeScale"
@@ -40,6 +41,13 @@ export function BookingGrid() {
     statusFilters: [],
     roomTypeFilters: [],
   })
+
+  // Debounce search term to avoid excessive filtering
+  const debouncedSearchTerm = useDebounce(filters.searchTerm, 300)
+  const debouncedFilters = useMemo(
+    () => ({ ...filters, searchTerm: debouncedSearchTerm }),
+    [filters.statusFilters, filters.roomTypeFilters, debouncedSearchTerm]
+  )
 
   // Calculate view range
   const { start: viewStart, end: viewEnd } = useMemo(
@@ -72,13 +80,13 @@ export function BookingGrid() {
   const allBookings = bookingsData?.data || []
 
   const filteredBookings = useMemo(
-    () => filterBookings(allBookings, filters),
-    [allBookings, filters]
+    () => filterBookings(allBookings, debouncedFilters),
+    [allBookings, debouncedFilters]
   )
 
   const filteredRooms = useMemo(
-    () => filterRooms(allRooms, filteredBookings, filters.roomTypeFilters),
-    [allRooms, filteredBookings, filters.roomTypeFilters]
+    () => filterRooms(allRooms, filteredBookings, debouncedFilters.roomTypeFilters),
+    [allRooms, filteredBookings, debouncedFilters.roomTypeFilters]
   )
 
   const bookingsByRoom = useMemo(

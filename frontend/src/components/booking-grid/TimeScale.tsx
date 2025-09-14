@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 import { generateTimeScale } from "@/utils/date-helpers"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
@@ -9,7 +9,7 @@ interface TimeScaleProps {
   viewMode: ViewMode
 }
 
-export function TimeScale({ viewStart, viewEnd, viewMode }: TimeScaleProps) {
+export const TimeScale = memo(function TimeScale({ viewStart, viewEnd, viewMode }: TimeScaleProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>()
 
@@ -64,4 +64,4 @@ export function TimeScale({ viewStart, viewEnd, viewMode }: TimeScaleProps) {
       ))}
     </div>
   )
-}
+})

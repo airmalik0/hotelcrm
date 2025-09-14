@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { format } from "date-fns"
 import { ChevronLeft, ChevronRight, Calendar, Plus, LayoutGrid, CalendarDays } from "lucide-react"
 import type { ViewMode } from "@/utils/date-helpers"
@@ -16,7 +17,7 @@ interface GridHeaderProps {
   onAddBooking: () => void
 }
 
-export function GridHeader({
+export const GridHeader = memo(function GridHeader({
   currentDate,
   viewMode,
   viewStart,
@@ -134,4 +135,4 @@ export function GridHeader({
       </div>
     </div>
   )
-}
+})
