@@ -1,14 +1,17 @@
 import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { addDays, addWeeks, addMonths, subWeeks, subMonths } from "date-fns"
-import type { BookingPublic, RoomPublic } from "@/client/types.gen"
+import type { BookingPublic, RoomPublic, BookingStatus } from "@/client/types.gen"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
 import { groupBookingsByRoom, sortRoomsByNumber, calculateOccupancy } from "@/utils/booking-grid"
+import { filterBookings, filterRooms, getUniqueRoomTypes, calculateFilteredStats } from "@/utils/booking-filters"
+import type { BookingFilters } from "@/utils/booking-filters"
 import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
 import { GridHeader } from "./GridHeader"
+import { GridControls } from "./GridControls"
 import { TimeScale } from "./TimeScale"
 import { RoomRow } from "./RoomRow"
 import { TodayLine } from "./TodayLine"
@@ -30,6 +33,17 @@ export function BookingGrid() {
   }>({ isOpen: false })
 
   const [detailModalOpen, setDetailModalOpen] = useState(false)
+
+  // Filter state
+  const [filters, setFilters] = useState<BookingFilters>({
+    searchTerm: "",
+    statusFilters: [],
+    roomTypeFilters: [],
+    dateRange: {
+      start: new Date(),
+      end: addDays(new Date(), 7)
+    }
+  })
 
   // Calculate view range
   const { start: viewStart, end: viewEnd } = useMemo(
@@ -53,19 +67,37 @@ export function BookingGrid() {
     }),
   })
 
-  const rooms = useMemo(
+  // Apply filters to data
+  const allRooms = useMemo(
     () => sortRoomsByNumber(roomsData?.data || []),
     [roomsData]
   )
 
-  const bookingsByRoom = useMemo(
-    () => groupBookingsByRoom(bookingsData?.data || []),
-    [bookingsData]
+  const allBookings = bookingsData?.data || []
+
+  const filteredBookings = useMemo(
+    () => filterBookings(allBookings, filters),
+    [allBookings, filters]
   )
 
-  const occupancyRate = useMemo(
-    () => calculateOccupancy(rooms, bookingsData?.data || [], viewStart, viewEnd),
-    [rooms, bookingsData, viewStart, viewEnd]
+  const filteredRooms = useMemo(
+    () => filterRooms(allRooms, filteredBookings, filters.roomTypeFilters),
+    [allRooms, filteredBookings, filters.roomTypeFilters]
+  )
+
+  const bookingsByRoom = useMemo(
+    () => groupBookingsByRoom(filteredBookings),
+    [filteredBookings]
+  )
+
+  const availableRoomTypes = useMemo(
+    () => getUniqueRoomTypes(allRooms),
+    [allRooms]
+  )
+
+  const filteredStats = useMemo(
+    () => calculateFilteredStats(filteredBookings, filteredRooms, filters.dateRange),
+    [filteredBookings, filteredRooms, filters.dateRange]
   )
 
   // Drag & Drop functionality
@@ -78,7 +110,7 @@ export function BookingGrid() {
     handleDragEnd,
     createDragImageContainer,
     isUpdating,
-  } = useBookingDrag(bookingsData?.data || [])
+  } = useBookingDrag(allBookings)
 
   // Create drag image container on mount
   useEffect(() => {
@@ -109,6 +141,35 @@ export function BookingGrid() {
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
+  }
+
+  // Filter handlers
+  const handleSearchChange = (searchTerm: string) => {
+    setFilters(prev => ({ ...prev, searchTerm }))
+  }
+
+  const handleStatusFilterChange = (statusFilters: BookingStatus[]) => {
+    setFilters(prev => ({ ...prev, statusFilters }))
+  }
+
+  const handleRoomTypeFilterChange = (roomTypeFilters: string[]) => {
+    setFilters(prev => ({ ...prev, roomTypeFilters }))
+  }
+
+  const handleDateRangeChange = (dateRange: { start: Date; end: Date }) => {
+    setFilters(prev => ({ ...prev, dateRange }))
+  }
+
+  const handleClearAllFilters = () => {
+    setFilters({
+      searchTerm: "",
+      statusFilters: [],
+      roomTypeFilters: [],
+      dateRange: {
+        start: new Date(),
+        end: addDays(new Date(), 7)
+      }
+    })
   }
 
   const handleAddBooking = () => {
@@ -155,12 +216,28 @@ export function BookingGrid() {
         viewMode={viewMode}
         viewStart={viewStart}
         viewEnd={viewEnd}
-        occupancyRate={occupancyRate}
+        occupancyRate={filteredStats.occupancyRate}
         onPrevious={handlePrevious}
         onNext={handleNext}
         onToday={handleToday}
         onViewModeChange={handleViewModeChange}
         onAddBooking={handleAddBooking}
+      />
+
+      {/* Grid Controls */}
+      <GridControls
+        searchTerm={filters.searchTerm}
+        onSearchChange={handleSearchChange}
+        statusFilters={filters.statusFilters}
+        onStatusFilterChange={handleStatusFilterChange}
+        roomTypeFilters={filters.roomTypeFilters}
+        onRoomTypeFilterChange={handleRoomTypeFilterChange}
+        dateRange={filters.dateRange}
+        onDateRangeChange={handleDateRangeChange}
+        availableRoomTypes={availableRoomTypes}
+        totalBookings={filteredStats.totalBookings}
+        occupancyRate={filteredStats.occupancyRate}
+        onClearAllFilters={handleClearAllFilters}
       />
 
       {/* Grid container */}
@@ -172,11 +249,14 @@ export function BookingGrid() {
               <p className="text-neutral-600 dark:text-neutral-400">Loading bookings...</p>
             </div>
           </div>
-        ) : rooms.length === 0 ? (
+        ) : filteredRooms.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-md">
               <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
-                No rooms available. Please add rooms to start managing bookings.
+                {allRooms.length === 0
+                  ? "No rooms available. Please add rooms to start managing bookings."
+                  : "No rooms match your current filters. Try adjusting your search criteria."
+                }
               </p>
             </div>
           </div>
@@ -199,7 +279,7 @@ export function BookingGrid() {
                 </div>
 
                 {/* Room rows with bookings */}
-                {rooms.map((room) => (
+                {filteredRooms.map((room) => (
                   <RoomRow
                     key={room.id}
                     room={room}
