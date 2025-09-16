@@ -33,13 +33,6 @@ export function BookingGrid() {
   // Use CSS-based responsive hooks
   const { isMobile, isTablet, isDesktop, isTouchDevice } = useBreakpoints()
 
-  // Swipe handlers for tablet view
-  const swipeRef = useSwipe<HTMLDivElement>({
-    onSwipeLeft: isTablet ? handleNext : undefined,
-    onSwipeRight: isTablet ? handlePrevious : undefined,
-    threshold: 75
-  })
-
   // Modal state
   const [quickBookingModal, setQuickBookingModal] = useState<{
     isOpen: boolean
@@ -168,6 +161,13 @@ export function BookingGrid() {
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
   }
+
+  // Swipe handlers for tablet view (must be after navigation handlers)
+  const swipeRef = useSwipe<HTMLDivElement>({
+    onSwipeLeft: () => isTablet && handleNext(),
+    onSwipeRight: () => isTablet && handlePrevious(),
+    threshold: 75
+  })
 
   // Filter handlers
   const handleSearchChange = (searchTerm: string) => {
