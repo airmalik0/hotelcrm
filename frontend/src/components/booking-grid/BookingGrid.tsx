@@ -13,7 +13,6 @@ import { getRooms } from "@/api/rooms"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useBreakpoints } from "@/hooks/useMediaQuery"
-import { useSwipe } from "@/hooks/useSwipe"
 import { GridHeader } from "./GridHeader"
 import { GridControls } from "./GridControls"
 import { TimeScale } from "./TimeScale"
@@ -162,12 +161,6 @@ export function BookingGrid() {
     setViewMode(mode)
   }
 
-  // Swipe handlers for tablet view (must be after navigation handlers)
-  const swipeRef = useSwipe<HTMLDivElement>({
-    onSwipeLeft: () => isTablet && handleNext(),
-    onSwipeRight: () => isTablet && handlePrevious(),
-    threshold: 75
-  })
 
   // Filter handlers
   const handleSearchChange = (searchTerm: string) => {
@@ -342,12 +335,9 @@ export function BookingGrid() {
                 ))}
               </div>
 
-              {/* Scrollable timeline area - swipeable on tablets */}
-              <div
-                className="flex-1 overflow-x-auto overflow-y-auto touch-pan-x"
-                ref={swipeRef}
-              >
-                <div className="min-w-[800px] md:min-w-[1200px] lg:min-w-[1000px]">
+              {/* Scrollable timeline area - horizontal scroll for wider grid */}
+              <div className="flex-1 overflow-x-auto overflow-y-auto">
+                <div className="min-w-[1200px] lg:min-w-[1600px]">
                   {/* Time scale header */}
                   <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
                     <TimeScale viewStart={viewStart} viewEnd={viewEnd} viewMode={viewMode} />
