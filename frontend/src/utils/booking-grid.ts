@@ -1,6 +1,59 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import { isBookingInView, bookingsOverlap } from "./date-helpers"
 
+export interface BookingWithLane extends BookingPublic {
+  lane: number
+}
+
+/**
+ * Calculate vertical lanes for overlapping bookings to prevent visual overlap
+ * Used in month view to stack bookings that would otherwise overlap
+ */
+export function assignBookingLanes(
+  bookings: BookingPublic[],
+  viewStart: Date,
+  viewEnd: Date
+): BookingWithLane[] {
+  if (!bookings.length) return []
+
+  // Sort by check-in date
+  const sortedBookings = [...bookings].sort((a, b) =>
+    new Date(a.check_in).getTime() - new Date(b.check_in).getTime()
+  )
+
+  const bookingsWithLanes: BookingWithLane[] = []
+  const lanes: Array<{ endTime: number }> = []
+
+  for (const booking of sortedBookings) {
+    const startTime = new Date(booking.check_in).getTime()
+    const endTime = new Date(booking.check_out).getTime()
+
+    // Find the first available lane
+    let assignedLane = -1
+    for (let i = 0; i < lanes.length; i++) {
+      // Add buffer of 2 hours to prevent visual overlap
+      if (lanes[i].endTime + 2 * 60 * 60 * 1000 <= startTime) {
+        assignedLane = i
+        lanes[i].endTime = endTime
+        break
+      }
+    }
+
+    // If no lane is available, create a new one
+    if (assignedLane === -1) {
+      assignedLane = lanes.length
+      lanes.push({ endTime })
+    }
+
+    bookingsWithLanes.push({
+      ...booking,
+      lane: assignedLane
+    })
+  }
+
+  return bookingsWithLanes
+}
+
 /**
  * Group bookings by room ID
  */

@@ -459,6 +459,8 @@ export type CustomersDeleteCustomerError = (HTTPValidationError);
 export type BookingsReadBookingsData = {
     query?: {
         customer_id?: (string | null);
+        date_from?: (string | null);
+        date_to?: (string | null);
         limit?: number;
         room_id?: (string | null);
         skip?: number;

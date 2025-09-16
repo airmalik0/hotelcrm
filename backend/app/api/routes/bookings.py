@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -32,23 +33,33 @@ def read_bookings(
     status: BookingStatus | None = None,
     room_id: uuid.UUID | None = None,
     customer_id: uuid.UUID | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
 ) -> Any:
     """
     Retrieve bookings.
     """
+    # Parse date strings to datetime objects
+    parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00")) if date_from else None
+    parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00")) if date_to else None
+
     bookings = crud_booking.get_multi_filtered(
         session,
         skip=skip,
         limit=limit,
         status=status,
         room_id=room_id,
-        customer_id=customer_id
+        customer_id=customer_id,
+        date_from=parsed_date_from,
+        date_to=parsed_date_to
     )
     count = crud_booking.count_filtered(
         session,
         status=status,
         room_id=room_id,
-        customer_id=customer_id
+        customer_id=customer_id,
+        date_from=parsed_date_from,
+        date_to=parsed_date_to
     )
     return BookingsPublic(data=bookings, count=count)
 

@@ -29,7 +29,9 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         limit: int = 100,
         status: BookingStatus | None = None,
         room_id: UUID | None = None,
-        customer_id: UUID | None = None
+        customer_id: UUID | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
     ) -> list[Booking]:
         statement = select(Booking)
 
@@ -39,6 +41,12 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
             statement = statement.where(Booking.room_id == room_id)
         if customer_id:
             statement = statement.where(Booking.customer_id == customer_id)
+
+        # Add date range filtering
+        if date_from:
+            statement = statement.where(Booking.check_out >= date_from)
+        if date_to:
+            statement = statement.where(Booking.check_in <= date_to)
 
         statement = statement.options(
             joinedload(Booking.customer),  # type: ignore[arg-type]
@@ -53,7 +61,9 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         *,
         status: BookingStatus | None = None,
         room_id: UUID | None = None,
-        customer_id: UUID | None = None
+        customer_id: UUID | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
     ) -> int:
         statement = select(func.count()).select_from(Booking)
 
@@ -63,6 +73,12 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
             statement = statement.where(Booking.room_id == room_id)
         if customer_id:
             statement = statement.where(Booking.customer_id == customer_id)
+
+        # Add date range filtering
+        if date_from:
+            statement = statement.where(Booking.check_out >= date_from)
+        if date_to:
+            statement = statement.where(Booking.check_in <= date_to)
 
         return session.exec(statement).one()
 
