@@ -6,6 +6,7 @@ import { createBooking } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
 import { X, Calendar, Clock, User, DollarSign, Search, Plus, Bed, Phone as PhoneIcon, XCircle } from "lucide-react"
 import clsx from "clsx"
 
@@ -165,8 +166,13 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: (data: BookingCreate) => createBooking(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] })
+    onSuccess: (createdBooking, variables) => {
+      // Invalidate bookings and customer stats (backend updates total_bookings and total_spent)
+      invalidateAfterBookingCreate(
+        queryClient,
+        variables.customer_id,
+        variables.room_id
+      )
       resetForm()
       onClose()
     },
@@ -187,6 +193,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     const activeRoom = room || selectedRoom
     if (!selectedCustomer || !activeRoom) {
       setErrors({ customer: "Please select a customer" })
+      return
+    }
+
+    // Client-side validation: Check if room is under maintenance
+    if (activeRoom.status === "maintenance") {
+      setErrors({ room: "Cannot book a room that is under maintenance" })
       return
     }
 

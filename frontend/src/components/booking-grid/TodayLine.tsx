@@ -15,13 +15,31 @@ export function TodayLine({ viewStart, viewEnd }: TodayLineProps) {
     // Update position immediately
     const updatePosition = () => {
       const pos = getCurrentTimePosition(viewStart, viewEnd)
-      setPosition(pos)
-      setCurrentTime(new Date())
+
+      // Only update state if position actually changed (prevents unnecessary re-renders)
+      setPosition((prevPos) => {
+        if (prevPos === pos) return prevPos
+        return pos
+      })
+
+      // Only update time if we have a position
+      if (pos) {
+        setCurrentTime(new Date())
+      }
     }
 
     updatePosition()
 
-    // Update every minute
+    // Only set interval if today is visible in current view
+    const now = new Date()
+    const isVisible = now >= viewStart && now <= viewEnd
+
+    if (!isVisible) {
+      // Today is not visible, no need for updates
+      return
+    }
+
+    // Update every minute only when visible
     const interval = setInterval(updatePosition, 60000)
 
     return () => clearInterval(interval)

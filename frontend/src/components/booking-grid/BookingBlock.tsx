@@ -64,7 +64,8 @@ export const BookingBlock = memo(function BookingBlock({
       style={{
         left: position.left,
         width: position.width,
-        minWidth: "60px",
+        minWidth: "40px",
+        zIndex: isSelected ? 20 : isDragging ? 5 : 1,
       }}
       draggable={canDrag}
       onDragStart={(e) => canDrag && onDragStart?.(e, booking)}

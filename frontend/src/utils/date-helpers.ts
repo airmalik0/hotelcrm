@@ -60,13 +60,38 @@ export function calculateBookingPosition(
   const viewEndTime = viewEnd.getTime()
   const totalMs = viewEndTime - viewStartTime
 
+  // Skip bookings completely outside the view
+  if (bookingEnd.getTime() <= viewStartTime || bookingStart.getTime() >= viewEndTime) {
+    return null
+  }
+
   // Calculate left position
   const startMs = Math.max(bookingStart.getTime(), viewStartTime) - viewStartTime
   const left = (startMs / totalMs) * 100
 
   // Calculate width
   const endMs = Math.min(bookingEnd.getTime(), viewEndTime) - viewStartTime
-  const width = Math.max(((endMs - startMs) / totalMs) * 100, 2) // Min 2% width
+  const rawWidth = ((endMs - startMs) / totalMs) * 100
+
+  // Smart minimum width calculation
+  // Ensure blocks are visible but not artificially wide
+  const totalHours = differenceInHours(viewEnd, viewStart)
+
+  // Calculate what percentage represents exactly 1 hour
+  const oneHourPercent = (1 / totalHours) * 100
+
+  // For very small bookings, ensure minimum visibility
+  // But don't make them wider than they actually are
+  let width = rawWidth
+
+  // If the booking is less than half an hour wide visually, make it at least visible
+  if (rawWidth < oneHourPercent * 0.5) {
+    // Make it half-hour wide for clickability, but cap at actual duration
+    width = Math.min(oneHourPercent * 0.5, rawWidth + 0.2)
+  }
+
+  // Ensure absolute minimum of 0.3% for any booking to be clickable
+  width = Math.max(width, 0.3)
 
   return {
     left: `${left}%`,

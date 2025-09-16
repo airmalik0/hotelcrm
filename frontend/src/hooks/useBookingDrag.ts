@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import { updateBooking } from "@/api/bookings"
 import { isRoomAvailable } from "@/utils/booking-grid"
+import { invalidateAfterBookingUpdate } from "@/utils/query-invalidation"
 
 interface DragState {
   isDragging: boolean
@@ -22,12 +23,47 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
     isValidDrop: false,
   })
 
-  // Mutation for updating booking room
+  // Mutation for updating booking room with optimistic updates
   const updateBookingMutation = useMutation({
-    mutationFn: ({ id, roomId }: { id: string; roomId: string }) =>
+    mutationFn: ({ id, roomId, oldRoomId }: { id: string; roomId: string; oldRoomId: string }) =>
       updateBooking(id, { room_id: roomId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] })
+    onMutate: async ({ id, roomId }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["bookings"] })
+
+      // Snapshot the previous value
+      const previousBookings = queryClient.getQueryData(["bookings"])
+
+      // Optimistically update to the new value
+      queryClient.setQueriesData({ queryKey: ["bookings"] }, (old: any) => {
+        if (!old?.data) return old
+        return {
+          ...old,
+          data: old.data.map((booking: BookingPublic) =>
+            booking.id === id ? { ...booking, room_id: roomId } : booking
+          ),
+        }
+      })
+
+      // Return context with snapshot
+      return { previousBookings }
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context to roll back
+      if (context?.previousBookings) {
+        queryClient.setQueryData(["bookings"], context.previousBookings)
+      }
+    },
+    onSuccess: (updatedBooking, variables) => {
+      // When moving a checked-in booking, room statuses change:
+      // - Old room: OCCUPIED → CLEANING
+      // - New room: (any) → OCCUPIED
+      invalidateAfterBookingUpdate(queryClient, updatedBooking.id, {
+        roomChanged: true,
+        customerChanged: false,
+        oldRoomId: variables.oldRoomId,
+        newRoomId: variables.roomId,
+      })
     },
   })
 
@@ -95,9 +131,12 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
 
   // Handle drag leave
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    // Only reset if we're leaving the drop zone entirely
-    const relatedTarget = e.relatedTarget as HTMLElement
-    if (!relatedTarget || !relatedTarget.closest('.room-drop-zone')) {
+    // Safer approach - check if we're actually leaving the target
+    const target = e.currentTarget as HTMLElement
+    const related = e.relatedTarget as Node | null
+
+    // Only reset if we're truly leaving (not entering a child element)
+    if (!related || !target.contains(related)) {
       setDragState(prev => ({
         ...prev,
         dragOverRoomId: null,
@@ -126,6 +165,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       updateBookingMutation.mutate({
         id: dragState.draggedBooking.id,
         roomId: room.id,
+        oldRoomId: dragState.draggedBooking.room_id,
       })
     }
 

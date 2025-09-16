@@ -4,6 +4,12 @@ import { format } from "date-fns"
 import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
 import { getBooking, updateBooking, deleteBooking, checkInBooking, checkOutBooking } from "@/api/bookings"
 import {
+  invalidateAfterCheckIn,
+  invalidateAfterCheckOut,
+  invalidateAfterBookingCancel,
+  invalidateAfterBookingUpdate,
+} from "@/utils/query-invalidation"
+import {
   X, Calendar, Clock, User, DollarSign, CreditCard,
   CheckCircle, XCircle, LogIn, LogOut, Trash2, Edit2, Save
 } from "lucide-react"
@@ -60,9 +66,19 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: BookingUpdate }) =>
       updateBooking(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] })
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+    onSuccess: (updatedBooking) => {
+      // Check what changed to properly invalidate
+      const roomChanged = booking?.room_id !== updatedBooking.room_id
+      const customerChanged = booking?.customer_id !== updatedBooking.customer_id
+
+      invalidateAfterBookingUpdate(queryClient, updatedBooking.id, {
+        roomChanged,
+        customerChanged,
+        oldRoomId: booking?.room_id,
+        newRoomId: updatedBooking.room_id,
+        oldCustomerId: booking?.customer_id,
+        newCustomerId: updatedBooking.customer_id,
+      })
       setIsEditing(false)
     },
   })
@@ -71,7 +87,16 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteBooking(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] })
+      // When deleting, we need to update customer stats and potentially room status
+      if (booking) {
+        invalidateAfterBookingCancel(
+          queryClient,
+          booking.id,
+          booking.customer_id,
+          booking.room_id,
+          booking.status === "checked_in"
+        )
+      }
       onClose()
     },
   })
@@ -79,18 +104,18 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   // Check-in mutation
   const checkInMutation = useMutation({
     mutationFn: (id: string) => checkInBooking(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] })
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+    onSuccess: (updatedBooking) => {
+      // Check-in changes room status to OCCUPIED
+      invalidateAfterCheckIn(queryClient, updatedBooking.id, updatedBooking.room_id)
     },
   })
 
   // Check-out mutation
   const checkOutMutation = useMutation({
     mutationFn: (id: string) => checkOutBooking(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] })
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+    onSuccess: (updatedBooking) => {
+      // Check-out changes room status to CLEANING
+      invalidateAfterCheckOut(queryClient, updatedBooking.id, updatedBooking.room_id)
     },
   })
 
@@ -114,11 +139,31 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
   const handleCheckIn = () => {
     if (!booking) return
+
+    // Client-side validation: Check if room is under maintenance
+    if (booking.room?.status === "maintenance") {
+      alert("Cannot check in: Room is under maintenance")
+      return
+    }
+
+    // Client-side validation: Only confirmed bookings can be checked in
+    if (booking.status !== "confirmed") {
+      alert("Only confirmed bookings can be checked in")
+      return
+    }
+
     checkInMutation.mutate(booking.id)
   }
 
   const handleCheckOut = () => {
     if (!booking) return
+
+    // Client-side validation: Only checked-in bookings can be checked out
+    if (booking.status !== "checked_in") {
+      alert("Only checked-in bookings can be checked out")
+      return
+    }
+
     checkOutMutation.mutate(booking.id)
   }
 

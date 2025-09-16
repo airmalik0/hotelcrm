@@ -4,8 +4,9 @@ import { addDays, addWeeks, addMonths, subWeeks, subMonths } from "date-fns"
 import type { BookingPublic, RoomPublic, BookingStatus } from "@/client/types.gen"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
-import { groupBookingsByRoom, sortRoomsByNumber, calculateOccupancy } from "@/utils/booking-grid"
+import { groupBookingsByRoom, sortRoomsByNumber, calculateOccupancy, formatRoomName } from "@/utils/booking-grid"
 import { filterBookings, filterRooms, getUniqueRoomTypes, calculateFilteredStats } from "@/utils/booking-filters"
+import { getRoomStatusColor, getRoomTypeColor } from "@/utils/booking-colors"
 import type { BookingFilters } from "@/utils/booking-filters"
 import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
@@ -18,7 +19,8 @@ import { RoomRow } from "./RoomRow"
 import { TodayLine } from "./TodayLine"
 import { QuickBookingModal } from "./QuickBookingModal"
 import { BookingDetailModal } from "./BookingDetailModal"
-import { Loader2, GripHorizontal } from "lucide-react"
+import { Loader2, GripHorizontal, Bed, DollarSign } from "lucide-react"
+import clsx from "clsx"
 
 export function BookingGrid() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -256,46 +258,83 @@ export function BookingGrid() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-auto">
-            <div className="min-w-[1200px]">
-              {/* Time scale header */}
-              <div className="sticky top-0 z-10 flex">
-                <div className="w-48 flex-shrink-0 bg-white dark:bg-dark-2 border-b border-r border-neutral-200 dark:border-neutral-600" />
-                <div className="flex-1">
-                  <TimeScale viewStart={viewStart} viewEnd={viewEnd} viewMode={viewMode} />
-                </div>
+          <div className="flex-1 relative overflow-hidden">
+            <div className="absolute inset-0 flex">
+              {/* Sticky room sidebar */}
+              <div className="w-48 flex-shrink-0 overflow-y-auto overflow-x-hidden bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600">
+                {/* Spacer for header */}
+                <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
+
+                {/* Room list */}
+                {filteredRooms.map((room) => (
+                  <div key={room.id} className="h-16 border-b border-neutral-200 dark:border-neutral-700 p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-neutral-900 dark:text-white">
+                            {formatRoomName(room)}
+                          </h3>
+                          <span className={clsx("text-xs px-2 py-0.5 rounded-full", getRoomTypeColor(room.room_type))}>
+                            {room.room_type}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+                          <div className="flex items-center gap-1">
+                            <Bed className="w-3 h-3" />
+                            <span>{room.capacity}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-3 h-3" />
+                            <span>${room.price_per_night}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={clsx("text-xs px-2 py-1 rounded", getRoomStatusColor(room.status))}>
+                        {room.status.replace("_", " ")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Room rows */}
-              <div className="relative">
-                {/* Today line */}
-                <div className="absolute top-0 bottom-0 left-48 right-0">
-                  <TodayLine viewStart={viewStart} viewEnd={viewEnd} />
-                </div>
+              {/* Scrollable timeline area */}
+              <div className="flex-1 overflow-auto">
+                <div className="min-w-[1000px]">
+                  {/* Time scale header */}
+                  <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
+                    <TimeScale viewStart={viewStart} viewEnd={viewEnd} viewMode={viewMode} />
+                  </div>
 
-                {/* Room rows with bookings */}
-                {filteredRooms.map((room) => (
-                  <RoomRow
-                    key={room.id}
-                    room={room}
-                    bookings={bookingsByRoom.get(room.id) || []}
-                    viewStart={viewStart}
-                    viewEnd={viewEnd}
-                    onBookingClick={handleBookingClick}
-                    onEmptyClick={handleEmptyClick}
-                    onBookingHover={handleBookingHover}
-                    onBookingLeave={handleBookingLeave}
-                    onBookingDragStart={handleDragStart}
-                    onBookingDragEnd={handleDragEnd}
-                    onRoomDragOver={handleDragOver}
-                    onRoomDragLeave={handleDragLeave}
-                    onRoomDrop={handleDrop}
-                    selectedBookingId={selectedBookingId}
-                    isDraggedBooking={(id) => dragState.draggedBooking?.id === id}
-                    isDropTarget={dragState.dragOverRoomId === room.id}
-                    isValidDropTarget={dragState.dragOverRoomId === room.id && dragState.isValidDrop}
-                  />
-                ))}
+                  {/* Bookings grid */}
+                  <div className="relative">
+                    {/* Today line */}
+                    <TodayLine viewStart={viewStart} viewEnd={viewEnd} />
+
+                    {/* Room booking rows */}
+                    {filteredRooms.map((room) => (
+                      <RoomRow
+                        key={room.id}
+                        room={room}
+                        bookings={bookingsByRoom.get(room.id) || []}
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
+                        onBookingClick={handleBookingClick}
+                        onEmptyClick={handleEmptyClick}
+                        onBookingHover={handleBookingHover}
+                        onBookingLeave={handleBookingLeave}
+                        onBookingDragStart={handleDragStart}
+                        onBookingDragEnd={handleDragEnd}
+                        onRoomDragOver={handleDragOver}
+                        onRoomDragLeave={handleDragLeave}
+                        onRoomDrop={handleDrop}
+                        selectedBookingId={selectedBookingId}
+                        isDraggedBooking={(id) => dragState.draggedBooking?.id === id}
+                        isDropTarget={dragState.dragOverRoomId === room.id}
+                        isValidDropTarget={dragState.dragOverRoomId === room.id && dragState.isValidDrop}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
