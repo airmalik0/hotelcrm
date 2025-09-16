@@ -22,14 +22,13 @@ import { TodayLine } from "./TodayLine"
 import { QuickBookingModal } from "./QuickBookingModal"
 import { BookingDetailModal } from "./BookingDetailModal"
 import { MobileBookingList } from "./MobileBookingList"
-import { Loader2, GripHorizontal, Bed, DollarSign, Menu, X } from "lucide-react"
+import { Loader2, GripHorizontal, Bed, DollarSign } from "lucide-react"
 import clsx from "clsx"
 
 export function BookingGrid() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Use CSS-based responsive hooks
   const { isMobile, isTablet, isDesktop, isTouchDevice } = useBreakpoints()
@@ -242,9 +241,6 @@ export function BookingGrid() {
         onToday={handleToday}
         onViewModeChange={handleViewModeChange}
         onAddBooking={handleAddBooking}
-        isMobileView={isMobile}
-        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        isMenuOpen={isSidebarOpen}
       />
 
       {/* Grid Controls - hide on mobile using CSS */}
@@ -306,10 +302,7 @@ export function BookingGrid() {
               <div className={clsx(
                 "flex-shrink-0 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transition-all duration-300",
                 "md:sticky md:left-0 md:w-32 lg:w-48",
-                "overflow-y-auto overflow-x-hidden",
-                {
-                  "fixed inset-y-0 left-0 z-40 w-64": isSidebarOpen && isMobile,
-                }
+                "overflow-y-auto overflow-x-hidden"
               )}>
                 {/* Spacer for header */}
                 <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
@@ -397,14 +390,6 @@ export function BookingGrid() {
               )}
             </div>
 
-            {/* Mobile sidebar overlay */}
-            {isSidebarOpen && isMobile && (
-              <div
-                className="fixed inset-0 bg-black/50 z-30"
-                onClick={() => setIsSidebarOpen(false)}
-                aria-hidden="true"
-              />
-            )}
           </>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { memo } from "react"
 import { format } from "date-fns"
-import { ChevronLeft, ChevronRight, Calendar, Plus, LayoutGrid, CalendarDays, Menu, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Plus, LayoutGrid, CalendarDays } from "lucide-react"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
 
@@ -15,9 +15,6 @@ interface GridHeaderProps {
   onToday: () => void
   onViewModeChange: (mode: ViewMode) => void
   onAddBooking: () => void
-  isMobileView?: boolean
-  onMenuClick?: () => void
-  isMenuOpen?: boolean
 }
 
 export const GridHeader = memo(function GridHeader({
@@ -31,9 +28,6 @@ export const GridHeader = memo(function GridHeader({
   onToday,
   onViewModeChange,
   onAddBooking,
-  isMobileView = false,
-  onMenuClick,
-  isMenuOpen = false,
 }: GridHeaderProps) {
   // Always show date range for both modes
   const dateRangeText = `${format(viewStart, "MMM d")} - ${format(viewEnd, "MMM d, yyyy")}`
@@ -43,26 +37,11 @@ export const GridHeader = memo(function GridHeader({
       <div className="px-3 py-2 md:px-4 md:py-3">
         {/* Mobile layout */}
         <div className="md:hidden">
-          {/* Top row - menu, date, add button */}
+          {/* Top row - date and add button */}
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              {/* Mobile menu button */}
-              <button
-                onClick={onMenuClick}
-                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
-                aria-label="Toggle room list"
-              >
-                {isMenuOpen ? (
-                  <X className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                ) : (
-                  <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                )}
-              </button>
-
-              {/* Date display */}
-              <div className="text-sm font-semibold text-neutral-900 dark:text-white">
-                {format(viewStart, "MMM d")} - {format(viewEnd, "d")}
-              </div>
+            {/* Date display */}
+            <div className="text-sm font-semibold text-neutral-900 dark:text-white">
+              {format(viewStart, "MMM d")} - {format(viewEnd, "d")}
             </div>
 
             {/* Add button */}

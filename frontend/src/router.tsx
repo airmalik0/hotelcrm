@@ -1,6 +1,6 @@
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { MainLayout } from "@/layouts/MainLayout"
-import { BookingGrid } from "@/pages/BookingGrid"
+import { BookingGridPage } from "@/pages/BookingGrid"
 import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
@@ -29,7 +29,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MainLayout>
-          <BookingGrid />
+          <BookingGridPage />
         </MainLayout>
       </ProtectedRoute>
     ),

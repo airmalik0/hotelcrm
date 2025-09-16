@@ -1,5 +1,5 @@
-import { BookingGrid as BookingGridComponent } from "@/components/booking-grid/BookingGrid"
+import { BookingGrid } from "@/components/booking-grid/BookingGrid"
 
-export function BookingGrid() {
-  return <BookingGridComponent />
+export function BookingGridPage() {
+  return <BookingGrid />
 }
