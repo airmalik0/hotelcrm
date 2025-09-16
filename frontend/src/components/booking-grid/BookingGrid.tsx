@@ -4,7 +4,7 @@ import { addDays, addWeeks, addMonths, subWeeks, subMonths } from "date-fns"
 import type { BookingPublic, RoomPublic, BookingStatus } from "@/client/types.gen"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
-import { groupBookingsByRoom, sortRoomsByNumber, calculateOccupancy, formatRoomName, assignBookingLanes } from "@/utils/booking-grid"
+import { groupBookingsByRoom, sortRoomsByNumber, calculateOccupancy, formatRoomName } from "@/utils/booking-grid"
 import { filterBookings, filterRooms, getUniqueRoomTypes, calculateFilteredStats } from "@/utils/booking-filters"
 import { getRoomStatusColor, getRoomTypeColor } from "@/utils/booking-colors"
 import type { BookingFilters } from "@/utils/booking-filters"
@@ -266,18 +266,8 @@ export function BookingGrid() {
                 <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
 
                 {/* Room list */}
-                {filteredRooms.map((room) => {
-                  // Calculate height for this room based on its bookings
-                  const roomBookings = bookingsByRoom.get(room.id) || []
-                  let roomHeight = 64 // default height in pixels
-                  if (viewMode === "month" && roomBookings.length > 0) {
-                    const lanes = assignBookingLanes(roomBookings, viewStart, viewEnd)
-                    const maxLane = lanes.reduce((max, b) => Math.max(max, b.lane), 0)
-                    roomHeight = Math.max(64, 48 + maxLane * 32)
-                  }
-
-                  return (
-                    <div key={room.id} className="border-b border-neutral-200 dark:border-neutral-700 p-3" style={{ height: `${roomHeight}px` }}>
+                {filteredRooms.map((room) => (
+                  <div key={room.id} className="h-16 border-b border-neutral-200 dark:border-neutral-700 p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -304,8 +294,7 @@ export function BookingGrid() {
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                ))}
               </div>
 
               {/* Scrollable timeline area */}
@@ -329,7 +318,6 @@ export function BookingGrid() {
                         bookings={bookingsByRoom.get(room.id) || []}
                         viewStart={viewStart}
                         viewEnd={viewEnd}
-                        viewMode={viewMode}
                         onBookingClick={handleBookingClick}
                         onEmptyClick={handleEmptyClick}
                         onBookingHover={handleBookingHover}

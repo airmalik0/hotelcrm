@@ -10,7 +10,6 @@ interface BookingBlockProps {
   position: {
     left: string
     width: string
-    top?: string
     isPartialStart: boolean
     isPartialEnd: boolean
   }
@@ -52,7 +51,7 @@ export const BookingBlock = memo(function BookingBlock({
   return (
     <div
       className={clsx(
-        "absolute rounded-md border transition-all duration-200",
+        "absolute top-1 bottom-1 rounded-md border transition-all duration-200",
         "flex items-center gap-1 px-2 py-1 overflow-hidden",
         "shadow-sm hover:shadow-md hover:z-10",
         statusColor,
@@ -65,8 +64,6 @@ export const BookingBlock = memo(function BookingBlock({
       style={{
         left: position.left,
         width: position.width,
-        top: position.top || "4px",
-        height: position.top ? "24px" : "calc(100% - 8px)",
         minWidth: "40px",
         zIndex: isSelected ? 20 : isDragging ? 5 : 1,
       }}

@@ -1,9 +1,7 @@
-import { memo, useRef, useMemo } from "react"
+import { memo, useRef } from "react"
 import type { RoomPublic, BookingPublic } from "@/client/types.gen"
 import { BookingBlock } from "./BookingBlock"
 import { calculateBookingPosition, getBookingTimesFromClick } from "@/utils/date-helpers"
-import { assignBookingLanes } from "@/utils/booking-grid"
-import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
 
 interface RoomRowProps {
@@ -11,7 +9,6 @@ interface RoomRowProps {
   bookings: BookingPublic[]
   viewStart: Date
   viewEnd: Date
-  viewMode?: ViewMode
   onBookingClick: (booking: BookingPublic) => void
   onEmptyClick: (room: RoomPublic, checkIn: Date, checkOut: Date) => void
   onBookingHover?: (booking: BookingPublic, event: React.MouseEvent) => void
@@ -32,7 +29,6 @@ export const RoomRow = memo(function RoomRow({
   bookings,
   viewStart,
   viewEnd,
-  viewMode = "week",
   onBookingClick,
   onEmptyClick,
   onBookingHover,
@@ -48,22 +44,6 @@ export const RoomRow = memo(function RoomRow({
   isValidDropTarget = false,
 }: RoomRowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-
-  // Calculate lanes for bookings in month view to prevent overlap
-  const bookingsWithLanes = useMemo(() => {
-    if (viewMode === "month" && bookings.length > 0) {
-      return assignBookingLanes(bookings, viewStart, viewEnd)
-    }
-    return bookings.map(b => ({ ...b, lane: 0 }))
-  }, [bookings, viewMode, viewStart, viewEnd])
-
-  // Calculate the height needed based on the maximum lane
-  const maxLane = useMemo(() => {
-    return bookingsWithLanes.reduce((max, b) => Math.max(max, b.lane), 0)
-  }, [bookingsWithLanes])
-
-  // Dynamic height based on number of lanes (for month view)
-  const rowHeight = viewMode === "month" ? `${Math.max(64, 48 + maxLane * 32)}px` : "64px"
 
   const handleEmptyClick = (event: React.MouseEvent<HTMLDivElement>) => {
     // Only handle clicks on the container itself, not on bookings
@@ -90,19 +70,18 @@ export const RoomRow = memo(function RoomRow({
     <div
       ref={containerRef}
       className={clsx(
-        "relative cursor-pointer room-drop-zone border-b border-neutral-200 dark:border-neutral-700 transition-colors",
+        "relative h-16 cursor-pointer room-drop-zone border-b border-neutral-200 dark:border-neutral-700 transition-colors",
         isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-900/20",
         isDropTarget && !isValidDropTarget && "bg-red-50 dark:bg-red-900/20",
         !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3"
       )}
-      style={{ height: rowHeight }}
       onClick={handleEmptyClick}
       onDragOver={(e) => onRoomDragOver?.(e, room)}
       onDragLeave={onRoomDragLeave}
       onDrop={(e) => onRoomDrop?.(e, room)}
     >
       {/* Render bookings */}
-      {bookingsWithLanes.map((booking) => {
+      {bookings.map((booking) => {
         const position = calculateBookingPosition(
           booking.check_in,
           booking.check_out,
@@ -115,19 +94,11 @@ export const RoomRow = memo(function RoomRow({
           return null
         }
 
-        // Calculate vertical position based on lane for month view
-        const topOffset = viewMode === "month"
-          ? `${4 + booking.lane * 28}px`  // Stack bookings with 28px spacing
-          : "4px"  // Default top position for week view
-
         return (
           <BookingBlock
             key={booking.id}
             booking={booking}
-            position={{
-              ...position,
-              top: topOffset
-            }}
+            position={position}
             onClick={onBookingClick}
             onMouseEnter={onBookingHover}
             onMouseLeave={onBookingLeave}
