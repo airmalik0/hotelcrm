@@ -21,6 +21,7 @@ interface BookingBlockProps {
   isDragging?: boolean
   isSelected?: boolean
   isDraggable?: boolean
+  isTouchDevice?: boolean
 }
 
 export const BookingBlock = memo(function BookingBlock({
@@ -34,8 +35,11 @@ export const BookingBlock = memo(function BookingBlock({
   isDragging = false,
   isSelected = false,
   isDraggable = true,
+  isTouchDevice = false,
 }: BookingBlockProps) {
-  const guestName = booking.customer?.full_name || "Guest"
+  const guestName = booking.customer
+    ? `${booking.customer.first_name} ${booking.customer.last_name}`
+    : "Guest"
   const initials = getGuestInitials(guestName)
   const duration = formatDuration(booking.check_in, booking.check_out)
   const statusColor = getBookingStatusColor(booking.status || "confirmed")
@@ -43,16 +47,27 @@ export const BookingBlock = memo(function BookingBlock({
   const indicatorColor = getBookingIndicatorColor(booking.status || "confirmed")
 
   // Calculate if we should show full name or initials based on width
-  const showFullName = parseFloat(position.width) > 10 // Show full name if width > 10%
+  const widthPercent = parseFloat(position.width)
+  const showFullName = widthPercent > 10 // Show full name if width > 10%
+  const showInitials = widthPercent > 1.5 // Show initials if width > 1.5%
+  const showStatusDot = widthPercent > 0.8 // Show status dot if width > 0.8%
 
-  // Only allow dragging for confirmed bookings (not checked in/out)
-  const canDrag = isDraggable && booking.status === "confirmed"
+  // Adaptive padding based on width
+  const paddingClass = widthPercent < 2 ? "px-0.5" : widthPercent < 5 ? "px-1" : "px-2"
+
+  // Only allow dragging for confirmed bookings (not checked in/out) and not on touch devices
+  const canDrag = isDraggable && booking.status === "confirmed" && !isTouchDevice
 
   return (
     <div
       className={clsx(
-        "absolute top-1 bottom-1 rounded-md border transition-all duration-200",
-        "flex items-center gap-1 px-2 py-1 overflow-hidden",
+        "absolute rounded-md border transition-all duration-200",
+        // Better touch targets with CSS
+        "top-1 bottom-1 md:top-1 md:bottom-1",
+        // Mobile-first touch targets
+        "touch-manipulation min-h-[44px] md:min-h-0",
+        `flex items-center gap-1 ${paddingClass} overflow-hidden box-border`,
+        "py-2 md:py-1",
         "shadow-sm hover:shadow-md hover:z-10",
         statusColor,
         hoverColor,
@@ -64,7 +79,6 @@ export const BookingBlock = memo(function BookingBlock({
       style={{
         left: position.left,
         width: position.width,
-        minWidth: "40px",
         zIndex: isSelected ? 20 : isDragging ? 5 : 1,
       }}
       draggable={canDrag}
@@ -77,17 +91,21 @@ export const BookingBlock = memo(function BookingBlock({
       tabIndex={0}
       aria-label={`Booking for ${guestName} - ${duration}`}
     >
-      {/* Status indicator dot */}
-      <div className={clsx("w-2 h-2 rounded-full flex-shrink-0", indicatorColor)} />
+      {/* Status indicator dot - only show if there's enough space */}
+      {showStatusDot && (
+        <div className={clsx("w-2 h-2 rounded-full flex-shrink-0", indicatorColor)} />
+      )}
 
-      {/* Guest name or initials */}
-      <div className="flex-1 min-w-0">
-        {showFullName ? (
-          <div className="text-xs font-medium truncate">{guestName}</div>
-        ) : (
-          <div className="text-xs font-bold">{initials}</div>
-        )}
-      </div>
+      {/* Guest name or initials - only show if there's enough space */}
+      {showInitials && (
+        <div className="flex-1 min-w-0">
+          {showFullName ? (
+            <div className="text-xs font-medium truncate">{guestName}</div>
+          ) : (
+            <div className="text-xs font-bold">{initials}</div>
+          )}
+        </div>
+      )}
 
       {/* Partial indicators */}
       {position.isPartialStart && (

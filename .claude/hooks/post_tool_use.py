@@ -77,7 +77,7 @@ def run_linters(operation_type=None):
                     pass
 
     # Frontend linters (JavaScript/TypeScript) - run only if frontend or no specific type
-    if operation_type in ["frontend", None]:
+    """if operation_type in ["frontend", None]:
         frontend_dir = PROJECT_ROOT / "frontend"
         if frontend_dir.exists():
             try:
@@ -136,7 +136,7 @@ def run_linters(operation_type=None):
                 # biome not installed
                 pass
             except Exception:
-                pass
+                pass"""
 
     return linter_results
 

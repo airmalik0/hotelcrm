@@ -76,10 +76,10 @@ export const GridControls = memo(function GridControls({
 
 
   return (
-    <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-4 py-3">
-      <div className="flex items-center justify-between gap-4">
+    <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-3 md:px-4 py-2 md:py-3 overflow-x-auto">
+      <div className="flex items-center justify-between gap-2 md:gap-4 min-w-fit">
         {/* Left side - Search and Filters */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -87,13 +87,13 @@ export const GridControls = memo(function GridControls({
               type="text"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search guests, rooms, or booking IDs..."
-              className="w-80 pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="Search..."
+              className="w-32 md:w-48 lg:w-80 pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
 
-          {/* Status Filters */}
-          <div className="flex items-center gap-1">
+          {/* Status Filters - hide labels on mobile */}
+          <div className="flex items-center gap-1 flex-shrink-0">
             {Object.entries(statusConfig).map(([status, config]) => {
               const Icon = config.icon
               const isActive = statusFilters.includes(status as BookingStatus)
@@ -103,14 +103,15 @@ export const GridControls = memo(function GridControls({
                   key={status}
                   onClick={() => toggleStatusFilter(status as BookingStatus)}
                   className={clsx(
-                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5",
+                    "px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1 md:gap-1.5",
                     isActive
                       ? config.color
                       : "bg-white dark:bg-dark-3 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-dark-2"
                   )}
+                  title={config.label}
                 >
                   <Icon className="w-3 h-3" />
-                  {config.label}
+                  <span className="hidden md:inline">{config.label}</span>
                 </button>
               )
             })}
@@ -182,8 +183,8 @@ export const GridControls = memo(function GridControls({
           )}
         </div>
 
-        {/* Right side - Stats */}
-        <div className="flex items-center gap-4">
+        {/* Right side - Stats - hide on small screens */}
+        <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <Users className="w-4 h-4" />

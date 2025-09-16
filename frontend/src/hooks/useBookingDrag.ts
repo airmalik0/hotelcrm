@@ -76,7 +76,9 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
     // Create custom drag image
     if (dragImageRef.current) {
       const dragImage = dragImageRef.current
-      dragImage.textContent = `${booking.customer?.full_name || "Guest"}`
+      dragImage.textContent = booking.customer
+        ? `${booking.customer.first_name} ${booking.customer.last_name}`
+        : "Guest"
       dragImage.style.position = "absolute"
       dragImage.style.top = "-1000px"
       dragImage.style.left = "-1000px"

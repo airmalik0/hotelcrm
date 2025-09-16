@@ -241,7 +241,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   <div>
                     <span className="text-neutral-500 dark:text-neutral-400">Name:</span>
                     <span className="ml-2 font-medium text-neutral-900 dark:text-white">
-                      {booking.customer?.full_name || "N/A"}
+                      {booking.customer
+                        ? `${booking.customer.first_name} ${booking.customer.last_name}`
+                        : "N/A"}
                     </span>
                   </div>
                   {booking.customer?.email && (

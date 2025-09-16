@@ -12,6 +12,8 @@ import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
 import { useDebounce } from "@/hooks/useDebounce"
+import { useBreakpoints } from "@/hooks/useMediaQuery"
+import { useSwipe } from "@/hooks/useSwipe"
 import { GridHeader } from "./GridHeader"
 import { GridControls } from "./GridControls"
 import { TimeScale } from "./TimeScale"
@@ -19,13 +21,25 @@ import { RoomRow } from "./RoomRow"
 import { TodayLine } from "./TodayLine"
 import { QuickBookingModal } from "./QuickBookingModal"
 import { BookingDetailModal } from "./BookingDetailModal"
-import { Loader2, GripHorizontal, Bed, DollarSign } from "lucide-react"
+import { MobileBookingList } from "./MobileBookingList"
+import { Loader2, GripHorizontal, Bed, DollarSign, Menu, X } from "lucide-react"
 import clsx from "clsx"
 
 export function BookingGrid() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // Use CSS-based responsive hooks
+  const { isMobile, isTablet, isDesktop, isTouchDevice } = useBreakpoints()
+
+  // Swipe handlers for tablet view
+  const swipeRef = useSwipe<HTMLDivElement>({
+    onSwipeLeft: isTablet ? handleNext : undefined,
+    onSwipeRight: isTablet ? handlePrevious : undefined,
+    threshold: 75
+  })
 
   // Modal state
   const [quickBookingModal, setQuickBookingModal] = useState<{
@@ -123,6 +137,13 @@ export function BookingGrid() {
     createDragImageContainer()
   }, [createDragImageContainer])
 
+  // Close sidebar when resizing to desktop
+  useEffect(() => {
+    if (isDesktop) {
+      setIsSidebarOpen(false)
+    }
+  }, [isDesktop])
+
   // Navigation handlers - use full week jump and full month jump
   // Because startOfWeek/startOfMonth snap to period boundaries
   const handlePrevious = () => {
@@ -208,7 +229,7 @@ export function BookingGrid() {
   const isLoading = roomsLoading || bookingsLoading
 
   return (
-    <div className="flex flex-col h-full bg-neutral-50 dark:bg-dark-1">
+    <div className="flex flex-col h-screen bg-neutral-50 dark:bg-dark-1 overflow-hidden">
       {/* Header */}
       <GridHeader
         currentDate={currentDate}
@@ -221,24 +242,29 @@ export function BookingGrid() {
         onToday={handleToday}
         onViewModeChange={handleViewModeChange}
         onAddBooking={handleAddBooking}
+        isMobileView={isMobile}
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        isMenuOpen={isSidebarOpen}
       />
 
-      {/* Grid Controls */}
-      <GridControls
-        searchTerm={filters.searchTerm}
-        onSearchChange={handleSearchChange}
-        statusFilters={filters.statusFilters}
-        onStatusFilterChange={handleStatusFilterChange}
-        roomTypeFilters={filters.roomTypeFilters}
-        onRoomTypeFilterChange={handleRoomTypeFilterChange}
-        availableRoomTypes={availableRoomTypes}
-        totalBookings={filteredStats.totalBookings}
-        occupancyRate={filteredStats.occupancyRate}
-        onClearAllFilters={handleClearAllFilters}
-      />
+      {/* Grid Controls - hide on mobile using CSS */}
+      <div className="hidden md:block">
+        <GridControls
+          searchTerm={filters.searchTerm}
+          onSearchChange={handleSearchChange}
+          statusFilters={filters.statusFilters}
+          onStatusFilterChange={handleStatusFilterChange}
+          roomTypeFilters={filters.roomTypeFilters}
+          onRoomTypeFilterChange={handleRoomTypeFilterChange}
+          availableRoomTypes={availableRoomTypes}
+          totalBookings={filteredStats.totalBookings}
+          occupancyRate={filteredStats.occupancyRate}
+          onClearAllFilters={handleClearAllFilters}
+        />
+      </div>
 
       {/* Grid container */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -246,50 +272,76 @@ export function BookingGrid() {
               <p className="text-neutral-600 dark:text-neutral-400">Loading bookings...</p>
             </div>
           </div>
-        ) : filteredRooms.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center max-w-md">
-              <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
-                {allRooms.length === 0
-                  ? "No rooms available. Please add rooms to start managing bookings."
-                  : "No rooms match your current filters. Try adjusting your search criteria."
-                }
-              </p>
-            </div>
-          </div>
         ) : (
-          <div className="flex-1 relative overflow-hidden">
-            <div className="absolute inset-0 flex">
-              {/* Sticky room sidebar */}
-              <div className="w-48 flex-shrink-0 overflow-y-auto overflow-x-hidden bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600">
+          <>
+            {/* Mobile view - vertical list */}
+            <div className="block md:hidden h-full overflow-y-auto">
+              <MobileBookingList
+                rooms={filteredRooms}
+                bookings={filteredBookings}
+                viewStart={viewStart}
+                viewEnd={viewEnd}
+                onBookingClick={handleBookingClick}
+                onEmptyClick={handleEmptyClick}
+                selectedBookingId={selectedBookingId}
+              />
+            </div>
+            {/* Desktop/Tablet view - grid */}
+            <div className="hidden md:block h-full overflow-hidden">
+              {filteredRooms.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center max-w-md">
+                    <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
+                      {allRooms.length === 0
+                        ? "No rooms available. Please add rooms to start managing bookings."
+                        : "No rooms match your current filters. Try adjusting your search criteria."
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative h-full">
+                  <div className="absolute inset-0 flex overflow-hidden">
+              {/* Sticky room sidebar - pinned on tablets */}
+              <div className={clsx(
+                "flex-shrink-0 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transition-all duration-300",
+                "md:sticky md:left-0 md:w-32 lg:w-48",
+                "overflow-y-auto overflow-x-hidden",
+                {
+                  "fixed inset-y-0 left-0 z-40 w-64": isSidebarOpen && isMobile,
+                }
+              )}>
                 {/* Spacer for header */}
                 <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
 
-                {/* Room list */}
+                {/* Room list - responsive layout */}
                 {filteredRooms.map((room) => (
-                  <div key={room.id} className="h-16 border-b border-neutral-200 dark:border-neutral-700 p-3">
+                  <div key={room.id} className={clsx(
+                    "border-b border-neutral-200 dark:border-neutral-700 p-2 md:p-3",
+                    "h-16 md:h-16 lg:h-16" // Consistent heights across breakpoints
+                  )}>
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1 md:gap-2 mb-1">
+                            <h3 className="font-semibold text-sm md:text-base text-neutral-900 dark:text-white truncate">
                               {formatRoomName(room)}
                             </h3>
-                            <span className={clsx("text-xs px-2 py-0.5 rounded-full", getRoomTypeColor(room.room_type))}>
+                            <span className={clsx("text-xs px-2 py-0.5 rounded-full hidden lg:inline-block", getRoomTypeColor(room.room_type))}>
                               {room.room_type}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+                          <div className="flex items-center gap-2 md:gap-3 text-xs text-neutral-500 dark:text-neutral-400">
                             <div className="flex items-center gap-1">
                               <Bed className="w-3 h-3" />
-                              <span>{room.capacity}</span>
+                              <span className="hidden md:inline">{room.capacity}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
-                              <span>${room.price_per_night}</span>
+                              <span className="hidden lg:inline">${room.price_per_night}</span>
                             </div>
                           </div>
                         </div>
-                        <div className={clsx("text-xs px-2 py-1 rounded", getRoomStatusColor(room.status))}>
+                        <div className={clsx("text-xs px-1 md:px-2 py-0.5 md:py-1 rounded hidden md:block", getRoomStatusColor(room.status))}>
                           {room.status.replace("_", " ")}
                         </div>
                       </div>
@@ -297,9 +349,12 @@ export function BookingGrid() {
                 ))}
               </div>
 
-              {/* Scrollable timeline area */}
-              <div className="flex-1 overflow-auto">
-                <div className="min-w-[1000px]">
+              {/* Scrollable timeline area - swipeable on tablets */}
+              <div
+                className="flex-1 overflow-x-auto overflow-y-auto touch-pan-x"
+                ref={swipeRef}
+              >
+                <div className="min-w-[800px] md:min-w-[1200px] lg:min-w-[1000px]">
                   {/* Time scale header */}
                   <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
                     <TimeScale viewStart={viewStart} viewEnd={viewEnd} viewMode={viewMode} />
@@ -331,13 +386,26 @@ export function BookingGrid() {
                         isDraggedBooking={(id) => dragState.draggedBooking?.id === id}
                         isDropTarget={dragState.dragOverRoomId === room.id}
                         isValidDropTarget={dragState.dragOverRoomId === room.id && dragState.isValidDrop}
+                        isTouchDevice={isTouchDevice}
                       />
                     ))}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile sidebar overlay */}
+            {isSidebarOpen && isMobile && (
+              <div
+                className="fixed inset-0 bg-black/50 z-30"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+          </>
         )}
       </div>
 

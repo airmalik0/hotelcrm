@@ -17,7 +17,9 @@ export function filterBookings(
     // Search term filter - search across guest name, room number, and booking ID
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase()
-      const guestName = booking.customer?.full_name?.toLowerCase() || ""
+      const guestName = booking.customer
+        ? `${booking.customer.first_name} ${booking.customer.last_name}`.toLowerCase()
+        : ""
       const roomNumber = booking.room?.room_number?.toLowerCase() || ""
       const bookingId = booking.id.toLowerCase()
 
@@ -94,7 +96,9 @@ export function getSearchSuggestions(
 
   bookings.forEach(booking => {
     // Guest names
-    const guestName = booking.customer?.full_name
+    const guestName = booking.customer
+      ? `${booking.customer.first_name} ${booking.customer.last_name}`
+      : null
     if (guestName && guestName.toLowerCase().includes(term) && !suggestions.has(guestName)) {
       suggestions.add(guestName)
       results.push({ type: 'guest', value: guestName })

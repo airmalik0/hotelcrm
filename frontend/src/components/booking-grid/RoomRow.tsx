@@ -22,6 +22,7 @@ interface RoomRowProps {
   isDraggedBooking?: (bookingId: string) => boolean
   isDropTarget?: boolean
   isValidDropTarget?: boolean
+  isTouchDevice?: boolean
 }
 
 export const RoomRow = memo(function RoomRow({
@@ -42,6 +43,7 @@ export const RoomRow = memo(function RoomRow({
   isDraggedBooking,
   isDropTarget = false,
   isValidDropTarget = false,
+  isTouchDevice = false,
 }: RoomRowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -70,15 +72,19 @@ export const RoomRow = memo(function RoomRow({
     <div
       ref={containerRef}
       className={clsx(
-        "relative h-16 cursor-pointer room-drop-zone border-b border-neutral-200 dark:border-neutral-700 transition-colors",
+        "relative cursor-pointer room-drop-zone border-b border-neutral-200 dark:border-neutral-700 transition-colors",
+        // CSS-based responsive height
+        "h-20 md:h-16",
+        // Touch-friendly interaction
+        "touch-manipulation",
         isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-900/20",
         isDropTarget && !isValidDropTarget && "bg-red-50 dark:bg-red-900/20",
         !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3"
       )}
       onClick={handleEmptyClick}
-      onDragOver={(e) => onRoomDragOver?.(e, room)}
-      onDragLeave={onRoomDragLeave}
-      onDrop={(e) => onRoomDrop?.(e, room)}
+      onDragOver={(e) => !isTouchDevice && onRoomDragOver?.(e, room)}
+      onDragLeave={!isTouchDevice ? onRoomDragLeave : undefined}
+      onDrop={(e) => !isTouchDevice && onRoomDrop?.(e, room)}
     >
       {/* Render bookings */}
       {bookings.map((booking) => {
@@ -100,12 +106,13 @@ export const RoomRow = memo(function RoomRow({
             booking={booking}
             position={position}
             onClick={onBookingClick}
-            onMouseEnter={onBookingHover}
-            onMouseLeave={onBookingLeave}
-            onDragStart={onBookingDragStart}
-            onDragEnd={onBookingDragEnd}
-            isDragging={isDraggedBooking?.(booking.id) || false}
+            onMouseEnter={!isTouchDevice ? onBookingHover : undefined}
+            onMouseLeave={!isTouchDevice ? onBookingLeave : undefined}
+            onDragStart={!isTouchDevice ? onBookingDragStart : undefined}
+            onDragEnd={!isTouchDevice ? onBookingDragEnd : undefined}
+            isDragging={!isTouchDevice && (isDraggedBooking?.(booking.id) || false)}
             isSelected={booking.id === selectedBookingId}
+            isTouchDevice={isTouchDevice}
           />
         )
       })}
