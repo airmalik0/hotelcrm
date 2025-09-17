@@ -1,10 +1,18 @@
-import { memo, useState } from "react"
 import type { BookingStatus } from "@/client/types.gen"
-import {
-  Search, Users, Bed, BarChart3,
-  CheckCircle, Clock, LogOut, XCircle, X, ChevronDown
-} from "lucide-react"
 import clsx from "clsx"
+import {
+  BarChart3,
+  Bed,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  LogOut,
+  Search,
+  Users,
+  X,
+  XCircle,
+} from "lucide-react"
+import { memo, useState } from "react"
 
 interface GridControlsProps {
   searchTerm: string
@@ -22,23 +30,27 @@ interface GridControlsProps {
 const statusConfig = {
   confirmed: {
     icon: CheckCircle,
-    color: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-600/25 dark:text-emerald-400 dark:border-emerald-600/50",
-    label: "Confirmed"
+    color:
+      "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-600/25 dark:text-emerald-400 dark:border-emerald-600/50",
+    label: "Confirmed",
   },
   checked_in: {
     icon: Clock,
-    color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/25 dark:text-blue-400 dark:border-blue-600/50",
-    label: "Checked In"
+    color:
+      "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/25 dark:text-blue-400 dark:border-blue-600/50",
+    label: "Checked In",
   },
   checked_out: {
     icon: LogOut,
-    color: "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-600/25 dark:text-violet-400 dark:border-violet-600/50",
-    label: "Checked Out"
+    color:
+      "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-600/25 dark:text-violet-400 dark:border-violet-600/50",
+    label: "Checked Out",
   },
   cancelled: {
     icon: XCircle,
-    color: "bg-red-100 text-red-700 border-red-200 dark:bg-red-600/25 dark:text-red-400 dark:border-red-600/50",
-    label: "Cancelled"
+    color:
+      "bg-red-100 text-red-700 border-red-200 dark:bg-red-600/25 dark:text-red-400 dark:border-red-600/50",
+    label: "Cancelled",
   },
 }
 
@@ -56,11 +68,14 @@ export const GridControls = memo(function GridControls({
 }: GridControlsProps) {
   const [showRoomTypeFilter, setShowRoomTypeFilter] = useState(false)
 
-  const hasActiveFilters = statusFilters.length > 0 || roomTypeFilters.length > 0 || searchTerm.length > 0
+  const hasActiveFilters =
+    statusFilters.length > 0 ||
+    roomTypeFilters.length > 0 ||
+    searchTerm.length > 0
 
   const toggleStatusFilter = (status: BookingStatus) => {
     if (statusFilters.includes(status)) {
-      onStatusFilterChange(statusFilters.filter(s => s !== status))
+      onStatusFilterChange(statusFilters.filter((s) => s !== status))
     } else {
       onStatusFilterChange([...statusFilters, status])
     }
@@ -68,12 +83,11 @@ export const GridControls = memo(function GridControls({
 
   const toggleRoomTypeFilter = (roomType: string) => {
     if (roomTypeFilters.includes(roomType)) {
-      onRoomTypeFilterChange(roomTypeFilters.filter(t => t !== roomType))
+      onRoomTypeFilterChange(roomTypeFilters.filter((t) => t !== roomType))
     } else {
       onRoomTypeFilterChange([...roomTypeFilters, roomType])
     }
   }
-
 
   return (
     <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-3 md:px-4 py-2 md:py-3 overflow-x-auto">
@@ -106,7 +120,7 @@ export const GridControls = memo(function GridControls({
                     "px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1 md:gap-1.5",
                     isActive
                       ? config.color
-                      : "bg-white dark:bg-dark-3 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-dark-2"
+                      : "bg-white dark:bg-dark-3 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-dark-2",
                   )}
                   title={config.label}
                 >
@@ -125,7 +139,7 @@ export const GridControls = memo(function GridControls({
                 "px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-2",
                 roomTypeFilters.length > 0
                   ? "bg-primary-100 dark:bg-primary-600/25 border-primary-300 dark:border-primary-600/50 text-primary-700 dark:text-primary-400"
-                  : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2"
+                  : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
               )}
             >
               <Bed className="w-4 h-4" />
@@ -149,15 +163,17 @@ export const GridControls = memo(function GridControls({
                         "w-full px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
                         roomTypeFilters.includes(roomType)
                           ? "bg-primary-100 dark:bg-primary-600/25 text-primary-700 dark:text-primary-400"
-                          : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3"
+                          : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
                       )}
                     >
-                      <div className={clsx(
-                        "w-3 h-3 rounded border-2 flex items-center justify-center",
-                        roomTypeFilters.includes(roomType)
-                          ? "border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400"
-                          : "border-neutral-300 dark:border-neutral-600"
-                      )}>
+                      <div
+                        className={clsx(
+                          "w-3 h-3 rounded border-2 flex items-center justify-center",
+                          roomTypeFilters.includes(roomType)
+                            ? "border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400"
+                            : "border-neutral-300 dark:border-neutral-600",
+                        )}
+                      >
                         {roomTypeFilters.includes(roomType) && (
                           <div className="w-1.5 h-1.5 bg-white dark:bg-neutral-900 rounded-full" />
                         )}
@@ -169,7 +185,6 @@ export const GridControls = memo(function GridControls({
               </div>
             )}
           </div>
-
 
           {/* Clear Filters */}
           {hasActiveFilters && (

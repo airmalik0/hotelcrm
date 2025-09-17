@@ -1,8 +1,20 @@
-import { memo, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createCustomer } from "@/api/customers"
-import type { CustomerCreate, CustomerPublic, District } from "@/client/types.gen"
-import { X, User, Phone, Calendar, MapPin, FileText, Camera } from "lucide-react"
+import type {
+  CustomerCreate,
+  CustomerPublic,
+  District,
+} from "@/client/types.gen"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  Calendar,
+  Camera,
+  FileText,
+  MapPin,
+  Phone,
+  User,
+  X,
+} from "lucide-react"
+import { memo, useState } from "react"
 
 interface CreateCustomerModalProps {
   isOpen: boolean
@@ -11,8 +23,18 @@ interface CreateCustomerModalProps {
 }
 
 const DISTRICTS: District[] = [
-  'Almazar', 'Bektemir', 'Mirabad', 'Mirzo Ulugbek', 'Sergeli', 'Uchtepa',
-  'Chilanzar', 'Shaykhantakhur', 'Yunusabad', 'Yakkasaray', 'Yashnabad', 'Yangihayot'
+  "Almazar",
+  "Bektemir",
+  "Mirabad",
+  "Mirzo Ulugbek",
+  "Sergeli",
+  "Uchtepa",
+  "Chilanzar",
+  "Shaykhantakhur",
+  "Yunusabad",
+  "Yakkasaray",
+  "Yashnabad",
+  "Yangihayot",
 ]
 
 export const CreateCustomerModal = memo(function CreateCustomerModal({
@@ -105,7 +127,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       last_name: formData.last_name.trim(),
       phone: formData.phone.trim() || null,
       date_of_birth: formData.date_of_birth || null,
-      district: formData.district as District || null,
+      district: (formData.district as District) || null,
       notes: formData.notes.trim() || null,
     }
 
@@ -162,16 +184,23 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                 <input
                   type="text"
                   value={formData.first_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      first_name: e.target.value,
+                    }))
+                  }
                   className={`w-full px-3 py-2 border ${
                     errors.first_name
-                      ? 'border-danger-500 focus:ring-danger-500'
-                      : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                      ? "border-danger-500 focus:ring-danger-500"
+                      : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
                   } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
                   placeholder="John"
                 />
                 {errors.first_name && (
-                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.first_name}</p>
+                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                    {errors.first_name}
+                  </p>
                 )}
               </div>
               <div>
@@ -181,16 +210,23 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                 <input
                   type="text"
                   value={formData.last_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      last_name: e.target.value,
+                    }))
+                  }
                   className={`w-full px-3 py-2 border ${
                     errors.last_name
-                      ? 'border-danger-500 focus:ring-danger-500'
-                      : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                      ? "border-danger-500 focus:ring-danger-500"
+                      : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
                   } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
                   placeholder="Doe"
                 />
                 {errors.last_name && (
-                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.last_name}</p>
+                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                    {errors.last_name}
+                  </p>
                 )}
               </div>
             </div>
@@ -210,16 +246,20 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                  }
                   className={`w-full px-3 py-2 border ${
                     errors.phone
-                      ? 'border-danger-500 focus:ring-danger-500'
-                      : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                      ? "border-danger-500 focus:ring-danger-500"
+                      : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
                   } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
                   placeholder="+998901234567"
                 />
                 {errors.phone && (
-                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.phone}</p>
+                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                    {errors.phone}
+                  </p>
                 )}
               </div>
               <div>
@@ -229,7 +269,12 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                 <input
                   type="date"
                   value={formData.date_of_birth}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date_of_birth: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      date_of_birth: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -248,7 +293,12 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               </label>
               <select
                 value={formData.district}
-                onChange={(e) => setFormData(prev => ({ ...prev, district: e.target.value as District | "" }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    district: e.target.value as District | "",
+                  }))
+                }
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Select district</option>
@@ -273,7 +323,9 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               </label>
               <textarea
                 value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, notes: e.target.value }))
+                }
                 rows={3}
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 placeholder="Any special notes about the customer..."

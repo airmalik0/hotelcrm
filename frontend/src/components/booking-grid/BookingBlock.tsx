@@ -1,9 +1,13 @@
-import { memo } from "react"
 import type { BookingPublic } from "@/client/types.gen"
-import { getBookingStatusColor, getBookingHoverColor, getBookingIndicatorColor } from "@/utils/booking-colors"
+import {
+  getBookingHoverColor,
+  getBookingIndicatorColor,
+  getBookingStatusColor,
+} from "@/utils/booking-colors"
 import { getGuestInitials } from "@/utils/booking-grid"
 import { formatDuration } from "@/utils/date-helpers"
 import clsx from "clsx"
+import { memo } from "react"
 
 interface BookingBlockProps {
   booking: BookingPublic
@@ -47,16 +51,18 @@ export const BookingBlock = memo(function BookingBlock({
   const indicatorColor = getBookingIndicatorColor(booking.status || "confirmed")
 
   // Calculate if we should show full name or initials based on width
-  const widthPercent = parseFloat(position.width)
+  const widthPercent = Number.parseFloat(position.width)
   const showFullName = widthPercent > 10 // Show full name if width > 10%
   const showInitials = widthPercent > 1.5 // Show initials if width > 1.5%
   const showStatusDot = widthPercent > 0.8 // Show status dot if width > 0.8%
 
   // Adaptive padding based on width
-  const paddingClass = widthPercent < 2 ? "px-0.5" : widthPercent < 5 ? "px-1" : "px-2"
+  const paddingClass =
+    widthPercent < 2 ? "px-0.5" : widthPercent < 5 ? "px-1" : "px-2"
 
   // Only allow dragging for confirmed bookings (not checked in/out) and not on touch devices
-  const canDrag = isDraggable && booking.status === "confirmed" && !isTouchDevice
+  const canDrag =
+    isDraggable && booking.status === "confirmed" && !isTouchDevice
 
   return (
     <div
@@ -74,7 +80,7 @@ export const BookingBlock = memo(function BookingBlock({
         canDrag && "cursor-move",
         !canDrag && "cursor-pointer",
         isDragging && "opacity-50 cursor-grabbing",
-        isSelected && "ring-2 ring-primary-500 ring-offset-1"
+        isSelected && "ring-2 ring-primary-500 ring-offset-1",
       )}
       style={{
         left: position.left,
@@ -93,7 +99,9 @@ export const BookingBlock = memo(function BookingBlock({
     >
       {/* Status indicator dot - only show if there's enough space */}
       {showStatusDot && (
-        <div className={clsx("w-2 h-2 rounded-full flex-shrink-0", indicatorColor)} />
+        <div
+          className={clsx("w-2 h-2 rounded-full flex-shrink-0", indicatorColor)}
+        />
       )}
 
       {/* Guest name or initials - only show if there's enough space */}

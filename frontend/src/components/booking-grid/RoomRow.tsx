@@ -1,8 +1,11 @@
-import { memo, useRef } from "react"
-import type { RoomPublic, BookingPublic } from "@/client/types.gen"
-import { BookingBlock } from "./BookingBlock"
-import { calculateBookingPosition, getBookingTimesFromClick } from "@/utils/date-helpers"
+import type { BookingPublic, RoomPublic } from "@/client/types.gen"
+import {
+  calculateBookingPosition,
+  getBookingTimesFromClick,
+} from "@/utils/date-helpers"
 import clsx from "clsx"
+import { memo, useRef } from "react"
+import { BookingBlock } from "./BookingBlock"
 
 interface RoomRowProps {
   room: RoomPublic
@@ -62,7 +65,7 @@ export const RoomRow = memo(function RoomRow({
       clickX,
       containerWidth,
       viewStart,
-      viewEnd
+      viewEnd,
     )
 
     onEmptyClick(room, checkIn, checkOut)
@@ -79,7 +82,7 @@ export const RoomRow = memo(function RoomRow({
         "touch-manipulation",
         isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-900/20",
         isDropTarget && !isValidDropTarget && "bg-red-50 dark:bg-red-900/20",
-        !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3"
+        !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3",
       )}
       onClick={handleEmptyClick}
       onDragOver={(e) => !isTouchDevice && onRoomDragOver?.(e, room)}
@@ -92,7 +95,7 @@ export const RoomRow = memo(function RoomRow({
           booking.check_in,
           booking.check_out,
           viewStart,
-          viewEnd
+          viewEnd,
         )
 
         // Skip bookings completely outside the view
@@ -110,7 +113,9 @@ export const RoomRow = memo(function RoomRow({
             onMouseLeave={!isTouchDevice ? onBookingLeave : undefined}
             onDragStart={!isTouchDevice ? onBookingDragStart : undefined}
             onDragEnd={!isTouchDevice ? onBookingDragEnd : undefined}
-            isDragging={!isTouchDevice && (isDraggedBooking?.(booking.id) || false)}
+            isDragging={
+              !isTouchDevice && (isDraggedBooking?.(booking.id) || false)
+            }
             isSelected={booking.id === selectedBookingId}
             isTouchDevice={isTouchDevice}
           />

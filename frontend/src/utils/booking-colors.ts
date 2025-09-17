@@ -47,10 +47,14 @@ export function getBookingIndicatorColor(status: BookingStatus): string {
  */
 export function getRoomStatusColor(status: string): string {
   const colors: Record<string, string> = {
-    AVAILABLE: "bg-green-100 dark:bg-green-600/25 text-green-700 dark:text-green-400",
-    OCCUPIED: "bg-blue-100 dark:bg-blue-600/25 text-blue-700 dark:text-blue-400",
-    CLEANING: "bg-yellow-100 dark:bg-yellow-600/25 text-yellow-700 dark:text-yellow-400",
-    MAINTENANCE: "bg-gray-100 dark:bg-gray-600/25 text-gray-700 dark:text-gray-400",
+    AVAILABLE:
+      "bg-green-100 dark:bg-green-600/25 text-green-700 dark:text-green-400",
+    OCCUPIED:
+      "bg-blue-100 dark:bg-blue-600/25 text-blue-700 dark:text-blue-400",
+    CLEANING:
+      "bg-yellow-100 dark:bg-yellow-600/25 text-yellow-700 dark:text-yellow-400",
+    MAINTENANCE:
+      "bg-gray-100 dark:bg-gray-600/25 text-gray-700 dark:text-gray-400",
   }
 
   return colors[status] || colors.AVAILABLE
@@ -61,9 +65,11 @@ export function getRoomStatusColor(status: string): string {
  */
 export function getRoomTypeColor(type: string): string {
   const colors: Record<string, string> = {
-    STANDARD: "bg-gray-100 dark:bg-gray-600/25 text-gray-700 dark:text-gray-400",
+    STANDARD:
+      "bg-gray-100 dark:bg-gray-600/25 text-gray-700 dark:text-gray-400",
     VIP: "bg-purple-100 dark:bg-purple-600/25 text-purple-700 dark:text-purple-400",
-    SUITE: "bg-indigo-100 dark:bg-indigo-600/25 text-indigo-700 dark:text-indigo-400",
+    SUITE:
+      "bg-indigo-100 dark:bg-indigo-600/25 text-indigo-700 dark:text-indigo-400",
     DELUXE: "bg-cyan-100 dark:bg-cyan-600/25 text-cyan-700 dark:text-cyan-400",
   }
 
@@ -73,7 +79,10 @@ export function getRoomTypeColor(type: string): string {
 /**
  * Get drag state classes
  */
-export function getDragStateClasses(isDragging: boolean, isValidDrop: boolean): string {
+export function getDragStateClasses(
+  isDragging: boolean,
+  isValidDrop: boolean,
+): string {
   if (!isDragging) return ""
 
   if (isValidDrop) {

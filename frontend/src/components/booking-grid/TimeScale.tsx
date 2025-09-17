@@ -1,7 +1,7 @@
-import { memo, useEffect, useRef, useState } from "react"
 import { generateTimeScale } from "@/utils/date-helpers"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
+import { memo, useEffect, useRef, useState } from "react"
 
 interface TimeScaleProps {
   viewStart: Date
@@ -9,7 +9,11 @@ interface TimeScaleProps {
   viewMode: ViewMode
 }
 
-export const TimeScale = memo(function TimeScale({ viewStart, viewEnd, viewMode }: TimeScaleProps) {
+export const TimeScale = memo(function TimeScale({
+  viewStart,
+  viewEnd,
+  viewMode,
+}: TimeScaleProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>()
 
@@ -28,10 +32,18 @@ export const TimeScale = memo(function TimeScale({ viewStart, viewEnd, viewMode 
     return () => resizeObserver.disconnect()
   }, [])
 
-  const markers = generateTimeScale(viewStart, viewEnd, viewMode, containerWidth)
+  const markers = generateTimeScale(
+    viewStart,
+    viewEnd,
+    viewMode,
+    containerWidth,
+  )
 
   return (
-    <div ref={containerRef} className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2">
+    <div
+      ref={containerRef}
+      className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2"
+    >
       {/* Time markers */}
       {markers.map((marker, index) => (
         <div
@@ -45,7 +57,7 @@ export const TimeScale = memo(function TimeScale({ viewStart, viewEnd, viewMode 
               "absolute top-full w-px h-screen pointer-events-none",
               marker.isToday
                 ? "bg-primary-500 dark:bg-primary-400 z-10"
-                : "bg-neutral-200 dark:bg-neutral-700"
+                : "bg-neutral-200 dark:bg-neutral-700",
             )}
           />
 
@@ -55,7 +67,7 @@ export const TimeScale = memo(function TimeScale({ viewStart, viewEnd, viewMode 
               "px-2 text-xs font-medium whitespace-nowrap",
               marker.isToday
                 ? "text-primary-600 dark:text-primary-400"
-                : "text-neutral-600 dark:text-neutral-400"
+                : "text-neutral-600 dark:text-neutral-400",
             )}
           >
             {marker.label}

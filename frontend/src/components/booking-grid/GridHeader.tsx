@@ -1,8 +1,15 @@
-import { memo } from "react"
-import { format } from "date-fns"
-import { ChevronLeft, ChevronRight, Calendar, Plus, LayoutGrid, CalendarDays } from "lucide-react"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
+import { format } from "date-fns"
+import {
+  Calendar,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  Plus,
+} from "lucide-react"
+import { memo } from "react"
 
 interface GridHeaderProps {
   currentDate: Date
@@ -87,9 +94,11 @@ export const GridHeader = memo(function GridHeader({
                 <div
                   className={clsx(
                     "h-full transition-all duration-300",
-                    occupancyRate >= 80 ? "bg-red-500" :
-                    occupancyRate >= 60 ? "bg-yellow-500" :
-                    "bg-green-500"
+                    occupancyRate >= 80
+                      ? "bg-red-500"
+                      : occupancyRate >= 60
+                        ? "bg-yellow-500"
+                        : "bg-green-500",
                   )}
                   style={{ width: `${occupancyRate}%` }}
                 />
@@ -142,15 +151,19 @@ export const GridHeader = memo(function GridHeader({
 
           {/* Center - Occupancy */}
           <div className="flex items-center gap-1 md:gap-2">
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">Occupancy:</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+              Occupancy:
+            </span>
             <div className="flex items-center gap-1">
               <div className="w-20 md:w-32 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                 <div
                   className={clsx(
                     "h-full transition-all duration-300",
-                    occupancyRate >= 80 ? "bg-red-500" :
-                    occupancyRate >= 60 ? "bg-yellow-500" :
-                    "bg-green-500"
+                    occupancyRate >= 80
+                      ? "bg-red-500"
+                      : occupancyRate >= 60
+                        ? "bg-yellow-500"
+                        : "bg-green-500",
                   )}
                   style={{ width: `${occupancyRate}%` }}
                 />
@@ -171,7 +184,7 @@ export const GridHeader = memo(function GridHeader({
                   "px-2 md:px-3 py-1.5 md:py-2 text-sm font-medium transition-colors flex items-center gap-1",
                   viewMode === "week"
                     ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
-                    : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400"
+                    : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400",
                 )}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -183,7 +196,7 @@ export const GridHeader = memo(function GridHeader({
                   "px-2 md:px-3 py-1.5 md:py-2 text-sm font-medium transition-colors flex items-center gap-1 border-l border-neutral-200 dark:border-neutral-600",
                   viewMode === "month"
                     ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
-                    : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400"
+                    : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400",
                 )}
               >
                 <CalendarDays className="w-4 h-4" />

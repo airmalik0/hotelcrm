@@ -1,18 +1,18 @@
 import {
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
   addDays,
   addHours,
   differenceInHours,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
   format,
   isSameDay,
+  isWithinInterval,
   setHours,
   setMinutes,
-  isWithinInterval,
   startOfDay,
-  endOfDay,
+  startOfMonth,
+  startOfWeek,
 } from "date-fns"
 
 export type ViewMode = "week" | "month"
@@ -52,7 +52,7 @@ export function calculateBookingPosition(
   checkIn: string | Date,
   checkOut: string | Date,
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ) {
   const bookingStart = new Date(checkIn)
   const bookingEnd = new Date(checkOut)
@@ -61,12 +61,16 @@ export function calculateBookingPosition(
   const totalMs = viewEndTime - viewStartTime
 
   // Skip bookings completely outside the view
-  if (bookingEnd.getTime() <= viewStartTime || bookingStart.getTime() >= viewEndTime) {
+  if (
+    bookingEnd.getTime() <= viewStartTime ||
+    bookingStart.getTime() >= viewEndTime
+  ) {
     return null
   }
 
   // Calculate left position
-  const startMs = Math.max(bookingStart.getTime(), viewStartTime) - viewStartTime
+  const startMs =
+    Math.max(bookingStart.getTime(), viewStartTime) - viewStartTime
   const left = (startMs / totalMs) * 100
 
   // Calculate width
@@ -88,7 +92,7 @@ export function generateTimeScale(
   viewStart: Date,
   viewEnd: Date,
   view: ViewMode,
-  containerWidth?: number
+  containerWidth?: number,
 ) {
   const markers = []
   const totalHours = getViewTotalHours(viewStart, viewEnd)
@@ -148,7 +152,7 @@ export function getBookingTimesFromClick(
   clickX: number,
   containerWidth: number,
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ) {
   const percentage = clickX / containerWidth
   const totalHours = getViewTotalHours(viewStart, viewEnd)
@@ -168,7 +172,7 @@ export function getBookingTimesFromClick(
  */
 export function bookingsOverlap(
   booking1: { check_in: string | Date; check_out: string | Date },
-  booking2: { check_in: string | Date; check_out: string | Date }
+  booking2: { check_in: string | Date; check_out: string | Date },
 ): boolean {
   const start1 = new Date(booking1.check_in)
   const end1 = new Date(booking1.check_out)
@@ -185,7 +189,7 @@ export function isBookingInView(
   checkIn: string | Date,
   checkOut: string | Date,
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ): boolean {
   const bookingStart = new Date(checkIn)
   const bookingEnd = new Date(checkOut)
@@ -196,24 +200,30 @@ export function isBookingInView(
 /**
  * Format duration for display
  */
-export function formatDuration(checkIn: string | Date, checkOut: string | Date): string {
+export function formatDuration(
+  checkIn: string | Date,
+  checkOut: string | Date,
+): string {
   const hours = differenceInHours(new Date(checkOut), new Date(checkIn))
   const days = Math.floor(hours / 24)
   const remainingHours = hours % 24
 
   if (days === 0) {
     return `${hours}h`
-  } else if (remainingHours === 0) {
-    return `${days}d`
-  } else {
-    return `${days}d ${remainingHours}h`
   }
+  if (remainingHours === 0) {
+    return `${days}d`
+  }
+  return `${days}d ${remainingHours}h`
 }
 
 /**
  * Get current time position as percentage
  */
-export function getCurrentTimePosition(viewStart: Date, viewEnd: Date): string | null {
+export function getCurrentTimePosition(
+  viewStart: Date,
+  viewEnd: Date,
+): string | null {
   const now = new Date()
 
   if (now < viewStart || now > viewEnd) {

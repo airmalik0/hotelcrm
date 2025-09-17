@@ -1,11 +1,11 @@
-import { apiClient } from "@/lib/axios"
 import type {
   BookingCreate,
   BookingPublic,
-  BookingsPublic,
-  BookingUpdate,
   BookingStatus,
+  BookingUpdate,
+  BookingsPublic,
 } from "@/client/types.gen"
+import { apiClient } from "@/lib/axios"
 
 interface GetBookingsParams {
   skip?: number
@@ -17,8 +17,12 @@ interface GetBookingsParams {
   date_to?: string
 }
 
-export async function getBookings(params?: GetBookingsParams): Promise<BookingsPublic> {
-  const response = await apiClient.get<BookingsPublic>("/api/v1/bookings/", { params })
+export async function getBookings(
+  params?: GetBookingsParams,
+): Promise<BookingsPublic> {
+  const response = await apiClient.get<BookingsPublic>("/api/v1/bookings/", {
+    params,
+  })
   return response.data
 }
 
@@ -27,13 +31,24 @@ export async function getBooking(id: string): Promise<BookingPublic> {
   return response.data
 }
 
-export async function createBooking(data: BookingCreate): Promise<BookingPublic> {
-  const response = await apiClient.post<BookingPublic>("/api/v1/bookings/", data)
+export async function createBooking(
+  data: BookingCreate,
+): Promise<BookingPublic> {
+  const response = await apiClient.post<BookingPublic>(
+    "/api/v1/bookings/",
+    data,
+  )
   return response.data
 }
 
-export async function updateBooking(id: string, data: BookingUpdate): Promise<BookingPublic> {
-  const response = await apiClient.put<BookingPublic>(`/api/v1/bookings/${id}`, data)
+export async function updateBooking(
+  id: string,
+  data: BookingUpdate,
+): Promise<BookingPublic> {
+  const response = await apiClient.put<BookingPublic>(
+    `/api/v1/bookings/${id}`,
+    data,
+  )
   return response.data
 }
 
@@ -42,11 +57,15 @@ export async function deleteBooking(id: string): Promise<void> {
 }
 
 export async function checkInBooking(id: string): Promise<BookingPublic> {
-  const response = await apiClient.post<BookingPublic>(`/api/v1/bookings/${id}/check-in`)
+  const response = await apiClient.post<BookingPublic>(
+    `/api/v1/bookings/${id}/check-in`,
+  )
   return response.data
 }
 
 export async function checkOutBooking(id: string): Promise<BookingPublic> {
-  const response = await apiClient.post<BookingPublic>(`/api/v1/bookings/${id}/check-out`)
+  const response = await apiClient.post<BookingPublic>(
+    `/api/v1/bookings/${id}/check-out`,
+  )
   return response.data
 }

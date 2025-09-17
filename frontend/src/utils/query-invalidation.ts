@@ -17,7 +17,7 @@ export function invalidateBookingRelated(
     bookingId?: string
     roomId?: string
     customerId?: string
-  }
+  },
 ) {
   const {
     includeRooms = true,
@@ -59,7 +59,7 @@ export function invalidateBookingRelated(
 export function invalidateAfterCheckIn(
   queryClient: QueryClient,
   bookingId: string,
-  roomId?: string
+  roomId?: string,
 ) {
   invalidateBookingRelated(queryClient, {
     includeRooms: true,
@@ -76,7 +76,7 @@ export function invalidateAfterCheckIn(
 export function invalidateAfterCheckOut(
   queryClient: QueryClient,
   bookingId: string,
-  roomId?: string
+  roomId?: string,
 ) {
   invalidateBookingRelated(queryClient, {
     includeRooms: true,
@@ -93,7 +93,7 @@ export function invalidateAfterCheckOut(
 export function invalidateAfterBookingCreate(
   queryClient: QueryClient,
   customerId: string,
-  roomId?: string
+  roomId?: string,
 ) {
   invalidateBookingRelated(queryClient, {
     includeRooms: false, // Room status doesn't change on create (only on check-in)
@@ -113,7 +113,7 @@ export function invalidateAfterBookingCancel(
   bookingId: string,
   customerId: string,
   roomId?: string,
-  wasCheckedIn?: boolean
+  wasCheckedIn?: boolean,
 ) {
   invalidateBookingRelated(queryClient, {
     includeRooms: wasCheckedIn || false, // Room changes only if was checked in
@@ -138,7 +138,7 @@ export function invalidateAfterBookingUpdate(
     newRoomId?: string
     oldCustomerId?: string
     newCustomerId?: string
-  }
+  },
 ) {
   const {
     roomChanged = false,

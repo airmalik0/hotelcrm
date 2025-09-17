@@ -1,19 +1,36 @@
-import { memo, useState, useEffect } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { format } from "date-fns"
-import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
-import { getBooking, updateBooking, deleteBooking, checkInBooking, checkOutBooking } from "@/api/bookings"
 import {
-  invalidateAfterCheckIn,
-  invalidateAfterCheckOut,
+  checkInBooking,
+  checkOutBooking,
+  deleteBooking,
+  getBooking,
+  updateBooking,
+} from "@/api/bookings"
+import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
+import {
   invalidateAfterBookingCancel,
   invalidateAfterBookingUpdate,
+  invalidateAfterCheckIn,
+  invalidateAfterCheckOut,
 } from "@/utils/query-invalidation"
-import {
-  X, Calendar, Clock, User, DollarSign, CreditCard,
-  CheckCircle, XCircle, LogIn, LogOut, Trash2, Edit2, Save
-} from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
+import { format } from "date-fns"
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Edit2,
+  LogIn,
+  LogOut,
+  Save,
+  Trash2,
+  User,
+  X,
+  XCircle,
+} from "lucide-react"
+import { memo, useEffect, useState } from "react"
 
 interface BookingDetailModalProps {
   isOpen: boolean
@@ -46,7 +63,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   // Fetch booking details
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", bookingId],
-    queryFn: () => bookingId ? getBooking(bookingId) : null,
+    queryFn: () => (bookingId ? getBooking(bookingId) : null),
     enabled: !!bookingId && isOpen,
   })
 
@@ -69,7 +86,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     onSuccess: (updatedBooking) => {
       // Check what changed to properly invalidate
       const roomChanged = booking?.room_id !== updatedBooking.room_id
-      const customerChanged = booking?.customer_id !== updatedBooking.customer_id
+      const customerChanged =
+        booking?.customer_id !== updatedBooking.customer_id
 
       invalidateAfterBookingUpdate(queryClient, updatedBooking.id, {
         roomChanged,
@@ -94,7 +112,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           booking.id,
           booking.customer_id,
           booking.room_id,
-          booking.status === "checked_in"
+          booking.status === "checked_in",
         )
       }
       onClose()
@@ -106,7 +124,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     mutationFn: (id: string) => checkInBooking(id),
     onSuccess: (updatedBooking) => {
       // Check-in changes room status to OCCUPIED
-      invalidateAfterCheckIn(queryClient, updatedBooking.id, updatedBooking.room_id)
+      invalidateAfterCheckIn(
+        queryClient,
+        updatedBooking.id,
+        updatedBooking.room_id,
+      )
     },
   })
 
@@ -115,7 +137,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     mutationFn: (id: string) => checkOutBooking(id),
     onSuccess: (updatedBooking) => {
       // Check-out changes room status to CLEANING
-      invalidateAfterCheckOut(queryClient, updatedBooking.id, updatedBooking.room_id)
+      invalidateAfterCheckOut(
+        queryClient,
+        updatedBooking.id,
+        updatedBooking.room_id,
+      )
     },
   })
 
@@ -171,17 +197,39 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
   const getStatusBadge = (status?: string) => {
     const statusConfig = {
-      confirmed: { color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-600/25 dark:text-emerald-400", icon: CheckCircle },
-      checked_in: { color: "bg-blue-100 text-blue-700 dark:bg-blue-600/25 dark:text-blue-400", icon: LogIn },
-      checked_out: { color: "bg-violet-100 text-violet-700 dark:bg-violet-600/25 dark:text-violet-400", icon: LogOut },
-      cancelled: { color: "bg-red-100 text-red-700 dark:bg-red-600/25 dark:text-red-400", icon: XCircle },
+      confirmed: {
+        color:
+          "bg-emerald-100 text-emerald-700 dark:bg-emerald-600/25 dark:text-emerald-400",
+        icon: CheckCircle,
+      },
+      checked_in: {
+        color:
+          "bg-blue-100 text-blue-700 dark:bg-blue-600/25 dark:text-blue-400",
+        icon: LogIn,
+      },
+      checked_out: {
+        color:
+          "bg-violet-100 text-violet-700 dark:bg-violet-600/25 dark:text-violet-400",
+        icon: LogOut,
+      },
+      cancelled: {
+        color: "bg-red-100 text-red-700 dark:bg-red-600/25 dark:text-red-400",
+        icon: XCircle,
+      },
     }
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.confirmed
+    const config =
+      statusConfig[status as keyof typeof statusConfig] ||
+      statusConfig.confirmed
     const Icon = config.icon
 
     return (
-      <div className={clsx("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium", config.color)}>
+      <div
+        className={clsx(
+          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium",
+          config.color,
+        )}
+      >
         <Icon className="w-4 h-4" />
         {status?.replace("_", " ").toUpperCase()}
       </div>
@@ -225,7 +273,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
         {isLoading ? (
           <div className="p-6 text-center">
-            <p className="text-neutral-600 dark:text-neutral-400">Loading booking details...</p>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Loading booking details...
+            </p>
           </div>
         ) : booking ? (
           <div className="p-6">
@@ -235,11 +285,15 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <User className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                  <h3 className="font-medium text-neutral-900 dark:text-white">Guest Information</h3>
+                  <h3 className="font-medium text-neutral-900 dark:text-white">
+                    Guest Information
+                  </h3>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Name:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Name:
+                    </span>
                     <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                       {booking.customer
                         ? `${booking.customer.first_name} ${booking.customer.last_name}`
@@ -248,7 +302,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   </div>
                   {booking.customer?.email && (
                     <div>
-                      <span className="text-neutral-500 dark:text-neutral-400">Email:</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Email:
+                      </span>
                       <span className="ml-2 text-neutral-700 dark:text-neutral-300">
                         {booking.customer.email}
                       </span>
@@ -256,7 +312,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   )}
                   {booking.customer?.phone && (
                     <div>
-                      <span className="text-neutral-500 dark:text-neutral-400">Phone:</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Phone:
+                      </span>
                       <span className="ml-2 text-neutral-700 dark:text-neutral-300">
                         {booking.customer.phone}
                       </span>
@@ -269,23 +327,31 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                  <h3 className="font-medium text-neutral-900 dark:text-white">Room Information</h3>
+                  <h3 className="font-medium text-neutral-900 dark:text-white">
+                    Room Information
+                  </h3>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Room:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Room:
+                    </span>
                     <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                       {booking.room?.room_number} - {booking.room?.room_type}
                     </span>
                   </div>
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Capacity:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Capacity:
+                    </span>
                     <span className="ml-2 text-neutral-700 dark:text-neutral-300">
                       {booking.room?.capacity} guests
                     </span>
                   </div>
                   <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">Price/Night:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Price/Night:
+                    </span>
                     <span className="ml-2 text-neutral-700 dark:text-neutral-300">
                       ${booking.room?.price_per_night}
                     </span>
@@ -298,17 +364,23 @@ export const BookingDetailModal = memo(function BookingDetailModal({
             <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                <h3 className="font-medium text-neutral-900 dark:text-white">Stay Duration</h3>
+                <h3 className="font-medium text-neutral-900 dark:text-white">
+                  Stay Duration
+                </h3>
               </div>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-neutral-500 dark:text-neutral-400">Check-in:</span>
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    Check-in:
+                  </span>
                   <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                     {format(new Date(booking.check_in), "PPP p")}
                   </span>
                 </div>
                 <div>
-                  <span className="text-neutral-500 dark:text-neutral-400">Check-out:</span>
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    Check-out:
+                  </span>
                   <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                     {format(new Date(booking.check_out), "PPP p")}
                   </span>
@@ -321,7 +393,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                  <h3 className="font-medium text-neutral-900 dark:text-white">Payment Details</h3>
+                  <h3 className="font-medium text-neutral-900 dark:text-white">
+                    Payment Details
+                  </h3>
                 </div>
                 {!isEditing && booking.status === "confirmed" && (
                   <button
@@ -344,7 +418,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       <input
                         type="number"
                         value={formData.totalAmount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, totalAmount: Number(e.target.value) }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            totalAmount: Number(e.target.value),
+                          }))
+                        }
                         className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
@@ -355,7 +434,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       <input
                         type="number"
                         value={formData.discount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, discount: Number(e.target.value) }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            discount: Number(e.target.value),
+                          }))
+                        }
                         className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
@@ -367,7 +451,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <input
                       type="text"
                       value={formData.discountReason}
-                      onChange={(e) => setFormData(prev => ({ ...prev, discountReason: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          discountReason: e.target.value,
+                        }))
+                      }
                       placeholder="Optional"
                       className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -377,21 +466,32 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       Payment Method
                     </label>
                     <div className="grid grid-cols-3 gap-2">
-                      {(["cash", "terminal", "transfer"] as const).map((method) => (
-                        <button
-                          key={method}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, paymentMethod: method }))}
-                          className={clsx(
-                            "px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
-                            formData.paymentMethod === method
-                              ? "bg-primary-100 dark:bg-primary-600/25 border-primary-500 text-primary-600 dark:text-primary-400"
-                              : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3"
-                          )}
-                        >
-                          {method === "cash" ? "Cash" : method === "terminal" ? "Terminal" : "Transfer"}
-                        </button>
-                      ))}
+                      {(["cash", "terminal", "transfer"] as const).map(
+                        (method) => (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                paymentMethod: method,
+                              }))
+                            }
+                            className={clsx(
+                              "px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
+                              formData.paymentMethod === method
+                                ? "bg-primary-100 dark:bg-primary-600/25 border-primary-500 text-primary-600 dark:text-primary-400"
+                                : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3",
+                            )}
+                          >
+                            {method === "cash"
+                              ? "Cash"
+                              : method === "terminal"
+                                ? "Terminal"
+                                : "Transfer"}
+                          </button>
+                        ),
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2 pt-2">
@@ -414,14 +514,18 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               ) : (
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Total Amount:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Total Amount:
+                    </span>
                     <span className="font-semibold text-neutral-900 dark:text-white">
                       ${booking.total_amount}
                     </span>
                   </div>
                   {booking.discount && booking.discount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-500 dark:text-neutral-400">Discount:</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Discount:
+                      </span>
                       <span className="text-red-600 dark:text-red-400">
                         -${booking.discount}
                       </span>
@@ -429,14 +533,18 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   )}
                   {booking.discount_reason && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-500 dark:text-neutral-400">Reason:</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Reason:
+                      </span>
                       <span className="text-neutral-700 dark:text-neutral-300">
                         {booking.discount_reason}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Payment Method:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Payment Method:
+                    </span>
                     <div className="flex items-center gap-1">
                       <CreditCard className="w-4 h-4" />
                       <span className="text-neutral-700 dark:text-neutral-300">
@@ -446,7 +554,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   </div>
                   <div className="pt-2 border-t border-neutral-200 dark:border-neutral-600">
                     <div className="flex justify-between">
-                      <span className="font-medium text-neutral-700 dark:text-neutral-300">Final Amount:</span>
+                      <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                        Final Amount:
+                      </span>
                       <span className="font-bold text-lg text-neutral-900 dark:text-white">
                         ${booking.total_amount - (booking.discount || 0)}
                       </span>
@@ -482,40 +592,41 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               )}
 
               {/* Delete Action */}
-              {booking.status !== "checked_out" && (
-                <>
-                  {!showDeleteConfirm ? (
+              {booking.status !== "checked_out" &&
+                (!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-4 py-2 border border-red-300 dark:border-red-600/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="px-4 py-2 border border-red-300 dark:border-red-600/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
+                      onClick={handleDelete}
+                      disabled={deleteMutation.isPending}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
                     >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
+                      {deleteMutation.isPending
+                        ? "Deleting..."
+                        : "Confirm Delete"}
                     </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleDelete}
-                        disabled={deleteMutation.isPending}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
-                      >
-                        {deleteMutation.isPending ? "Deleting..." : "Confirm Delete"}
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirm(false)}
-                        className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors font-medium"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         ) : (
           <div className="p-6 text-center">
-            <p className="text-neutral-600 dark:text-neutral-400">Booking not found</p>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Booking not found
+            </p>
           </div>
         )}
       </div>

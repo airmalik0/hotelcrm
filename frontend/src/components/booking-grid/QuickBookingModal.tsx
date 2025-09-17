@@ -1,14 +1,29 @@
-import { memo, useState, useEffect } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { format, setHours, setMinutes, addDays } from "date-fns"
-import type { BookingCreate, RoomPublic, CustomerPublic } from "@/client/types.gen"
 import { createBooking } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
+import type {
+  BookingCreate,
+  CustomerPublic,
+  RoomPublic,
+} from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
 import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
-import { X, Calendar, Clock, User, DollarSign, Search, Plus, Bed, Phone as PhoneIcon, XCircle } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
+import { addDays, format, setHours, setMinutes } from "date-fns"
+import {
+  Bed,
+  Calendar,
+  Clock,
+  DollarSign,
+  Phone as PhoneIcon,
+  Plus,
+  Search,
+  User,
+  X,
+  XCircle,
+} from "lucide-react"
+import { memo, useEffect, useState } from "react"
 
 interface QuickBookingModalProps {
   isOpen: boolean
@@ -27,7 +42,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
 }: QuickBookingModalProps) {
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerPublic | null>(null)
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<CustomerPublic | null>(null)
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomPublic | null>(null)
   const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false)
@@ -69,7 +85,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   // Set initial dates
   useEffect(() => {
     if (initialCheckIn && initialCheckOut) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         checkIn: format(initialCheckIn, "yyyy-MM-dd'T'HH:mm"),
         checkOut: format(initialCheckOut, "yyyy-MM-dd'T'HH:mm"),
@@ -80,8 +96,11 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       }))
     } else if (initialCheckIn) {
       // Default checkout: next day at 12:00
-      const defaultCheckOut = setHours(setMinutes(addDays(initialCheckIn, 1), 0), 12)
-      setFormData(prev => ({
+      const defaultCheckOut = setHours(
+        setMinutes(addDays(initialCheckIn, 1), 0),
+        12,
+      )
+      setFormData((prev) => ({
         ...prev,
         checkIn: format(initialCheckIn, "yyyy-MM-dd'T'HH:mm"),
         checkOut: format(defaultCheckOut, "yyyy-MM-dd'T'HH:mm"),
@@ -96,7 +115,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   // Update combined datetime when date or time changes
   useEffect(() => {
     if (formData.checkInDate && formData.checkInTime) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         checkIn: `${formData.checkInDate}T${formData.checkInTime}`,
       }))
@@ -105,7 +124,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
 
   useEffect(() => {
     if (formData.checkOutDate && formData.checkOutTime) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         checkOut: `${formData.checkOutDate}T${formData.checkOutTime}`,
       }))
@@ -118,14 +137,22 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     if (formData.checkIn && formData.checkOut && activeRoom) {
       const start = new Date(formData.checkIn)
       const end = new Date(formData.checkOut)
-      const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      const nights = Math.ceil(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+      )
       const total = nights * activeRoom.price_per_night
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         totalAmount: Math.max(total - prev.discount, 0),
       }))
     }
-  }, [formData.checkIn, formData.checkOut, formData.discount, room, selectedRoom])
+  }, [
+    formData.checkIn,
+    formData.checkOut,
+    formData.discount,
+    room,
+    selectedRoom,
+  ])
 
   // Fetch rooms if not provided
   const { data: roomsData } = useQuery({
@@ -171,7 +198,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       invalidateAfterBookingCreate(
         queryClient,
         variables.customer_id,
-        variables.room_id
+        variables.room_id,
       )
       resetForm()
       onClose()
@@ -204,7 +231,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
 
     // Validate discount reason
     if (formData.discount > 0 && !formData.discountReason.trim()) {
-      setErrors({ discountReason: "Discount reason is required when discount is applied" })
+      setErrors({
+        discountReason: "Discount reason is required when discount is applied",
+      })
       return
     }
 
@@ -215,7 +244,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       check_out: new Date(formData.checkOut).toISOString(),
       total_amount: formData.totalAmount,
       discount: formData.discount || undefined,
-      discount_reason: formData.discount > 0 ? formData.discountReason : undefined,
+      discount_reason:
+        formData.discount > 0 ? formData.discountReason : undefined,
       payment_method: formData.paymentMethod,
       status: "confirmed",
     }
@@ -266,7 +296,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               <select
                 value={selectedRoom?.id || ""}
                 onChange={(e) => {
-                  const room = roomsData?.data.find(r => r.id === e.target.value)
+                  const room = roomsData?.data.find(
+                    (r) => r.id === e.target.value,
+                  )
                   setSelectedRoom(room || null)
                 }}
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -275,7 +307,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 <option value="">Select a room</option>
                 {roomsData?.data.map((room) => (
                   <option key={room.id} value={room.id}>
-                    Room {room.room_number} - {room.room_type} (${room.price_per_night}/night)
+                    Room {room.room_number} - {room.room_type} ($
+                    {room.price_per_night}/night)
                   </option>
                 ))}
               </select>
@@ -348,8 +381,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       placeholder="Search for guest..."
                       className={`w-full pl-10 pr-3 py-2 border ${
                         errors.customer
-                          ? 'border-danger-500 focus:ring-danger-500'
-                          : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                          ? "border-danger-500 focus:ring-danger-500"
+                          : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
                       } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
                     />
                   </div>
@@ -399,7 +432,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
             )}
 
             {errors.customer && (
-              <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.customer}</p>
+              <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                {errors.customer}
+              </p>
             )}
           </div>
 
@@ -420,14 +455,24 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <input
                     type="date"
                     value={formData.checkInDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, checkInDate: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        checkInDate: e.target.value,
+                      }))
+                    }
                     className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                   <input
                     type="time"
                     value={formData.checkInTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, checkInTime: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        checkInTime: e.target.value,
+                      }))
+                    }
                     className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
@@ -443,14 +488,24 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <input
                     type="date"
                     value={formData.checkOutDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, checkOutDate: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        checkOutDate: e.target.value,
+                      }))
+                    }
                     className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
                   <input
                     type="time"
                     value={formData.checkOutTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, checkOutTime: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        checkOutTime: e.target.value,
+                      }))
+                    }
                     className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
                   />
@@ -483,7 +538,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <input
                     type="number"
                     value={formData.discount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, discount: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        discount: Number(e.target.value),
+                      }))
+                    }
                     min="0"
                     max={formData.totalAmount}
                     className="w-full pl-8 pr-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -492,22 +552,34 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Reason {formData.discount > 0 && <span className="text-danger-600 dark:text-danger-400">*</span>}
+                  Reason{" "}
+                  {formData.discount > 0 && (
+                    <span className="text-danger-600 dark:text-danger-400">
+                      *
+                    </span>
+                  )}
                 </label>
                 <input
                   type="text"
                   value={formData.discountReason}
-                  onChange={(e) => setFormData(prev => ({ ...prev, discountReason: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      discountReason: e.target.value,
+                    }))
+                  }
                   placeholder={formData.discount > 0 ? "Required" : "Optional"}
                   className={`w-full px-3 py-2 border ${
                     errors.discountReason
-                      ? 'border-danger-500 focus:ring-danger-500'
-                      : 'border-neutral-300 dark:border-neutral-600 focus:ring-primary-500'
+                      ? "border-danger-500 focus:ring-danger-500"
+                      : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
                   } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
                   required={formData.discount > 0}
                 />
                 {errors.discountReason && (
-                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">{errors.discountReason}</p>
+                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                    {errors.discountReason}
+                  </p>
                 )}
               </div>
             </div>
@@ -522,15 +594,24 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <button
                     key={method}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: method }))}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        paymentMethod: method,
+                      }))
+                    }
                     className={clsx(
                       "px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
                       formData.paymentMethod === method
                         ? "bg-primary-100 dark:bg-primary-600/25 border-primary-500 text-primary-600 dark:text-primary-400"
-                        : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3"
+                        : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3",
                     )}
                   >
-                    {method === "cash" ? "Cash" : method === "terminal" ? "Terminal" : "Transfer"}
+                    {method === "cash"
+                      ? "Cash"
+                      : method === "terminal"
+                        ? "Terminal"
+                        : "Transfer"}
                   </button>
                 ))}
               </div>
@@ -551,7 +632,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               disabled={!selectedCustomer || createBookingMutation.isPending}
               className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
             >
-              {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+              {createBookingMutation.isPending
+                ? "Creating..."
+                : "Create Booking"}
             </button>
           </div>
         </form>

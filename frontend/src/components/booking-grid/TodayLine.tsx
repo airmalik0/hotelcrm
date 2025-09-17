@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
 import { getCurrentTimePosition } from "@/utils/date-helpers"
 import clsx from "clsx"
+import { useEffect, useState } from "react"
 
 interface TodayLineProps {
   viewStart: Date
@@ -58,7 +58,10 @@ export function TodayLine({ viewStart, viewEnd }: TodayLineProps) {
       {/* Time label */}
       <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
         <div className="bg-primary-500 dark:bg-primary-400 text-white text-xs px-2 py-0.5 rounded-full">
-          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          {currentTime.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </div>
       </div>
 

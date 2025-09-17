@@ -27,7 +27,6 @@ export function CustomerProfile() {
     enabled: !!customerId,
   })
 
-
   const formatDate = (date: string | null | undefined) => {
     if (!date) return "N/A"
     return new Date(date).toLocaleDateString()
@@ -335,7 +334,9 @@ export function CustomerProfile() {
                       Booking Grid System Coming Soon
                     </p>
                     <p className="text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">
-                      We're rebuilding the booking management system with advanced features for better tracking and visualization of customer bookings.
+                      We're rebuilding the booking management system with
+                      advanced features for better tracking and visualization of
+                      customer bookings.
                     </p>
                   </div>
                 </div>

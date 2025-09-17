@@ -1,5 +1,5 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
-import { isBookingInView, bookingsOverlap } from "./date-helpers"
+import { bookingsOverlap, isBookingInView } from "./date-helpers"
 
 export interface BookingWithLane extends BookingPublic {
   lane: number
@@ -12,13 +12,13 @@ export interface BookingWithLane extends BookingPublic {
 export function assignBookingLanes(
   bookings: BookingPublic[],
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
 ): BookingWithLane[] {
   if (!bookings.length) return []
 
   // Sort by check-in date
-  const sortedBookings = [...bookings].sort((a, b) =>
-    new Date(a.check_in).getTime() - new Date(b.check_in).getTime()
+  const sortedBookings = [...bookings].sort(
+    (a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime(),
   )
 
   const bookingsWithLanes: BookingWithLane[] = []
@@ -47,7 +47,7 @@ export function assignBookingLanes(
 
     bookingsWithLanes.push({
       ...booking,
-      lane: assignedLane
+      lane: assignedLane,
     })
   }
 
@@ -57,7 +57,9 @@ export function assignBookingLanes(
 /**
  * Group bookings by room ID
  */
-export function groupBookingsByRoom(bookings: BookingPublic[]): Map<string, BookingPublic[]> {
+export function groupBookingsByRoom(
+  bookings: BookingPublic[],
+): Map<string, BookingPublic[]> {
   const grouped = new Map<string, BookingPublic[]>()
 
   for (const booking of bookings) {
@@ -68,8 +70,8 @@ export function groupBookingsByRoom(bookings: BookingPublic[]): Map<string, Book
 
   // Sort bookings within each room by check-in time
   for (const [roomId, roomBookings] of grouped) {
-    roomBookings.sort((a, b) =>
-      new Date(a.check_in).getTime() - new Date(b.check_in).getTime()
+    roomBookings.sort(
+      (a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime(),
     )
   }
 
@@ -84,17 +86,19 @@ export function isRoomAvailable(
   checkIn: Date,
   checkOut: Date,
   existingBookings: BookingPublic[],
-  excludeBookingId?: string
+  excludeBookingId?: string,
 ): boolean {
   const roomBookings = existingBookings.filter(
-    (b) => b.room_id === roomId && b.id !== excludeBookingId
+    (b) => b.room_id === roomId && b.id !== excludeBookingId,
   )
 
   for (const booking of roomBookings) {
-    if (bookingsOverlap(
-      { check_in: checkIn, check_out: checkOut },
-      { check_in: booking.check_in, check_out: booking.check_out }
-    )) {
+    if (
+      bookingsOverlap(
+        { check_in: checkIn, check_out: checkOut },
+        { check_in: booking.check_in, check_out: booking.check_out },
+      )
+    ) {
       return false
     }
   }
@@ -110,10 +114,10 @@ export function getAvailableRooms(
   checkIn: Date,
   checkOut: Date,
   bookings: BookingPublic[],
-  excludeBookingId?: string
+  excludeBookingId?: string,
 ): RoomPublic[] {
   return rooms.filter((room) =>
-    isRoomAvailable(room.id, checkIn, checkOut, bookings, excludeBookingId)
+    isRoomAvailable(room.id, checkIn, checkOut, bookings, excludeBookingId),
   )
 }
 
@@ -124,21 +128,31 @@ export function calculateOccupancy(
   rooms: RoomPublic[],
   bookings: BookingPublic[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): number {
   if (rooms.length === 0) return 0
 
-  const totalRoomDays = rooms.length * Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-  )
+  const totalRoomDays =
+    rooms.length *
+    Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
 
   let occupiedRoomDays = 0
 
   for (const booking of bookings) {
-    if (isBookingInView(booking.check_in, booking.check_out, startDate, endDate)) {
-      const bookingStart = Math.max(new Date(booking.check_in).getTime(), startDate.getTime())
-      const bookingEnd = Math.min(new Date(booking.check_out).getTime(), endDate.getTime())
-      const days = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60 * 24))
+    if (
+      isBookingInView(booking.check_in, booking.check_out, startDate, endDate)
+    ) {
+      const bookingStart = Math.max(
+        new Date(booking.check_in).getTime(),
+        startDate.getTime(),
+      )
+      const bookingEnd = Math.min(
+        new Date(booking.check_out).getTime(),
+        endDate.getTime(),
+      )
+      const days = Math.ceil(
+        (bookingEnd - bookingStart) / (1000 * 60 * 60 * 24),
+      )
       occupiedRoomDays += days
     }
   }
@@ -177,10 +191,10 @@ export function formatRoomName(room: RoomPublic): string {
 export function sortRoomsByNumber(rooms: RoomPublic[]): RoomPublic[] {
   return [...rooms].sort((a, b) => {
     // Extract numbers from room numbers
-    const aNum = parseInt(a.room_number.replace(/\D/g, ""), 10)
-    const bNum = parseInt(b.room_number.replace(/\D/g, ""), 10)
+    const aNum = Number.parseInt(a.room_number.replace(/\D/g, ""), 10)
+    const bNum = Number.parseInt(b.room_number.replace(/\D/g, ""), 10)
 
-    if (!isNaN(aNum) && !isNaN(bNum)) {
+    if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
       return aNum - bNum
     }
 

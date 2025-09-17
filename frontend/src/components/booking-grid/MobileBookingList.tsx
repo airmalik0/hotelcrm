@@ -1,10 +1,17 @@
-import { useMemo } from "react"
-import { format, isSameDay, startOfDay, endOfDay, eachDayOfInterval, isWithinInterval } from "date-fns"
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
-import { formatRoomName } from "@/utils/booking-grid"
 import { getRoomTypeColor } from "@/utils/booking-colors"
-import { Calendar, Users, Clock, ChevronRight, Plus } from "lucide-react"
+import { formatRoomName } from "@/utils/booking-grid"
 import clsx from "clsx"
+import {
+  eachDayOfInterval,
+  endOfDay,
+  format,
+  isSameDay,
+  isWithinInterval,
+  startOfDay,
+} from "date-fns"
+import { Calendar, ChevronRight, Clock, Plus, Users } from "lucide-react"
+import { useMemo } from "react"
 
 interface MobileBookingListProps {
   rooms: RoomPublic[]
@@ -30,18 +37,21 @@ export function MobileBookingList({
     const days = eachDayOfInterval({ start: viewStart, end: viewEnd })
     const dayMap = new Map<string, { date: Date; bookings: BookingPublic[] }>()
 
-    days.forEach(day => {
+    days.forEach((day) => {
       const dayStart = startOfDay(day)
       const dayEnd = endOfDay(day)
-      const dayKey = format(day, 'yyyy-MM-dd')
+      const dayKey = format(day, "yyyy-MM-dd")
 
-      const dayBookings = bookings.filter(booking => {
+      const dayBookings = bookings.filter((booking) => {
         const checkIn = new Date(booking.check_in)
         const checkOut = new Date(booking.check_out)
 
         // Check if booking overlaps with this day
-        return isWithinInterval(day, { start: checkIn, end: checkOut }) ||
-               isSameDay(day, checkIn) || isSameDay(day, checkOut)
+        return (
+          isWithinInterval(day, { start: checkIn, end: checkOut }) ||
+          isSameDay(day, checkIn) ||
+          isSameDay(day, checkOut)
+        )
       })
 
       dayMap.set(dayKey, { date: day, bookings: dayBookings })
@@ -52,15 +62,18 @@ export function MobileBookingList({
 
   // Get available rooms for a specific day
   const getAvailableRoomsForDay = (date: Date) => {
-    const dayBookings = bookings.filter(booking => {
+    const dayBookings = bookings.filter((booking) => {
       const checkIn = new Date(booking.check_in)
       const checkOut = new Date(booking.check_out)
-      return isWithinInterval(date, { start: checkIn, end: checkOut }) ||
-             isSameDay(date, checkIn) || isSameDay(date, checkOut)
+      return (
+        isWithinInterval(date, { start: checkIn, end: checkOut }) ||
+        isSameDay(date, checkIn) ||
+        isSameDay(date, checkOut)
+      )
     })
 
-    const bookedRoomIds = new Set(dayBookings.map(b => b.room_id))
-    return rooms.filter(room => !bookedRoomIds.has(room.id))
+    const bookedRoomIds = new Set(dayBookings.map((b) => b.room_id))
+    return rooms.filter((room) => !bookedRoomIds.has(room.id))
   }
 
   const today = new Date()
@@ -73,21 +86,23 @@ export function MobileBookingList({
           const isToday = isSameDay(date, today)
 
           return (
-            <div key={format(date, 'yyyy-MM-dd')} className="space-y-3">
+            <div key={format(date, "yyyy-MM-dd")} className="space-y-3">
               {/* Day header */}
-              <div className={clsx(
-                "sticky top-0 z-10 bg-white dark:bg-dark-2 px-4 py-3 rounded-lg border",
-                isToday
-                  ? "border-primary-500 dark:border-primary-600"
-                  : "border-neutral-200 dark:border-neutral-600"
-              )}>
+              <div
+                className={clsx(
+                  "sticky top-0 z-10 bg-white dark:bg-dark-2 px-4 py-3 rounded-lg border",
+                  isToday
+                    ? "border-primary-500 dark:border-primary-600"
+                    : "border-neutral-200 dark:border-neutral-600",
+                )}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold text-lg text-neutral-900 dark:text-white">
-                      {format(date, 'EEEE')}
+                      {format(date, "EEEE")}
                     </h3>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      {format(date, 'MMM d, yyyy')}
+                      {format(date, "MMM d, yyyy")}
                       {isToday && (
                         <span className="ml-2 text-primary-600 dark:text-primary-400 font-medium">
                           Today
@@ -119,33 +134,44 @@ export function MobileBookingList({
                         "hover:shadow-md",
                         selectedBookingId === booking.id
                           ? "border-primary-500 dark:border-primary-600 bg-primary-50 dark:bg-primary-900/20"
-                          : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-dark-2"
+                          : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-dark-2",
                       )}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className={clsx(
-                              "text-xs px-2 py-1 rounded-full",
-                              getRoomTypeColor(booking.room?.room_type || "standard")
-                            )}>
+                            <span
+                              className={clsx(
+                                "text-xs px-2 py-1 rounded-full",
+                                getRoomTypeColor(
+                                  booking.room?.room_type || "standard",
+                                ),
+                              )}
+                            >
                               {formatRoomName(booking.room!)}
                             </span>
-                            <span className={clsx(
-                              "text-xs px-2 py-1 rounded",
-                              booking.status === "confirmed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                              booking.status === "pending" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                              booking.status === "checked_in" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-                              booking.status === "checked_out" ? "bg-neutral-100 text-neutral-700 dark:bg-neutral-900/30 dark:text-neutral-400" :
-                              "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            )}>
+                            <span
+                              className={clsx(
+                                "text-xs px-2 py-1 rounded",
+                                booking.status === "confirmed"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  : booking.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                    : booking.status === "checked_in"
+                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                      : booking.status === "checked_out"
+                                        ? "bg-neutral-100 text-neutral-700 dark:bg-neutral-900/30 dark:text-neutral-400"
+                                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                              )}
+                            >
                               {booking.status.replace("_", " ")}
                             </span>
                           </div>
 
                           <div>
                             <p className="font-medium text-neutral-900 dark:text-white">
-                              {booking.customer?.first_name} {booking.customer?.last_name}
+                              {booking.customer?.first_name}{" "}
+                              {booking.customer?.last_name}
                             </p>
                             {booking.customer?.email && (
                               <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -158,8 +184,8 @@ export function MobileBookingList({
                             <div className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5" />
                               <span>
-                                {format(new Date(booking.check_in), 'MMM d')} -
-                                {format(new Date(booking.check_out), 'MMM d')}
+                                {format(new Date(booking.check_in), "MMM d")} -
+                                {format(new Date(booking.check_out), "MMM d")}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -200,7 +226,7 @@ export function MobileBookingList({
                     Available Rooms ({availableRooms.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {availableRooms.slice(0, 5).map(room => (
+                    {availableRooms.slice(0, 5).map((room) => (
                       <button
                         key={room.id}
                         onClick={() => onEmptyClick(room, date, date)}
