@@ -186,7 +186,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-50 dark:bg-dark-1">
+    <div className="flex min-h-screen bg-neutral-50 dark:bg-dark-1">
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
@@ -297,7 +297,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
 
       {/* Mobile overlay */}
