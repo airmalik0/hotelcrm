@@ -438,8 +438,6 @@ export function BookingGrid() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
               )}
             </div>
           </>

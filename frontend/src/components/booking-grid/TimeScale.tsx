@@ -54,7 +54,7 @@ export const TimeScale = memo(function TimeScale({
           {/* Vertical line */}
           <div
             className={clsx(
-              "absolute top-full w-px h-screen pointer-events-none",
+              "absolute top-full w-px h-[2000px] pointer-events-none",
               marker.isToday
                 ? "bg-primary-500 dark:bg-primary-400 z-10"
                 : "bg-neutral-200 dark:bg-neutral-700",
