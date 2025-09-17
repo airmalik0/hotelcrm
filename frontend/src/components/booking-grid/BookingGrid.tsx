@@ -252,7 +252,7 @@ export function BookingGrid() {
   const isLoading = roomsLoading || bookingsLoading
 
   return (
-    <div className="flex flex-col h-screen bg-neutral-50 dark:bg-dark-1 overflow-hidden">
+    <div className="bg-neutral-50 dark:bg-dark-1">
       {/* Header */}
       <GridHeader
         currentDate={currentDate}
@@ -284,69 +284,66 @@ export function BookingGrid() {
       </div>
 
       {/* Grid container */}
-      <div className="flex-1 min-h-0 flex flex-col">
-        {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin mx-auto mb-3" />
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Loading bookings...
-              </p>
-            </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin mx-auto mb-3" />
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Loading bookings...
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Responsive container - single render */}
-            <div className="h-full overflow-hidden">
-              {/* Mobile view - vertical list */}
-              <div className="block md:hidden h-full overflow-y-auto">
-                <MobileBookingList
-                  rooms={filteredRooms}
-                  bookings={filteredBookings}
-                  viewStart={viewStart}
-                  viewEnd={viewEnd}
-                  onBookingClick={handleBookingClick}
-                  onEmptyClick={handleEmptyClick}
-                  selectedBookingId={selectedBookingId}
-                />
-              </div>
+        </div>
+      ) : (
+        <div>
+          {/* Mobile view - vertical list */}
+          <div className="block md:hidden">
+            <MobileBookingList
+              rooms={filteredRooms}
+              bookings={filteredBookings}
+              viewStart={viewStart}
+              viewEnd={viewEnd}
+              onBookingClick={handleBookingClick}
+              onEmptyClick={handleEmptyClick}
+              selectedBookingId={selectedBookingId}
+            />
+          </div>
 
-              {/* Desktop/Tablet view - grid */}
-              <div className="hidden md:block">
-                {filteredRooms.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="text-center max-w-md">
-                      <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
-                        {allRooms.length === 0
-                          ? "No rooms available. Please add rooms to start managing bookings."
-                          : "No rooms match your current filters. Try adjusting your search criteria."}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative overflow-x-auto">
-                    <div className="flex min-h-0">
-                      {/* Sticky room sidebar */}
+          {/* Desktop/Tablet view - grid */}
+          <div className="hidden md:block">
+            {filteredRooms.length === 0 ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center max-w-md">
+                  <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
+                    {allRooms.length === 0
+                      ? "No rooms available. Please add rooms to start managing bookings."
+                      : "No rooms match your current filters. Try adjusting your search criteria."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="relative overflow-x-auto">
+                <div className="flex">
+                  {/* Sticky room sidebar */}
+                  <div
+                    className={clsx(
+                      "sticky left-0 z-20 flex-shrink-0",
+                      "bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600",
+                      // Responsive widths: narrower on tablets, wider on desktop
+                      "w-28 md:w-32 lg:w-40 xl:w-48",
+                    )}
+                  >
+                    {/* Spacer for header */}
+                    <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
+
+                    {/* Room list - responsive layout */}
+                    {filteredRooms.map((room) => (
                       <div
+                        key={room.id}
                         className={clsx(
-                          "sticky left-0 z-20 flex-shrink-0",
-                          "bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600",
-                          // Responsive widths: narrower on tablets, wider on desktop
-                          "w-28 md:w-32 lg:w-40 xl:w-48",
+                          "border-b border-neutral-200 dark:border-neutral-700 p-2 md:p-3",
+                          "h-16", // Fixed height for consistency
                         )}
                       >
-                        {/* Spacer for header */}
-                        <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
-
-                        {/* Room list - responsive layout */}
-                        {filteredRooms.map((room) => (
-                          <div
-                            key={room.id}
-                            className={clsx(
-                              "border-b border-neutral-200 dark:border-neutral-700 p-2 md:p-3",
-                              "h-16 md:h-16 lg:h-16", // Consistent heights across breakpoints
-                            )}
-                          >
                             <div className="flex items-start justify-between">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1 md:gap-2 mb-1">
@@ -386,41 +383,41 @@ export function BookingGrid() {
                                 {room.status.replace("_", " ")}
                               </div>
                             </div>
-                          </div>
-                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Timeline area */}
+                  <div className="flex-1">
+                    <div
+                      className={clsx(
+                        "w-full",
+                        // Responsive minimum widths
+                        // Tablets get narrower cells, desktops get comfortable spacing
+                        viewMode === "week"
+                          ? "min-w-[900px] md:min-w-[1000px] lg:min-w-[1200px]"
+                          : "min-w-[1600px] md:min-w-[1800px] lg:min-w-[2000px]",
+                      )}
+                    >
+                      {/* Time scale header */}
+                      <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
+                        <TimeScale
+                          viewStart={viewStart}
+                          viewEnd={viewEnd}
+                          viewMode={viewMode}
+                        />
                       </div>
 
-                      {/* Timeline area */}
-                      <div className="flex-1">
-                        <div
-                          className={clsx(
-                            "w-full",
-                            // Responsive minimum widths
-                            // Tablets get narrower cells, desktops get comfortable spacing
-                            viewMode === "week"
-                              ? "min-w-[900px] md:min-w-[1000px] lg:min-w-[1200px]"
-                              : "min-w-[1600px] md:min-w-[1800px] lg:min-w-[2000px]",
-                          )}
-                        >
-                          {/* Time scale header */}
-                          <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
-                            <TimeScale
-                              viewStart={viewStart}
-                              viewEnd={viewEnd}
-                              viewMode={viewMode}
-                            />
-                          </div>
+                      {/* Bookings grid */}
+                      <div className="relative">
+                        {/* Today line */}
+                        <TodayLine
+                          viewStart={viewStart}
+                          viewEnd={viewEnd}
+                        />
 
-                          {/* Bookings grid */}
-                          <div className="relative">
-                            {/* Today line */}
-                            <TodayLine
-                              viewStart={viewStart}
-                              viewEnd={viewEnd}
-                            />
-
-                            {/* Room booking rows */}
-                            {filteredRooms.map((room) => (
+                        {/* Room booking rows */}
+                        {filteredRooms.map((room) => (
                               <RoomRow
                                 key={room.id}
                                 room={room}
@@ -449,18 +446,16 @@ export function BookingGrid() {
                                 }
                                 isTouchDevice={isTouchDevice}
                               />
-                            ))}
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick Booking Modal */}
       <QuickBookingModal
