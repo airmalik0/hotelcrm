@@ -95,50 +95,38 @@ export function generateTimeScale(
   containerWidth?: number,
 ) {
   const markers = []
-  const totalHours = getViewTotalHours(viewStart, viewEnd)
+  const totalMs = viewEnd.getTime() - viewStart.getTime()
 
-  // Adaptive intervals based on container width
-  let interval: number
+  // For both week and month views, generate daily markers
+  let currentDate = startOfDay(viewStart)
+  const endDate = startOfDay(viewEnd)
+
+  // Determine format based on view mode and container width
   let formatStr: string
-
   if (view === "week") {
-    // For week view (7 days), adjust based on container width
-    if (!containerWidth || containerWidth > 1400) {
-      interval = 12 // Every 12 hours for large screens
-      formatStr = "EEE HH:mm"
-    } else if (containerWidth > 1000) {
-      interval = 24 // Daily for medium screens
-      formatStr = "EEE HH:mm"
-    } else {
-      interval = 24 // Daily for small screens
-      formatStr = "EEE" // Just day name, no time
-    }
+    formatStr = "EEE" // Just day name (Mon, Tue, Wed, etc.)
   } else {
-    // For month view (~30 days) - always show daily lines
-    interval = 24 // Daily lines for all screen sizes
-
-    // Adjust label format based on container width
+    // Month view - adjust label format based on container width
     if (!containerWidth || containerWidth > 1600) {
       formatStr = "dd MMM" // Full format for very large screens
-    } else if (containerWidth > 1200) {
-      formatStr = "dd" // Just day number for large screens
-    } else if (containerWidth > 800) {
-      formatStr = "dd" // Just day number for medium screens
     } else {
-      formatStr = "dd" // Just day number for small screens
+      formatStr = "dd" // Just day number for smaller screens
     }
   }
 
-  for (let hour = 0; hour <= totalHours; hour += interval) {
-    const markerDate = addHours(viewStart, hour)
-    const position = (hour / totalHours) * 100
+  // Generate one marker per day
+  while (currentDate <= endDate) {
+    const positionMs = currentDate.getTime() - viewStart.getTime()
+    const position = (positionMs / totalMs) * 100
 
     markers.push({
       position: `${position}%`,
-      label: format(markerDate, formatStr),
-      date: markerDate,
-      isToday: isSameDay(markerDate, new Date()),
+      label: format(currentDate, formatStr),
+      date: currentDate,
+      isToday: isSameDay(currentDate, new Date()),
     })
+
+    currentDate = addDays(currentDate, 1)
   }
 
   return markers
