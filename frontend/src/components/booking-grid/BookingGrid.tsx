@@ -128,13 +128,6 @@ export function BookingGrid() {
     createDragImageContainer()
   }, [createDragImageContainer])
 
-  // Close sidebar when resizing to desktop
-  useEffect(() => {
-    if (isDesktop) {
-      setIsSidebarOpen(false)
-    }
-  }, [isDesktop])
-
   // Navigation handlers - use full week jump and full month jump
   // Because startOfWeek/startOfMonth snap to period boundaries
   const handlePrevious = () => {
