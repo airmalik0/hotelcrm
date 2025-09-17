@@ -321,27 +321,27 @@ export function BookingGrid() {
                 </div>
               </div>
             ) : (
-              <div className="flex">
-                {/* Room sidebar - OUTSIDE overflow container */}
-                <div
-                  className={clsx(
-                    "flex-shrink-0",
-                    "bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600",
-                    // Responsive widths: narrower on tablets, wider on desktop
-                    "w-28 md:w-32 lg:w-40 xl:w-48",
-                  )}
-                >
-                    {/* Spacer for header */}
+              <div className="overflow-x-auto">
+                <div className="flex min-w-max">
+                  {/* Room sidebar - fixed width column */}
+                  <div
+                    className={clsx(
+                      "sticky left-0 z-20 flex-shrink-0",
+                      "bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600",
+                      // Responsive widths
+                      "w-28 md:w-32 lg:w-40 xl:w-48",
+                    )}
+                  >
+                    {/* Header spacer */}
                     <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
 
-                    {/* Room list - responsive layout */}
+                    {/* Room cells - exact same height as RoomRow */}
                     {filteredRooms.map((room) => (
                       <div
                         key={room.id}
                         className={clsx(
-                          "border-b border-neutral-200 dark:border-neutral-700",
-                          "h-20 md:h-16", // Match RoomRow height exactly
-                          "flex items-center px-2 md:px-3", // Center content vertically
+                          "h-16 border-b border-neutral-200 dark:border-neutral-700",
+                          "flex items-center px-2 md:px-3",
                         )}
                       >
                         <div className="flex items-center justify-between w-full">
@@ -385,39 +385,37 @@ export function BookingGrid() {
                         </div>
                       </div>
                     ))}
-                </div>
+                  </div>
 
-                {/* Timeline area - ONLY this scrolls horizontally */}
-                <div className="flex-1 overflow-x-auto">
+                  {/* Timeline area - scrolls with the container */}
                   <div
                     className={clsx(
-                      "w-full",
-                      // Responsive minimum widths
-                      // Tablets get narrower cells, desktops get comfortable spacing
+                      "flex-1",
+                      // Minimum widths for comfortable viewing
                       viewMode === "week"
                         ? "min-w-[900px] md:min-w-[1000px] lg:min-w-[1200px]"
                         : "min-w-[1600px] md:min-w-[1800px] lg:min-w-[2000px]",
                     )}
                   >
-                      {/* Time scale header */}
-                      <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
-                        <TimeScale
-                          viewStart={viewStart}
-                          viewEnd={viewEnd}
-                          viewMode={viewMode}
-                        />
-                      </div>
+                    {/* Time scale header */}
+                    <div className="h-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
+                      <TimeScale
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
+                        viewMode={viewMode}
+                      />
+                    </div>
 
-                      {/* Bookings grid */}
-                      <div className="relative">
-                        {/* Today line */}
-                        <TodayLine
-                          viewStart={viewStart}
-                          viewEnd={viewEnd}
-                        />
+                    {/* Bookings grid */}
+                    <div className="relative">
+                      {/* Today line */}
+                      <TodayLine
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
+                      />
 
-                        {/* Room booking rows */}
-                        {filteredRooms.map((room) => (
+                      {/* Room rows - exact height matching sidebar */}
+                      {filteredRooms.map((room) => (
                               <RoomRow
                                 key={room.id}
                                 room={room}
@@ -446,7 +444,7 @@ export function BookingGrid() {
                                 }
                                 isTouchDevice={isTouchDevice}
                               />
-                        ))}
+                      ))}
                     </div>
                   </div>
                 </div>
