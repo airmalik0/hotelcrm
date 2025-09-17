@@ -84,13 +84,6 @@ export function BookingGrid() {
     return Math.ceil((viewEnd.getTime() - viewStart.getTime() + 1) / msPerDay)
   }, [viewStart, viewEnd])
 
-  // Calculate responsive grid min-width based on days and viewport
-  // Week view: min 120px per day, month view: min 60px per day
-  // This ensures readability while being responsive
-  const gridMinWidth = useMemo(() => {
-    const minDayWidth = viewMode === "week" ? 120 : 60
-    return daysInView * minDayWidth
-  }, [daysInView, viewMode])
 
   // Fetch rooms
   const { data: roomsData, isLoading: roomsLoading } = useQuery({
@@ -395,10 +388,15 @@ export function BookingGrid() {
 
                     {/* Scrollable timeline area - responsive grid */}
                     <div className="flex-1 overflow-x-auto overflow-y-auto">
-                      {/* Responsive: fills viewport when possible, scrolls when needed */}
+                      {/* Responsive grid: fills viewport but ensures minimum day width */}
                       <div
                         className="w-full"
-                        style={{ minWidth: `${gridMinWidth}px` }}
+                        style={{
+                          // Ensure minimum width for readability
+                          // Week: 7 days × min 140px = 980px min
+                          // Month: 30 days × min 50px = 1500px min
+                          minWidth: viewMode === "week" ? "980px" : "1500px"
+                        }}
                       >
                         {/* Time scale header */}
                         <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
