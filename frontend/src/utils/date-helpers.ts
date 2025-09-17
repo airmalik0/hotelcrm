@@ -114,19 +114,18 @@ export function generateTimeScale(
       formatStr = "EEE" // Just day name, no time
     }
   } else {
-    // For month view (~30 days)
+    // For month view (~30 days) - always show daily lines
+    interval = 24 // Daily lines for all screen sizes
+
+    // Adjust label format based on container width
     if (!containerWidth || containerWidth > 1600) {
-      interval = 24 // Daily with full format for very large screens
-      formatStr = "dd MMM"
+      formatStr = "dd MMM" // Full format for very large screens
     } else if (containerWidth > 1200) {
-      interval = 48 // Every 2 days for large screens
-      formatStr = "dd MMM"
+      formatStr = "dd" // Just day number for large screens
     } else if (containerWidth > 800) {
-      interval = 72 // Every 3 days for medium screens
-      formatStr = "dd"
+      formatStr = "dd" // Just day number for medium screens
     } else {
-      interval = 96 // Every 4 days for small screens
-      formatStr = "dd"
+      formatStr = "dd" // Just day number for small screens
     }
   }
 
