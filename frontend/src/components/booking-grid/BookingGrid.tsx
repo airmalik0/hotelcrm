@@ -78,11 +78,6 @@ export function BookingGrid() {
     [currentDate, viewMode],
   )
 
-  // Calculate the number of days in the current view
-  const daysInView = useMemo(() => {
-    const msPerDay = 24 * 60 * 60 * 1000
-    return Math.ceil((viewEnd.getTime() - viewStart.getTime() + 1) / msPerDay)
-  }, [viewStart, viewEnd])
 
 
   // Fetch rooms
@@ -386,16 +381,23 @@ export function BookingGrid() {
                       ))}
                     </div>
 
-                    {/* Scrollable timeline area - responsive grid */}
-                    <div className="flex-1 overflow-x-auto overflow-y-auto">
-                      {/* Responsive grid: fills viewport but ensures minimum day width */}
+                    {/* Scrollable timeline area with top scrollbar using transform */}
+                    <div
+                      className="flex-1 overflow-x-auto overflow-y-auto"
+                      style={{
+                        transform: "rotateX(180deg)",
+                      }}
+                    >
                       <div
-                        className="w-full"
+                        className={clsx(
+                          "w-full",
+                          // Minimum widths for readability
+                          // Week: ~170px per day × 7 = 1200px
+                          // Month: ~65px per day × 31 = 2000px
+                          viewMode === "week" ? "min-w-[1200px]" : "min-w-[2000px]"
+                        )}
                         style={{
-                          // Ensure minimum width for readability
-                          // Week: 7 days × min 140px = 980px min
-                          // Month: 30 days × min 50px = 1500px min
-                          minWidth: viewMode === "week" ? "980px" : "1500px"
+                          transform: "rotateX(180deg)",
                         }}
                       >
                         {/* Time scale header */}

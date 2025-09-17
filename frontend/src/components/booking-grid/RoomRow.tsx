@@ -75,7 +75,7 @@ export const RoomRow = memo(function RoomRow({
     <div
       ref={containerRef}
       className={clsx(
-        "relative cursor-pointer room-drop-zone border-b border-neutral-200 dark:border-neutral-700 transition-colors pr-20",
+        "relative cursor-pointer room-drop-zone border-b border-neutral-200 dark:border-neutral-700 transition-colors",
         // CSS-based responsive height
         "h-20 md:h-16",
         // Touch-friendly interaction

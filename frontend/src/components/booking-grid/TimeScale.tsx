@@ -42,7 +42,7 @@ export const TimeScale = memo(function TimeScale({
   return (
     <div
       ref={containerRef}
-      className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2 pr-20"
+      className="relative h-12 border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-dark-2"
     >
       {/* Time markers */}
       {markers.map((marker, index) => (
