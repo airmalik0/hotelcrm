@@ -46,9 +46,12 @@ export const BookingBlock = memo(function BookingBlock({
     : "Guest"
   const initials = getGuestInitials(guestName)
   const duration = formatDuration(booking.check_in, booking.check_out)
-  const statusColor = getBookingStatusColor(booking.status || "confirmed")
-  const hoverColor = getBookingHoverColor(booking.status || "confirmed")
-  const indicatorColor = getBookingIndicatorColor(booking.status || "confirmed")
+
+  // Memoize status to avoid repetition
+  const bookingStatus = booking.status || "confirmed"
+  const statusColor = getBookingStatusColor(bookingStatus)
+  const hoverColor = getBookingHoverColor(bookingStatus)
+  const indicatorColor = getBookingIndicatorColor(bookingStatus)
 
   // Calculate if we should show full name or initials based on width
   const widthPercent = Number.parseFloat(position.width)
@@ -62,7 +65,7 @@ export const BookingBlock = memo(function BookingBlock({
 
   // Only allow dragging for confirmed bookings (not checked in/out) and not on touch devices
   const canDrag =
-    isDraggable && booking.status === "confirmed" && !isTouchDevice
+    isDraggable && bookingStatus === "confirmed" && !isTouchDevice
 
   return (
     <div

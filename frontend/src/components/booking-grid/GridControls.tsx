@@ -12,7 +12,7 @@ import {
   X,
   XCircle,
 } from "lucide-react"
-import { memo, useState } from "react"
+import { memo, useRef, useState } from "react"
 
 interface GridControlsProps {
   searchTerm: string
@@ -67,6 +67,9 @@ export const GridControls = memo(function GridControls({
   onClearAllFilters,
 }: GridControlsProps) {
   const [showRoomTypeFilter, setShowRoomTypeFilter] = useState(false)
+  const [showStatusFilter, setShowStatusFilter] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const statusButtonRef = useRef<HTMLButtonElement>(null)
 
   const hasActiveFilters =
     statusFilters.length > 0 ||
@@ -106,18 +109,19 @@ export const GridControls = memo(function GridControls({
             />
           </div>
 
-          {/* Status Filters - hide labels on mobile */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Status Filters - inline on desktop, dropdown on tablet/mobile */}
+          <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
             {Object.entries(statusConfig).map(([status, config]) => {
               const Icon = config.icon
               const isActive = statusFilters.includes(status as BookingStatus)
 
               return (
                 <button
+                  type="button"
                   key={status}
                   onClick={() => toggleStatusFilter(status as BookingStatus)}
                   className={clsx(
-                    "px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1 md:gap-1.5",
+                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5",
                     isActive
                       ? config.color
                       : "bg-white dark:bg-dark-3 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-dark-2",
@@ -125,15 +129,87 @@ export const GridControls = memo(function GridControls({
                   title={config.label}
                 >
                   <Icon className="w-3 h-3" />
-                  <span className="hidden md:inline">{config.label}</span>
+                  <span>{config.label}</span>
                 </button>
               )
             })}
           </div>
 
+          {/* Status Filter Dropdown - show on tablet/mobile */}
+          <div className="relative lg:hidden">
+            <button
+              ref={statusButtonRef}
+              type="button"
+              onClick={() => setShowStatusFilter(!showStatusFilter)}
+              className={clsx(
+                "px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-2",
+                statusFilters.length > 0
+                  ? "bg-blue-100 dark:bg-blue-600/25 border-blue-300 dark:border-blue-600/50 text-blue-700 dark:text-blue-400"
+                  : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
+              )}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Status
+              {statusFilters.length > 0 && (
+                <span className="bg-blue-600 dark:bg-blue-400 text-white dark:text-neutral-900 text-xs px-1.5 py-0.5 rounded-full">
+                  {statusFilters.length}
+                </span>
+              )}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+
+            {showStatusFilter && statusButtonRef.current && (
+              <div
+                className="fixed z-50 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
+                style={{
+                  top: statusButtonRef.current.getBoundingClientRect().bottom + 4,
+                  left: statusButtonRef.current.getBoundingClientRect().left,
+                }}
+              >
+                <div className="p-2">
+                  {Object.entries(statusConfig).map(([status, config]) => {
+                    const Icon = config.icon
+                    const isActive = statusFilters.includes(status as BookingStatus)
+
+                    return (
+                      <button
+                        type="button"
+                        key={status}
+                        onClick={() => toggleStatusFilter(status as BookingStatus)}
+                        className={clsx(
+                          "w-full px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
+                          isActive
+                            ? "bg-blue-100 dark:bg-blue-600/25 text-blue-700 dark:text-blue-400"
+                            : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
+                        )}
+                      >
+                        <div
+                          className={clsx(
+                            "w-3 h-3 rounded border-2 flex items-center justify-center",
+                            isActive
+                              ? "border-blue-600 dark:border-blue-400 bg-blue-600 dark:bg-blue-400"
+                              : "border-neutral-300 dark:border-neutral-600",
+                          )}
+                        >
+                          {isActive && (
+                            <div className="w-1.5 h-1.5 bg-white dark:bg-neutral-900 rounded-full" />
+                          )}
+                        </div>
+                        <Icon className="w-4 h-4" />
+                        {config.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Room Type Filter */}
           <div className="relative">
             <button
+              ref={buttonRef}
+              type="button"
               onClick={() => setShowRoomTypeFilter(!showRoomTypeFilter)}
               className={clsx(
                 "px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-2",
@@ -152,11 +228,18 @@ export const GridControls = memo(function GridControls({
               <ChevronDown className="w-3 h-3" />
             </button>
 
-            {showRoomTypeFilter && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-20">
+            {showRoomTypeFilter && buttonRef.current && (
+              <div
+                className="fixed z-50 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
+                style={{
+                  top: buttonRef.current.getBoundingClientRect().bottom + 4,
+                  left: buttonRef.current.getBoundingClientRect().left,
+                }}
+              >
                 <div className="p-2">
                   {availableRoomTypes.map((roomType) => (
                     <button
+                      type="button"
                       key={roomType}
                       onClick={() => toggleRoomTypeFilter(roomType)}
                       className={clsx(
@@ -189,6 +272,7 @@ export const GridControls = memo(function GridControls({
           {/* Clear Filters */}
           {hasActiveFilters && (
             <button
+              type="button"
               onClick={onClearAllFilters}
               className="px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors flex items-center gap-1"
             >
@@ -213,11 +297,17 @@ export const GridControls = memo(function GridControls({
         </div>
       </div>
 
-      {/* Click outside handler */}
+      {/* Click outside handlers */}
       {showRoomTypeFilter && (
         <div
-          className="fixed inset-0 z-10"
+          className="fixed inset-0 z-40"
           onClick={() => setShowRoomTypeFilter(false)}
+        />
+      )}
+      {showStatusFilter && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowStatusFilter(false)}
         />
       )}
     </div>
