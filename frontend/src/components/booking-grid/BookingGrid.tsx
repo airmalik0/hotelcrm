@@ -321,17 +321,16 @@ export function BookingGrid() {
                 </div>
               </div>
             ) : (
-              <div className="relative overflow-x-auto">
-                <div className="flex">
-                  {/* Sticky room sidebar */}
-                  <div
-                    className={clsx(
-                      "sticky left-0 z-20 flex-shrink-0",
-                      "bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600",
-                      // Responsive widths: narrower on tablets, wider on desktop
-                      "w-28 md:w-32 lg:w-40 xl:w-48",
-                    )}
-                  >
+              <div className="flex">
+                {/* Room sidebar - OUTSIDE overflow container */}
+                <div
+                  className={clsx(
+                    "flex-shrink-0",
+                    "bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600",
+                    // Responsive widths: narrower on tablets, wider on desktop
+                    "w-28 md:w-32 lg:w-40 xl:w-48",
+                  )}
+                >
                     {/* Spacer for header */}
                     <div className="h-10 border-b border-neutral-200 dark:border-neutral-600" />
 
@@ -340,65 +339,66 @@ export function BookingGrid() {
                       <div
                         key={room.id}
                         className={clsx(
-                          "border-b border-neutral-200 dark:border-neutral-700 p-2 md:p-3",
-                          "h-16", // Fixed height for consistency
+                          "border-b border-neutral-200 dark:border-neutral-700",
+                          "h-20 md:h-16", // Match RoomRow height exactly
+                          "flex items-center px-2 md:px-3", // Center content vertically
                         )}
                       >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1 md:gap-2 mb-1">
-                                  <h3 className="font-semibold text-sm md:text-base text-neutral-900 dark:text-white truncate">
-                                    {formatRoomName(room)}
-                                  </h3>
-                                  <span
-                                    className={clsx(
-                                      "text-xs px-2 py-0.5 rounded-full hidden lg:inline-block",
-                                      getRoomTypeColor(room.room_type),
-                                    )}
-                                  >
-                                    {room.room_type}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 md:gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                                  <div className="flex items-center gap-1">
-                                    <Bed className="w-3 h-3" />
-                                    <span className="hidden md:inline">
-                                      {room.capacity}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <DollarSign className="w-3 h-3" />
-                                    <span className="hidden lg:inline">
-                                      ${room.price_per_night}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1 md:gap-2">
+                              <h3 className="font-semibold text-sm md:text-base text-neutral-900 dark:text-white truncate">
+                                {formatRoomName(room)}
+                              </h3>
+                              <span
                                 className={clsx(
-                                  "text-xs px-1 md:px-2 py-0.5 md:py-1 rounded hidden md:block",
-                                  getRoomStatusColor(room.status),
+                                  "text-xs px-2 py-0.5 rounded-full hidden lg:inline-block",
+                                  getRoomTypeColor(room.room_type),
                                 )}
                               >
-                                {room.status.replace("_", " ")}
+                                {room.room_type}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 md:gap-3 text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                              <div className="flex items-center gap-1">
+                                <Bed className="w-3 h-3" />
+                                <span className="hidden md:inline">
+                                  {room.capacity}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="w-3 h-3" />
+                                <span className="hidden lg:inline">
+                                  ${room.price_per_night}
+                                </span>
                               </div>
                             </div>
+                          </div>
+                          <div
+                            className={clsx(
+                              "text-xs px-1 md:px-2 py-0.5 md:py-1 rounded hidden md:block",
+                              getRoomStatusColor(room.status),
+                            )}
+                          >
+                            {room.status.replace("_", " ")}
+                          </div>
+                        </div>
                       </div>
                     ))}
-                  </div>
+                </div>
 
-                  {/* Timeline area */}
-                  <div className="flex-1">
-                    <div
-                      className={clsx(
-                        "w-full",
-                        // Responsive minimum widths
-                        // Tablets get narrower cells, desktops get comfortable spacing
-                        viewMode === "week"
-                          ? "min-w-[900px] md:min-w-[1000px] lg:min-w-[1200px]"
-                          : "min-w-[1600px] md:min-w-[1800px] lg:min-w-[2000px]",
-                      )}
-                    >
+                {/* Timeline area - ONLY this scrolls horizontally */}
+                <div className="flex-1 overflow-x-auto">
+                  <div
+                    className={clsx(
+                      "w-full",
+                      // Responsive minimum widths
+                      // Tablets get narrower cells, desktops get comfortable spacing
+                      viewMode === "week"
+                        ? "min-w-[900px] md:min-w-[1000px] lg:min-w-[1200px]"
+                        : "min-w-[1600px] md:min-w-[1800px] lg:min-w-[2000px]",
+                    )}
+                  >
                       {/* Time scale header */}
                       <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
                         <TimeScale
@@ -447,7 +447,6 @@ export function BookingGrid() {
                                 isTouchDevice={isTouchDevice}
                               />
                         ))}
-                      </div>
                     </div>
                   </div>
                 </div>
