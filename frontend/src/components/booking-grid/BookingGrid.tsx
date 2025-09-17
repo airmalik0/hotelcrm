@@ -381,25 +381,15 @@ export function BookingGrid() {
                       ))}
                     </div>
 
-                    {/* Scrollable timeline area with top scrollbar using transform */}
-                    <div
-                      className="flex-1 overflow-x-auto overflow-y-auto"
-                      style={{
-                        transform: "rotateX(180deg)",
-                      }}
-                    >
-                      <div
-                        className={clsx(
-                          "w-full",
-                          // Minimum widths for readability
-                          // Week: ~170px per day × 7 = 1200px
-                          // Month: ~65px per day × 31 = 2000px
-                          viewMode === "week" ? "min-w-[1200px]" : "min-w-[2000px]"
-                        )}
-                        style={{
-                          transform: "rotateX(180deg)",
-                        }}
-                      >
+                    {/* Scrollable timeline area - clean and simple */}
+                    <div className="flex-1 overflow-x-auto overflow-y-auto">
+                      <div className={clsx(
+                        "w-full",
+                        // Minimum widths ensure all days are visible
+                        // Week: 7 days with comfortable spacing
+                        // Month: 30-31 days with readable width
+                        viewMode === "week" ? "min-w-[1200px]" : "min-w-[2000px]"
+                      )}>
                         {/* Time scale header */}
                         <div className="sticky top-0 z-10 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
                           <TimeScale
