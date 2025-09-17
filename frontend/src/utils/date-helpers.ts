@@ -86,7 +86,8 @@ export function calculateBookingPosition(
 }
 
 /**
- * Generate time scale markers with responsive formatting
+ * Generate time scale markers - one vertical line per day
+ * Best practice: Simple, predictable, handles DST correctly
  */
 export function generateTimeScale(
   viewStart: Date,
@@ -95,37 +96,35 @@ export function generateTimeScale(
   containerWidth?: number,
 ) {
   const markers = []
+
+  // Total time span for percentage calculations
   const totalMs = viewEnd.getTime() - viewStart.getTime()
 
-  // For both week and month views, generate daily markers
-  let currentDate = startOfDay(viewStart)
-  const endDate = startOfDay(viewEnd)
+  // Start at midnight of the first day (viewStart is already at 00:00:00)
+  let currentDate = new Date(viewStart)
 
-  // Determine format based on view mode and container width
-  let formatStr: string
-  if (view === "week") {
-    formatStr = "EEE" // Just day name (Mon, Tue, Wed, etc.)
-  } else {
-    // Month view - adjust label format based on container width
-    if (!containerWidth || containerWidth > 1600) {
-      formatStr = "dd MMM" // Full format for very large screens
-    } else {
-      formatStr = "dd" // Just day number for smaller screens
-    }
-  }
+  // Determine label format
+  const formatStr = view === "week"
+    ? "EEE" // Week view: day names (Mon, Tue, Wed)
+    : containerWidth && containerWidth <= 1600
+      ? "dd" // Month view small: day numbers (01, 02, 03)
+      : "dd MMM" // Month view large: day + month (01 Jan)
 
-  // Generate one marker per day
-  while (currentDate <= endDate) {
-    const positionMs = currentDate.getTime() - viewStart.getTime()
-    const position = (positionMs / totalMs) * 100
+  // Generate one marker per day at midnight
+  // Continue while we're still within the view (viewEnd is at 23:59:59)
+  while (currentDate <= viewEnd) {
+    // Calculate position as percentage from start
+    const offsetMs = currentDate.getTime() - viewStart.getTime()
+    const positionPercent = (offsetMs / totalMs) * 100
 
     markers.push({
-      position: `${position}%`,
+      position: `${positionPercent}%`,
       label: format(currentDate, formatStr),
-      date: currentDate,
+      date: new Date(currentDate), // Clone to avoid mutations
       isToday: isSameDay(currentDate, new Date()),
     })
 
+    // Move to next day at midnight
     currentDate = addDays(currentDate, 1)
   }
 
