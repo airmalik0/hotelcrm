@@ -104,11 +104,12 @@ export function generateTimeScale(
   let currentDate = new Date(viewStart)
 
   // Determine label format
-  const formatStr = view === "week"
-    ? "EEE" // Week view: day names (Mon, Tue, Wed)
-    : containerWidth && containerWidth <= 1600
-      ? "dd" // Month view small: day numbers (01, 02, 03)
-      : "dd MMM" // Month view large: day + month (01 Jan)
+  const formatStr =
+    view === "week"
+      ? "EEE" // Week view: day names (Mon, Tue, Wed)
+      : containerWidth && containerWidth <= 1600
+        ? "dd" // Month view small: day numbers (01, 02, 03)
+        : "dd MMM" // Month view large: day + month (01 Jan)
 
   // Generate one marker per day at midnight
   // Continue while we're still within the view (viewEnd is at 23:59:59)
