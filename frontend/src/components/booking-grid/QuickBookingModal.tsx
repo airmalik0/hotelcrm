@@ -223,19 +223,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       return
     }
 
-    // Comprehensive room status validation
+    // Room status validation - only MAINTENANCE prevents booking
+    // OCCUPIED and CLEANING rooms can be booked for future dates
     if (activeRoom.status === "maintenance") {
       setErrors({ room: "Cannot book a room that is under maintenance" })
-      return
-    }
-    if (activeRoom.status === "occupied") {
-      setErrors({ room: "Cannot book a room that is currently occupied" })
-      return
-    }
-    if (activeRoom.status === "cleaning") {
-      setErrors({
-        room: "Cannot book a room that is being cleaned. Please wait until cleaning is complete",
-      })
       return
     }
 
@@ -327,12 +318,13 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <option
                     key={room.id}
                     value={room.id}
-                    disabled={room.status !== "available"}
+                    disabled={room.status === "maintenance"}
                   >
                     Room {room.room_number} - {room.room_type} ($
                     {room.price_per_night}/night)
-                    {room.status !== "available" &&
-                      ` [${room.status.toUpperCase()}]`}
+                    {room.status === "maintenance" && " [MAINTENANCE - UNAVAILABLE]"}
+                    {room.status === "occupied" && " [OCCUPIED]"}
+                    {room.status === "cleaning" && " [CLEANING]"}
                   </option>
                 ))}
               </select>
@@ -349,10 +341,24 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     </div>
                   </div>
                   {/* Room Status Warning */}
-                  {selectedRoom.status !== "available" && (
+                  {selectedRoom.status === "maintenance" && (
+                    <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700">
+                      <p className="text-xs text-red-700 dark:text-red-400 font-medium">
+                        ⚠️ Room is under maintenance. Cannot create booking.
+                      </p>
+                    </div>
+                  )}
+                  {selectedRoom.status === "occupied" && (
+                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700">
+                      <p className="text-xs text-blue-700 dark:text-blue-400">
+                        ℹ️ Room is currently occupied. You can book it for future dates.
+                      </p>
+                    </div>
+                  )}
+                  {selectedRoom.status === "cleaning" && (
                     <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700">
-                      <p className="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
-                        ⚠️ Room is {selectedRoom.status}. Cannot create booking.
+                      <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                        ℹ️ Room is being cleaned. You can book it for future dates.
                       </p>
                     </div>
                   )}

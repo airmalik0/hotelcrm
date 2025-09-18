@@ -140,14 +140,11 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
                 f"Total amount mismatch. Expected: {calculated_total:.2f}, got: {obj_in.total_amount:.2f}"
             )
 
-        # Check room status comprehensively
+        # Check room status - only MAINTENANCE prevents booking creation
+        # OCCUPIED and CLEANING rooms can be booked for future dates
         from app.models import RoomStatus
         if room.status == RoomStatus.MAINTENANCE:
             raise ValueError("Room is currently under maintenance and cannot be booked")
-        elif room.status == RoomStatus.OCCUPIED:
-            raise ValueError("Room is currently occupied and cannot be booked")
-        elif room.status == RoomStatus.CLEANING:
-            raise ValueError("Room is being cleaned and cannot be booked. Please wait until cleaning is complete")
 
         # Validate booking dates are not in the past
         current_time = datetime.now(timezone.utc)
