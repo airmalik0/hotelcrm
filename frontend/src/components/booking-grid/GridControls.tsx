@@ -160,7 +160,7 @@ export const GridControls = memo(function GridControls({
 
             {showStatusFilter && statusButtonRef.current && (
               <div
-                className="fixed z-50 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
+                className="fixed z-30 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
                 style={{
                   top: statusButtonRef.current.getBoundingClientRect().bottom + 4,
                   left: statusButtonRef.current.getBoundingClientRect().left,
@@ -230,7 +230,7 @@ export const GridControls = memo(function GridControls({
 
             {showRoomTypeFilter && buttonRef.current && (
               <div
-                className="fixed z-50 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
+                className="fixed z-30 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
                 style={{
                   top: buttonRef.current.getBoundingClientRect().bottom + 4,
                   left: buttonRef.current.getBoundingClientRect().left,
@@ -300,13 +300,13 @@ export const GridControls = memo(function GridControls({
       {/* Click outside handlers */}
       {showRoomTypeFilter && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-20"
           onClick={() => setShowRoomTypeFilter(false)}
         />
       )}
       {showStatusFilter && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-20"
           onClick={() => setShowStatusFilter(false)}
         />
       )}

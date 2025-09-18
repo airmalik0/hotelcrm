@@ -1,4 +1,5 @@
 import { getCustomer } from "@/api/customers"
+import { BookingHistoryTab } from "@/components/customer/BookingHistoryTab"
 import { CustomerEditForm } from "@/components/customer/CustomerEditForm"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -321,25 +322,8 @@ export function CustomerProfile() {
               )}
 
               {/* Bookings Tab */}
-              {activeTab === "bookings" && (
-                <div>
-                  <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                    Booking History
-                  </h5>
-                  <div className="text-center py-12">
-                    <div className="mx-auto w-20 h-20 bg-primary-100 dark:bg-primary-600/25 rounded-full flex items-center justify-center mb-4">
-                      <Calendar className="w-10 h-10 text-primary-600 dark:text-primary-400" />
-                    </div>
-                    <p className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                      Booking Grid System Coming Soon
-                    </p>
-                    <p className="text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">
-                      We're rebuilding the booking management system with
-                      advanced features for better tracking and visualization of
-                      customer bookings.
-                    </p>
-                  </div>
-                </div>
+              {activeTab === "bookings" && customerId && (
+                <BookingHistoryTab customerId={customerId} />
               )}
 
               {/* Edit Tab */}

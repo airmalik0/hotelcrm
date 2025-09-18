@@ -11,7 +11,6 @@ import {
   LogOut,
   Menu,
   Moon,
-  Search,
   Settings,
   Sun,
   Users,
@@ -242,15 +241,6 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <Menu className="w-5 h-5" />
               </button>
 
-              {/* Search */}
-              <form className="relative hidden sm:block">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-64 pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-dark-2 text-neutral-900 dark:text-white placeholder-neutral-500 focus:ring-2 focus:ring-primary-300 focus:outline-none"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              </form>
             </div>
 
             {/* Right side */}

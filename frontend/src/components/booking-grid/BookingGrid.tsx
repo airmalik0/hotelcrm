@@ -261,7 +261,7 @@ export function BookingGrid() {
       />
 
       {/* Grid Controls - hide on mobile using CSS */}
-      <div className="hidden md:block relative z-50">
+      <div className="hidden md:block relative z-20">
         <GridControls
           searchTerm={filters.searchTerm}
           onSearchChange={handleSearchChange}
@@ -413,7 +413,7 @@ export function BookingGrid() {
 
       {/* Drag indicator */}
       {dragState.isDragging && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-40">
           <GripHorizontal className="w-4 h-4" />
           <span className="text-sm font-medium">
             {isUpdating ? "Moving booking..." : "Drag to another room"}
