@@ -51,10 +51,10 @@ export function UserCreateModal({
           }
         } else if (Array.isArray(error.response.data.detail)) {
           // Handle validation errors
-          const newErrors: Partial<UserCreate> = {}
+          const newErrors: Record<string, string> = {}
           error.response.data.detail.forEach((err: any) => {
-            if (err.loc?.[1]) {
-              newErrors[err.loc[1] as keyof UserCreate] = err.msg
+            if (err.loc?.[1] && typeof err.loc[1] === 'string') {
+              newErrors[err.loc[1]] = err.msg
             }
           })
           setErrors(newErrors)

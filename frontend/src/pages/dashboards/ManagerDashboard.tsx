@@ -17,9 +17,9 @@ import React from "react"
 
 export function ManagerDashboard() {
   // Temporarily disabled until API endpoints are created
-  const rooms = { data: [] }
-  const customers = { data: [] }
-  const bookings = { data: [] }
+  const rooms = { data: [], count: 0 }
+  const customers = { data: [], count: 0 }
+  const bookings = { data: [], count: 0 }
   const roomsLoading = false
   const customersLoading = false
   const bookingsLoading = false

@@ -13,8 +13,8 @@ import React from "react"
 
 export function HostDashboard() {
   // Temporarily disabled until API endpoints are created
-  const customers = { data: [] }
-  const bookings = { data: [] }
+  const customers = { data: [], count: 0 }
+  const bookings = { data: [], count: 0 }
   const customersLoading = false
   const bookingsLoading = false
 

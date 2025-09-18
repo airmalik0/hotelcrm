@@ -155,8 +155,6 @@ export function MobileBookingList({
                                 "text-xs px-2 py-1 rounded",
                                 booking.status === "confirmed"
                                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                  : booking.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                                     : booking.status === "checked_in"
                                       ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                                       : booking.status === "checked_out"
@@ -173,11 +171,6 @@ export function MobileBookingList({
                               {booking.customer?.first_name}{" "}
                               {booking.customer?.last_name}
                             </p>
-                            {booking.customer?.email && (
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                {booking.customer.email}
-                              </p>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
@@ -187,10 +180,6 @@ export function MobileBookingList({
                                 {format(new Date(booking.check_in), "MMM d")} -
                                 {format(new Date(booking.check_out), "MMM d")}
                               </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5" />
-                              <span>{booking.number_of_guests} guests</span>
                             </div>
                           </div>
                         </div>

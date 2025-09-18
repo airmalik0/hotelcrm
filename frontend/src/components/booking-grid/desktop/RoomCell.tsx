@@ -39,10 +39,6 @@ export const RoomCell = memo(function RoomCell({ room }: RoomCellProps) {
           {/* Icons */}
           <div className="flex items-center gap-2 ml-auto text-xs text-neutral-500 dark:text-neutral-400">
             <div className="flex items-center gap-0.5">
-              <Bed className="w-3 h-3" />
-              <span>{room.capacity}</span>
-            </div>
-            <div className="flex items-center gap-0.5">
               <DollarSign className="w-3 h-3" />
               <span>{room.price_per_night}</span>
             </div>
