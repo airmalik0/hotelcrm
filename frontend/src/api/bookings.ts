@@ -56,9 +56,14 @@ export async function deleteBooking(id: string): Promise<void> {
   await apiClient.delete(`/api/v1/bookings/${id}`)
 }
 
-export async function checkInBooking(id: string): Promise<BookingPublic> {
+export async function checkInBooking(
+  id: string,
+  forceCleanRoom = false,
+): Promise<BookingPublic> {
   const response = await apiClient.post<BookingPublic>(
     `/api/v1/bookings/${id}/check-in`,
+    null,
+    { params: { force_clean_room: forceCleanRoom } },
   )
   return response.data
 }

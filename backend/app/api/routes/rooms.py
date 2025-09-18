@@ -225,8 +225,6 @@ def update_room_status(
     if status == RoomStatus.OCCUPIED:
         # Check if there's an active booking for this room
         from app.crud.booking import booking as crud_booking
-        from app.models import BookingStatus
-        from datetime import datetime, timezone
 
         active_bookings = crud_booking.get_multi_filtered(
             session,

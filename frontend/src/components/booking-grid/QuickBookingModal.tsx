@@ -332,10 +332,6 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
                     <div className="flex items-center gap-1">
-                      <Bed className="w-3 h-3" />
-                      <span>Capacity: {selectedRoom.capacity}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
                       <DollarSign className="w-3 h-3" />
                       <span>${selectedRoom.price_per_night}/night</span>
                     </div>

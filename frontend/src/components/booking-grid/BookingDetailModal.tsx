@@ -127,7 +127,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
   // Check-in mutation
   const checkInMutation = useMutation({
-    mutationFn: (id: string) => checkInBooking(id),
+    mutationFn: ({ id, forceClean }: { id: string; forceClean?: boolean }) =>
+      checkInBooking(id, forceClean),
     onSuccess: (updatedBooking) => {
       // Check-in changes room status to OCCUPIED
       invalidateAfterCheckIn(
@@ -193,6 +194,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       return
     }
 
+    // Handle cleaning status with confirmation
+    let forceCleanRoom = false
     if (booking.room?.status === "cleaning") {
       if (
         !confirm(
@@ -201,6 +204,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       ) {
         return
       }
+      forceCleanRoom = true
     }
 
     if (booking.room?.status === "occupied") {
@@ -216,7 +220,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       return
     }
 
-    checkInMutation.mutate(booking.id)
+    checkInMutation.mutate({ id: booking.id, forceClean: forceCleanRoom })
   }
 
   const handleCheckOut = () => {
@@ -338,16 +342,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         : "N/A"}
                     </span>
                   </div>
-                  {booking.customer?.email && (
-                    <div>
-                      <span className="text-neutral-500 dark:text-neutral-400">
-                        Email:
-                      </span>
-                      <span className="ml-2 text-neutral-700 dark:text-neutral-300">
-                        {booking.customer.email}
-                      </span>
-                    </div>
-                  )}
                   {booking.customer?.phone && (
                     <div>
                       <span className="text-neutral-500 dark:text-neutral-400">
@@ -376,14 +370,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </span>
                     <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                       {booking.room?.room_number} - {booking.room?.room_type}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Capacity:
-                    </span>
-                    <span className="ml-2 text-neutral-700 dark:text-neutral-300">
-                      {booking.room?.capacity} guests
                     </span>
                   </div>
                   <div>

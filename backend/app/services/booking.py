@@ -180,7 +180,7 @@ class BookingService:
 
         return booking
 
-    def check_in_booking(self, booking: Booking) -> Booking:
+    def check_in_booking(self, booking: Booking, force_clean_room: bool = False) -> Booking:
         """
         Handle check-in with room status updates.
 
@@ -217,7 +217,12 @@ class BookingService:
 
         # Check if room needs cleaning first
         if room.status == RoomStatus.CLEANING:
-            raise ValueError("Room is being cleaned. Please mark it as available first or choose another room")
+            if force_clean_room:
+                # Host/manager confirmed room is clean, mark as available
+                self.crud_room.update_status(self.session, room=room, status=RoomStatus.AVAILABLE)
+                room.status = RoomStatus.AVAILABLE
+            else:
+                raise ValueError("Room is being cleaned. Please confirm it's ready for check-in")
 
         # Check if room is already occupied
         if room.status == RoomStatus.OCCUPIED:
