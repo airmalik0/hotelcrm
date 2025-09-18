@@ -11,6 +11,7 @@ from app.models import (
     RoomCreate,
     RoomPublic,
     RoomsPublic,
+    RoomStatus,
     RoomUpdate,
 )
 from app.services.room import RoomService
@@ -185,3 +186,79 @@ def read_available_rooms(
     rooms = crud_room.get_available(session, skip=skip, limit=limit)
     count = crud_room.count_available(session)
     return RoomsPublic(data=rooms, count=count)
+
+
+@router.post("/{room_id}/status", response_model=RoomPublic)
+def update_room_status(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    room_id: uuid.UUID,
+    status: RoomStatus,
+) -> Any:
+    """
+    Update room status. Available to all authenticated users.
+    Hosts can mark rooms as available after cleaning.
+    Managers and admins can set any status.
+    """
+    from app.models import UserRole
+
+    room = crud_room.get(session, id=room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Permission checks based on role
+    if current_user.role == UserRole.HOST:
+        # Hosts can only change status from CLEANING to AVAILABLE
+        if room.status != RoomStatus.CLEANING or status != RoomStatus.AVAILABLE:
+            raise HTTPException(
+                status_code=403,
+                detail="Hosts can only mark rooms as available after cleaning"
+            )
+    elif current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to change room status"
+        )
+
+    # Additional validation for status changes
+    if status == RoomStatus.OCCUPIED:
+        # Check if there's an active booking for this room
+        from app.crud.booking import booking as crud_booking
+        from app.models import BookingStatus
+        from datetime import datetime, timezone
+
+        active_bookings = crud_booking.get_multi_filtered(
+            session,
+            room_id=room_id,
+            status=BookingStatus.CHECKED_IN,
+            limit=1
+        )
+        if not active_bookings:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot mark room as occupied without an active checked-in booking"
+            )
+
+    # Log the old status for audit
+    old_status = room.status
+
+    # Update room status
+    crud_room.update_status(session, room=room, status=status)
+
+    # Log audit
+    entity_name = get_entity_name("room", room)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="status_changed",
+        entity_type="room",
+        entity_id=room.id,
+        entity_name=entity_name,
+        old_values={"status": old_status.value},
+        new_values={"status": status.value},
+    )
+
+    session.commit()
+    session.refresh(room)
+    return room

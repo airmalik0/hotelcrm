@@ -6,6 +6,7 @@ import {
   updateBooking,
 } from "@/api/bookings"
 import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
+import { useRole } from "@/hooks/useRole"
 import {
   invalidateAfterBookingCancel,
   invalidateAfterBookingUpdate,
@@ -16,17 +17,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
 import { format } from "date-fns"
 import {
+  AlertTriangle,
   Calendar,
   CheckCircle,
   Clock,
   CreditCard,
   DollarSign,
   Edit2,
+  Home,
   LogIn,
   LogOut,
   Save,
+  Sparkles,
   Trash2,
   User,
+  Wrench,
   X,
   XCircle,
 } from "lucide-react"
@@ -44,6 +49,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   bookingId,
 }: BookingDetailModalProps) {
   const queryClient = useQueryClient()
+  const { canDeleteBookings, canUpdateDiscount, canCheckInOut } = useRole()
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -166,9 +172,41 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   const handleCheckIn = () => {
     if (!booking) return
 
-    // Client-side validation: Check if room is under maintenance
+    // Client-side validation: Check if check-in time has arrived
+    const now = new Date()
+    const checkInTime = new Date(booking.check_in)
+    if (now < checkInTime) {
+      const timeDiff = checkInTime.getTime() - now.getTime()
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60))
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+      const message =
+        hours > 0
+          ? `Check-in time has not arrived yet. Please wait ${hours} hours and ${minutes} minutes.`
+          : `Check-in time has not arrived yet. Please wait ${minutes} minutes.`
+      alert(message)
+      return
+    }
+
+    // Client-side validation: Check room status
     if (booking.room?.status === "maintenance") {
       alert("Cannot check in: Room is under maintenance")
+      return
+    }
+
+    if (booking.room?.status === "cleaning") {
+      if (
+        !confirm(
+          "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
+        )
+      ) {
+        return
+      }
+    }
+
+    if (booking.room?.status === "occupied") {
+      alert(
+        "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support.",
+      )
       return
     }
 
@@ -354,6 +392,38 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </span>
                     <span className="ml-2 text-neutral-700 dark:text-neutral-300">
                       ${booking.room?.price_per_night}
+                    </span>
+                  </div>
+                  {/* Room Status Indicator */}
+                  <div>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Status:
+                    </span>
+                    <span className="ml-2">
+                      {booking.room?.status === "available" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-600/25 dark:text-emerald-400 text-xs font-medium">
+                          <CheckCircle className="w-3 h-3" />
+                          Available
+                        </span>
+                      )}
+                      {booking.room?.status === "occupied" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-600/25 dark:text-red-400 text-xs font-medium">
+                          <Home className="w-3 h-3" />
+                          Occupied
+                        </span>
+                      )}
+                      {booking.room?.status === "cleaning" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-600/25 dark:text-yellow-400 text-xs font-medium">
+                          <Sparkles className="w-3 h-3" />
+                          Cleaning
+                        </span>
+                      )}
+                      {booking.room?.status === "maintenance" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-600/25 dark:text-gray-400 text-xs font-medium">
+                          <Wrench className="w-3 h-3" />
+                          Maintenance
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -568,8 +638,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
             {/* Actions */}
             <div className="flex gap-3">
-              {/* Status Actions */}
-              {booking.status === "confirmed" && (
+              {/* Status Actions - Only show if user has permission */}
+              {booking.status === "confirmed" && canCheckInOut() && (
                 <button
                   onClick={handleCheckIn}
                   disabled={checkInMutation.isPending}
@@ -580,7 +650,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 </button>
               )}
 
-              {booking.status === "checked_in" && (
+              {booking.status === "checked_in" && canCheckInOut() && (
                 <button
                   onClick={handleCheckOut}
                   disabled={checkOutMutation.isPending}
@@ -591,8 +661,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 </button>
               )}
 
-              {/* Delete Action */}
+              {/* Delete Action - Only show if user has permission */}
               {booking.status !== "checked_out" &&
+                canDeleteBookings() &&
                 (!showDeleteConfirm ? (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}

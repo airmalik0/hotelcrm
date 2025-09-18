@@ -279,7 +279,10 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
             {paginatedBookings.map((booking) => {
               const status = booking.status || "confirmed"
               const config = statusConfig[status as keyof typeof statusConfig]
-              const nights = calculateNights(booking.check_in, booking.check_out)
+              const nights = calculateNights(
+                booking.check_in,
+                booking.check_out,
+              )
 
               return (
                 <div

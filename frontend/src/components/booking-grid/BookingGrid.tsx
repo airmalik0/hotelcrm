@@ -24,13 +24,13 @@ import { useEffect, useMemo, useState } from "react"
 import { BookingDetailModal } from "./BookingDetailModal"
 import { GridControls } from "./GridControls"
 import { GridHeader } from "./GridHeader"
+import { QuickBookingModal } from "./QuickBookingModal"
 import { RoomCell } from "./desktop/RoomCell"
 import { RoomTimeline } from "./desktop/RoomTimeline"
 import { TimeScale } from "./desktop/TimeScale"
 import { TimelineGrid } from "./desktop/TimelineGrid"
 import { TodayLine } from "./desktop/TodayLine"
 import { MobileBookingList } from "./mobile/MobileBookingList"
-import { QuickBookingModal } from "./QuickBookingModal"
 
 export function BookingGrid() {
   const [currentDate, setCurrentDate] = useState(new Date())

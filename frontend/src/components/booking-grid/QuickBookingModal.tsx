@@ -223,9 +223,27 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       return
     }
 
-    // Client-side validation: Check if room is under maintenance
+    // Comprehensive room status validation
     if (activeRoom.status === "maintenance") {
       setErrors({ room: "Cannot book a room that is under maintenance" })
+      return
+    }
+    if (activeRoom.status === "occupied") {
+      setErrors({ room: "Cannot book a room that is currently occupied" })
+      return
+    }
+    if (activeRoom.status === "cleaning") {
+      setErrors({
+        room: "Cannot book a room that is being cleaned. Please wait until cleaning is complete",
+      })
+      return
+    }
+
+    // Validate dates are not in the past
+    const checkInDate = new Date(formData.checkIn)
+    const now = new Date()
+    if (checkInDate < now) {
+      setErrors({ dates: "Check-in date cannot be in the past" })
       return
     }
 
@@ -306,22 +324,38 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               >
                 <option value="">Select a room</option>
                 {roomsData?.data.map((room) => (
-                  <option key={room.id} value={room.id}>
+                  <option
+                    key={room.id}
+                    value={room.id}
+                    disabled={room.status !== "available"}
+                  >
                     Room {room.room_number} - {room.room_type} ($
                     {room.price_per_night}/night)
+                    {room.status !== "available" &&
+                      ` [${room.status.toUpperCase()}]`}
                   </option>
                 ))}
               </select>
               {selectedRoom && (
-                <div className="mt-2 flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
-                  <div className="flex items-center gap-1">
-                    <Bed className="w-3 h-3" />
-                    <span>Capacity: {selectedRoom.capacity}</span>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+                    <div className="flex items-center gap-1">
+                      <Bed className="w-3 h-3" />
+                      <span>Capacity: {selectedRoom.capacity}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
+                      <span>${selectedRoom.price_per_night}/night</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" />
-                    <span>${selectedRoom.price_per_night}/night</span>
-                  </div>
+                  {/* Room Status Warning */}
+                  {selectedRoom.status !== "available" && (
+                    <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700">
+                      <p className="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
+                        ⚠️ Room is {selectedRoom.status}. Cannot create booking.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

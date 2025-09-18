@@ -196,12 +196,32 @@ class BookingService:
         if booking.status != BookingStatus.CONFIRMED:
             raise ValueError("Only confirmed bookings can be checked in")
 
+        # Validate check-in time has arrived
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+        if current_time < booking.check_in:
+            time_until_checkin = booking.check_in - current_time
+            hours = int(time_until_checkin.total_seconds() / 3600)
+            minutes = int((time_until_checkin.total_seconds() % 3600) / 60)
+            if hours > 0:
+                raise ValueError(f"Check-in time has not arrived yet. Please wait {hours} hours and {minutes} minutes")
+            else:
+                raise ValueError(f"Check-in time has not arrived yet. Please wait {minutes} minutes")
+
         room = self.crud_room.get(self.session, id=booking.room_id)
         if not room:
             raise ValueError("Room not found")
 
         if room.status == RoomStatus.MAINTENANCE:
             raise ValueError("Room is under maintenance and cannot be checked in")
+
+        # Check if room needs cleaning first
+        if room.status == RoomStatus.CLEANING:
+            raise ValueError("Room is being cleaned. Please mark it as available first or choose another room")
+
+        # Check if room is already occupied
+        if room.status == RoomStatus.OCCUPIED:
+            raise ValueError("Room is already occupied. This might be a data inconsistency - please contact support")
 
         # Check for conflicts
         overlapping = self.crud_booking.get_overlapping(

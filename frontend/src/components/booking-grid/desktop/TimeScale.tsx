@@ -39,7 +39,6 @@ export const TimeScale = memo(function TimeScale({
     containerWidth,
   )
 
-
   return (
     <div ref={containerRef} className="relative h-10 bg-white dark:bg-dark-2">
       {/* Time markers */}

@@ -240,7 +240,6 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 <Menu className="w-5 h-5" />
               </button>
-
             </div>
 
             {/* Right side */}

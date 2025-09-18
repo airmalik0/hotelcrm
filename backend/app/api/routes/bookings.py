@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
@@ -207,18 +207,22 @@ def update_booking(
 
 
 
-@router.delete("/{booking_id}", response_model=Message)
+@router.delete("/{booking_id}", response_model=Message, dependencies=[Depends(require_admin_or_manager)])
 def delete_booking(
     session: SessionDep,
     current_user: CurrentUser,
     booking_id: uuid.UUID,
 ) -> Any:
     """
-    Delete a booking.
+    Delete a booking. Requires admin or manager role.
     """
     booking = crud_booking.get(session, id=booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
+
+    # Prevent deletion of checked-out bookings for data integrity
+    if booking.status == BookingStatus.CHECKED_OUT:
+        raise HTTPException(status_code=400, detail="Cannot delete checked-out bookings. This booking is part of the historical record")
 
     service = BookingService(session)
 

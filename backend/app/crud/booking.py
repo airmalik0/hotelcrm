@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy.orm import joinedload
@@ -140,10 +140,19 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
                 f"Total amount mismatch. Expected: {calculated_total:.2f}, got: {obj_in.total_amount:.2f}"
             )
 
-        # Check room status
+        # Check room status comprehensively
         from app.models import RoomStatus
         if room.status == RoomStatus.MAINTENANCE:
             raise ValueError("Room is currently under maintenance and cannot be booked")
+        elif room.status == RoomStatus.OCCUPIED:
+            raise ValueError("Room is currently occupied and cannot be booked")
+        elif room.status == RoomStatus.CLEANING:
+            raise ValueError("Room is being cleaned and cannot be booked. Please wait until cleaning is complete")
+
+        # Validate booking dates are not in the past
+        current_time = datetime.now(timezone.utc)
+        if obj_in.check_in < current_time:
+            raise ValueError("Cannot create booking with check-in date in the past")
 
         # Now check for overlapping bookings while room is locked
         overlapping = self.get_overlapping(

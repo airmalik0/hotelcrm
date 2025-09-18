@@ -162,20 +162,25 @@ export const GridControls = memo(function GridControls({
               <div
                 className="fixed z-30 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
                 style={{
-                  top: statusButtonRef.current.getBoundingClientRect().bottom + 4,
+                  top:
+                    statusButtonRef.current.getBoundingClientRect().bottom + 4,
                   left: statusButtonRef.current.getBoundingClientRect().left,
                 }}
               >
                 <div className="p-2">
                   {Object.entries(statusConfig).map(([status, config]) => {
                     const Icon = config.icon
-                    const isActive = statusFilters.includes(status as BookingStatus)
+                    const isActive = statusFilters.includes(
+                      status as BookingStatus,
+                    )
 
                     return (
                       <button
                         type="button"
                         key={status}
-                        onClick={() => toggleStatusFilter(status as BookingStatus)}
+                        onClick={() =>
+                          toggleStatusFilter(status as BookingStatus)
+                        }
                         className={clsx(
                           "w-full px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
                           isActive

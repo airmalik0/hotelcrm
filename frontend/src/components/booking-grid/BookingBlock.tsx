@@ -64,8 +64,7 @@ export const BookingBlock = memo(function BookingBlock({
     widthPercent < 2 ? "px-0.5" : widthPercent < 5 ? "px-1" : "px-2"
 
   // Only allow dragging for confirmed bookings (not checked in/out) and not on touch devices
-  const canDrag =
-    isDraggable && bookingStatus === "confirmed" && !isTouchDevice
+  const canDrag = isDraggable && bookingStatus === "confirmed" && !isTouchDevice
 
   return (
     <div

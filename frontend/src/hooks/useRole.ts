@@ -24,6 +24,11 @@ export function useRole() {
   const canManageCustomers = (): boolean =>
     hasAnyRole(["admin", "manager", "host"])
   const canDeleteCustomers = (): boolean => isAdminOrManager()
+  const canDeleteBookings = (): boolean => isAdminOrManager()
+  const canCheckInOut = (): boolean => hasAnyRole(["admin", "manager", "host"])
+  const canUpdateDiscount = (): boolean => isAdminOrManager()
+  const canMarkRoomAvailable = (): boolean =>
+    hasAnyRole(["admin", "manager", "host"])
 
   return {
     user,
@@ -39,5 +44,9 @@ export function useRole() {
     canManageRooms,
     canManageCustomers,
     canDeleteCustomers,
+    canDeleteBookings,
+    canCheckInOut,
+    canUpdateDiscount,
+    canMarkRoomAvailable,
   }
 }
