@@ -250,7 +250,6 @@ def check_in_booking(
     session: SessionDep,
     current_user: CurrentUser,
     booking_id: uuid.UUID,
-    force_clean_room: bool = False,
 ) -> Any:
     """
     Check in a booking.
@@ -262,7 +261,7 @@ def check_in_booking(
     service = BookingService(session)
 
     try:
-        booking = service.check_in_booking(booking, force_clean_room=force_clean_room)
+        booking = service.check_in_booking(booking)
 
         # Log audit
         entity_name = get_entity_name("booking", booking)

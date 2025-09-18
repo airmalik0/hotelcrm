@@ -5,6 +5,7 @@ import {
   getBooking,
   updateBooking,
 } from "@/api/bookings"
+import { updateRoomStatus } from "@/api/rooms"
 import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
 import { useRole } from "@/hooks/useRole"
 import {
@@ -127,8 +128,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
   // Check-in mutation
   const checkInMutation = useMutation({
-    mutationFn: ({ id, forceClean }: { id: string; forceClean?: boolean }) =>
-      checkInBooking(id, forceClean),
+    mutationFn: (id: string) => checkInBooking(id),
     onSuccess: (updatedBooking) => {
       // Check-in changes room status to OCCUPIED
       invalidateAfterCheckIn(
@@ -170,7 +170,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     deleteMutation.mutate(booking.id)
   }
 
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     if (!booking) return
 
     // Client-side validation: Check if check-in time has arrived
@@ -194,8 +194,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       return
     }
 
-    // Handle cleaning status with confirmation
-    let forceCleanRoom = false
+    // Handle cleaning status with confirmation and two API calls
     if (booking.room?.status === "cleaning") {
       if (
         !confirm(
@@ -204,7 +203,17 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       ) {
         return
       }
-      forceCleanRoom = true
+
+      // First update room status to AVAILABLE
+      try {
+        await updateRoomStatus(booking.room_id, "available")
+        // Invalidate room queries to update UI
+        queryClient.invalidateQueries({ queryKey: ["rooms"] })
+        queryClient.invalidateQueries({ queryKey: ["room", booking.room_id] })
+      } catch (error) {
+        alert("Failed to update room status. Please try again.")
+        return
+      }
     }
 
     if (booking.room?.status === "occupied") {
@@ -220,7 +229,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       return
     }
 
-    checkInMutation.mutate({ id: booking.id, forceClean: forceCleanRoom })
+    checkInMutation.mutate(booking.id)
   }
 
   const handleCheckOut = () => {

@@ -26,6 +26,7 @@ interface BookingBlockProps {
   isSelected?: boolean
   isDraggable?: boolean
   isTouchDevice?: boolean
+  fontSize?: number
 }
 
 export const BookingBlock = memo(function BookingBlock({
@@ -40,6 +41,7 @@ export const BookingBlock = memo(function BookingBlock({
   isSelected = false,
   isDraggable = true,
   isTouchDevice = false,
+  fontSize = 12,
 }: BookingBlockProps) {
   const guestName = booking.customer
     ? `${booking.customer.first_name} ${booking.customer.last_name}`
@@ -110,9 +112,9 @@ export const BookingBlock = memo(function BookingBlock({
       {showInitials && (
         <div className="flex-1 min-w-0">
           {showFullName ? (
-            <div className="text-xs font-medium truncate">{guestName}</div>
+            <div className="font-medium truncate" style={{ fontSize: `${fontSize}px` }}>{guestName}</div>
           ) : (
-            <div className="text-xs font-bold">{initials}</div>
+            <div className="font-bold" style={{ fontSize: `${fontSize}px` }}>{initials}</div>
           )}
         </div>
       )}

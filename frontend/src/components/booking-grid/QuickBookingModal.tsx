@@ -665,7 +665,11 @@ export const QuickBookingModal = memo(function QuickBookingModal({
             </button>
             <button
               type="submit"
-              disabled={!selectedCustomer || createBookingMutation.isPending}
+              disabled={
+                !selectedCustomer ||
+                createBookingMutation.isPending ||
+                (room || selectedRoom)?.status === "maintenance"
+              }
               className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
             >
               {createBookingMutation.isPending

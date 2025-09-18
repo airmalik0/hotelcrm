@@ -5,8 +5,10 @@ import type {
   BookingStatus,
   RoomPublic,
 } from "@/client/types.gen"
+import { GridZoomProvider, useGridZoom } from "@/contexts/GridZoomContext"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
 import { useDebounce } from "@/hooks/useDebounce"
+import { useGridZoomControls } from "@/hooks/useGridZoomControls"
 import {
   calculateFilteredStats,
   filterBookings,
@@ -32,12 +34,16 @@ import { TimelineGrid } from "./desktop/TimelineGrid"
 import { TodayLine } from "./desktop/TodayLine"
 import { MobileBookingList } from "./mobile/MobileBookingList"
 
-export function BookingGrid() {
+function BookingGridContent() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null,
   )
+
+  // Get zoom context
+  const { zoomLevel, dayWidth, roomHeight } = useGridZoom()
+  const gridContainerRef = useGridZoomControls({ enabled: true })
 
   // Touch device detection only (for drag-n-drop)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
@@ -97,9 +103,12 @@ export function BookingGrid() {
       }),
   })
 
-  // Apply filters to data
+  // Apply filters to data (filter out maintenance rooms from display)
   const allRooms = useMemo(
-    () => sortRoomsByNumber(roomsData?.data || []),
+    () =>
+      sortRoomsByNumber(
+        (roomsData?.data || []).filter((room) => room.status !== "maintenance"),
+      ),
     [roomsData],
   )
 
@@ -314,13 +323,15 @@ export function BookingGrid() {
                 </div>
               </div>
             ) : (
-              <div className="relative overflow-x-auto">
+              <div className="relative overflow-x-auto" ref={gridContainerRef}>
                 {/* Main Grid */}
                 <div
                   className="grid bg-white dark:bg-dark-2"
                   style={{
                     gridTemplateColumns: "200px 1fr",
-                    minWidth: viewMode === "week" ? "1000px" : "1800px",
+                    minWidth: viewMode === "week"
+                      ? `${200 + dayWidth * 7}px`
+                      : `${200 + dayWidth * 30}px`,
                   }}
                 >
                   {/* Header Row */}
@@ -336,7 +347,11 @@ export function BookingGrid() {
                   {/* Room Rows */}
                   {filteredRooms.flatMap((room) => [
                     /* Room Cell */
-                    <RoomCell key={`cell-${room.id}`} room={room} />,
+                    <RoomCell
+                      key={`cell-${room.id}`}
+                      room={room}
+                      height={roomHeight}
+                    />,
 
                     /* Timeline Cell */
                     <RoomTimeline
@@ -345,6 +360,7 @@ export function BookingGrid() {
                       bookings={bookingsByRoom.get(room.id) || []}
                       viewStart={viewStart}
                       viewEnd={viewEnd}
+                      height={roomHeight}
                       onBookingClick={handleBookingClick}
                       onEmptyClick={handleEmptyClick}
                       onBookingHover={handleBookingHover}
@@ -374,7 +390,9 @@ export function BookingGrid() {
                   style={{
                     left: "200px",
                     right: 0,
-                    minWidth: viewMode === "week" ? "800px" : "1600px",
+                    minWidth: viewMode === "week"
+                      ? `${dayWidth * 7}px`
+                      : `${dayWidth * 30}px`,
                   }}
                 >
                   {/* Vertical grid lines */}
@@ -421,5 +439,14 @@ export function BookingGrid() {
         </div>
       )}
     </div>
+  )
+}
+
+// Export wrapper with zoom provider
+export function BookingGrid() {
+  return (
+    <GridZoomProvider>
+      <BookingGridContent />
+    </GridZoomProvider>
   )
 }

@@ -7,9 +7,10 @@ import { memo } from "react"
 
 interface RoomCellProps {
   room: RoomPublic
+  height?: number
 }
 
-export const RoomCell = memo(function RoomCell({ room }: RoomCellProps) {
+export const RoomCell = memo(function RoomCell({ room, height = 64 }: RoomCellProps) {
   return (
     <div
       className={clsx(
@@ -17,9 +18,11 @@ export const RoomCell = memo(function RoomCell({ room }: RoomCellProps) {
         "sticky left-0 z-30",
         "bg-white dark:bg-dark-2",
         "border-b border-r border-neutral-200 dark:border-neutral-700",
-        "h-16",
         "w-[200px]", // Fixed width to match grid column
       )}
+      style={{
+        height: `${height}px`,
+      }}
     >
       <div className="h-full px-3 flex items-center">
         <div className="flex items-center gap-2 w-full">

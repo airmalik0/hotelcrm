@@ -2,6 +2,7 @@ import type {
   Message,
   RoomCreate,
   RoomPublic,
+  RoomStatus,
   RoomUpdate,
   RoomsPublic,
 } from "@/client/types.gen"
@@ -75,5 +76,20 @@ export async function updateRoom(
  */
 export async function deleteRoom(roomId: string): Promise<Message> {
   const response = await apiClient.delete<Message>(`/api/v1/rooms/${roomId}`)
+  return response.data
+}
+
+/**
+ * Update room status
+ */
+export async function updateRoomStatus(
+  roomId: string,
+  status: RoomStatus,
+): Promise<RoomPublic> {
+  const response = await apiClient.post<RoomPublic>(
+    `/api/v1/rooms/${roomId}/status`,
+    null,
+    { params: { status } },
+  )
   return response.data
 }

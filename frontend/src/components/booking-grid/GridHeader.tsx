@@ -1,3 +1,4 @@
+import { useGridZoom } from "@/contexts/GridZoomContext"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
 import { format } from "date-fns"
@@ -8,8 +9,11 @@ import {
   ChevronRight,
   LayoutGrid,
   Plus,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from "lucide-react"
-import { memo } from "react"
+import { memo, useState } from "react"
 
 interface GridHeaderProps {
   currentDate: Date
@@ -36,6 +40,13 @@ export const GridHeader = memo(function GridHeader({
   onViewModeChange,
   onAddBooking,
 }: GridHeaderProps) {
+  // Get zoom context
+  const { zoomLevel, zoomIn, zoomOut, resetZoom, presets, applyPreset } = useGridZoom()
+  const [showZoomPresets, setShowZoomPresets] = useState(false)
+
+  // Format zoom percentage
+  const zoomPercent = Math.round(zoomLevel * 100)
+
   // Always show date range for both modes
   const dateRangeText = `${format(viewStart, "MMM d")} - ${format(viewEnd, "MMM d, yyyy")}`
 
@@ -176,6 +187,98 @@ export const GridHeader = memo(function GridHeader({
 
           {/* Right side - Controls */}
           <div className="flex items-center gap-1 md:gap-2">
+            {/* Zoom controls - hidden on small screens */}
+            <div className="hidden lg:flex items-center gap-1">
+              {/* Zoom out button */}
+              <button
+                onClick={zoomOut}
+                disabled={zoomLevel <= 0.5}
+                className={clsx(
+                  "p-2 rounded-lg border transition-colors",
+                  "border-neutral-200 dark:border-neutral-600",
+                  zoomLevel <= 0.5
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-neutral-100 dark:hover:bg-dark-3"
+                )}
+                aria-label="Zoom out"
+                title={`Zoom out (Ctrl+-)`}
+              >
+                <ZoomOut className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              </button>
+
+              {/* Zoom level indicator with preset dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowZoomPresets(!showZoomPresets)}
+                  className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300 min-w-[80px]"
+                >
+                  {zoomPercent}%
+                </button>
+
+                {showZoomPresets && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowZoomPresets(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-20">
+                      <div className="p-1">
+                        {presets.map((preset) => (
+                          <button
+                            key={preset.name}
+                            onClick={() => {
+                              applyPreset(preset)
+                              setShowZoomPresets(false)
+                            }}
+                            className={clsx(
+                              "w-full px-3 py-2 rounded-md text-sm transition-colors text-left",
+                              Math.abs(preset.scale - zoomLevel) < 0.05
+                                ? "bg-primary-100 dark:bg-primary-600/25 text-primary-700 dark:text-primary-400"
+                                : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3"
+                            )}
+                          >
+                            <div className="font-medium">{preset.name} ({Math.round(preset.scale * 100)}%)</div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {preset.description}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Zoom in button */}
+              <button
+                onClick={zoomIn}
+                disabled={zoomLevel >= 2.0}
+                className={clsx(
+                  "p-2 rounded-lg border transition-colors",
+                  "border-neutral-200 dark:border-neutral-600",
+                  zoomLevel >= 2.0
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-neutral-100 dark:hover:bg-dark-3"
+                )}
+                aria-label="Zoom in"
+                title={`Zoom in (Ctrl++)`}
+              >
+                <ZoomIn className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              </button>
+
+              {/* Reset zoom button */}
+              <button
+                onClick={resetZoom}
+                className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
+                aria-label="Reset zoom"
+                title={`Reset zoom (Ctrl+0)`}
+              >
+                <RotateCcw className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              </button>
+
+              <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-600 mx-1" />
+            </div>
+
             {/* View mode toggle */}
             <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-600">
               <button

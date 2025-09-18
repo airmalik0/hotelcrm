@@ -1,4 +1,5 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
+import { useGridZoom } from "@/contexts/GridZoomContext"
 import {
   calculateBookingPosition,
   getBookingTimesFromClick,
@@ -12,6 +13,7 @@ interface RoomTimelineProps {
   bookings: BookingPublic[]
   viewStart: Date
   viewEnd: Date
+  height?: number
   onBookingClick: (booking: BookingPublic) => void
   onEmptyClick: (room: RoomPublic, checkIn: Date, checkOut: Date) => void
   onBookingHover?: (booking: BookingPublic, event: React.MouseEvent) => void
@@ -33,6 +35,7 @@ export const RoomTimeline = memo(function RoomTimeline({
   bookings,
   viewStart,
   viewEnd,
+  height = 64,
   onBookingClick,
   onEmptyClick,
   onBookingHover,
@@ -49,6 +52,7 @@ export const RoomTimeline = memo(function RoomTimeline({
   isTouchDevice = false,
 }: RoomTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { fontSize } = useGridZoom()
 
   const handleEmptyClick = (event: React.MouseEvent<HTMLDivElement>) => {
     // Only handle clicks on the container itself, not on bookings
@@ -75,13 +79,16 @@ export const RoomTimeline = memo(function RoomTimeline({
     <div
       ref={containerRef}
       className={clsx(
-        "relative h-16 cursor-pointer",
+        "relative cursor-pointer",
         "border-b border-neutral-200 dark:border-neutral-700",
         "transition-colors touch-manipulation",
         isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-900/20",
         isDropTarget && !isValidDropTarget && "bg-red-50 dark:bg-red-900/20",
         !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3",
       )}
+      style={{
+        height: `${height}px`,
+      }}
       onClick={handleEmptyClick}
       onDragOver={(e) => !isTouchDevice && onRoomDragOver?.(e, room)}
       onDragLeave={!isTouchDevice ? onRoomDragLeave : undefined}
@@ -116,6 +123,7 @@ export const RoomTimeline = memo(function RoomTimeline({
             }
             isSelected={booking.id === selectedBookingId}
             isTouchDevice={isTouchDevice}
+            fontSize={fontSize}
           />
         )
       })}
