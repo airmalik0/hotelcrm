@@ -3,48 +3,54 @@
  * Only shows in development mode
  */
 
-import { BREAKPOINTS, TRANSITION_BREAKPOINTS } from "@/constants/breakpoints"
+import { BREAKPOINTS } from "@/constants/breakpoints"
 import { useViewportWidth } from "@/hooks/useViewportWidth"
 import { getCurrentBreakpointName } from "@/utils/breakpoint-test"
 import { useEffect, useState } from "react"
 
 export function ResponsiveDebug() {
   const width = useViewportWidth()
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(() => {
+    // Check localStorage for debug mode
+    return localStorage.getItem("responsive-debug") === "true"
+  })
   const breakpoint = getCurrentBreakpointName(width)
 
   // Toggle with keyboard shortcut Ctrl+Shift+D
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === "D") {
-        setIsVisible((prev) => !prev)
+        setIsVisible((prev) => {
+          const newValue = !prev
+          localStorage.setItem("responsive-debug", newValue.toString())
+          return newValue
+        })
       }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [])
 
-  // Only show in development
-  if (import.meta.env.PROD || !isVisible) {
+  // Show based on visibility state
+  if (!isVisible) {
     return null
   }
 
-  // Determine critical zones
-  const isInCriticalZone = width >= 1200 && width < 1280
+  // Determine if at exact breakpoint
+  const isNearBreakpoint = Math.abs(width - BREAKPOINTS.xl) <= 10
   const isAtBreakpoint =
     width === BREAKPOINTS.sm ||
     width === BREAKPOINTS.md ||
     width === BREAKPOINTS.lg ||
-    width === TRANSITION_BREAKPOINTS["lg-plus"] ||
     width === BREAKPOINTS.xl ||
     width === BREAKPOINTS["2xl"]
 
   // Determine expected behaviors
   const behaviors = {
-    sidebar: width >= 1200 ? "static" : "hidden",
+    sidebar: width >= 1280 ? "static" : "hidden",
     grid: width >= 768 ? "desktop" : "mobile",
-    zoomControls: width >= 1200 ? "visible" : "hidden",
-    statusFilters: width >= 1200 ? "inline" : "dropdown",
+    zoomControls: width >= 1280 ? "visible" : "hidden",
+    statusFilters: width >= 1280 ? "inline" : "dropdown",
     searchWidth: width >= 1280 ? "xl:w-80" : "md:w-48",
     roomColumns:
       width >= 1280 ? 4 : width >= 1024 ? 3 : width >= 640 ? 2 : 1,
@@ -85,14 +91,14 @@ export function ResponsiveDebug() {
         </div>
       </div>
 
-      {/* Critical zone warning */}
-      {isInCriticalZone && (
+      {/* Near breakpoint warning */}
+      {isNearBreakpoint && (
         <div className="mb-3 p-2 bg-yellow-100 dark:bg-yellow-600/25 rounded border border-yellow-300 dark:border-yellow-600/50">
           <div className="text-xs font-semibold text-yellow-700 dark:text-yellow-400">
-            ⚠️ Critical Zone (1200-1280px)
+            ⚠️ Near XL Breakpoint (1280px)
           </div>
           <div className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
-            lg-plus → xl transition
+            Layout will change at {BREAKPOINTS.xl}px
           </div>
         </div>
       )}
@@ -169,9 +175,6 @@ export function ResponsiveDebug() {
           </div>
           <div className="text-neutral-500 dark:text-neutral-400">
             lg: {BREAKPOINTS.lg}px |{" "}
-            <span className="text-yellow-600 dark:text-yellow-400">
-              lg+: {TRANSITION_BREAKPOINTS["lg-plus"]}px
-            </span>
           </div>
           <div className="text-neutral-500 dark:text-neutral-400">
             xl: {BREAKPOINTS.xl}px | 2xl: {BREAKPOINTS["2xl"]}px
@@ -191,20 +194,26 @@ export function ResponsiveDebug() {
  */
 export function ResponsiveIndicator() {
   const width = useViewportWidth()
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(() => {
+    return localStorage.getItem("responsive-indicator") === "true"
+  })
 
   // Toggle with Ctrl+Shift+B
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === "B") {
-        setIsVisible((prev) => !prev)
+        setIsVisible((prev) => {
+          const newValue = !prev
+          localStorage.setItem("responsive-indicator", newValue.toString())
+          return newValue
+        })
       }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [])
 
-  if (import.meta.env.PROD || !isVisible) {
+  if (!isVisible) {
     return null
   }
 
@@ -212,11 +221,6 @@ export function ResponsiveIndicator() {
     { name: "sm", value: BREAKPOINTS.sm, color: "bg-blue-500" },
     { name: "md", value: BREAKPOINTS.md, color: "bg-green-500" },
     { name: "lg", value: BREAKPOINTS.lg, color: "bg-purple-500" },
-    {
-      name: "lg+",
-      value: TRANSITION_BREAKPOINTS["lg-plus"],
-      color: "bg-yellow-500",
-    },
     { name: "xl", value: BREAKPOINTS.xl, color: "bg-red-500" },
     { name: "2xl", value: BREAKPOINTS["2xl"], color: "bg-indigo-500" },
   ]

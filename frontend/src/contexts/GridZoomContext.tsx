@@ -27,8 +27,7 @@ const LAYOUT_CONSTANTS = {
   MAIN_CONTAINER_PADDING: 48, // p-6 = 24px * 2 sides
   MIN_TIMELINE_WIDTH: 400,    // Minimum usable width for timeline
   LG_BREAKPOINT: 1024,        // Tailwind lg: breakpoint
-  LG_PLUS_BREAKPOINT: 1200,   // Temporary: old xl breakpoint for sidebar during migration
-  XL_BREAKPOINT: 1280,        // Standard xl: breakpoint (migrated)
+  XL_BREAKPOINT: 1280,        // Standard Tailwind xl: breakpoint - when sidebar becomes static
 } as const
 
 interface GridZoomContextValue {
@@ -136,10 +135,10 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     // IMPORTANT: The grid is rendered inside a flex container structure:
     // <div flex> <aside w-64 xl:static> <div flex-1> <main p-6> [GRID HERE]
     //
-    // On mobile (<1200px): Sidebar is fixed (out of flow), main gets full viewport
-    // On desktop (>=1200px): Sidebar is static (in flow), main gets remaining space
+    // On mobile (<1280px): Sidebar is fixed (out of flow), main gets full viewport
+    // On desktop (>=1280px): Sidebar is static (in flow), main gets remaining space
 
-    const hasSidebar = viewportWidth >= LAYOUT_CONSTANTS.LG_PLUS_BREAKPOINT
+    const hasSidebar = viewportWidth >= LAYOUT_CONSTANTS.XL_BREAKPOINT
 
     // Calculate the actual container width (not viewport width!)
     let containerWidth: number

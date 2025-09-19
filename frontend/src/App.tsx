@@ -22,13 +22,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouterProvider router={router} />
-        {/* Debug components - only visible in development with keyboard shortcuts */}
-        {import.meta.env.DEV && (
-          <>
-            <ResponsiveDebug />
-            <ResponsiveIndicator />
-          </>
-        )}
+        {/* Debug components - toggle with keyboard shortcuts */}
+        <ResponsiveDebug />
+        <ResponsiveIndicator />
       </AuthProvider>
     </QueryClientProvider>
   )

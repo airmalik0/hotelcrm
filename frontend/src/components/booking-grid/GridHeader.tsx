@@ -163,10 +163,10 @@ export const GridHeader = memo(function GridHeader({
               onClick={onToday}
               className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
-              <span className="lg-plus:hidden">
+              <span className="xl:hidden">
                 <Calendar className="w-4 h-4" />
               </span>
-              <span className="hidden lg-plus:inline">Today</span>
+              <span className="hidden xl:inline">Today</span>
             </button>
 
             {/* Date range display */}
@@ -206,7 +206,7 @@ export const GridHeader = memo(function GridHeader({
           {/* Right side - Controls */}
           <div className="flex items-center gap-1 md:gap-2">
             {/* Zoom controls - hidden on small screens */}
-            <div className="hidden lg-plus:flex items-center gap-1">
+            <div className="hidden xl:flex items-center gap-1">
               {/* Zoom out button */}
               <button
                 onClick={() => zoomOut(viewMode)}
@@ -311,7 +311,7 @@ export const GridHeader = memo(function GridHeader({
                 )}
               >
                 <LayoutGrid className="w-4 h-4" />
-                <span className="hidden lg-plus:inline">Week</span>
+                <span className="hidden xl:inline">Week</span>
               </button>
               <button
                 onClick={() => onViewModeChange("month")}
@@ -323,7 +323,7 @@ export const GridHeader = memo(function GridHeader({
                 )}
               >
                 <CalendarDays className="w-4 h-4" />
-                <span className="hidden lg-plus:inline">Month</span>
+                <span className="hidden xl:inline">Month</span>
               </button>
             </div>
 
@@ -333,7 +333,7 @@ export const GridHeader = memo(function GridHeader({
               className="px-3 md:px-4 py-1.5 md:py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-1 md:gap-2 text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden lg-plus:inline">Add Booking</span>
+              <span className="hidden xl:inline">Add Booking</span>
             </button>
           </div>
         </div>

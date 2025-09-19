@@ -3,7 +3,7 @@
  * Particularly focused on the critical 1200-1280px transition zone
  */
 
-import { BREAKPOINTS, TRANSITION_BREAKPOINTS } from "@/constants/breakpoints"
+import { BREAKPOINTS } from "@/constants/breakpoints"
 
 export interface ResponsiveTestPoint {
   width: number
@@ -114,48 +114,48 @@ export const RESPONSIVE_TEST_POINTS: ResponsiveTestPoint[] = [
       gridColumns: 3,
     },
   },
-  // lg-plus breakpoint - CRITICAL TRANSITION ZONE
+  // Before xl breakpoint
   {
     width: 1200,
-    label: "lg-plus Start ⚠️",
-    description: "Sidebar becomes static, zoom appears",
+    label: "Before XL",
+    description: "Still in lg range",
     expectedBehavior: {
-      sidebar: "static",
-      zoomControls: "visible",
-      statusFilters: "inline",
+      sidebar: "hidden",
+      zoomControls: "hidden",
+      statusFilters: "dropdown",
       searchWidth: "normal",
       gridColumns: 3,
     },
   },
   {
     width: 1240,
-    label: "Transition Zone",
-    description: "Between lg-plus and xl",
+    label: "Approaching XL",
+    description: "Getting close to xl breakpoint",
     expectedBehavior: {
-      sidebar: "static",
-      zoomControls: "visible",
-      statusFilters: "inline",
+      sidebar: "hidden",
+      zoomControls: "hidden",
+      statusFilters: "dropdown",
       searchWidth: "normal",
       gridColumns: 3,
     },
   },
   {
     width: 1279,
-    label: "lg-plus End",
-    description: "Just before xl",
+    label: "Just Before XL ⚠️",
+    description: "1px before major layout change",
     expectedBehavior: {
-      sidebar: "static",
-      zoomControls: "visible",
-      statusFilters: "inline",
+      sidebar: "hidden",
+      zoomControls: "hidden",
+      statusFilters: "dropdown",
       searchWidth: "normal",
       gridColumns: 3,
     },
   },
-  // xl breakpoint
+  // xl breakpoint - MAJOR TRANSITION
   {
     width: 1280,
-    label: "xl Start",
-    description: "Search expands, stats appear",
+    label: "xl Start ⚠️",
+    description: "Sidebar static, zoom visible, filters inline, search expands",
     expectedBehavior: {
       sidebar: "static",
       zoomControls: "visible",
@@ -267,8 +267,7 @@ export function getCurrentBreakpointName(width: number): string {
   if (width < BREAKPOINTS.sm) return "xs"
   if (width < BREAKPOINTS.md) return "sm"
   if (width < BREAKPOINTS.lg) return "md"
-  if (width < TRANSITION_BREAKPOINTS["lg-plus"]) return "lg"
-  if (width < BREAKPOINTS.xl) return "lg-plus"
+  if (width < BREAKPOINTS.xl) return "lg"
   if (width < BREAKPOINTS["2xl"]) return "xl"
   return "2xl"
 }

@@ -12,26 +12,7 @@ export const BREAKPOINTS = {
 
 export type Breakpoint = keyof typeof BREAKPOINTS
 
-/**
- * Legacy breakpoints for migration period
- * Will be removed after complete migration
- */
-export const LEGACY_BREAKPOINTS = {
-  sm: 576,
-  md: 768,
-  lg: 992,
-  xl: 1200,
-  "2xl": 1400,
-  "3xl": 1650,
-} as const
-
-/**
- * Temporary breakpoint for smooth xl migration
- * Maps to old xl (1200px) during transition period
- */
-export const TRANSITION_BREAKPOINTS = {
-  "lg-plus": 1200, // Old xl value for critical components
-} as const
+// Legacy and transition breakpoints removed - migration to standard Tailwind complete
 
 /**
  * Helper to check if viewport is at least the specified breakpoint

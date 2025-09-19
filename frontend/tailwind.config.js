@@ -10,23 +10,21 @@ export default {
       serif: ["Inter", "sans-serif"],
     },
     screens: {
-      sm: "640px", // Migrated to standard Tailwind
-      md: "768px",
-      lg: "1024px", // Migrated to standard Tailwind
-      "lg-plus": "1200px", // Temporary breakpoint for smooth xl migration
-      xl: "1280px", // Migrated to standard Tailwind
-      "2xl": "1536px", // Migrated to standard Tailwind
+      sm: "640px", // Standard Tailwind
+      md: "768px", // Standard Tailwind
+      lg: "1024px", // Standard Tailwind
+      xl: "1280px", // Standard Tailwind
+      "2xl": "1536px", // Standard Tailwind
     },
     container: {
       center: true,
       padding: "1rem",
       screens: {
-        sm: "600px",   // Updated for 640px breakpoint
-        md: "720px",   // Good for 768px breakpoint
-        lg: "960px",   // Updated for 1024px breakpoint
-        "lg-plus": "1140px", // For 1200px temp breakpoint
-        xl: "1200px",  // Updated for 1280px breakpoint
-        "2xl": "1400px", // Updated for 1536px breakpoint
+        sm: "600px",   // Container for 640px breakpoint
+        md: "720px",   // Container for 768px breakpoint
+        lg: "960px",   // Container for 1024px breakpoint
+        xl: "1200px",  // Container for 1280px breakpoint
+        "2xl": "1400px", // Container for 1536px breakpoint
       },
     },
     extend: {
