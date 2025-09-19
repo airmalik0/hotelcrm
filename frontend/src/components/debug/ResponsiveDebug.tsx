@@ -74,7 +74,7 @@ export function ResponsiveDebug() {
       <div className="mb-3">
         <div
           className={`text-2xl font-bold ${
-            isInCriticalZone
+            isNearBreakpoint
               ? "text-yellow-600 dark:text-yellow-400"
               : isAtBreakpoint
               ? "text-red-600 dark:text-red-400"
