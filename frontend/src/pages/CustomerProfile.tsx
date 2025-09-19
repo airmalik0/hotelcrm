@@ -1,7 +1,9 @@
-import { getCustomer } from "@/api/customers"
+import { getCustomer, updateCustomer } from "@/api/customers"
 import { BookingHistoryTab } from "@/components/customer/BookingHistoryTab"
 import { CustomerEditForm } from "@/components/customer/CustomerEditForm"
-import { useQuery } from "@tanstack/react-query"
+import { ImageUpload } from "@/components/ui/ImageUpload"
+import { showSuccess } from "@/utils/error-handling"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Calendar,
   DollarSign,
@@ -18,7 +20,8 @@ import { useParams } from "react-router-dom"
 
 export function CustomerProfile() {
   const { customerId } = useParams<{ customerId: string }>()
-  const [activeTab, setActiveTab] = useState<"details" | "bookings" | "edit">(
+  const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState<"details" | "bookings" | "documents" | "edit">(
     "details",
   )
 
@@ -27,6 +30,16 @@ export function CustomerProfile() {
     queryKey: ["customer", customerId],
     queryFn: () => getCustomer(customerId!),
     enabled: !!customerId,
+  })
+
+  // Mutation for updating passport
+  const updatePassportMutation = useMutation({
+    mutationFn: (passportPath: string | null) =>
+      updateCustomer(customerId!, { passport_photo_path: passportPath }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customer", customerId] })
+      showSuccess("Passport photo updated successfully!")
+    },
   })
 
   const formatDate = (date: string | null | undefined) => {
@@ -85,11 +98,8 @@ export function CustomerProfile() {
           <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
           <div className="pb-6 px-6 -mt-16">
             <div className="text-center border-b border-neutral-200 dark:border-neutral-600 pb-6">
-              <div className="w-32 h-32 rounded-full bg-white dark:bg-neutral-800 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
-                <span className="text-4xl font-bold text-primary-600 dark:text-primary-400">
-                  {customer.first_name[0]}
-                  {customer.last_name[0]}
-                </span>
+              <div className="w-32 h-32 rounded-lg bg-primary-100 dark:bg-primary-600/25 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
+                <User className="w-16 h-16 text-primary-600 dark:text-primary-400" />
               </div>
               <h4 className="text-xl font-semibold mt-4 mb-1 text-neutral-900 dark:text-white">
                 {customer.first_name} {customer.last_name}
@@ -140,30 +150,6 @@ export function CustomerProfile() {
               </ul>
             </div>
 
-            {/* Passport Photo */}
-            {customer.passport_photo_path && (
-              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
-                <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
-                  <FileImage className="w-5 h-5" />
-                  Passport Photo
-                </h6>
-                <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600">
-                  <img
-                    src={`/api/v1/files/${customer.passport_photo_path}`}
-                    alt="Passport"
-                    className="w-full h-auto object-contain bg-neutral-50 dark:bg-neutral-800"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      target.parentElement?.insertAdjacentHTML(
-                        'beforeend',
-                        '<div class="p-4 text-center text-neutral-500">Failed to load passport image</div>'
-                      )
-                    }}
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Statistics */}
             <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
@@ -239,6 +225,17 @@ export function CustomerProfile() {
               </button>
               <button
                 className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
+                  activeTab === "documents"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
+                }`}
+                onClick={() => setActiveTab("documents")}
+              >
+                <FileImage className="w-4 h-4" />
+                Documents
+              </button>
+              <button
+                className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
                   activeTab === "edit"
                     ? "border-primary-600 text-primary-600"
                     : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
@@ -301,36 +298,6 @@ export function CustomerProfile() {
                     </div>
                   </div>
 
-                  {/* Passport Photo in Details Tab */}
-                  {customer.passport_photo_path && (
-                    <div className="mt-8">
-                      <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
-                        <FileImage className="w-5 h-5" />
-                        Document - Passport Photo
-                      </h5>
-                      <div className="max-w-2xl">
-                        <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800">
-                          <img
-                            src={`/api/v1/files/${customer.passport_photo_path}`}
-                            alt="Customer Passport"
-                            className="w-full h-auto object-contain"
-                            style={{ maxHeight: '500px' }}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                              target.parentElement?.insertAdjacentHTML(
-                                'beforeend',
-                                '<div class="p-8 text-center text-neutral-500"><svg class="w-16 h-16 mx-auto mb-2 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Failed to load passport image</div>'
-                              )
-                            }}
-                          />
-                        </div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
-                          Uploaded document for verification purposes
-                        </p>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                     <h6 className="text-base font-semibold mb-3 text-neutral-900 dark:text-white">
@@ -381,6 +348,59 @@ export function CustomerProfile() {
               {/* Bookings Tab */}
               {activeTab === "bookings" && customerId && (
                 <BookingHistoryTab customerId={customerId} />
+              )}
+
+              {/* Documents Tab */}
+              {activeTab === "documents" && (
+                <div>
+                  <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
+                    Customer Documents
+                  </h5>
+
+                  <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6">
+                    <h6 className="text-base font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
+                      <FileImage className="w-5 h-5" />
+                      Passport Photo
+                    </h6>
+
+                    <div className="space-y-4">
+                      <ImageUpload
+                        value={customer.passport_photo_path}
+                        onChange={(path) => updatePassportMutation.mutate(path)}
+                        label="Upload Passport"
+                        disabled={updatePassportMutation.isPending}
+                      />
+
+                      {customer.passport_photo_path && (
+                        <div className="mt-6">
+                          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+                            Current Passport Document
+                          </p>
+                          <div className="max-w-2xl rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600">
+                            <img
+                              src={`/api/v1/files/${customer.passport_photo_path}`}
+                              alt="Customer Passport"
+                              className="w-full h-auto object-contain bg-white dark:bg-neutral-900"
+                              style={{ maxHeight: '600px' }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                target.parentElement?.insertAdjacentHTML(
+                                  'beforeend',
+                                  '<div class="p-8 text-center text-neutral-500"><svg class="w-16 h-16 mx-auto mb-2 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Failed to load passport image</div>'
+                                )
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB). This document will be used for customer verification.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* Edit Tab */}

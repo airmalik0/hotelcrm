@@ -179,26 +179,16 @@ export function CustomerList() {
                           {currentPage * itemsPerPage + index + 1}
                         </td>
                         <td className="py-3 px-2">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-600/25 flex items-center justify-center mr-3">
-                              <span className="text-primary-600 dark:text-primary-400 font-semibold">
-                                {customer.first_name[0]}
-                                {customer.last_name[0]}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-base font-normal text-neutral-900 dark:text-white">
-                                  {customer.first_name} {customer.last_name}
-                                </span>
-                                {customer.passport_photo_path && (
-                                  <FileCheck
-                                    className="w-4 h-4 text-success-600 dark:text-success-400"
-                                    title="Passport uploaded"
-                                  />
-                                )}
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-normal text-neutral-900 dark:text-white">
+                              {customer.first_name} {customer.last_name}
+                            </span>
+                            {customer.passport_photo_path && (
+                              <FileCheck
+                                className="w-4 h-4 text-success-600 dark:text-success-400"
+                                title="Passport uploaded"
+                              />
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-2 text-neutral-600 dark:text-neutral-300">

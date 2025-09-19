@@ -4,11 +4,9 @@ import type {
   CustomerUpdate,
   District,
 } from "@/client/types.gen"
-import { ImageUpload } from "@/components/ui/ImageUpload"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Camera } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -45,7 +43,6 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
       ? new Date(customer.date_of_birth).toISOString().split("T")[0]
       : "",
     district: customer.district || undefined,
-    passport_photo_path: customer.passport_photo_path || undefined,
     notes: customer.notes || "",
   })
 
@@ -117,7 +114,6 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         phone: formData.phone || undefined,
         date_of_birth: formData.date_of_birth || undefined,
         district: formData.district as District | undefined,
-        passport_photo_path: formData.passport_photo_path || undefined,
         notes: formData.notes || undefined,
       }
       updateMutation.mutate(submitData)
@@ -149,32 +145,6 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         Edit Customer Profile
       </h5>
 
-      {/* Passport Photo */}
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
-          Passport Photo
-        </label>
-        <div className="flex items-center gap-6">
-          <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-600/25 flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-              {customer.first_name[0]}
-              {customer.last_name[0]}
-            </span>
-          </div>
-          <div>
-            <ImageUpload
-              value={formData.passport_photo_path}
-              onChange={(path) =>
-                setFormData((prev) => ({ ...prev, passport_photo_path: path }))
-              }
-              label="Upload Passport"
-            />
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
-              Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB)
-            </p>
-          </div>
-        </div>
-      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
