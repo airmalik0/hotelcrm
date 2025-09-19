@@ -30,7 +30,11 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
       onClose()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create room")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to create room",
+      )
     },
   })
 
@@ -44,8 +48,11 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
       newErrors.room_number = "Room number is required"
     } else if (formData.room_number.trim().length > 10) {
       newErrors.room_number = "Room number must be 10 characters or less"
-    } else if (!/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())) {
-      newErrors.room_number = "Room number must start with letter or number and contain only letters, numbers, and hyphens"
+    } else if (
+      !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())
+    ) {
+      newErrors.room_number =
+        "Room number must start with letter or number and contain only letters, numbers, and hyphens"
     }
     if (formData.floor < 1) {
       newErrors.floor = "Floor must be 1 or greater"

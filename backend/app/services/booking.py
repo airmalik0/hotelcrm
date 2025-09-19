@@ -3,11 +3,15 @@ Booking service layer for centralizing booking business logic.
 """
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from sqlmodel import Session
 
 from app.core.customer_stats import update_customer_stats_on_booking_change
 from app.core.exceptions import BusinessRuleViolation, NotFoundError
+
+if TYPE_CHECKING:
+    from app.models import User
 from app.crud.booking import booking as crud_booking
 from app.crud.customer import customer as crud_customer
 from app.crud.room import room as crud_room
@@ -371,3 +375,292 @@ class BookingService:
         )
 
         return temp_booking.calculate_total_amount(room.price_per_night)
+
+    def get_booking_or_404(self, booking_id: uuid.UUID) -> Booking:
+        """Get booking by ID or raise NotFoundError."""
+        booking = self.crud_booking.get(self.session, id=booking_id)
+        if not booking:
+            raise NotFoundError("Booking", str(booking_id))
+        return booking
+
+    def get_booking_with_relations_or_404(self, booking_id: uuid.UUID) -> Booking:
+        """Get booking with relations or raise NotFoundError."""
+        booking = self.crud_booking.get_with_relations(self.session, booking_id=booking_id)
+        if not booking:
+            raise NotFoundError("Booking", str(booking_id))
+        return booking
+
+    def validate_booking_for_deletion(self, booking: Booking) -> None:
+        """Validate business rules for booking deletion."""
+        if booking.status == BookingStatus.CHECKED_OUT:
+            raise BusinessRuleViolation("Cannot delete checked-out bookings. This booking is part of the historical record")
+
+    def validate_status_transition(self, booking: Booking, new_status: BookingStatus, current_user: "User") -> None:
+        """Validate booking status transition permissions and business rules."""
+        from app.models import UserRole
+
+        # Only admin/manager can cancel checked-out bookings
+        if booking.status == BookingStatus.CHECKED_OUT and new_status == BookingStatus.CANCELLED:
+            if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and not current_user.is_superuser:
+                raise BusinessRuleViolation("Only admin or manager can cancel checked-out bookings")
+
+        # Validate other transitions using existing business logic
+        if not booking.is_status_transition_valid(new_status):
+            raise BusinessRuleViolation(f"Invalid status transition from {booking.status} to {new_status}")
+
+    def perform_actual_check_in(self, booking: Booking) -> Booking:
+        """
+        Perform actual check-in - sets actual_check_in to current time.
+        This is for when guest arrives (may be different from planned time).
+
+        Args:
+            booking: Booking to check in
+
+        Returns:
+            Updated booking
+
+        Raises:
+            BusinessRuleViolation: If actual check-in is not allowed
+        """
+        if booking.status != BookingStatus.CONFIRMED:
+            raise BusinessRuleViolation("Only confirmed bookings can be checked in")
+
+        # Get room and validate availability
+        room = self.crud_room.get(self.session, id=booking.room_id)
+        if not room:
+            raise NotFoundError("Room", str(booking.room_id))
+
+        if room.status == RoomStatus.MAINTENANCE:
+            raise BusinessRuleViolation("Room is under maintenance and cannot be checked in")
+
+        if room.status == RoomStatus.OCCUPIED:
+            raise BusinessRuleViolation("Room is already occupied. This might be a data inconsistency - please contact support")
+
+        # Check for conflicts with other bookings
+        overlapping = self.crud_booking.get_overlapping(
+            self.session,
+            room_id=booking.room_id,
+            check_in=booking.check_in,
+            check_out=booking.check_out,
+            exclude_id=booking.id
+        )
+
+        if overlapping:
+            raise BusinessRuleViolation("Cannot check in: room has conflicting bookings")
+
+        # Set actual check-in time to now and update statuses
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+
+        # Update booking with actual check-in time
+        booking_update = BookingUpdate(
+            status=BookingStatus.CHECKED_IN,
+            actual_check_in=current_time
+        )
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
+
+        # Update room status
+        self.crud_room.update_status(self.session, room=room, status=RoomStatus.OCCUPIED)
+
+        return booking
+
+    def perform_actual_check_out(self, booking: Booking) -> Booking:
+        """
+        Perform actual check-out - sets actual_check_out to current time.
+        This is for quick checkout without changing planned dates or refunding.
+
+        Args:
+            booking: Booking to check out
+
+        Returns:
+            Updated booking
+
+        Raises:
+            BusinessRuleViolation: If actual check-out is not allowed
+        """
+        if booking.status != BookingStatus.CHECKED_IN:
+            raise BusinessRuleViolation("Only checked-in bookings can be checked out")
+
+        # Set actual check-out time to now
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+
+        # Update booking with actual check-out time
+        booking_update = BookingUpdate(
+            status=BookingStatus.CHECKED_OUT,
+            actual_check_out=current_time
+        )
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
+
+        # Update room status to cleaning
+        room = self.crud_room.get(self.session, id=booking.room_id)
+        if room:
+            self.crud_room.update_status(self.session, room=room, status=RoomStatus.CLEANING)
+
+        return booking
+
+    def modify_booking_dates(self, booking: Booking, new_check_in: datetime | None = None, new_check_out: datetime | None = None) -> tuple[Booking, float]:
+        """
+        Modify planned check-in/out dates with payment recalculation.
+        This is an administrative operation that may result in refunds/additional charges.
+
+        Args:
+            booking: Booking to modify
+            new_check_in: New planned check-in date (optional)
+            new_check_out: New planned check-out date (optional)
+
+        Returns:
+            Tuple of (updated booking, payment difference - positive means charge, negative means refund)
+
+        Raises:
+            BusinessRuleViolation: If modification is not allowed
+        """
+        if booking.status == BookingStatus.CANCELLED:
+            raise BusinessRuleViolation("Cannot modify cancelled bookings")
+
+        old_total = booking.total_amount
+        changes: dict[str, Any] = {}
+
+        if new_check_in:
+            changes["check_in"] = new_check_in
+        if new_check_out:
+            changes["check_out"] = new_check_out
+
+        if not changes:
+            return booking, 0.0
+
+        # Check room availability for new dates
+        check_in = new_check_in or booking.check_in
+        check_out = new_check_out or booking.check_out
+
+        overlapping = self.crud_booking.get_overlapping(
+            self.session,
+            room_id=booking.room_id,
+            check_in=check_in,
+            check_out=check_out,
+            exclude_id=booking.id
+        )
+
+        if overlapping:
+            raise BusinessRuleViolation("Room is not available for the selected dates")
+
+        # Calculate new total
+        new_total = self.recalculate_booking_total(
+            booking,
+            new_check_in=new_check_in,
+            new_check_out=new_check_out
+        )
+
+        payment_difference = new_total - old_total
+
+        # Update booking
+        changes["total_amount"] = new_total
+        if payment_difference < 0:
+            # Customer gets refund
+            changes["refund_amount"] = booking.refund_amount + abs(payment_difference)
+        elif payment_difference > 0:
+            # Customer pays additional amount
+            changes["additional_payment"] = booking.additional_payment + payment_difference
+
+        booking_update = BookingUpdate(**changes)
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
+
+        # Update customer stats if amount changed
+        if payment_difference != 0:
+            update_customer_stats_on_booking_change(
+                session=self.session,
+                customer_id=booking.customer_id,
+                amount_delta=payment_difference,
+                booking_delta=0,
+                new_booking_date=new_check_in if new_check_in else None
+            )
+
+        return booking, payment_difference
+
+    def change_room_with_payment_adjustment(self, booking: Booking, new_room_id: uuid.UUID) -> tuple[Booking, float]:
+        """
+        Change room with automatic payment adjustment based on price difference.
+
+        Args:
+            booking: Booking to modify
+            new_room_id: ID of the new room
+
+        Returns:
+            Tuple of (updated booking, payment difference - positive means charge, negative means refund)
+
+        Raises:
+            BusinessRuleViolation: If room change is not allowed
+        """
+        if booking.status == BookingStatus.CANCELLED:
+            raise BusinessRuleViolation("Cannot change room for cancelled bookings")
+
+        if booking.status == BookingStatus.CHECKED_OUT:
+            raise BusinessRuleViolation("Cannot change room for checked-out bookings")
+
+        # Get new room and validate
+        new_room = self.crud_room.get(self.session, id=new_room_id)
+        if not new_room:
+            raise NotFoundError("Room", str(new_room_id))
+
+        if new_room.status == RoomStatus.MAINTENANCE:
+            raise BusinessRuleViolation("New room is under maintenance and cannot be used")
+
+        # Check availability for new room
+        overlapping = self.crud_booking.get_overlapping(
+            self.session,
+            room_id=new_room_id,
+            check_in=booking.check_in,
+            check_out=booking.check_out,
+            exclude_id=booking.id
+        )
+
+        if overlapping:
+            raise BusinessRuleViolation("New room is not available for the selected dates")
+
+        # Calculate price difference
+        old_total = booking.total_amount
+        new_total = self.recalculate_booking_total(booking, new_room_id=new_room_id)
+        payment_difference = new_total - old_total
+
+        # Handle room status updates if currently checked in
+        if booking.status == BookingStatus.CHECKED_IN:
+            # Old room becomes available for cleaning
+            old_room = self.crud_room.get(self.session, id=booking.room_id)
+            if old_room:
+                self.crud_room.update_status(self.session, room=old_room, status=RoomStatus.CLEANING)
+
+            # New room becomes occupied (if available)
+            if new_room.status == RoomStatus.CLEANING:
+                # Allow admin/manager to move from cleaning room
+                pass
+            elif new_room.status != RoomStatus.AVAILABLE:
+                raise BusinessRuleViolation("New room is not available for immediate check-in")
+
+            self.crud_room.update_status(self.session, room=new_room, status=RoomStatus.OCCUPIED)
+
+        # Update booking
+        changes = {
+            "room_id": new_room_id,
+            "total_amount": new_total
+        }
+
+        if payment_difference < 0:
+            # Customer gets refund
+            changes["refund_amount"] = booking.refund_amount + abs(payment_difference)
+        elif payment_difference > 0:
+            # Customer pays additional amount
+            changes["additional_payment"] = booking.additional_payment + payment_difference
+
+        booking_update = BookingUpdate(**changes)
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
+
+        # Update customer stats if amount changed
+        if payment_difference != 0:
+            update_customer_stats_on_booking_change(
+                session=self.session,
+                customer_id=booking.customer_id,
+                amount_delta=payment_difference,
+                booking_delta=0
+            )
+
+        return booking, payment_difference

@@ -53,6 +53,14 @@ class Booking(BookingBase, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     version: int = Field(default=0, index=True)
 
+    # Actual dates (when guest really checked in/out)
+    actual_check_in: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))
+    actual_check_out: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))
+
+    # Payment adjustments for room changes, early checkout, etc.
+    refund_amount: float = Field(default=0.0, ge=0, le=1000000)
+    additional_payment: float = Field(default=0.0, ge=0, le=1000000)
+
     def calculate_total_amount(self, room_price_per_night: float) -> float:
         nights = (self.check_out.date() - self.check_in.date()).days
         nights = max(1, nights)
@@ -86,6 +94,10 @@ class BookingUpdate(SQLModel):
     discount_reason: str | None = None
     payment_method: PaymentMethod | None = None
     registration_need: bool | None = None
+    actual_check_in: datetime | None = None
+    actual_check_out: datetime | None = None
+    refund_amount: float | None = None
+    additional_payment: float | None = None
 
 
 class BookingPublic(BookingBase):
@@ -94,8 +106,29 @@ class BookingPublic(BookingBase):
     room: RoomPublic | None = None
     booking_date: datetime
     created_at: datetime
+    actual_check_in: datetime | None = None
+    actual_check_out: datetime | None = None
+    refund_amount: float = 0.0
+    additional_payment: float = 0.0
 
 
 class BookingsPublic(SQLModel):
     data: list[BookingPublic]
     count: int
+
+
+class DateModificationRequest(SQLModel):
+    """Request model for modifying booking dates."""
+    new_check_in: datetime | None = None
+    new_check_out: datetime | None = None
+
+
+class RoomChangeRequest(SQLModel):
+    """Request model for changing booking room."""
+    new_room_id: uuid.UUID
+
+
+class PaymentAdjustmentResponse(SQLModel):
+    """Response model for operations that result in payment adjustments."""
+    booking: BookingPublic
+    payment_difference: float  # Positive = customer pays more, negative = refund

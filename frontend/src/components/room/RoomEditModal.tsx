@@ -42,7 +42,11 @@ export function RoomEditModal({
       onClose()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to update room")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to update room",
+      )
     },
   })
 
@@ -56,10 +60,17 @@ export function RoomEditModal({
     const newErrors: Record<string, string> = {}
     if (formData.room_number !== null && !formData.room_number?.trim()) {
       newErrors.room_number = "Room number cannot be empty"
-    } else if (formData.room_number && formData.room_number.trim().length > 10) {
+    } else if (
+      formData.room_number &&
+      formData.room_number.trim().length > 10
+    ) {
       newErrors.room_number = "Room number must be 10 characters or less"
-    } else if (formData.room_number && !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())) {
-      newErrors.room_number = "Room number must start with letter or number and contain only letters, numbers, and hyphens"
+    } else if (
+      formData.room_number &&
+      !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())
+    ) {
+      newErrors.room_number =
+        "Room number must start with letter or number and contain only letters, numbers, and hyphens"
     }
     if (formData.floor !== null && formData.floor < 1) {
       newErrors.floor = "Floor must be 1 or greater"
@@ -68,7 +79,10 @@ export function RoomEditModal({
     }
     if (formData.price_per_night !== null && formData.price_per_night <= 0) {
       newErrors.price_per_night = "Price must be greater than 0"
-    } else if (formData.price_per_night !== null && formData.price_per_night > 100000) {
+    } else if (
+      formData.price_per_night !== null &&
+      formData.price_per_night > 100000
+    ) {
       newErrors.price_per_night = "Price must be 100,000 or less"
     }
 

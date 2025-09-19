@@ -56,7 +56,11 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
       showSuccess("Customer updated successfully!")
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to update customer")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to update customer",
+      )
     },
   })
 
@@ -144,7 +148,6 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
       <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
         Edit Customer Profile
       </h5>
-
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

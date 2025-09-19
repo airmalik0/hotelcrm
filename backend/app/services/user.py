@@ -1,10 +1,11 @@
 """
 User service layer for centralizing user business logic.
 """
+import uuid
 
 from sqlmodel import Session
 
-from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation
+from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation, NotFoundError
 from app.core.security import get_password_hash, verify_password
 from app.crud.user import user as crud_user
 from app.models import UpdatePassword, User, UserCreate, UserUpdate, UserUpdateMe
@@ -146,3 +147,10 @@ class UserService:
             raise BusinessRuleViolation("Super users are not allowed to delete themselves")
 
         self.crud.delete(self.session, id=current_user.id)
+
+    def get_user_or_404(self, user_id: uuid.UUID) -> User:
+        """Get user by ID or raise NotFoundError."""
+        user = self.crud.get(self.session, id=user_id)
+        if not user:
+            raise NotFoundError("User", str(user_id))
+        return user

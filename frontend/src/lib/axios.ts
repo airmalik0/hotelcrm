@@ -37,8 +37,10 @@ apiClient.interceptors.response.use(
   (response) => {
     // Validate response has expected JSON structure
     try {
-      if (response.headers["content-type"]?.includes("application/json") &&
-          typeof response.data === "string") {
+      if (
+        response.headers["content-type"]?.includes("application/json") &&
+        typeof response.data === "string"
+      ) {
         // Try to parse JSON if it came as string
         response.data = JSON.parse(response.data)
       }
@@ -46,7 +48,6 @@ apiClient.interceptors.response.use(
       // If JSON parsing fails, wrap in a structured error
       console.warn("Response JSON parsing failed:", e)
     }
-
 
     return response
   },

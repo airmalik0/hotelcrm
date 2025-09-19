@@ -144,6 +144,7 @@ export function getSearchSuggestions(
  * Calculate filtered statistics
  */
 export function calculateFilteredStats(
+  allBookings: BookingPublic[],
   filteredBookings: BookingPublic[],
   filteredRooms: RoomPublic[],
   viewStart: Date,
@@ -151,13 +152,21 @@ export function calculateFilteredStats(
 ) {
   const totalBookings = filteredBookings.length
 
-  // Calculate occupancy rate for filtered data
+  // Calculate occupancy rate using ALL bookings (not filtered by status)
+  // but only for filtered rooms (may be filtered by room type)
   const totalRoomDays =
     filteredRooms.length *
     Math.ceil((viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60 * 24))
 
   let occupiedRoomDays = 0
-  filteredBookings.forEach((booking) => {
+
+  // Filter allBookings to only include bookings for filteredRooms
+  const filteredRoomIds = new Set(filteredRooms.map((room) => room.id))
+  const relevantBookings = allBookings.filter((booking) =>
+    filteredRoomIds.has(booking.room_id),
+  )
+
+  relevantBookings.forEach((booking) => {
     const bookingStart = Math.max(
       new Date(booking.check_in).getTime(),
       viewStart.getTime(),

@@ -96,6 +96,19 @@ export const AuditLogsPublicSchema = {
     title: 'AuditLogsPublic'
 } as const;
 
+export const Body_files_upload_passportSchema = {
+    properties: {
+        file: {
+            type: 'string',
+            format: 'binary',
+            title: 'File'
+        }
+    },
+    type: 'object',
+    required: ['file'],
+    title: 'Body_files-upload_passport'
+} as const;
+
 export const Body_login_login_access_tokenSchema = {
     properties: {
         grant_type: {
@@ -311,6 +324,40 @@ export const BookingPublicSchema = {
             type: 'string',
             format: 'date-time',
             title: 'Created At'
+        },
+        actual_check_in: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actual Check In'
+        },
+        actual_check_out: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actual Check Out'
+        },
+        refund_amount: {
+            type: 'number',
+            title: 'Refund Amount',
+            default: 0
+        },
+        additional_payment: {
+            type: 'number',
+            title: 'Additional Payment',
+            default: 0
         }
     },
     type: 'object',
@@ -437,6 +484,52 @@ export const BookingUpdateSchema = {
                 }
             ],
             title: 'Registration Need'
+        },
+        actual_check_in: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actual Check In'
+        },
+        actual_check_out: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Actual Check Out'
+        },
+        refund_amount: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Refund Amount'
+        },
+        additional_payment: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Payment'
         }
     },
     type: 'object',
@@ -777,6 +870,38 @@ export const CustomersPublicSchema = {
     title: 'CustomersPublic'
 } as const;
 
+export const DateModificationRequestSchema = {
+    properties: {
+        new_check_in: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'New Check In'
+        },
+        new_check_out: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'New Check Out'
+        }
+    },
+    type: 'object',
+    title: 'DateModificationRequest',
+    description: 'Request model for modifying booking dates.'
+} as const;
+
 export const DistrictSchema = {
     type: 'string',
     enum: ['Almazar', 'Bektemir', 'Mirabad', 'Mirzo Ulugbek', 'Sergeli', 'Uchtepa', 'Chilanzar', 'Shaykhantakhur', 'Yunusabad', 'Yakkasaray', 'Yashnabad', 'Yangihayot'],
@@ -810,10 +935,40 @@ export const MessageSchema = {
     title: 'Message'
 } as const;
 
+export const PaymentAdjustmentResponseSchema = {
+    properties: {
+        booking: {
+            '$ref': '#/components/schemas/BookingPublic'
+        },
+        payment_difference: {
+            type: 'number',
+            title: 'Payment Difference'
+        }
+    },
+    type: 'object',
+    required: ['booking', 'payment_difference'],
+    title: 'PaymentAdjustmentResponse',
+    description: 'Response model for operations that result in payment adjustments.'
+} as const;
+
 export const PaymentMethodSchema = {
     type: 'string',
     enum: ['cash', 'transfer', 'terminal'],
     title: 'PaymentMethod'
+} as const;
+
+export const RoomChangeRequestSchema = {
+    properties: {
+        new_room_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'New Room Id'
+        }
+    },
+    type: 'object',
+    required: ['new_room_id'],
+    title: 'RoomChangeRequest',
+    description: 'Request model for changing booking room.'
 } as const;
 
 export const RoomCreateSchema = {

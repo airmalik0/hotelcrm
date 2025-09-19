@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.api.deps import SessionDep, require_admin
 from app.models import AuditLogPublic, AuditLogsPublic
@@ -48,11 +48,7 @@ def read_audit_log(
     """
     service = AuditService(session)
 
-    audit_log = service.get_audit_log_with_user(audit_log_id)
-    if not audit_log:
-        raise HTTPException(status_code=404, detail="Audit log not found")
-
-    return audit_log
+    return service.get_audit_log_or_404(audit_log_id)
 
 
 @router.get("/stats/summary", dependencies=[Depends(require_admin)])

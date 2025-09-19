@@ -43,7 +43,11 @@ export function UserCreateModal({
       resetForm()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create user")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to create user",
+      )
     },
   })
 
@@ -88,7 +92,8 @@ export function UserCreateModal({
     } else if (formData.username.length < 3) {
       newErrors.username = "Username must be at least 3 characters"
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username = "Username must contain only letters, numbers, hyphens and underscores"
+      newErrors.username =
+        "Username must contain only letters, numbers, hyphens and underscores"
     }
 
     if (!formData.password) {

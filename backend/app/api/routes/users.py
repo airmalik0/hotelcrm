@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.api.deps import CurrentUser, SessionDep, require_admin
 from app.core.audit import get_change_values, get_entity_name, log_audit
@@ -188,9 +188,8 @@ def read_user_by_id(
     """
     Get a specific user by id. Users can view their own profile, admins can view any profile.
     """
-    user = crud_user.get(session, id=user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    service = UserService(session)
+    user = service.get_user_or_404(user_id)
 
     # Allow users to view their own profile
     if user.id == current_user.id:
@@ -212,14 +211,8 @@ def update_user(
     """
     Update a user. Only admin can update users.
     """
-    user = crud_user.get(session, id=user_id)
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this id does not exist in the system",
-        )
-
     service = UserService(session)
+    user = service.get_user_or_404(user_id)
 
     # Get old values before update
     update_data = user_in.model_dump(exclude_unset=True)
@@ -254,11 +247,8 @@ def delete_user(
     """
     Delete a user. Only admin can delete users.
     """
-    user = crud_user.get(session, id=user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     service = UserService(session)
+    user = service.get_user_or_404(user_id)
 
     # Log audit before deletion
     entity_name = get_entity_name("user", user)

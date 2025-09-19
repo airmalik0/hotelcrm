@@ -49,6 +49,9 @@ function BookingGridContent() {
     actualDaysInView,
     switchViewMode,
     setViewDates,
+    currentGridState,
+    isLargeScreen,
+    maxContentWidth,
   } = useGridZoom()
   const gridContainerRef = useGridZoomControls({ enabled: true, viewMode })
 
@@ -155,12 +158,13 @@ function BookingGridContent() {
   const filteredStats = useMemo(
     () =>
       calculateFilteredStats(
+        allBookings,
         filteredBookings,
         filteredRooms,
         viewStart,
         viewEnd,
       ),
-    [filteredBookings, filteredRooms, viewStart, viewEnd],
+    [allBookings, filteredBookings, filteredRooms, viewStart, viewEnd],
   )
 
   // Drag & Drop functionality
@@ -320,21 +324,24 @@ function BookingGridContent() {
         onAddBooking={handleAddBooking}
       />
 
-      {/* Grid Controls - hide on mobile using CSS */}
-      <div className="hidden md:block relative z-20">
-        <GridControls
-          searchTerm={filters.searchTerm}
-          onSearchChange={handleSearchChange}
-          statusFilters={filters.statusFilters}
-          onStatusFilterChange={handleStatusFilterChange}
-          roomTypeFilters={filters.roomTypeFilters}
-          onRoomTypeFilterChange={handleRoomTypeFilterChange}
-          availableRoomTypes={availableRoomTypes}
-          totalBookings={filteredStats.totalBookings}
-          occupancyRate={filteredStats.occupancyRate}
-          onClearAllFilters={handleClearAllFilters}
-        />
-      </div>
+      {/* Grid Controls - show for all states except mobile */}
+      {currentGridState !== 'mobile' && (
+        <div className="relative z-20">
+          <GridControls
+            searchTerm={filters.searchTerm}
+            onSearchChange={handleSearchChange}
+            statusFilters={filters.statusFilters}
+            onStatusFilterChange={handleStatusFilterChange}
+            roomTypeFilters={filters.roomTypeFilters}
+            onRoomTypeFilterChange={handleRoomTypeFilterChange}
+            availableRoomTypes={availableRoomTypes}
+            totalBookings={filteredStats.totalBookings}
+            occupancyRate={filteredStats.occupancyRate}
+            onClearAllFilters={handleClearAllFilters}
+            currentGridState={currentGridState}
+          />
+        </div>
+      )}
 
       {/* Grid container */}
       {isLoading ? (
@@ -348,8 +355,8 @@ function BookingGridContent() {
         </div>
       ) : (
         <div>
-          {/* Mobile view - vertical list */}
-          <div className="block md:hidden">
+          {/* Mobile state - vertical list (< 768px) */}
+          {currentGridState === 'mobile' && (
             <MobileBookingList
               rooms={filteredRooms}
               bookings={filteredBookings}
@@ -359,10 +366,16 @@ function BookingGridContent() {
               onEmptyClick={handleEmptyClick}
               selectedBookingId={selectedBookingId}
             />
-          </div>
+          )}
 
-          {/* Desktop/Tablet view - CSS Grid */}
-          <div className="hidden md:block">
+          {/* Grid views - Tablet, Desktop, and Large states (≥ 768px) */}
+          {(currentGridState === 'tablet' || currentGridState === 'desktop' || currentGridState === 'large') && (
+            <div className={`
+              ${isLargeScreen ? 'mx-auto' : ''}
+            `}
+            style={{
+              maxWidth: isLargeScreen ? maxContentWidth : undefined
+            }}>
             {filteredRooms.length === 0 ? (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center max-w-md">
@@ -452,7 +465,8 @@ function BookingGridContent() {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

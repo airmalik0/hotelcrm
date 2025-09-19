@@ -1,5 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
+import { useViewportWidth } from "@/hooks/useViewportWidth"
+import { BREAKPOINTS } from "@/constants/breakpoints"
 import { setupNavigationListener } from "@/utils/navigation"
 import {
   ArrowRight,
@@ -102,6 +104,10 @@ export function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { hasAnyRole } = useRole()
+  const viewportWidth = useViewportWidth()
+
+  // Determine if we're on a large screen for layout optimization
+  const isLargeScreen = viewportWidth >= BREAKPOINTS["2xl"]
 
   // Setup navigation listener for external navigation
   useEffect(() => {
@@ -211,7 +217,9 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="flex min-h-screen bg-neutral-50 dark:bg-dark-1">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
+        className={`fixed inset-y-0 left-0 z-50 ${
+          isLargeScreen ? 'w-80' : 'w-64'
+        } bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 ease-in-out xl:translate-x-0 xl:static xl:inset-0`}
       >
@@ -309,7 +317,11 @@ export function MainLayout({ children }: MainLayoutProps) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 p-6">{children}</main>
+        <main className={`flex-1 p-6 ${
+          isLargeScreen ? 'max-w-screen-2xl mx-auto w-full' : ''
+        }`}>
+          {children}
+        </main>
       </div>
 
       {/* Mobile overlay */}

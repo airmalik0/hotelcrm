@@ -78,10 +78,15 @@ backend/
 ### CRITICAL: Follow Clean Architecture Pattern
 
 **Architecture Rules:**
-1. **Simple CRUD operations** (reads, lists): `Router → CRUD → Database`
-2. **Business logic operations** (creates, updates, complex logic): `Router → Service → CRUD → Database`
-3. **Services**: ONLY for business logic, validation, orchestration
-4. **CRUD**: ALL database queries MUST be here. NEVER put SQL in routers or services
+1. **Single entity operations** (get by ID, create, update, delete): `Router → Service → CRUD → Database`
+2. **Collection operations** (list all, search, pagination): `Router → CRUD → Database`
+3. **Infrastructure operations** (auth, files, health): `Router → Direct Implementation`
+4. **Services**: Business logic, validation, orchestration AND consistent domain exception handling
+5. **CRUD**: ALL database queries MUST be here. NEVER put SQL in routers or services
+
+**IMPORTANT**: For single entity operations, ALWAYS use service helpers even for simple reads to ensure consistent error handling across the application.
+
+**Rationale**: All domain operations use services for consistent error handling and future extensibility, even for simple reads. This provides predictable patterns for AI-assisted development.
 
 **MANDATORY RULES:**
 1. **Routers**: ONLY handle HTTP concerns. NEVER write SQL queries or business logic here
@@ -93,7 +98,7 @@ backend/
 
 #### Routers (app/api/routes/)
 ```python
-# CORRECT: Simple read - Router → CRUD
+# CORRECT: Collection reads - Router → CRUD (no domain exceptions needed)
 @router.get("/", response_model=CustomersPublic)
 def read_customers(
     session: SessionDep,
@@ -104,7 +109,13 @@ def read_customers(
     count = crud_customer.count(session)
     return CustomersPublic(data=customers, count=count)
 
-# CORRECT: Business logic - Router → Service → CRUD
+# CORRECT: Single entity operations - Router → Service (for domain exceptions)
+@router.get("/{customer_id}", response_model=CustomerPublic)
+def read_customer(session: SessionDep, customer_id: uuid.UUID) -> Any:
+    service = CustomerService(session)
+    return service.get_customer_or_404(customer_id)
+
+# CORRECT: Business logic operations - Router → Service → CRUD
 @router.post("/", response_model=CustomerPublic)
 def create_customer(
     session: SessionDep,  # ALWAYS use 'session', not 'db'
@@ -112,28 +123,28 @@ def create_customer(
     customer_in: CustomerCreate,
 ) -> Any:
     service = CustomerService(session)
-    try:
-        customer = service.create_customer(customer_in)
-        session.commit()
-        session.refresh(customer)
-        return customer
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    customer = service.create_customer(customer_in)
+    session.commit()
+    session.refresh(customer)
+    return customer
+    # Domain exceptions auto-handled by exception handlers
 ```
 
 #### Services (app/services/)
 ```python
 # CORRECT: Service contains business logic, uses CRUD for DB
+from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation, NotFoundError
+
 class CustomerService:
     def __init__(self, session: Session):
         self.session = session
         self.crud = crud_customer
-    
+
     def create_customer(self, customer_in: CustomerCreate) -> Customer:
         # Business validation
         if self.crud.get_by_phone(self.session, phone=customer_in.phone):
-            raise ValueError("Phone number already registered")
-        
+            raise AlreadyExistsError("phone", "Phone number already registered")
+
         # Delegate to CRUD
         return self.crud.create(self.session, obj_in=customer_in)
 ```
@@ -245,12 +256,61 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
 ## Key Patterns
 
+### Service Helper Methods
+Services should provide consistent helper methods for common operations:
+
+```python
+# REQUIRED: All services must implement get_X_or_404() methods
+class CustomerService:
+    def get_customer_or_404(self, customer_id: uuid.UUID) -> Customer:
+        """Get customer by ID or raise NotFoundError."""
+        customer = self.crud.get(self.session, id=customer_id)
+        if not customer:
+            raise NotFoundError("Customer", str(customer_id))
+        return customer
+
+    def get_customer_for_update(self, customer_id: uuid.UUID) -> Customer:
+        """Get customer for update operations."""
+        return self.get_customer_or_404(customer_id)
+
+    def get_customer_for_delete(self, customer_id: uuid.UUID) -> Customer:
+        """Get customer and validate business rules for deletion."""
+        customer = self.get_customer_or_404(customer_id)
+
+        # Check business rules
+        from app.crud.booking import booking as crud_booking
+        booking_count = crud_booking.count_filtered(self.session, customer_id=customer_id)
+        if booking_count > 0:
+            raise BusinessRuleViolation(f"Cannot delete customer with {booking_count} existing booking(s)")
+
+        return customer
+```
+
+**Route Integration:**
+```python
+# CORRECT: Use service helpers for domain exceptions
+@router.get("/{customer_id}", response_model=CustomerPublic)
+def read_customer(session: SessionDep, customer_id: uuid.UUID):
+    service = CustomerService(session)
+    return service.get_customer_or_404(customer_id)
+
+# CORRECT: Business logic validation in service
+@router.delete("/{customer_id}")
+def delete_customer(session: SessionDep, customer_id: uuid.UUID):
+    service = CustomerService(session)
+    customer = service.get_customer_for_delete(customer_id)  # Validates business rules
+    service.delete_customer(customer_id)
+    session.commit()
+    return Message(message="Customer deleted successfully")
+```
+
 ### API Routes
 - Routes are defined in `app/api/routes/`
 - Use dependency injection for auth: `current_user: CurrentUser`
 - Return proper HTTP status codes
 - Use Pydantic models for request/response validation
 - NEVER write SQL queries directly in routes
+- ALWAYS use service helper methods for entity retrieval and validation
 
 ### Database Models
 - Defined in `app/models.py` using SQLModel
@@ -448,6 +508,40 @@ except PaymentError as e:
 
 ## Common Architecture Mistakes to Avoid
 
+### ❌ WRONG: HTTPException in Routes for Domain Errors
+```python
+# NEVER do this in routes - inconsistent error handling!
+@router.get("/{customer_id}")
+def read_customer(session: SessionDep, customer_id: uuid.UUID):
+    customer = crud_customer.get(session, id=customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")  # NO!
+    return customer
+```
+
+### ✅ CORRECT: Domain Exceptions with Service Helpers
+```python
+# CORRECT: Consistent domain exception handling
+@router.get("/{customer_id}")
+def read_customer(session: SessionDep, customer_id: uuid.UUID):
+    service = CustomerService(session)
+    return service.get_customer_or_404(customer_id)  # Uses NotFoundError → auto-handled
+
+# Service layer with domain exception
+class CustomerService:
+    def get_customer_or_404(self, customer_id: uuid.UUID) -> Customer:
+        customer = self.crud.get(self.session, id=customer_id)
+        if not customer:
+            raise NotFoundError("Customer", str(customer_id))  # Domain exception
+        return customer
+```
+
+**Benefits:**
+- Consistent error responses across all endpoints
+- Single point of error handling configuration
+- Proper separation of concerns (domain logic in services)
+- DRY principle compliance
+
 ### ❌ WRONG: SQL in Router
 ```python
 # NEVER do this in a router!
@@ -479,17 +573,18 @@ def create_booking(...):
 @router.post("/bookings")
 def create_booking(session: SessionDep, booking_in: BookingCreate):
     service = BookingService(session)
-    try:
-        return service.create_booking(booking_in)
-    except ValueError as e:
-        raise HTTPException(400, str(e))
+    booking = service.create_booking(booking_in)
+    session.commit()
+    session.refresh(booking)
+    return booking
+    # Domain exceptions auto-handled by exception handlers
 
 # Service: Business logic
 class BookingService:
     def create_booking(self, booking_in: BookingCreate):
         room = self.crud_room.get(self.session, booking_in.room_id)
         if room.status != "available":  # Business logic here!
-            raise ValueError("Room not available")
+            raise BusinessRuleViolation("Room not available")
         return self.crud_booking.create(self.session, booking_in)
 
 # CRUD: Database queries

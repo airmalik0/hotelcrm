@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlmodel import Session, func, select
 
 from app.core.audit import get_change_values, get_entity_name, log_audit
+from app.core.exceptions import NotFoundError
 from app.models import AuditLog, AuditLogPublic, User
 
 
@@ -306,3 +307,10 @@ class AuditService:
             "actions_by_entity": dict(entity_stats),
             "top_users": dict(user_stats),
         }
+
+    def get_audit_log_or_404(self, audit_log_id: UUID) -> AuditLogPublic:
+        """Get audit log by ID or raise NotFoundError."""
+        audit_log = self.get_audit_log_with_user(audit_log_id)
+        if not audit_log:
+            raise NotFoundError("Audit log", str(audit_log_id))
+        return audit_log

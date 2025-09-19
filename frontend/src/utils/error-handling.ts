@@ -1,7 +1,7 @@
-import { isAxiosError } from "axios"
-import toast from "react-hot-toast"
 import type { APIErrorResponse, ValidationErrorDetail } from "@/types/errors"
 import { hasValidationErrors } from "@/types/errors"
+import { isAxiosError } from "axios"
+import toast from "react-hot-toast"
 
 interface ErrorHandlerOptions {
   /** Fallback message if no specific error can be extracted */
@@ -23,17 +23,14 @@ export class ErrorHandler {
   /**
    * Handle API errors and show appropriate notifications
    */
-  static handleError(
-    error: unknown,
-    options: ErrorHandlerOptions = {}
-  ): void {
+  static handleError(error: unknown, options: ErrorHandlerOptions = {}): void {
     const {
       fallbackMessage = "Something went wrong. Please try again.",
       showToast = true,
       onError,
     } = options
 
-    const message = this.extractErrorMessage(error, fallbackMessage)
+    const message = ErrorHandler.extractErrorMessage(error, fallbackMessage)
 
     if (showToast) {
       toast.error(message)
@@ -49,7 +46,7 @@ export class ErrorHandler {
    * Returns Record<string, string> for setErrors usage
    */
   static extractValidationErrors(
-    error: unknown
+    error: unknown,
   ): Record<string, string> | null {
     if (!isAxiosError(error) || !error.response?.data) {
       return null
@@ -62,8 +59,8 @@ export class ErrorHandler {
     if (hasValidationErrors(data)) {
       data.errors?.forEach((err: ValidationErrorDetail) => {
         // Extract field name from "body -> field_name" format
-        const fieldName = err.field.includes(' -> ')
-          ? err.field.split(' -> ').pop() || err.field
+        const fieldName = err.field.includes(" -> ")
+          ? err.field.split(" -> ").pop() || err.field
           : err.field
         fieldErrors[fieldName] = err.message
       })
@@ -81,7 +78,7 @@ export class ErrorHandler {
     options: {
       fallbackMessage?: string
       onValidationErrors?: (errors: Record<string, string>) => void
-    } = {}
+    } = {},
   ): void {
     const {
       fallbackMessage = "Failed to submit form. Please try again.",
@@ -89,26 +86,25 @@ export class ErrorHandler {
     } = options
 
     // Try to extract validation errors first
-    const validationErrors = this.extractValidationErrors(error)
+    const validationErrors = ErrorHandler.extractValidationErrors(error)
     if (validationErrors && onValidationErrors) {
       onValidationErrors(validationErrors)
       // Also show a toast for validation errors to ensure user sees feedback
       const errorCount = Object.keys(validationErrors).length
-      toast.error(`Please fix ${errorCount} validation error${errorCount > 1 ? 's' : ''} below`)
+      toast.error(
+        `Please fix ${errorCount} validation error${errorCount > 1 ? "s" : ""} below`,
+      )
       return
     }
 
     // Fall back to general error handling
-    this.handleError(error, { fallbackMessage })
+    ErrorHandler.handleError(error, { fallbackMessage })
   }
 
   /**
    * Extract human-readable error message from various error types
    */
-  private static extractErrorMessage(
-    error: unknown,
-    fallback: string
-  ): string {
+  private static extractErrorMessage(error: unknown, fallback: string): string {
     // Axios HTTP errors
     if (isAxiosError(error)) {
       // Handle JSON parsing errors
@@ -122,8 +118,11 @@ export class ErrorHandler {
       }
 
       // Check if we got HTML instead of JSON (common server error)
-      if (error.response?.data && typeof error.response.data === "string" &&
-          error.response.data.includes("<html")) {
+      if (
+        error.response?.data &&
+        typeof error.response.data === "string" &&
+        error.response.data.includes("<html")
+      ) {
         return "Server error occurred. Please try again later."
       }
 
@@ -212,10 +211,7 @@ export class ErrorHandler {
  */
 
 /** Show error toast notification */
-export const showError = (
-  error: unknown,
-  fallbackMessage?: string
-): void => {
+export const showError = (error: unknown, fallbackMessage?: string): void => {
   ErrorHandler.handleError(error, { fallbackMessage })
 }
 
@@ -233,7 +229,7 @@ export const showInfo = (message: string): void => {
 export const handleFormError = (
   error: unknown,
   onValidationErrors?: (errors: Record<string, string>) => void,
-  fallbackMessage?: string
+  fallbackMessage?: string,
 ): void => {
   ErrorHandler.handleFormError(error, {
     onValidationErrors,

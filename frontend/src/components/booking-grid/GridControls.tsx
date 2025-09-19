@@ -1,4 +1,5 @@
 import type { BookingStatus } from "@/client/types.gen"
+import type { GridState } from "@/constants/breakpoints"
 import clsx from "clsx"
 import {
   BarChart3,
@@ -25,6 +26,7 @@ interface GridControlsProps {
   totalBookings: number
   occupancyRate: number
   onClearAllFilters: () => void
+  currentGridState: GridState
 }
 
 const statusConfig = {
@@ -65,6 +67,7 @@ export const GridControls = memo(function GridControls({
   totalBookings,
   occupancyRate,
   onClearAllFilters,
+  currentGridState,
 }: GridControlsProps) {
   const [showRoomTypeFilter, setShowRoomTypeFilter] = useState(false)
   const [showStatusFilter, setShowStatusFilter] = useState(false)
@@ -93,7 +96,11 @@ export const GridControls = memo(function GridControls({
   }
 
   return (
-    <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-3 md:px-4 py-2 md:py-3 overflow-x-auto">
+    <div className={`
+      bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600
+      px-3 md:px-4 py-2 md:py-3 overflow-x-auto
+      ${currentGridState === 'large' ? 'max-w-screen-2xl mx-auto' : ''}
+    `}>
       <div className="flex items-center justify-between gap-2 md:gap-4 min-w-fit">
         {/* Left side - Search and Filters */}
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
@@ -105,12 +112,21 @@ export const GridControls = memo(function GridControls({
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search..."
-              className="w-32 md:w-48 xl:w-80 pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className={clsx(
+                "pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+                // Responsive widths based on grid state
+                currentGridState === 'tablet' ? 'w-32' :
+                currentGridState === 'desktop' ? 'w-48' :
+                currentGridState === 'large' ? 'w-96' : 'w-32'
+              )}
             />
           </div>
 
-          {/* Status Filters - inline on desktop, dropdown on tablet/mobile */}
-          <div className="hidden xl:flex items-center gap-1 flex-shrink-0">
+          {/* Status Filters - inline on desktop+, dropdown on tablet */}
+          <div className={clsx(
+            "items-center gap-1 flex-shrink-0",
+            currentGridState === 'desktop' || currentGridState === 'large' ? 'flex' : 'hidden'
+          )}>
             {Object.entries(statusConfig).map(([status, config]) => {
               const Icon = config.icon
               const isActive = statusFilters.includes(status as BookingStatus)
@@ -135,8 +151,11 @@ export const GridControls = memo(function GridControls({
             })}
           </div>
 
-          {/* Status Filter Dropdown - show on tablet/mobile */}
-          <div className="relative xl:hidden">
+          {/* Status Filter Dropdown - show on tablet only */}
+          <div className={clsx(
+            "relative",
+            currentGridState === 'tablet' ? 'block' : 'hidden'
+          )}>
             <button
               ref={statusButtonRef}
               type="button"
@@ -287,8 +306,11 @@ export const GridControls = memo(function GridControls({
           )}
         </div>
 
-        {/* Right side - Stats - hide on small screens */}
-        <div className="hidden xl:flex items-center gap-4 flex-shrink-0">
+        {/* Right side - Stats - progressive enhancement */}
+        <div className={clsx(
+          "items-center gap-4 flex-shrink-0",
+          currentGridState === 'desktop' || currentGridState === 'large' ? 'flex' : 'hidden'
+        )}>
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <Users className="w-4 h-4" />

@@ -4,6 +4,9 @@ import type {
   BookingStatus,
   BookingUpdate,
   BookingsPublic,
+  DateModificationRequest,
+  PaymentAdjustmentResponse,
+  RoomChangeRequest,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
@@ -66,6 +69,42 @@ export async function checkInBooking(id: string): Promise<BookingPublic> {
 export async function checkOutBooking(id: string): Promise<BookingPublic> {
   const response = await apiClient.post<BookingPublic>(
     `/api/v1/bookings/${id}/check-out`,
+  )
+  return response.data
+}
+
+export async function actualCheckInBooking(id: string): Promise<BookingPublic> {
+  const response = await apiClient.post<BookingPublic>(
+    `/api/v1/bookings/${id}/actual-check-in`,
+  )
+  return response.data
+}
+
+export async function actualCheckOutBooking(id: string): Promise<BookingPublic> {
+  const response = await apiClient.post<BookingPublic>(
+    `/api/v1/bookings/${id}/actual-check-out`,
+  )
+  return response.data
+}
+
+export async function modifyBookingDates(
+  id: string,
+  data: DateModificationRequest,
+): Promise<PaymentAdjustmentResponse> {
+  const response = await apiClient.put<PaymentAdjustmentResponse>(
+    `/api/v1/bookings/${id}/modify-dates`,
+    data,
+  )
+  return response.data
+}
+
+export async function changeBookingRoom(
+  id: string,
+  data: RoomChangeRequest,
+): Promise<PaymentAdjustmentResponse> {
+  const response = await apiClient.put<PaymentAdjustmentResponse>(
+    `/api/v1/bookings/${id}/change-room`,
+    data,
   )
   return response.data
 }

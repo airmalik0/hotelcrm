@@ -255,6 +255,37 @@ def test_customer_not_found():
 | Тестирование | Проверка строк | Проверка типов |
 | Расширяемость | Изменение везде | Добавление handler |
 
+## Service Helper Methods Pattern
+
+Для консистентности и DRY принципа, все сервисы должны предоставлять helper методы:
+
+```python
+class CustomerService:
+    def get_customer_or_404(self, customer_id: uuid.UUID) -> Customer:
+        """Get customer by ID or raise NotFoundError."""
+        customer = self.crud.get(self.session, id=customer_id)
+        if not customer:
+            raise NotFoundError("Customer", str(customer_id))
+        return customer
+
+    def get_customer_for_delete(self, customer_id: uuid.UUID) -> Customer:
+        """Get customer and validate business rules for deletion."""
+        customer = self.get_customer_or_404(customer_id)
+
+        # Business rule validation
+        booking_count = crud_booking.count_filtered(self.session, customer_id=customer_id)
+        if booking_count > 0:
+            raise BusinessRuleViolation(f"Cannot delete customer with {booking_count} bookings")
+
+        return customer
+```
+
+**Преимущества:**
+- **DRY**: Убирает дублирование get+check паттерна
+- **Consistency**: Все single entity operations используют одинаковый подход
+- **Business Logic**: Валидация централизована в сервисах
+- **Predictable**: LLM всегда знает какой метод использовать
+
 ## Best Practices
 
 1. **Используйте правильное исключение для контекста:**
@@ -317,7 +348,13 @@ Exception → Error (unexpected)
 - [x] Добавить exception handlers в `main.py`
 - [x] Обновить все сервисы на использование domain exceptions
 - [x] Удалить try/except из routes
+- [x] Создать service helper methods (`get_X_or_404` pattern)
+- [x] Рефакторить все single entity operations → service helpers
+- [x] Убрать HTTPException(40X) из business domain routes
+- [x] Проверить архитектурную consistency
 - [x] Протестировать все сценарии ошибок
-- [x] Обновить документацию
+- [x] Обновить документацию (CLAUDE.md + ERROR_HANDLING_ARCHITECTURE.md)
 - [ ] Настроить фильтры в Sentry
 - [ ] Добавить метрики по типам ошибок
+
+**Текущий статус**: ✅ **ЗАВЕРШЕНО** - Domain-Driven Error Handling полностью внедрен

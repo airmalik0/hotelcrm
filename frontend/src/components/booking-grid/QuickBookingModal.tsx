@@ -213,7 +213,11 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       onClose()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create booking. Please try again.")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to create booking. Please try again.",
+      )
     },
   })
 
@@ -726,8 +730,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       <>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-neutral-600 dark:text-neutral-400">
-                            Subtotal ({nights} {nights === 1 ? "night" : "nights"} ×
-                            ${activeRoom.price_per_night})
+                            Subtotal ({nights}{" "}
+                            {nights === 1 ? "night" : "nights"} × $
+                            {activeRoom.price_per_night})
                           </span>
                           <span className="text-neutral-900 dark:text-white">
                             ${subtotal}
@@ -743,7 +748,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                         </div>
                       </>
                     )}
-                    <div className={`flex items-center justify-between ${showDiscountFields && formData.discount > 0 ? 'pt-2 border-t border-neutral-200 dark:border-neutral-600' : ''}`}>
+                    <div
+                      className={`flex items-center justify-between ${showDiscountFields && formData.discount > 0 ? "pt-2 border-t border-neutral-200 dark:border-neutral-600" : ""}`}
+                    >
                       <label className="text-base font-medium text-neutral-700 dark:text-neutral-300">
                         Total Amount
                       </label>

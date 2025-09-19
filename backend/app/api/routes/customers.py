@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.audit import get_change_values, get_entity_name, log_audit
@@ -48,10 +48,8 @@ def read_customer(
     """
     Get customer by ID.
     """
-    customer = crud_customer.get(session, id=customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-    return customer
+    service = CustomerService(session)
+    return service.get_customer_or_404(customer_id)
 
 
 @router.post("/", response_model=CustomerPublic)
@@ -95,11 +93,8 @@ def update_customer(
     """
     Update a customer.
     """
-    customer = crud_customer.get(session, id=customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-
     service = CustomerService(session)
+    customer = service.get_customer_for_update(customer_id)
 
     # Get old and new values for audit
     update_dict = customer_in.model_dump(exclude_unset=True)
@@ -136,11 +131,8 @@ def delete_customer(
     """
     Delete a customer.
     """
-    customer = crud_customer.get(session, id=customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-
     service = CustomerService(session)
+    customer = service.get_customer_for_delete(customer_id)
 
     # Log audit before deletion
     entity_name = get_entity_name("customer", customer)

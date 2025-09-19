@@ -59,7 +59,11 @@ export function UserEditModal({
       resetForm()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to update user")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to update user",
+      )
     },
   })
 

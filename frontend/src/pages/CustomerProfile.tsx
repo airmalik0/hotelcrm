@@ -21,9 +21,9 @@ import { useParams } from "react-router-dom"
 export function CustomerProfile() {
   const { customerId } = useParams<{ customerId: string }>()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<"details" | "bookings" | "documents" | "edit">(
-    "details",
-  )
+  const [activeTab, setActiveTab] = useState<
+    "details" | "bookings" | "documents" | "edit"
+  >("details")
 
   // Fetch customer data
   const { data: customer, isLoading: customerLoading } = useQuery({
@@ -149,7 +149,6 @@ export function CustomerProfile() {
                 )}
               </ul>
             </div>
-
 
             {/* Statistics */}
             <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
@@ -298,7 +297,6 @@ export function CustomerProfile() {
                     </div>
                   </div>
 
-
                   <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                     <h6 className="text-base font-semibold mb-3 text-neutral-900 dark:text-white">
                       Customer Metrics
@@ -360,45 +358,20 @@ export function CustomerProfile() {
                   <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6">
                     <h6 className="text-base font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <FileImage className="w-5 h-5" />
-                      Passport Photo
+                      Passport Document
                     </h6>
 
-                    <div className="space-y-4">
-                      <ImageUpload
-                        value={customer.passport_photo_path}
-                        onChange={(path) => updatePassportMutation.mutate(path)}
-                        label="Upload Passport"
-                        disabled={updatePassportMutation.isPending}
-                      />
+                    <ImageUpload
+                      value={customer.passport_photo_path}
+                      onChange={(path) => updatePassportMutation.mutate(path)}
+                      label="Upload Passport"
+                      disabled={updatePassportMutation.isPending}
+                    />
 
-                      {customer.passport_photo_path && (
-                        <div className="mt-6">
-                          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
-                            Current Passport Document
-                          </p>
-                          <div className="max-w-2xl rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600">
-                            <img
-                              src={`/api/v1/files/${customer.passport_photo_path}`}
-                              alt="Customer Passport"
-                              className="w-full h-auto object-contain bg-white dark:bg-neutral-900"
-                              style={{ maxHeight: '600px' }}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement
-                                target.style.display = 'none'
-                                target.parentElement?.insertAdjacentHTML(
-                                  'beforeend',
-                                  '<div class="p-8 text-center text-neutral-500"><svg class="w-16 h-16 mx-auto mb-2 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Failed to load passport image</div>'
-                                )
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB). This document will be used for customer verification.
-                      </p>
-                    </div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
+                      Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB). This
+                      document will be used for customer verification.
+                    </p>
                   </div>
                 </div>
               )}

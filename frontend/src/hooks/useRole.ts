@@ -30,6 +30,27 @@ export function useRole() {
   const canMarkRoomAvailable = (): boolean =>
     hasAnyRole(["admin", "manager", "host"])
 
+  // New booking operation permissions
+  const canPerformActualOperations = (): boolean =>
+    hasAnyRole(["admin", "manager", "host"]) // All roles can set actual times
+
+  const canModifyPlannedDates = (): boolean =>
+    isAdminOrManager() // Only admin/manager can change planned dates with payment recalc
+
+  const canChangeRoom = (bookingStatus?: string): boolean => {
+    // Hosts can change rooms for confirmed bookings
+    // Admin/Manager can change rooms for any status
+    if (isAdminOrManager()) return true
+    if (isHost() && bookingStatus === "confirmed") return true
+    return false
+  }
+
+  const canCancelBooking = (): boolean =>
+    hasAnyRole(["admin", "manager", "host"]) // All roles can cancel
+
+  const canViewPaymentAdjustments = (): boolean =>
+    isAdminOrManager() // Only admin/manager can see payment differences
+
   return {
     user,
     role: user?.role,
@@ -48,5 +69,10 @@ export function useRole() {
     canCheckInOut,
     canUpdateDiscount,
     canMarkRoomAvailable,
+    canPerformActualOperations,
+    canModifyPlannedDates,
+    canChangeRoom,
+    canCancelBooking,
+    canViewPaymentAdjustments,
   }
 }

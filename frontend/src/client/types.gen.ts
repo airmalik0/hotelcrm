@@ -23,6 +23,10 @@ export type AuditLogsPublic = {
     count: number;
 };
 
+export type Body_files_upload_passport = {
+    file: (Blob | File);
+};
+
 export type Body_login_login_access_token = {
     grant_type?: (string | null);
     username: string;
@@ -61,6 +65,10 @@ export type BookingPublic = {
     room?: (RoomPublic | null);
     booking_date: string;
     created_at: string;
+    actual_check_in?: (string | null);
+    actual_check_out?: (string | null);
+    refund_amount?: number;
+    additional_payment?: number;
 };
 
 export type BookingsPublic = {
@@ -81,6 +89,10 @@ export type BookingUpdate = {
     discount_reason?: (string | null);
     payment_method?: (PaymentMethod | null);
     registration_need?: (boolean | null);
+    actual_check_in?: (string | null);
+    actual_check_out?: (string | null);
+    refund_amount?: (number | null);
+    additional_payment?: (number | null);
 };
 
 export type CustomerCreate = {
@@ -126,6 +138,14 @@ export type CustomerUpdate = {
 };
 
 /**
+ * Request model for modifying booking dates.
+ */
+export type DateModificationRequest = {
+    new_check_in?: (string | null);
+    new_check_out?: (string | null);
+};
+
+/**
  * Districts of Tashkent
  */
 export type District = 'Almazar' | 'Bektemir' | 'Mirabad' | 'Mirzo Ulugbek' | 'Sergeli' | 'Uchtepa' | 'Chilanzar' | 'Shaykhantakhur' | 'Yunusabad' | 'Yakkasaray' | 'Yashnabad' | 'Yangihayot';
@@ -138,7 +158,22 @@ export type Message = {
     message: string;
 };
 
+/**
+ * Response model for operations that result in payment adjustments.
+ */
+export type PaymentAdjustmentResponse = {
+    booking: BookingPublic;
+    payment_difference: number;
+};
+
 export type PaymentMethod = 'cash' | 'transfer' | 'terminal';
+
+/**
+ * Request model for changing booking room.
+ */
+export type RoomChangeRequest = {
+    new_room_id: string;
+};
 
 export type RoomCreate = {
     room_number: string;
@@ -405,6 +440,19 @@ export type RoomsReadAvailableRoomsResponse = (RoomsPublic);
 
 export type RoomsReadAvailableRoomsError = (HTTPValidationError);
 
+export type RoomsUpdateRoomStatusData = {
+    path: {
+        room_id: string;
+    };
+    query: {
+        status: RoomStatus;
+    };
+};
+
+export type RoomsUpdateRoomStatusResponse = (RoomPublic);
+
+export type RoomsUpdateRoomStatusError = (HTTPValidationError);
+
 export type CustomersReadCustomersData = {
     query?: {
         limit?: number;
@@ -511,6 +559,28 @@ export type BookingsDeleteBookingResponse = (Message);
 
 export type BookingsDeleteBookingError = (HTTPValidationError);
 
+export type BookingsModifyBookingDatesData = {
+    body: DateModificationRequest;
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsModifyBookingDatesResponse = (PaymentAdjustmentResponse);
+
+export type BookingsModifyBookingDatesError = (HTTPValidationError);
+
+export type BookingsChangeBookingRoomData = {
+    body: RoomChangeRequest;
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsChangeBookingRoomResponse = (PaymentAdjustmentResponse);
+
+export type BookingsChangeBookingRoomError = (HTTPValidationError);
+
 export type BookingsCheckInBookingData = {
     path: {
         booking_id: string;
@@ -530,6 +600,26 @@ export type BookingsCheckOutBookingData = {
 export type BookingsCheckOutBookingResponse = (BookingPublic);
 
 export type BookingsCheckOutBookingError = (HTTPValidationError);
+
+export type BookingsActualCheckInData = {
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsActualCheckInResponse = (BookingPublic);
+
+export type BookingsActualCheckInError = (HTTPValidationError);
+
+export type BookingsActualCheckOutData = {
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsActualCheckOutResponse = (BookingPublic);
+
+export type BookingsActualCheckOutError = (HTTPValidationError);
 
 export type AuditReadAuditLogsData = {
     query?: {
@@ -559,3 +649,33 @@ export type AuditReadAuditLogError = (HTTPValidationError);
 export type AuditGetAuditStatsResponse = (unknown);
 
 export type AuditGetAuditStatsError = unknown;
+
+export type FilesUploadPassportData = {
+    body: Body_files_upload_passport;
+};
+
+export type FilesUploadPassportResponse = (unknown);
+
+export type FilesUploadPassportError = (HTTPValidationError);
+
+export type FilesGetFileData = {
+    path: {
+        file_type: string;
+        filename: string;
+    };
+};
+
+export type FilesGetFileResponse = (unknown);
+
+export type FilesGetFileError = (HTTPValidationError);
+
+export type FilesDeleteFileData = {
+    path: {
+        file_type: string;
+        filename: string;
+    };
+};
+
+export type FilesDeleteFileResponse = (unknown);
+
+export type FilesDeleteFileError = (HTTPValidationError);

@@ -43,6 +43,9 @@ from .booking import (
     BookingUpdate,
     BookingPublic,
     BookingsPublic,
+    DateModificationRequest,
+    RoomChangeRequest,
+    PaymentAdjustmentResponse,
 )
 from .audit import (
     AuditLog,

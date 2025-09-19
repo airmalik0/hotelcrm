@@ -41,8 +41,17 @@ export const GridHeader = memo(function GridHeader({
   onAddBooking,
 }: GridHeaderProps) {
   // Get zoom context
-  const { zoomLevel, zoomIn, zoomOut, resetZoom, getMinZoom, getMaxZoom } =
-    useGridZoom()
+  const {
+    zoomLevel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    getMinZoom,
+    getMaxZoom,
+    currentGridState,
+    isLargeScreen,
+    maxContentWidth
+  } = useGridZoom()
 
   // Check zoom limits
   const minZoom = getMinZoom()
@@ -58,9 +67,12 @@ export const GridHeader = memo(function GridHeader({
 
   return (
     <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
-      <div className="px-3 py-2 md:px-4 md:py-3">
+      <div className={clsx(
+        "px-3 py-2 md:px-4 md:py-3",
+        isLargeScreen && "max-w-screen-2xl mx-auto"
+      )}>
         {/* Mobile layout */}
-        <div className="md:hidden">
+        <div className={currentGridState === 'mobile' ? 'block' : 'hidden'}>
           {/* Top row - date and add button */}
           <div className="flex items-center justify-between mb-2">
             {/* Date display */}
@@ -114,7 +126,7 @@ export const GridHeader = memo(function GridHeader({
                     occupancyRate >= 80
                       ? "bg-red-500"
                       : occupancyRate >= 60
-                        ? "bg-yellow-500"
+                        ? "bg-amber-500"
                         : "bg-green-500",
                   )}
                   style={{ width: `${occupancyRate}%` }}
@@ -127,8 +139,11 @@ export const GridHeader = memo(function GridHeader({
           </div>
         </div>
 
-        {/* Desktop/Tablet layout */}
-        <div className="hidden md:flex md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
+        {/* Desktop/Tablet/Large layout */}
+        <div className={clsx(
+          "flex-row items-center justify-between gap-2 md:gap-4",
+          currentGridState !== 'mobile' ? 'flex' : 'hidden'
+        )}>
           {/* Left side - Navigation */}
           <div className="flex items-center gap-1 md:gap-2 flex-wrap">
             {/* Previous/Next buttons */}
@@ -182,7 +197,7 @@ export const GridHeader = memo(function GridHeader({
                     occupancyRate >= 80
                       ? "bg-red-500"
                       : occupancyRate >= 60
-                        ? "bg-yellow-500"
+                        ? "bg-amber-500"
                         : "bg-green-500",
                   )}
                   style={{ width: `${occupancyRate}%` }}
@@ -196,8 +211,11 @@ export const GridHeader = memo(function GridHeader({
 
           {/* Right side - Controls */}
           <div className="flex items-center gap-1 md:gap-2">
-            {/* Zoom controls - hidden on small screens */}
-            <div className="hidden xl:flex items-center gap-1">
+            {/* Zoom controls - show on desktop and large screens */}
+            <div className={clsx(
+              "items-center gap-1",
+              currentGridState === 'desktop' || currentGridState === 'large' ? 'flex' : 'hidden'
+            )}>
               {/* Zoom out button */}
               <button
                 onClick={() => zoomOut(viewMode)}

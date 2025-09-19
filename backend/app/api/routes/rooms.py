@@ -1,13 +1,12 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.crud.room import room as crud_room
 from app.models import (
-    BookingStatus,
     Message,
     RoomCreate,
     RoomPublic,
@@ -44,10 +43,8 @@ def read_room(
     """
     Get room by ID.
     """
-    room = crud_room.get(session, id=room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-    return room
+    service = RoomService(session)
+    return service.get_room_or_404(room_id)
 
 
 @router.post("/", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])
@@ -92,11 +89,8 @@ def update_room(
     """
     Update a room. Only admin and manager can update rooms.
     """
-    room = crud_room.get(session, id=room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-
     service = RoomService(session)
+    room = service.get_room_or_404(room_id)
 
     # Get old values for audit
     update_dict = room_in.model_dump(exclude_unset=True)
@@ -133,24 +127,8 @@ def delete_room(
     """
     Delete a room. Only admin and manager can delete rooms.
     """
-    room = crud_room.get(session, id=room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-
-    # Check for existing bookings
-    from app.crud.booking import booking as crud_booking
-
-    # Count active bookings
-    active_count = crud_booking.count_filtered(
-        session,
-        room_id=room_id
-    )
-
-    if active_count > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot delete room with {active_count} booking(s). Please cancel or complete them first.",
-        )
+    service = RoomService(session)
+    room = service.get_room_for_delete(room_id)
 
     # Log audit before deletion
     entity_name = get_entity_name("room", room)
@@ -196,42 +174,11 @@ def update_room_status(
     Hosts can mark rooms as available after cleaning.
     Managers and admins can set any status.
     """
-    from app.models import UserRole
+    service = RoomService(session)
+    room = service.get_room_or_404(room_id)
 
-    room = crud_room.get(session, id=room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-
-    # Permission checks based on role
-    if current_user.role == UserRole.HOST:
-        # Hosts can only change status from CLEANING to AVAILABLE
-        if room.status != RoomStatus.CLEANING or status != RoomStatus.AVAILABLE:
-            raise HTTPException(
-                status_code=403,
-                detail="Hosts can only mark rooms as available after cleaning"
-            )
-    elif current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have permission to change room status"
-        )
-
-    # Additional validation for status changes
-    if status == RoomStatus.OCCUPIED:
-        # Check if there's an active booking for this room
-        from app.crud.booking import booking as crud_booking
-
-        active_bookings = crud_booking.get_multi_filtered(
-            session,
-            room_id=room_id,
-            status=BookingStatus.CHECKED_IN,
-            limit=1
-        )
-        if not active_bookings:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot mark room as occupied without an active checked-in booking"
-            )
+    # Validate permissions and business rules
+    service.validate_room_status_change(room, status, current_user)
 
     # Log the old status for audit
     old_status = room.status

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
@@ -14,7 +14,10 @@ from app.models import (
     BookingsPublic,
     BookingStatus,
     BookingUpdate,
+    DateModificationRequest,
     Message,
+    PaymentAdjustmentResponse,
+    RoomChangeRequest,
 )
 from app.services.booking import BookingService
 
@@ -72,10 +75,8 @@ def read_booking(
     """
     Get booking by ID.
     """
-    booking = crud_booking.get_with_relations(session, booking_id=booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
-    return booking
+    service = BookingService(session)
+    return service.get_booking_with_relations_or_404(booking_id)
 
 
 @router.post("/", response_model=BookingPublic)
@@ -124,9 +125,7 @@ def update_booking(
     Update a booking.
     """
     service = BookingService(session)
-    booking = service.crud_booking.get(session, id=booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = service.get_booking_or_404(booking_id)
 
     # Check permissions for specific operations
     # Only admin/manager can change discount
@@ -146,15 +145,8 @@ def update_booking(
 
     # Special status transitions
     if booking_in.status and booking_in.status != booking.status:
-        # Only admin/manager can cancel checked-out bookings
-        if booking.status == BookingStatus.CHECKED_OUT and booking_in.status == BookingStatus.CANCELLED:
-            require_admin_or_manager(current_user)
-        # Validate other transitions
-        elif not booking.is_status_transition_valid(booking_in.status):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid status transition from {booking.status} to {booking_in.status}"
-            )
+        # Validate status transition permissions and business rules
+        service.validate_status_transition(booking, booking_in.status, current_user)
 
     # Get old values for audit
     update_dict = booking_in.model_dump(exclude_unset=True)
@@ -192,6 +184,106 @@ def update_booking(
     return crud_booking.get_with_relations(session, booking_id=booking.id)
 
 
+@router.put("/{booking_id}/modify-dates", response_model=PaymentAdjustmentResponse, dependencies=[Depends(require_admin_or_manager)])
+def modify_booking_dates(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    booking_id: uuid.UUID,
+    request: DateModificationRequest,
+) -> Any:
+    """
+    Modify booking dates with payment recalculation.
+    Administrative operation - requires admin or manager role.
+    """
+    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
+
+    booking, payment_difference = service.modify_booking_dates(
+        booking,
+        new_check_in=request.new_check_in,
+        new_check_out=request.new_check_out
+    )
+
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    changes = []
+    if request.new_check_in:
+        changes.append(f"check-in: {request.new_check_in.isoformat()}")
+    if request.new_check_out:
+        changes.append(f"check-out: {request.new_check_out.isoformat()}")
+    if payment_difference != 0:
+        action_type = "charge" if payment_difference > 0 else "refund"
+        changes.append(f"payment {action_type}: ${abs(payment_difference):.2f}")
+
+    log_audit(
+        session=session,
+        user=current_user,
+        action="modified_dates",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+        new_values={"changes": ", ".join(changes)},
+    )
+
+    session.commit()
+    session.refresh(booking)
+
+    # Reload with relationships
+    updated_booking = crud_booking.get_with_relations(session, booking_id=booking.id)
+    return PaymentAdjustmentResponse(booking=updated_booking, payment_difference=payment_difference)
+
+
+@router.put("/{booking_id}/change-room", response_model=PaymentAdjustmentResponse)
+def change_booking_room(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    booking_id: uuid.UUID,
+    request: RoomChangeRequest,
+) -> Any:
+    """
+    Change booking room with payment adjustment.
+    Available to hosts for confirmed bookings, admin/managers for all.
+    """
+    from app.models import UserRole
+
+    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
+
+    # Permission check: hosts can only change rooms for confirmed bookings
+    if current_user.role == UserRole.HOST and booking.status != BookingStatus.CONFIRMED:
+        require_admin_or_manager(current_user)
+
+    booking, payment_difference = service.change_room_with_payment_adjustment(
+        booking,
+        new_room_id=request.new_room_id
+    )
+
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    action_details = f"room changed to {booking.room.room_number if booking.room else 'N/A'}"
+    if payment_difference != 0:
+        action_type = "charge" if payment_difference > 0 else "refund"
+        action_details += f", payment {action_type}: ${abs(payment_difference):.2f}"
+
+    log_audit(
+        session=session,
+        user=current_user,
+        action="changed_room",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+        new_values={"changes": action_details},
+    )
+
+    session.commit()
+    session.refresh(booking)
+
+    # Reload with relationships
+    updated_booking = crud_booking.get_with_relations(session, booking_id=booking.id)
+    return PaymentAdjustmentResponse(booking=updated_booking, payment_difference=payment_difference)
+
 
 @router.delete("/{booking_id}", response_model=Message, dependencies=[Depends(require_admin_or_manager)])
 def delete_booking(
@@ -203,15 +295,10 @@ def delete_booking(
     Delete a booking. Requires admin or manager role.
     """
     service = BookingService(session)
-    booking = service.crud_booking.get(session, id=booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = service.get_booking_or_404(booking_id)
 
-    # Prevent deletion of checked-out bookings for data integrity
-    if booking.status == BookingStatus.CHECKED_OUT:
-        raise HTTPException(status_code=400, detail="Cannot delete checked-out bookings. This booking is part of the historical record")
-
-    service = BookingService(session)
+    # Validate business rules for deletion
+    service.validate_booking_for_deletion(booking)
 
     # Log audit before deletion
     entity_name = get_entity_name("booking", booking)
@@ -242,11 +329,7 @@ def check_in_booking(
     Check in a booking.
     """
     service = BookingService(session)
-    booking = service.crud_booking.get(session, id=booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
-
-    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
 
     booking = service.check_in_booking(booking)
 
@@ -279,11 +362,7 @@ def check_out_booking(
     Check out a booking.
     """
     service = BookingService(session)
-    booking = service.crud_booking.get(session, id=booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
-
-    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
 
     booking = service.check_out_booking(booking)
 
@@ -293,6 +372,74 @@ def check_out_booking(
         session=session,
         user=current_user,
         action="checked_out",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+    )
+
+    session.commit()
+    session.refresh(booking)
+
+    # Reload with relationships
+    return crud_booking.get_with_relations(session, booking_id=booking.id)
+
+
+@router.post("/{booking_id}/actual-check-in", response_model=BookingPublic)
+def actual_check_in(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    booking_id: uuid.UUID,
+) -> Any:
+    """
+    Perform actual check-in - sets actual check-in time to current time.
+    Available to all roles with check-in permissions.
+    """
+    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
+
+    booking = service.perform_actual_check_in(booking)
+
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="actual_checked_in",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+    )
+
+    session.commit()
+    session.refresh(booking)
+
+    # Reload with relationships
+    return crud_booking.get_with_relations(session, booking_id=booking.id)
+
+
+@router.post("/{booking_id}/actual-check-out", response_model=BookingPublic)
+def actual_check_out(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    booking_id: uuid.UUID,
+) -> Any:
+    """
+    Perform actual check-out - sets actual check-out time to current time.
+    Available to all roles with check-out permissions.
+    """
+    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
+
+    booking = service.perform_actual_check_out(booking)
+
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="actual_checked_out",
         entity_type="booking",
         entity_id=booking.id,
         entity_name=entity_name,

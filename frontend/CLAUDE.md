@@ -181,7 +181,17 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
 - **Build time**: Variable is embedded into the built JavaScript bundle
 - **Runtime**: axios uses `import.meta.env.VITE_API_URL || ""` as baseURL
 
-**Flow:** `backend/models.py` → auto-generates → `frontend/openapi.json` → `src/client/types.gen.ts` → use in API wrappers → use in components
+**Type Generation Flow:**
+1. `backend/models.py` changes → triggers hook
+2. `scripts/generate-client.sh` → generates `frontend/openapi.json`
+3. `@hey-api/openapi-ts` → generates `src/client/types.gen.ts`
+4. Use types in API wrappers → use in components
+
+**First Time Setup:**
+```bash
+# If types.gen.ts doesn't exist, generate manually:
+cd frontend && npm run generate-client
+```
 
 1. **Usage in components with custom API wrappers:**
    ```typescript
@@ -209,6 +219,95 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
    ```
 
 3. **Auto-generation:** When `models.py` changes, TypeScript types regenerate via hook (generates only types, no client functions - we use custom axios wrappers)
+
+### Error Handling Architecture
+
+**Backend Domain-Driven Error Handling:**
+The backend uses a consistent Domain-Driven Error Handling system that provides predictable HTTP statuses and unified error response format.
+
+**HTTP Status Mapping:**
+- `404 Not Found` → Resource doesn't exist (NotFoundError)
+- `409 Conflict` → Resource already exists or constraint violation (AlreadyExistsError, IntegrityError)
+- `400 Bad Request` → Business rule violation (BusinessRuleViolation)
+- `422 Unprocessable Entity` → Validation errors (RequestValidationError)
+
+**Unified Error Response Format:**
+```typescript
+interface ErrorResponse {
+  detail: string                    // General error description
+  errors?: Array<{                 // Field-specific errors (optional)
+    field: string
+    message: string
+    type: string
+  }>
+}
+```
+
+**Error Handling Architecture:**
+```typescript
+// src/lib/axios.ts - Minimal interceptor for infrastructure errors only
+apiClient.interceptors.response.use(
+  response => response,
+  error => {
+    // Handle 401 Unauthorized - redirect to login
+    if (error.response?.status === 401) {
+      removeToken()
+      navigateFromOutside("/login", true)
+    }
+
+    // All other errors (404, 409, 400, 422) are handled contextually in components
+    return Promise.reject(error)
+  }
+)
+```
+
+**Component Error Handling:**
+```typescript
+// Domain errors are handled contextually in components, not in axios interceptor
+import { showError } from "@/utils/error-handling"
+
+const { data, error, isLoading } = useQuery({
+  queryKey: ["customer", customerId],
+  queryFn: () => getCustomer(customerId),
+  onError: (error) => {
+    // Handle different error types contextually
+    const status = error.response?.status
+    if (status === 404) {
+      showError(error, "Customer not found")
+      // Maybe redirect to customers list
+    }
+  }
+})
+
+if (isLoading) return <Spinner />
+if (error) return <div>Customer not found</div>
+
+return <CustomerDetails customer={data} />
+```
+
+**Form Validation Integration:**
+```typescript
+// React Hook Form with handleFormError for comprehensive error handling
+import { handleFormError } from "@/utils/error-handling"
+const { setError } = useForm()
+
+const mutation = useMutation({
+  mutationFn: createCustomer,
+  onError: (error) => {
+    // Use handleFormError for all domain errors
+    handleFormError(
+      error,
+      (validationErrors) => {
+        // 422 validation errors → highlight fields
+        Object.entries(validationErrors).forEach(([field, message]) => {
+          setError(field as any, { message })
+        })
+      },
+      "Failed to create customer" // Fallback for 409/400/404
+    )
+  }
+})
+```
 
 ### Authentication
 - JWT token in localStorage

@@ -75,7 +75,11 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       onClose()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create customer")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to create customer",
+      )
     },
   })
 
@@ -110,7 +114,10 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     }
     if (formData.phone) {
       const digitsOnly = formData.phone.replace(/\D/g, "")
-      if (digitsOnly.length > 0 && (digitsOnly.length < 7 || digitsOnly.length > 15)) {
+      if (
+        digitsOnly.length > 0 &&
+        (digitsOnly.length < 7 || digitsOnly.length > 15)
+      ) {
         newErrors.phone = "Phone number must contain between 7 and 15 digits"
       }
     }
@@ -345,7 +352,10 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               <ImageUpload
                 value={formData.passport_photo_path}
                 onChange={(path) =>
-                  setFormData((prev) => ({ ...prev, passport_photo_path: path }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    passport_photo_path: path,
+                  }))
                 }
                 label="Upload Passport"
               />

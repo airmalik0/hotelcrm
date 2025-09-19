@@ -1,12 +1,21 @@
 import {
+  actualCheckInBooking,
+  actualCheckOutBooking,
+  changeBookingRoom,
   checkInBooking,
   checkOutBooking,
   deleteBooking,
   getBooking,
+  modifyBookingDates,
   updateBooking,
 } from "@/api/bookings"
-import { updateRoomStatus } from "@/api/rooms"
-import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
+import { getRooms, updateRoomStatus } from "@/api/rooms"
+import type {
+  BookingPublic,
+  BookingUpdate,
+  DateModificationRequest,
+  RoomChangeRequest,
+} from "@/client/types.gen"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
 import { showError, showSuccess } from "@/utils/error-handling"
@@ -52,11 +61,23 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   bookingId,
 }: BookingDetailModalProps) {
   const queryClient = useQueryClient()
-  const { canDeleteBookings, canUpdateDiscount, canCheckInOut } = useRole()
+  const {
+    canDeleteBookings,
+    canUpdateDiscount,
+    canCheckInOut,
+    canPerformActualOperations,
+    canModifyPlannedDates,
+    canChangeRoom,
+    canViewPaymentAdjustments,
+  } = useRole()
   const { confirm, ConfirmDialog } = useConfirm()
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showDiscountFields, setShowDiscountFields] = useState(false)
+  const [showDateModification, setShowDateModification] = useState(false)
+  const [showRoomChange, setShowRoomChange] = useState(false)
+  const [dateModification, setDateModification] = useState<DateModificationRequest>({})
+  const [selectedNewRoom, setSelectedNewRoom] = useState<string>("")
 
   // Form state for editing
   const [formData, setFormData] = useState<{
@@ -76,6 +97,13 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     queryKey: ["booking", bookingId],
     queryFn: () => (bookingId ? getBooking(bookingId) : null),
     enabled: !!bookingId && isOpen,
+  })
+
+  // Fetch available rooms for room change
+  const { data: availableRooms } = useQuery({
+    queryKey: ["rooms", "available"],
+    queryFn: () => getRooms({ limit: 100 }),
+    enabled: showRoomChange,
   })
 
   // Set form data when booking loads
@@ -174,6 +202,75 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     },
   })
 
+  // Actual check-in mutation
+  const actualCheckInMutation = useMutation({
+    mutationFn: (id: string) => actualCheckInBooking(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+      showSuccess("Actual check-in time recorded!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to record actual check-in")
+    },
+  })
+
+  // Actual check-out mutation
+  const actualCheckOutMutation = useMutation({
+    mutationFn: (id: string) => actualCheckOutBooking(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+      showSuccess("Actual check-out time recorded!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to record actual check-out")
+    },
+  })
+
+  // Modify dates mutation
+  const modifyDatesMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DateModificationRequest }) =>
+      modifyBookingDates(id, data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+      const diff = response.payment_difference
+      if (diff > 0) {
+        showSuccess(`Dates modified. Additional charge: $${diff.toFixed(2)}`)
+      } else if (diff < 0) {
+        showSuccess(`Dates modified. Refund amount: $${Math.abs(diff).toFixed(2)}`)
+      } else {
+        showSuccess("Dates modified successfully!")
+      }
+      setShowDateModification(false)
+      setDateModification({})
+    },
+    onError: (error) => {
+      showError(error, "Failed to modify dates")
+    },
+  })
+
+  // Change room mutation
+  const changeRoomMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: RoomChangeRequest }) =>
+      changeBookingRoom(id, data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+      queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      const diff = response.payment_difference
+      if (diff > 0) {
+        showSuccess(`Room changed. Additional charge: $${diff.toFixed(2)}`)
+      } else if (diff < 0) {
+        showSuccess(`Room changed. Refund amount: $${Math.abs(diff).toFixed(2)}`)
+      } else {
+        showSuccess("Room changed successfully!")
+      }
+      setShowRoomChange(false)
+      setSelectedNewRoom("")
+    },
+    onError: (error) => {
+      showError(error, "Failed to change room")
+    },
+  })
+
   const handleSave = () => {
     if (!booking) return
 
@@ -226,7 +323,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     if (booking.room?.status === "cleaning") {
       const confirmed = await confirm({
         title: "Room Status Confirmation",
-        message: "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
+        message:
+          "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
         confirmText: "Yes, Proceed",
         variant: "warning",
       })
@@ -249,7 +347,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     if (booking.room?.status === "occupied") {
       showError(
-        "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support."
+        "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support.",
       )
       return
     }
@@ -397,21 +495,90 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
               {/* Room Info */}
               <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                  <h3 className="font-medium text-neutral-900 dark:text-white">
-                    Room Information
-                  </h3>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Room:
-                    </span>
-                    <span className="ml-2 font-medium text-neutral-900 dark:text-white">
-                      {booking.room?.room_number} - {booking.room?.room_type}
-                    </span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                    <h3 className="font-medium text-neutral-900 dark:text-white">
+                      Room Information
+                    </h3>
                   </div>
+                  {canChangeRoom(booking.status) &&
+                    ["confirmed", "checked_in"].includes(booking.status || "") && (
+                      <button
+                        onClick={() => setShowRoomChange(true)}
+                        className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        Change Room
+                      </button>
+                    )}
+                </div>
+                {showRoomChange ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                        Select New Room
+                      </label>
+                      <select
+                        value={selectedNewRoom}
+                        onChange={(e) => setSelectedNewRoom(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">Choose a room...</option>
+                        {availableRooms?.data
+                          ?.filter(
+                            (room) =>
+                              room.status === "available" &&
+                              room.id !== booking.room_id,
+                          )
+                          .map((room) => (
+                            <option key={room.id} value={room.id}>
+                              {room.room_number} - {room.room_type} ($
+                              {room.price_per_night}/night)
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (booking && selectedNewRoom) {
+                            changeRoomMutation.mutate({
+                              id: booking.id,
+                              data: { new_room_id: selectedNewRoom },
+                            })
+                          }
+                        }}
+                        disabled={
+                          changeRoomMutation.isPending || !selectedNewRoom
+                        }
+                        className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
+                      >
+                        {changeRoomMutation.isPending
+                          ? "Changing..."
+                          : "Change Room"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowRoomChange(false)
+                          setSelectedNewRoom("")
+                        }}
+                        className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Room:
+                      </span>
+                      <span className="ml-2 font-medium text-neutral-900 dark:text-white">
+                        {booking.room?.room_number} - {booking.room?.room_type}
+                      </span>
+                    </div>
                   <div>
                     <span className="text-neutral-500 dark:text-neutral-400">
                       Price/Night:
@@ -453,35 +620,192 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </span>
                   </div>
                 </div>
+                )}
               </div>
             </div>
 
             {/* Dates */}
             <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                <h3 className="font-medium text-neutral-900 dark:text-white">
-                  Stay Duration
-                </h3>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-neutral-500 dark:text-neutral-400">
-                    Check-in:
-                  </span>
-                  <span className="ml-2 font-medium text-neutral-900 dark:text-white">
-                    {format(new Date(booking.check_in), "PPP p")}
-                  </span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                  <h3 className="font-medium text-neutral-900 dark:text-white">
+                    Stay Duration
+                  </h3>
                 </div>
-                <div>
-                  <span className="text-neutral-500 dark:text-neutral-400">
-                    Check-out:
-                  </span>
-                  <span className="ml-2 font-medium text-neutral-900 dark:text-white">
-                    {format(new Date(booking.check_out), "PPP p")}
-                  </span>
-                </div>
+                {canModifyPlannedDates() && booking.status === "confirmed" && (
+                  <button
+                    onClick={() => {
+                      setShowDateModification(true)
+                      setDateModification({
+                        new_check_in: booking.check_in,
+                        new_check_out: booking.check_out,
+                      })
+                    }}
+                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    Modify Dates
+                  </button>
+                )}
               </div>
+
+              {showDateModification ? (
+                <div className="space-y-3">
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                        New Check-in
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={
+                          dateModification.new_check_in
+                            ? new Date(dateModification.new_check_in)
+                                .toISOString()
+                                .slice(0, 16)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setDateModification({
+                            ...dateModification,
+                            new_check_in: e.target.value
+                              ? new Date(e.target.value).toISOString()
+                              : undefined,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                        New Check-out
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={
+                          dateModification.new_check_out
+                            ? new Date(dateModification.new_check_out)
+                                .toISOString()
+                                .slice(0, 16)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setDateModification({
+                            ...dateModification,
+                            new_check_out: e.target.value
+                              ? new Date(e.target.value).toISOString()
+                              : undefined,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (booking) {
+                          modifyDatesMutation.mutate({
+                            id: booking.id,
+                            data: dateModification,
+                          })
+                        }
+                      }}
+                      disabled={modifyDatesMutation.isPending}
+                      className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
+                    >
+                      {modifyDatesMutation.isPending ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDateModification(false)
+                        setDateModification({})
+                      }}
+                      className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Planned Check-in:
+                      </span>
+                      <span className="ml-2 font-medium text-neutral-900 dark:text-white">
+                        {format(new Date(booking.check_in), "PPP p")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Planned Check-out:
+                      </span>
+                      <span className="ml-2 font-medium text-neutral-900 dark:text-white">
+                        {format(new Date(booking.check_out), "PPP p")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actual times */}
+                  {(booking.actual_check_in || booking.actual_check_out) && (
+                    <div className="pt-3 border-t border-neutral-200 dark:border-neutral-600">
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        {booking.actual_check_in && (
+                          <div>
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                              Actual Check-in:
+                            </span>
+                            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">
+                              {format(new Date(booking.actual_check_in), "PPP p")}
+                            </span>
+                          </div>
+                        )}
+                        {booking.actual_check_out && (
+                          <div>
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                              Actual Check-out:
+                            </span>
+                            <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">
+                              {format(new Date(booking.actual_check_out), "PPP p")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actual operation buttons */}
+                  {canPerformActualOperations() && (
+                    <div className="flex gap-2 pt-2">
+                      {booking.status === "checked_in" && !booking.actual_check_in && (
+                        <button
+                          onClick={() => actualCheckInMutation.mutate(booking.id)}
+                          disabled={actualCheckInMutation.isPending}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-xs font-medium disabled:cursor-not-allowed"
+                        >
+                          {actualCheckInMutation.isPending
+                            ? "Recording..."
+                            : "Record Actual Check-in"}
+                        </button>
+                      )}
+                      {booking.status === "checked_in" && !booking.actual_check_out && (
+                        <button
+                          onClick={() => actualCheckOutMutation.mutate(booking.id)}
+                          disabled={actualCheckOutMutation.isPending}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-xs font-medium disabled:cursor-not-allowed"
+                        >
+                          {actualCheckOutMutation.isPending
+                            ? "Recording..."
+                            : "Record Actual Check-out"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Payment Info */}
@@ -596,7 +920,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                 discountReason: e.target.value,
                               }))
                             }
-                            placeholder={formData.discount > 0 ? "Required" : ""}
+                            placeholder={
+                              formData.discount > 0 ? "Required" : ""
+                            }
                             className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             required={formData.discount > 0}
                           />
@@ -720,6 +1046,33 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       </span>
                     </div>
                   </div>
+                  {/* Payment adjustments */}
+                  {canViewPaymentAdjustments() &&
+                    (booking.refund_amount > 0 ||
+                      booking.additional_payment > 0) && (
+                      <div className="pt-2 border-t border-neutral-200 dark:border-neutral-600 space-y-1">
+                        {booking.refund_amount > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                              Refund Applied:
+                            </span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                              -${booking.refund_amount.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                        {booking.additional_payment > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                              Additional Payment:
+                            </span>
+                            <span className="text-orange-600 dark:text-orange-400 font-medium">
+                              +${booking.additional_payment.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
               )}
             </div>
