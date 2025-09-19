@@ -7,7 +7,9 @@ import {
 } from "@/api/bookings"
 import { updateRoomStatus } from "@/api/rooms"
 import type { BookingPublic, BookingUpdate } from "@/client/types.gen"
+import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
+import { showError, showSuccess } from "@/utils/error-handling"
 import {
   invalidateAfterBookingCancel,
   invalidateAfterBookingUpdate,
@@ -51,8 +53,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 }: BookingDetailModalProps) {
   const queryClient = useQueryClient()
   const { canDeleteBookings, canUpdateDiscount, canCheckInOut } = useRole()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDiscountFields, setShowDiscountFields] = useState(false)
 
   // Form state for editing
   const [formData, setFormData] = useState<{
@@ -77,12 +81,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   // Set form data when booking loads
   useEffect(() => {
     if (booking) {
+      const hasDiscount = booking.discount && booking.discount > 0
       setFormData({
         totalAmount: booking.total_amount,
         discount: booking.discount || 0,
         discountReason: booking.discount_reason || "",
         paymentMethod: booking.payment_method || "cash",
       })
+      setShowDiscountFields(hasDiscount)
     }
   }, [booking])
 
@@ -104,7 +110,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         oldCustomerId: booking?.customer_id,
         newCustomerId: updatedBooking.customer_id,
       })
+      showSuccess("Booking updated successfully!")
       setIsEditing(false)
+    },
+    onError: (error) => {
+      showError(error, "Failed to update booking. Please try again.")
     },
   })
 
@@ -122,7 +132,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           booking.status === "checked_in",
         )
       }
+      showSuccess("Booking deleted successfully!")
       onClose()
+    },
+    onError: (error) => {
+      showError(error, "Failed to delete booking. Please try again.")
     },
   })
 
@@ -136,6 +150,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         updatedBooking.id,
         updatedBooking.room_id,
       )
+      showSuccess("Guest checked in successfully!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to check in booking. Please try again.")
     },
   })
 
@@ -149,11 +167,21 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         updatedBooking.id,
         updatedBooking.room_id,
       )
+      showSuccess("Guest checked out successfully!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to check out booking. Please try again.")
     },
   })
 
   const handleSave = () => {
     if (!booking) return
+
+    // Validate discount reason
+    if (formData.discount > 0 && !formData.discountReason.trim()) {
+      showError("Discount reason is required when discount is applied")
+      return
+    }
 
     const updateData: BookingUpdate = {
       total_amount: formData.totalAmount,
@@ -184,23 +212,26 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         hours > 0
           ? `Check-in time has not arrived yet. Please wait ${hours} hours and ${minutes} minutes.`
           : `Check-in time has not arrived yet. Please wait ${minutes} minutes.`
-      alert(message)
+      showError(message)
       return
     }
 
     // Client-side validation: Check room status
     if (booking.room?.status === "maintenance") {
-      alert("Cannot check in: Room is under maintenance")
+      showError("Cannot check in: Room is under maintenance")
       return
     }
 
     // Handle cleaning status with confirmation and two API calls
     if (booking.room?.status === "cleaning") {
-      if (
-        !confirm(
-          "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
-        )
-      ) {
+      const confirmed = await confirm({
+        title: "Room Status Confirmation",
+        message: "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
+        confirmText: "Yes, Proceed",
+        variant: "warning",
+      })
+
+      if (!confirmed) {
         return
       }
 
@@ -211,21 +242,21 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         queryClient.invalidateQueries({ queryKey: ["rooms"] })
         queryClient.invalidateQueries({ queryKey: ["room", booking.room_id] })
       } catch (error) {
-        alert("Failed to update room status. Please try again.")
+        showError("Failed to update room status. Please try again.")
         return
       }
     }
 
     if (booking.room?.status === "occupied") {
-      alert(
-        "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support.",
+      showError(
+        "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support."
       )
       return
     }
 
     // Client-side validation: Only confirmed bookings can be checked in
     if (booking.status !== "confirmed") {
-      alert("Only confirmed bookings can be checked in")
+      showError("Only confirmed bookings can be checked in")
       return
     }
 
@@ -237,7 +268,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     // Client-side validation: Only checked-in bookings can be checked out
     if (booking.status !== "checked_in") {
-      alert("Only checked-in bookings can be checked out")
+      showError("Only checked-in bookings can be checked out")
       return
     }
 
@@ -475,61 +506,126 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
               {isEditing ? (
                 <div className="space-y-3">
-                  <div className="grid md:grid-cols-2 gap-3">
+                  {/* Discount */}
+                  {!showDiscountFields ? (
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Total Amount
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.totalAmount}
-                        onChange={(e) =>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowDiscountFields(true)
                           setFormData((prev) => ({
                             ...prev,
-                            totalAmount: Number(e.target.value),
+                            discount: 10,
+                            discountReason: "",
                           }))
-                        }
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
+                        }}
+                        className="w-full px-4 py-2 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        Apply Discount
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Discount
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.discount}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            discount: Number(e.target.value),
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Discount (%)
+                          </label>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <input
+                                type="number"
+                                value={formData.discount}
+                                onChange={(e) => {
+                                  let value = e.target.value
+                                  // Remove leading zeros but keep at least one digit
+                                  value = value.replace(/^0+(?=\d)/, "") || "0"
+                                  const numValue = Number(value)
+                                  if (numValue >= 0 && numValue <= 100) {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      discount: numValue,
+                                    }))
+                                  }
+                                }}
+                                min="0"
+                                max="100"
+                                className="w-full pl-3 pr-8 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                style={{
+                                  appearance: "textfield",
+                                  MozAppearance: "textfield",
+                                }}
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
+                                %
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowDiscountFields(false)
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  discount: 0,
+                                  discountReason: "",
+                                }))
+                              }}
+                              className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                              title="Remove discount"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Reason
+                            {formData.discount > 0 && (
+                              <span className="text-danger-600 dark:text-danger-400">
+                                {" *"}
+                              </span>
+                            )}
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.discountReason}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                discountReason: e.target.value,
+                              }))
+                            }
+                            placeholder={formData.discount > 0 ? "Required" : ""}
+                            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            required={formData.discount > 0}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                      Discount Reason
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Total Amount
                     </label>
                     <input
-                      type="text"
-                      value={formData.discountReason}
+                      type="number"
+                      value={formData.totalAmount}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          discountReason: e.target.value,
+                          totalAmount: Number(e.target.value),
                         }))
                       }
-                      placeholder="Optional"
-                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      style={{
+                        appearance: "textfield",
+                        MozAppearance: "textfield",
+                      }}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                      Payment Method
-                    </label>
                     <div className="grid grid-cols-3 gap-2">
                       {(["cash", "terminal", "transfer"] as const).map(
                         (method) => (
@@ -592,7 +688,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         Discount:
                       </span>
                       <span className="text-red-600 dark:text-red-400">
-                        -${booking.discount}
+                        -{booking.discount}%
                       </span>
                     </div>
                   )}
@@ -607,9 +703,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Payment Method:
-                    </span>
                     <div className="flex items-center gap-1">
                       <CreditCard className="w-4 h-4" />
                       <span className="text-neutral-700 dark:text-neutral-300">
@@ -623,7 +716,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         Final Amount:
                       </span>
                       <span className="font-bold text-lg text-neutral-900 dark:text-white">
-                        ${booking.total_amount - (booking.discount || 0)}
+                        ${booking.total_amount}
                       </span>
                     </div>
                   </div>
@@ -696,6 +789,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         )}
       </div>
+      {ConfirmDialog}
     </div>
   )
 })

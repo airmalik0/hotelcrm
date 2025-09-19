@@ -52,8 +52,8 @@ cd backend && uv run python -m pytest
 cd backend && uv run ruff check .
 cd backend && uv run python -m mypy .
 cd frontend && npm run lint
-./scripts/generate-client.sh  # Manual API client regeneration
-# Flow: models.py → OpenAPI JSON → @hey-api/openapi-ts → src/client/types.gen.ts
+scripts/generate-client.sh  # Manual API client regeneration (run from project root)
+# Flow: models.py → frontend/openapi.json → @hey-api/openapi-ts → src/client/types.gen.ts
 # Setup: axios interceptors in lib/axios.ts handle token injection and auth
 ```
 

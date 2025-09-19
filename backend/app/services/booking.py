@@ -45,7 +45,7 @@ class BookingService:
         # Verify customer exists
         customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
         if not customer:
-            raise ValueError("Customer not found")
+            raise ValueError("customer_id: Customer not found")
 
         # Create booking with room lock to prevent race conditions
         # This handles ALL validations atomically: room check, status check, overlapping check, total amount
@@ -84,7 +84,7 @@ class BookingService:
         if booking_in.room_id and booking_in.room_id != booking.room_id:
             new_room = self.crud_room.get(self.session, id=booking_in.room_id)
             if not new_room:
-                raise ValueError("Room not found")
+                raise ValueError("room_id: Room not found")
 
             # If booking is currently checked in, handle room status transitions
             if booking.status == BookingStatus.CHECKED_IN:
@@ -104,7 +104,7 @@ class BookingService:
         if booking_in.customer_id and booking_in.customer_id != booking.customer_id:
             new_customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
             if not new_customer:
-                raise ValueError("Customer not found")
+                raise ValueError("customer_id: Customer not found")
 
         # Check room availability if dates or room changed
         if (booking_in.check_in or booking_in.check_out or booking_in.room_id):
@@ -121,7 +121,7 @@ class BookingService:
             )
 
             if overlapping:
-                raise ValueError("Room is not available for the selected dates")
+                raise ValueError("dates: Room is not available for the selected dates")
 
         # Recalculate total if needed
         if any([booking_in.check_in, booking_in.check_out, booking_in.room_id,
@@ -210,7 +210,7 @@ class BookingService:
 
         room = self.crud_room.get(self.session, id=booking.room_id)
         if not room:
-            raise ValueError("Room not found")
+            raise ValueError("room_id: Room not found")
 
         if room.status == RoomStatus.MAINTENANCE:
             raise ValueError("Room is under maintenance and cannot be checked in")
@@ -349,7 +349,7 @@ class BookingService:
         room_id = new_room_id or booking.room_id
         room = self.crud_room.get(self.session, id=room_id)
         if not room:
-            raise ValueError(f"Room {room_id} not found")
+            raise ValueError(f"room_id: Room {room_id} not found")
 
         # Use new or existing dates
         check_in = new_check_in or booking.check_in

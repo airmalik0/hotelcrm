@@ -1,5 +1,6 @@
 import { createUser } from "@/api/users"
 import type { UserCreate, UserRole } from "@/client/types.gen"
+import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, X } from "lucide-react"
 import type React from "react"
@@ -37,29 +38,12 @@ export function UserCreateModal({
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
+      showSuccess("User created successfully!")
       onSuccess()
       resetForm()
     },
-    onError: (error: any) => {
-      if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === "string") {
-          // Handle username already exists error
-          if (error.response.data.detail.includes("already registered")) {
-            setErrors({ username: "Username already exists" })
-          } else {
-            setErrors({ username: error.response.data.detail })
-          }
-        } else if (Array.isArray(error.response.data.detail)) {
-          // Handle validation errors
-          const newErrors: Record<string, string> = {}
-          error.response.data.detail.forEach((err: any) => {
-            if (err.loc?.[1] && typeof err.loc[1] === "string") {
-              newErrors[err.loc[1]] = err.msg
-            }
-          })
-          setErrors(newErrors)
-        }
-      }
+    onError: (error) => {
+      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create user")
     },
   })
 
@@ -103,12 +87,14 @@ export function UserCreateModal({
       newErrors.username = "Username is required"
     } else if (formData.username.length < 3) {
       newErrors.username = "Username must be at least 3 characters"
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+      newErrors.username = "Username must contain only letters, numbers, hyphens and underscores"
     }
 
     if (!formData.password) {
       newErrors.password = "Password is required"
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters"
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters"
     }
 
     setErrors(newErrors)

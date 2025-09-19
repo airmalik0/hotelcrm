@@ -16,6 +16,8 @@ from app.core.config import settings
 from app.core.consistency import run_all_consistency_checks
 from app.core.db_events import setup_db_events
 from app.core.rate_limit import custom_rate_limit_exceeded_handler, ip_blocker, limiter
+from app.crud.base import ConcurrentUpdateError
+from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
 
 logger = logging.getLogger(__name__)
 
@@ -90,23 +92,71 @@ setup_db_events()
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:  # noqa: ARG001
     """
-    Handle Pydantic validation errors with consistent format.
+    Handle Pydantic validation errors with unified format.
+
+    All validation errors are transformed into the standard format:
+    {
+        "detail": "Validation error",
+        "errors": [
+            {"field": "...", "message": "...", "type": "..."}
+        ]
+    }
     """
-    errors = []
+    error_details = []
     for error in exc.errors():
         field_path = " -> ".join(str(loc) for loc in error["loc"])
-        errors.append({
-            "field": field_path,
-            "message": error["msg"],
-            "type": error["type"]
-        })
+        error_details.append(
+            ValidationErrorDetail(
+                field=field_path,
+                message=error["msg"],
+                type=error["type"]
+            )
+        )
 
+    response = ValidationErrorResponse(errors=error_details)
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "detail": "Validation error",
-            "errors": errors
-        }
+        content=response.model_dump()
+    )
+
+
+@app.exception_handler(ValueError)
+async def business_logic_exception_handler(request: Request, exc: ValueError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle business logic errors with unified format.
+
+    Business logic errors (e.g., from services) are returned with 400 status.
+    If the error message contains field information, we try to extract it.
+    """
+    error_message = str(exc)
+
+    # Try to parse field-specific errors (e.g., "field_name: error message")
+    if ":" in error_message:
+        parts = error_message.split(":", 1)
+        if len(parts) == 2:
+            field = parts[0].strip()
+            message = parts[1].strip()
+            error_details = [
+                ValidationErrorDetail(
+                    field=field,
+                    message=message,
+                    type="business_error"
+                )
+            ]
+            response = ValidationErrorResponse(
+                detail="Business logic error",
+                errors=error_details,
+                status_code=400
+            )
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=response.model_dump()
+            )
+
+    # Generic business error without field information
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": error_message}
     )
 
 
@@ -114,27 +164,62 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def integrity_exception_handler(request: Request, exc: IntegrityError) -> JSONResponse:  # noqa: ARG001
     """
     Handle database integrity errors (unique constraints, foreign keys, etc).
+
+    These errors are transformed into field-specific validation errors when possible.
     """
     error_msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
 
     # Parse common integrity errors for better messages
     if "duplicate key" in error_msg.lower() or "unique constraint" in error_msg.lower():
         if "room_number" in error_msg:
-            detail = "Room number already exists"
+            field = "room_number"
+            message = "Room number already exists"
         elif "phone" in error_msg:
-            detail = "Phone number already registered"
+            field = "phone"
+            message = "Phone number already registered"
         elif "username" in error_msg:
-            detail = "Username already exists"
+            field = "username"
+            message = "Username already exists"
         else:
-            detail = "Duplicate value for unique field"
-    elif "foreign key" in error_msg.lower():
-        detail = "Referenced record does not exist"
-    else:
-        detail = "Database constraint violation"
+            field = "unknown"
+            message = "Duplicate value for unique field"
 
+        error_details = [
+            ValidationErrorDetail(
+                field=field,
+                message=message,
+                type="unique_constraint"
+            )
+        ]
+        response = ValidationErrorResponse(
+            detail="Duplicate value error",
+            errors=error_details,
+            status_code=409
+        )
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=response.model_dump()
+        )
+    elif "foreign key" in error_msg.lower():
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": "Referenced record does not exist"}
+        )
+    else:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": "Database constraint violation"}
+        )
+
+
+@app.exception_handler(ConcurrentUpdateError)
+async def concurrent_update_exception_handler(request: Request, exc: ConcurrentUpdateError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle concurrent update conflicts (optimistic locking).
+    """
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
-        content={"detail": detail}
+        content={"detail": "The record was modified by another user. Please refresh and try again."}
     )
 
 

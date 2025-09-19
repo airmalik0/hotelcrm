@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.rate_limit import RateLimits, limiter
-from app.crud.base import ConcurrentUpdateError
 from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
@@ -93,30 +92,24 @@ def create_booking(
     """
     service = BookingService(session)
 
-    try:
-        booking = service.create_booking(booking_in)
+    booking = service.create_booking(booking_in)
 
-        # Log audit
-        entity_name = get_entity_name("booking", booking)
-        log_audit(
-            session=session,
-            user=current_user,
-            action="created",
-            entity_type="booking",
-            entity_id=booking.id,
-            entity_name=entity_name,
-        )
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="created",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+    )
 
-        # Commit everything
-        session.commit()
+    # Commit everything
+    session.commit()
 
-        # Get booking with relationships in one query
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except ConcurrentUpdateError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    # Get booking with relationships in one query
+    return crud_booking.get_with_relations(session, booking_id=booking.id)
 
 
 @router.put("/{booking_id}", response_model=BookingPublic)
@@ -167,42 +160,36 @@ def update_booking(
     update_dict = booking_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(booking, update_dict)
 
-    try:
-        # Handle special status changes
-        if booking_in.status == BookingStatus.CANCELLED and booking.status != BookingStatus.CANCELLED:
-            booking = service.cancel_booking(booking)
-        elif booking_in.status == BookingStatus.CHECKED_IN and booking.status == BookingStatus.CONFIRMED:
-            booking = service.check_in_booking(booking)
-        elif booking_in.status == BookingStatus.CHECKED_OUT and booking.status == BookingStatus.CHECKED_IN:
-            booking = service.check_out_booking(booking)
-        else:
-            # Regular update
-            booking = service.update_booking(booking, booking_in)
+    # Handle special status changes
+    if booking_in.status == BookingStatus.CANCELLED and booking.status != BookingStatus.CANCELLED:
+        booking = service.cancel_booking(booking)
+    elif booking_in.status == BookingStatus.CHECKED_IN and booking.status == BookingStatus.CONFIRMED:
+        booking = service.check_in_booking(booking)
+    elif booking_in.status == BookingStatus.CHECKED_OUT and booking.status == BookingStatus.CHECKED_IN:
+        booking = service.check_out_booking(booking)
+    else:
+        # Regular update
+        booking = service.update_booking(booking, booking_in)
 
-        # Log audit if there were changes
-        if old_values:
-            entity_name = get_entity_name("booking", booking)
-            log_audit(
-                session=session,
-                user=current_user,
-                action="updated",
-                entity_type="booking",
-                entity_id=booking.id,
-                entity_name=entity_name,
-                old_values=old_values,
-                new_values=new_values,
-            )
+    # Log audit if there were changes
+    if old_values:
+        entity_name = get_entity_name("booking", booking)
+        log_audit(
+            session=session,
+            user=current_user,
+            action="updated",
+            entity_type="booking",
+            entity_id=booking.id,
+            entity_name=entity_name,
+            old_values=old_values,
+            new_values=new_values,
+        )
 
-        session.commit()
-        session.refresh(booking)
+    session.commit()
+    session.refresh(booking)
 
-        # Reload with relationships
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except ConcurrentUpdateError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    # Reload with relationships
+    return crud_booking.get_with_relations(session, booking_id=booking.id)
 
 
 
@@ -261,30 +248,24 @@ def check_in_booking(
 
     service = BookingService(session)
 
-    try:
-        booking = service.check_in_booking(booking)
+    booking = service.check_in_booking(booking)
 
-        # Log audit
-        entity_name = get_entity_name("booking", booking)
-        log_audit(
-            session=session,
-            user=current_user,
-            action="checked_in",
-            entity_type="booking",
-            entity_id=booking.id,
-            entity_name=entity_name,
-        )
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="checked_in",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+    )
 
-        session.commit()
-        session.refresh(booking)
+    session.commit()
+    session.refresh(booking)
 
-        # Reload with relationships
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except ConcurrentUpdateError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    # Reload with relationships
+    return crud_booking.get_with_relations(session, booking_id=booking.id)
 
 
 @router.post("/{booking_id}/check-out", response_model=BookingPublic)
@@ -304,27 +285,21 @@ def check_out_booking(
 
     service = BookingService(session)
 
-    try:
-        booking = service.check_out_booking(booking)
+    booking = service.check_out_booking(booking)
 
-        # Log audit
-        entity_name = get_entity_name("booking", booking)
-        log_audit(
-            session=session,
-            user=current_user,
-            action="checked_out",
-            entity_type="booking",
-            entity_id=booking.id,
-            entity_name=entity_name,
-        )
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="checked_out",
+        entity_type="booking",
+        entity_id=booking.id,
+        entity_name=entity_name,
+    )
 
-        session.commit()
-        session.refresh(booking)
+    session.commit()
+    session.refresh(booking)
 
-        # Reload with relationships
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except ConcurrentUpdateError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    # Reload with relationships
+    return crud_booking.get_with_relations(session, booking_id=booking.id)

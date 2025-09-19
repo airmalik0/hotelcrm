@@ -7,6 +7,7 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
@@ -47,6 +48,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomPublic | null>(null)
   const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false)
+  const [showDiscountFields, setShowDiscountFields] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -140,16 +142,21 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       const nights = Math.ceil(
         (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
       )
-      const total = nights * activeRoom.price_per_night
+      const subtotal = nights * activeRoom.price_per_night
+      const discountAmount = showDiscountFields
+        ? subtotal * (formData.discount / 100)
+        : 0
+      const total = subtotal - discountAmount
       setFormData((prev) => ({
         ...prev,
-        totalAmount: Math.max(total - prev.discount, 0),
+        totalAmount: Math.max(total, 0),
       }))
     }
   }, [
     formData.checkIn,
     formData.checkOut,
     formData.discount,
+    showDiscountFields,
     room,
     selectedRoom,
   ])
@@ -175,6 +182,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     setSelectedRoom(null)
     setShowCustomerDropdown(false)
     setShowCreateCustomerModal(false)
+    setShowDiscountFields(false)
     setFormData({
       checkIn: "",
       checkOut: "",
@@ -200,8 +208,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
         variables.customer_id,
         variables.room_id,
       )
+      showSuccess("Booking created successfully!")
       resetForm()
       onClose()
+    },
+    onError: (error) => {
+      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create booking. Please try again.")
     },
   })
 
@@ -239,7 +251,11 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     }
 
     // Validate discount reason
-    if (formData.discount > 0 && !formData.discountReason.trim()) {
+    if (
+      showDiscountFields &&
+      formData.discount > 0 &&
+      !formData.discountReason.trim()
+    ) {
       setErrors({
         discountReason: "Discount reason is required when discount is applied",
       })
@@ -252,9 +268,14 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       check_in: new Date(formData.checkIn).toISOString(),
       check_out: new Date(formData.checkOut).toISOString(),
       total_amount: formData.totalAmount,
-      discount: formData.discount || undefined,
+      discount:
+        showDiscountFields && formData.discount > 0
+          ? formData.discount
+          : undefined,
       discount_reason:
-        formData.discount > 0 ? formData.discountReason : undefined,
+        showDiscountFields && formData.discount > 0
+          ? formData.discountReason
+          : undefined,
       payment_method: formData.paymentMethod,
       status: "confirmed",
     }
@@ -551,83 +572,192 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 </div>
               </div>
             </div>
+
+            {/* Date validation error */}
+            {errors.dates && (
+              <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">
+                {errors.dates}
+              </p>
+            )}
           </div>
 
           {/* Price & Payment */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Total Amount
-              </label>
-              <div className="text-lg font-semibold text-neutral-900 dark:text-white">
-                ${formData.totalAmount}
-              </div>
-            </div>
-
             {/* Discount */}
-            <div className="grid grid-cols-2 gap-3">
+            {!showDiscountFields ? (
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Discount
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    value={formData.discount}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        discount: Number(e.target.value),
-                      }))
-                    }
-                    min="0"
-                    max={formData.totalAmount}
-                    className="w-full pl-8 pr-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Reason{" "}
-                  {formData.discount > 0 && (
-                    <span className="text-danger-600 dark:text-danger-400">
-                      *
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  value={formData.discountReason}
-                  onChange={(e) =>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDiscountFields(true)
                     setFormData((prev) => ({
                       ...prev,
-                      discountReason: e.target.value,
+                      discount: 10,
+                      discountReason: "",
                     }))
-                  }
-                  placeholder={formData.discount > 0 ? "Required" : "Optional"}
-                  className={`w-full px-3 py-2 border ${
-                    errors.discountReason
-                      ? "border-danger-500 focus:ring-danger-500"
-                      : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
-                  } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                  required={formData.discount > 0}
-                />
-                {errors.discountReason && (
-                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-                    {errors.discountReason}
-                  </p>
-                )}
+                  }}
+                  className="w-full px-4 py-2 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Apply Discount
+                </button>
               </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Discount (%)
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          value={formData.discount}
+                          onChange={(e) => {
+                            let value = e.target.value
+                            // Remove leading zeros but keep at least one digit
+                            value = value.replace(/^0+(?=\d)/, "") || "0"
+                            const numValue = Number(value)
+                            if (numValue >= 0 && numValue <= 100) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                discount: numValue,
+                              }))
+                            }
+                          }}
+                          min="0"
+                          max="100"
+                          className="w-full pl-3 pr-8 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          style={{ MozAppearance: "textfield" }}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
+                          %
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowDiscountFields(false)
+                          setFormData((prev) => ({
+                            ...prev,
+                            discount: 0,
+                            discountReason: "",
+                          }))
+                          setErrors((prev) => ({
+                            ...prev,
+                            discountReason: undefined,
+                          }))
+                        }}
+                        className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                        title="Remove discount"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Reason
+                      {formData.discount > 0 && (
+                        <span className="text-danger-600 dark:text-danger-400">
+                          {" *"}
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.discountReason}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          discountReason: e.target.value,
+                        }))
+                      }
+                      placeholder={formData.discount > 0 ? "Required" : ""}
+                      className={`w-full px-3 py-2 border ${
+                        errors.discountReason
+                          ? "border-danger-500 focus:ring-danger-500"
+                          : "border-neutral-300 dark:border-neutral-600 focus:ring-primary-500"
+                      } rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                      required={formData.discount > 0}
+                    />
+                    {errors.discountReason && (
+                      <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                        {errors.discountReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Total Amount Display */}
+            <div className="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-600">
+              {(() => {
+                const activeRoom = room || selectedRoom
+                if (!formData.checkIn || !formData.checkOut || !activeRoom) {
+                  return (
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                        Total Amount
+                      </label>
+                      <div className="text-lg font-semibold text-neutral-900 dark:text-white">
+                        $0
+                      </div>
+                    </div>
+                  )
+                }
+
+                const start = new Date(formData.checkIn)
+                const end = new Date(formData.checkOut)
+                const nights = Math.ceil(
+                  (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+                )
+                const subtotal = nights * activeRoom.price_per_night
+                const discountAmount = showDiscountFields
+                  ? subtotal * (formData.discount / 100)
+                  : 0
+                const total = subtotal - discountAmount
+
+                return (
+                  <>
+                    {showDiscountFields && formData.discount > 0 && (
+                      <>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            Subtotal ({nights} {nights === 1 ? "night" : "nights"} ×
+                            ${activeRoom.price_per_night})
+                          </span>
+                          <span className="text-neutral-900 dark:text-white">
+                            ${subtotal}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            Discount ({formData.discount}%)
+                          </span>
+                          <span className="text-red-600 dark:text-red-400">
+                            -${discountAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className={`flex items-center justify-between ${showDiscountFields && formData.discount > 0 ? 'pt-2 border-t border-neutral-200 dark:border-neutral-600' : ''}`}>
+                      <label className="text-base font-medium text-neutral-700 dark:text-neutral-300">
+                        Total Amount
+                      </label>
+                      <div className="text-xl font-bold text-neutral-900 dark:text-white">
+                        ${Math.max(total, 0).toFixed(2)}
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
 
             {/* Payment Method */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Payment Method
-              </label>
               <div className="grid grid-cols-3 gap-2">
                 {(["cash", "terminal", "transfer"] as const).map((method) => (
                   <button

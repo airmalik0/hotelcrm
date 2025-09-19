@@ -15,7 +15,7 @@ class CustomerService:
         """Create customer with business logic."""
         # Check if phone exists (phone is required)
         if customer_in.phone and self.crud.get_by_phone(self.session, phone=customer_in.phone):
-            raise ValueError("Phone number already registered")
+            raise ValueError("phone: Phone number already registered")
 
         return self.crud.create(self.session, obj_in=customer_in)
 
@@ -23,7 +23,7 @@ class CustomerService:
         """Update customer with validations."""
         if customer_in.phone and customer_in.phone != customer.phone:
             if self.crud.get_by_phone(self.session, phone=customer_in.phone):
-                raise ValueError("Phone number already in use")
+                raise ValueError("phone: Phone number already in use")
 
         return self.crud.update(self.session, db_obj=customer, obj_in=customer_in)
 

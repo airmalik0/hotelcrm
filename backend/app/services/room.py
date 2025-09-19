@@ -14,7 +14,7 @@ class RoomService:
         """Create room with validations."""
         # Check if room number exists
         if self.crud.get_by_room_number(self.session, room_number=room_in.room_number):
-            raise ValueError("Room number already exists")
+            raise ValueError("room_number: Room number already exists")
 
         return self.crud.create(self.session, obj_in=room_in)
 
@@ -22,7 +22,7 @@ class RoomService:
         """Update room with validations."""
         if room_in.room_number and room_in.room_number != room.room_number:
             if self.crud.get_by_room_number(self.session, room_number=room_in.room_number):
-                raise ValueError("Room number already exists")
+                raise ValueError("room_number: Room number already exists")
 
         return self.crud.update(self.session, db_obj=room, obj_in=room_in)
 
@@ -37,6 +37,6 @@ class RoomService:
 
         # Check for existing bookings
         if crud_booking.count_filtered(self.session, room_id=room_uuid) > 0:
-            raise ValueError("Cannot delete room with existing bookings")
+            raise ValueError("room_id: Cannot delete room with existing bookings")
 
         return self.crud.delete(self.session, id=room_uuid)

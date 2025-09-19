@@ -23,10 +23,10 @@ import {
 
 // Layout Constants (following best practices - no magic numbers)
 const LAYOUT_CONSTANTS = {
-  ROOM_COLUMN_WIDTH: 200,     // Fixed width of room column in grid
-  SIDEBAR_WIDTH_LG: 256,      // w-64 in Tailwind = 256px
+  ROOM_COLUMN_WIDTH: 200, // Fixed width of room column in grid
+  SIDEBAR_WIDTH_LG: 256, // w-64 in Tailwind = 256px
   MAIN_CONTAINER_PADDING: 48, // p-6 = 24px * 2 sides
-  MIN_TIMELINE_WIDTH: 400,    // Minimum usable width for timeline
+  MIN_TIMELINE_WIDTH: 400, // Minimum usable width for timeline
 } as const
 
 interface GridZoomContextValue {
@@ -155,16 +155,13 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     // The grid has overflow-x-auto so horizontal scrollbar appears only when needed
     // and doesn't affect the layout calculation
     const gridAvailableWidth =
-      containerWidth -
-      LAYOUT_CONSTANTS.MAIN_CONTAINER_PADDING
+      containerWidth - LAYOUT_CONSTANTS.MAIN_CONTAINER_PADDING
 
     // Available width for timeline (grid minus fixed room column)
-    const timelineAvailableWidth = gridAvailableWidth - LAYOUT_CONSTANTS.ROOM_COLUMN_WIDTH
+    const timelineAvailableWidth =
+      gridAvailableWidth - LAYOUT_CONSTANTS.ROOM_COLUMN_WIDTH
 
-    return Math.max(
-      timelineAvailableWidth,
-      LAYOUT_CONSTANTS.MIN_TIMELINE_WIDTH
-    )
+    return Math.max(timelineAvailableWidth, LAYOUT_CONSTANTS.MIN_TIMELINE_WIDTH)
   }, [viewportWidth])
 
   // Computed dimensions based on zoom level

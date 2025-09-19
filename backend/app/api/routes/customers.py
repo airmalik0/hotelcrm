@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException, Request
 from app.api.deps import CurrentUser, SessionDep
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.rate_limit import RateLimits, limiter
-from app.crud.base import ConcurrentUpdateError
 from app.crud.customer import customer as crud_customer
 from app.models import (
     CustomerCreate,
@@ -66,11 +65,7 @@ def create_customer(
     Create new customer.
     """
     service = CustomerService(session)
-
-    try:
-        customer = service.create_customer(customer_in)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    customer = service.create_customer(customer_in)
 
     # Log audit in the same transaction
     entity_name = get_entity_name("customer", customer)
@@ -110,12 +105,7 @@ def update_customer(
     update_dict = customer_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(customer, update_dict)
 
-    try:
-        customer = service.update_customer(customer, customer_in)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except ConcurrentUpdateError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    customer = service.update_customer(customer, customer_in)
 
     # Log audit if there were changes
     if old_values:
@@ -163,10 +153,7 @@ def delete_customer(
         entity_name=entity_name,
     )
 
-    try:
-        service.delete_customer(customer_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    service.delete_customer(customer_id)
 
     session.commit()
     return Message(message="Customer deleted successfully")

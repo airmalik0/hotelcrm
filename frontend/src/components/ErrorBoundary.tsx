@@ -44,7 +44,8 @@ export class ErrorBoundary extends Component<Props, State> {
               Something went wrong
             </h2>
             <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-              We're sorry, but something unexpected happened. The page has been automatically reloaded to fix the issue.
+              We're sorry, but something unexpected happened. The page has been
+              automatically reloaded to fix the issue.
             </p>
             <div className="flex gap-3 justify-center">
               <button

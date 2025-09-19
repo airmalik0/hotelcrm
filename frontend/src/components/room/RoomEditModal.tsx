@@ -5,6 +5,7 @@ import type {
   RoomType,
   RoomUpdate,
 } from "@/client/types.gen"
+import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { X } from "lucide-react"
@@ -37,23 +38,11 @@ export function RoomEditModal({
     mutationFn: (data: RoomUpdate) => updateRoom(room.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      showSuccess("Room updated successfully!")
       onClose()
     },
-    onError: (error: any) => {
-      if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === "string") {
-          setErrors({ general: error.response.data.detail })
-        } else if (Array.isArray(error.response.data.detail)) {
-          const fieldErrors: Record<string, string> = {}
-          error.response.data.detail.forEach((err: any) => {
-            const field = err.loc?.[err.loc.length - 1]
-            if (field) {
-              fieldErrors[field] = err.msg
-            }
-          })
-          setErrors(fieldErrors)
-        }
-      }
+    onError: (error) => {
+      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to update room")
     },
   })
 
@@ -67,12 +56,20 @@ export function RoomEditModal({
     const newErrors: Record<string, string> = {}
     if (formData.room_number !== null && !formData.room_number?.trim()) {
       newErrors.room_number = "Room number cannot be empty"
+    } else if (formData.room_number && formData.room_number.trim().length > 10) {
+      newErrors.room_number = "Room number must be 10 characters or less"
+    } else if (formData.room_number && !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())) {
+      newErrors.room_number = "Room number must start with letter or number and contain only letters, numbers, and hyphens"
     }
-    if (formData.floor !== null && formData.floor < 0) {
-      newErrors.floor = "Floor must be 0 or greater"
+    if (formData.floor !== null && formData.floor < 1) {
+      newErrors.floor = "Floor must be 1 or greater"
+    } else if (formData.floor !== null && formData.floor > 20) {
+      newErrors.floor = "Floor must be 20 or less"
     }
     if (formData.price_per_night !== null && formData.price_per_night <= 0) {
       newErrors.price_per_night = "Price must be greater than 0"
+    } else if (formData.price_per_night !== null && formData.price_per_night > 100000) {
+      newErrors.price_per_night = "Price must be 100,000 or less"
     }
 
     if (Object.keys(newErrors).length > 0) {

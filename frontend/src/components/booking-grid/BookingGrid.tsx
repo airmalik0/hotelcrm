@@ -37,9 +37,9 @@ import { MobileBookingList } from "./mobile/MobileBookingList"
 function BookingGridContent() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("week")
-  const [selectedBookingId, setSelectedBookingId] = useState<string | undefined>(
-    undefined,
-  )
+  const [selectedBookingId, setSelectedBookingId] = useState<
+    string | undefined
+  >(undefined)
 
   // Get zoom context and dimensions
   const {

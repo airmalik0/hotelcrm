@@ -20,10 +20,10 @@ export default {
       center: true,
       padding: "1rem",
       screens: {
-        sm: "600px",   // Container for 640px breakpoint
-        md: "720px",   // Container for 768px breakpoint
-        lg: "960px",   // Container for 1024px breakpoint
-        xl: "1200px",  // Container for 1280px breakpoint
+        sm: "600px", // Container for 640px breakpoint
+        md: "720px", // Container for 768px breakpoint
+        lg: "960px", // Container for 1024px breakpoint
+        xl: "1200px", // Container for 1280px breakpoint
         "2xl": "1400px", // Container for 1536px breakpoint
       },
     },

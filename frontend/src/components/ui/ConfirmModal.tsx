@@ -66,7 +66,9 @@ export function ConfirmModal({
         </button>
 
         {/* Icon */}
-        <div className={`w-12 h-12 ${styles.iconBg} rounded-full flex items-center justify-center mb-4`}>
+        <div
+          className={`w-12 h-12 ${styles.iconBg} rounded-full flex items-center justify-center mb-4`}
+        >
           <AlertTriangle className={`w-6 h-6 ${styles.iconColor}`} />
         </div>
 

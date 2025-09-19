@@ -1,6 +1,6 @@
 import { ConfirmModal } from "@/components/ui/ConfirmModal"
 import type { ReactNode } from "react"
-import { useState, useCallback } from "react"
+import { useCallback, useState } from "react"
 
 interface ConfirmOptions {
   title?: string
@@ -49,7 +49,7 @@ export function useConfirm() {
         ...prev,
         isOpen: false,
         isLoading: false,
-        resolve: undefined
+        resolve: undefined,
       }))
     }, 150)
   }, [state.resolve])

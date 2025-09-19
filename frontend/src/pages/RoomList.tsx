@@ -5,6 +5,7 @@ import { RoomCreateModal } from "@/components/room/RoomCreateModal"
 import { RoomEditModal } from "@/components/room/RoomEditModal"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
+import { showError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Building2, Filter, Plus, Search } from "lucide-react"
 import type React from "react"
@@ -34,6 +35,10 @@ export function RoomList() {
     mutationFn: deleteRoom,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      showSuccess("Room deleted successfully!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to delete room. Please try again.")
     },
   })
 

@@ -13,7 +13,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react"
-import { memo, useState } from "react"
+import { memo } from "react"
 
 interface GridHeaderProps {
   currentDate: Date
@@ -41,17 +41,8 @@ export const GridHeader = memo(function GridHeader({
   onAddBooking,
 }: GridHeaderProps) {
   // Get zoom context
-  const {
-    zoomLevel,
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    presets,
-    applyPreset,
-    getMinZoom,
-    getMaxZoom,
-  } = useGridZoom()
-  const [showZoomPresets, setShowZoomPresets] = useState(false)
+  const { zoomLevel, zoomIn, zoomOut, resetZoom, getMinZoom, getMaxZoom } =
+    useGridZoom()
 
   // Check zoom limits
   const minZoom = getMinZoom()
@@ -224,49 +215,9 @@ export const GridHeader = memo(function GridHeader({
                 <ZoomOut className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
 
-              {/* Zoom level indicator with preset dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowZoomPresets(!showZoomPresets)}
-                  className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300 min-w-[80px]"
-                >
-                  {zoomPercent}%
-                </button>
-
-                {showZoomPresets && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowZoomPresets(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-20">
-                      <div className="p-1">
-                        {presets.map((preset) => (
-                          <button
-                            key={preset.name}
-                            onClick={() => {
-                              applyPreset(preset)
-                              setShowZoomPresets(false)
-                            }}
-                            className={clsx(
-                              "w-full px-3 py-2 rounded-md text-sm transition-colors text-left",
-                              Math.abs(preset.scale - zoomLevel) < 0.05
-                                ? "bg-primary-100 dark:bg-primary-600/25 text-primary-700 dark:text-primary-400"
-                                : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
-                            )}
-                          >
-                            <div className="font-medium">
-                              {preset.name} ({Math.round(preset.scale * 100)}%)
-                            </div>
-                            <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                              {preset.description}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
+              {/* Zoom level indicator (display only) */}
+              <div className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-dark-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 min-w-[80px] text-center">
+                {zoomPercent}%
               </div>
 
               {/* Zoom in button */}

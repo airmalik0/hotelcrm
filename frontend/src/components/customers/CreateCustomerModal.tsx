@@ -4,8 +4,9 @@ import type {
   CustomerPublic,
   District,
 } from "@/client/types.gen"
+import { ImageUpload } from "@/components/ui/ImageUpload"
+import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { isAxiosError } from "axios"
 import {
   Calendar,
   Camera,
@@ -16,12 +17,6 @@ import {
   X,
 } from "lucide-react"
 import { memo, useState } from "react"
-
-interface ValidationError {
-  loc: (string | number)[]
-  msg: string
-  type: string
-}
 
 interface CreateCustomerModalProps {
   isOpen: boolean
@@ -56,6 +51,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     phone: string
     date_of_birth: string
     district: District | ""
+    passport_photo_path: string | null
     notes: string
   }>({
     first_name: "",
@@ -63,6 +59,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     phone: "",
     date_of_birth: "",
     district: "",
+    passport_photo_path: null,
     notes: "",
   })
 
@@ -72,29 +69,13 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     mutationFn: (data: CustomerCreate) => createCustomer(data),
     onSuccess: (newCustomer) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
+      showSuccess("Customer created successfully!")
       onSuccess?.(newCustomer)
       resetForm()
       onClose()
     },
-    onError: (error: unknown) => {
-      // Handle validation errors from backend
-      if (isAxiosError(error) && error.response?.data?.detail) {
-        const detail = error.response.data.detail
-        if (typeof detail === "string") {
-          setErrors({ general: detail })
-        } else if (Array.isArray(detail)) {
-          const fieldErrors: Record<string, string> = {}
-          detail.forEach((err: ValidationError) => {
-            if (err.loc && err.msg) {
-              const field = err.loc[err.loc.length - 1]
-              fieldErrors[field] = err.msg
-            }
-          })
-          setErrors(fieldErrors)
-        }
-      } else {
-        setErrors({ general: "Failed to create customer" })
-      }
+    onError: (error) => {
+      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create customer")
     },
   })
 
@@ -105,6 +86,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       phone: "",
       date_of_birth: "",
       district: "",
+      passport_photo_path: null,
       notes: "",
     })
     setErrors({})
@@ -118,12 +100,19 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     const newErrors: Record<string, string> = {}
     if (!formData.first_name.trim()) {
       newErrors.first_name = "First name is required"
+    } else if (formData.first_name.trim().length > 100) {
+      newErrors.first_name = "First name must be 100 characters or less"
     }
     if (!formData.last_name.trim()) {
       newErrors.last_name = "Last name is required"
+    } else if (formData.last_name.trim().length > 100) {
+      newErrors.last_name = "Last name must be 100 characters or less"
     }
-    if (formData.phone && !formData.phone.match(/^\+?\d{7,15}$/)) {
-      newErrors.phone = "Invalid phone number format"
+    if (formData.phone) {
+      const digitsOnly = formData.phone.replace(/\D/g, "")
+      if (digitsOnly.length > 0 && (digitsOnly.length < 7 || digitsOnly.length > 15)) {
+        newErrors.phone = "Phone number must contain between 7 and 15 digits"
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -137,6 +126,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       phone: formData.phone.trim() || null,
       date_of_birth: formData.date_of_birth || null,
       district: (formData.district as District) || null,
+      passport_photo_path: formData.passport_photo_path,
       notes: formData.notes.trim() || null,
     }
 
@@ -342,16 +332,25 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
             </div>
           </div>
 
-          {/* Passport Photo Upload (placeholder for future) */}
+          {/* Passport Photo Upload */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <Camera className="w-4 h-4" />
               Documents
             </h3>
-            <div className="p-4 border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-center">
-              <Camera className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Passport photo upload coming soon
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Passport Photo
+              </label>
+              <ImageUpload
+                value={formData.passport_photo_path}
+                onChange={(path) =>
+                  setFormData((prev) => ({ ...prev, passport_photo_path: path }))
+                }
+                label="Upload Passport"
+              />
+              <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB)
               </p>
             </div>
           </div>

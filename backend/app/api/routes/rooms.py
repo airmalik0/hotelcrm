@@ -62,10 +62,7 @@ def create_room(
     """
     service = RoomService(session)
 
-    try:
-        room = service.create_room(room_in)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    room = service.create_room(room_in)
 
     # Log audit in the same transaction
     entity_name = get_entity_name("room", room)
@@ -105,10 +102,7 @@ def update_room(
     update_dict = room_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(room, update_dict)
 
-    try:
-        room = service.update_room(room, room_in)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    room = service.update_room(room, room_in)
 
     # Log audit if there were changes
     if old_values:

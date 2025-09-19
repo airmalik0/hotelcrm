@@ -4,7 +4,9 @@ import type {
   CustomerUpdate,
   District,
 } from "@/client/types.gen"
+import { ImageUpload } from "@/components/ui/ImageUpload"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
+import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Camera } from "lucide-react"
 import type React from "react"
@@ -43,6 +45,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
       ? new Date(customer.date_of_birth).toISOString().split("T")[0]
       : "",
     district: customer.district || undefined,
+    passport_photo_path: customer.passport_photo_path || undefined,
     notes: customer.notes || "",
   })
 
@@ -53,15 +56,10 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer", customer.id] })
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      // Show success message (you could add a toast notification here)
-      alert("Customer updated successfully!")
+      showSuccess("Customer updated successfully!")
     },
-    onError: (error: any) => {
-      if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === "string") {
-          setErrors({ first_name: error.response.data.detail })
-        }
-      }
+    onError: (error) => {
+      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to update customer")
     },
   })
 
@@ -88,9 +86,13 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
 
     if (formData.first_name && !formData.first_name.trim()) {
       newErrors.first_name = "First name cannot be empty"
+    } else if (formData.first_name && formData.first_name.trim().length > 100) {
+      newErrors.first_name = "First name must be 100 characters or less"
     }
     if (formData.last_name && !formData.last_name.trim()) {
       newErrors.last_name = "Last name cannot be empty"
+    } else if (formData.last_name && formData.last_name.trim().length > 100) {
+      newErrors.last_name = "Last name must be 100 characters or less"
     }
     if (formData.phone) {
       const digitsOnly = formData.phone.replace(/\D/g, "")
@@ -115,6 +117,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         phone: formData.phone || undefined,
         date_of_birth: formData.date_of_birth || undefined,
         district: formData.district as District | undefined,
+        passport_photo_path: formData.passport_photo_path || undefined,
         notes: formData.notes || undefined,
       }
       updateMutation.mutate(submitData)
@@ -130,7 +133,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     if (errors.district) {
       setErrors((prev) => {
         const newErrors = { ...prev }
-        delete newErrors.district
+        newErrors.district = undefined
         return newErrors
       })
     }
@@ -146,28 +149,31 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         Edit Customer Profile
       </h5>
 
-      {/* Profile Image Placeholder */}
+      {/* Passport Photo */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
-          Profile Image
+          Passport Photo
         </label>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-600/25 flex items-center justify-center">
             <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
               {customer.first_name[0]}
               {customer.last_name[0]}
             </span>
           </div>
-          <button
-            type="button"
-            className="w-10 h-10 flex justify-center items-center bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 border border-primary-600 hover:bg-primary-200 rounded-full"
-          >
-            <Camera className="w-5 h-5" />
-          </button>
+          <div>
+            <ImageUpload
+              value={formData.passport_photo_path}
+              onChange={(path) =>
+                setFormData((prev) => ({ ...prev, passport_photo_path: path }))
+              }
+              label="Upload Passport"
+            />
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
+              Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB)
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
-          Photo upload functionality will be added in a future update
-        </p>
       </div>
 
       <form onSubmit={handleSubmit}>

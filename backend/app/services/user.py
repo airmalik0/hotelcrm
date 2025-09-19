@@ -32,7 +32,7 @@ class UserService:
         """
         # Check if username exists
         if self.crud.get_by_username(self.session, username=user_in.username):
-            raise ValueError("The user with this username already exists in the system")
+            raise ValueError("username: The user with this username already exists in the system")
 
         return self.crud.create(self.session, obj_in=user_in)
 
@@ -54,7 +54,7 @@ class UserService:
         if user_in.username and user_in.username != user.username:
             existing_user = self.crud.get_by_username(self.session, username=user_in.username)
             if existing_user and existing_user.id != user.id:
-                raise ValueError("User with this username already exists")
+                raise ValueError("username: User with this username already exists")
 
         return self.crud.update(self.session, db_obj=user, obj_in=user_in)
 
@@ -76,7 +76,7 @@ class UserService:
         if user_in.username:
             existing_user = self.crud.get_by_username(self.session, username=user_in.username)
             if existing_user and existing_user.id != current_user.id:
-                raise ValueError("User with this username already exists")
+                raise ValueError("username: User with this username already exists")
 
         # Convert UserUpdateMe to UserUpdate for CRUD layer
         update_data = UserUpdate(**user_in.model_dump(exclude_unset=True))
@@ -98,11 +98,11 @@ class UserService:
         """
         # Verify current password
         if not verify_password(password_update.current_password, current_user.hashed_password):
-            raise ValueError("Incorrect password")
+            raise ValueError("password: Incorrect password")
 
         # Check that new password is different
         if password_update.current_password == password_update.new_password:
-            raise ValueError("New password cannot be the same as the current one")
+            raise ValueError("new_password: New password cannot be the same as the current one")
 
         # Update password through CRUD
         update_data = UserUpdate(hashed_password=get_password_hash(password_update.new_password))

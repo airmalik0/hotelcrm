@@ -3,6 +3,7 @@ import type { UserPublic, UserRole } from "@/client/types.gen"
 import { UserCreateModal } from "@/components/user/UserCreateModal"
 import { UserEditModal } from "@/components/user/UserEditModal"
 import { useConfirm } from "@/hooks/useConfirm"
+import { showError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -57,6 +58,10 @@ export function UserList() {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      showSuccess("User deleted successfully!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to delete user. Please try again.")
     },
   })
 

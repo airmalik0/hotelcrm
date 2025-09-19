@@ -2,13 +2,14 @@ import { deleteCustomer, getCustomers } from "@/api/customers"
 import type { CustomerPublic } from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
 import { useConfirm } from "@/hooks/useConfirm"
+import { showError, showSuccess } from "@/utils/error-handling"
 import {
   formatCurrency,
   formatDate,
   formatPhoneNumber,
 } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react"
+import { Edit, Eye, FileCheck, Plus, Search, Trash2 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
@@ -37,6 +38,10 @@ export function CustomerList() {
     mutationFn: deleteCustomer,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
+      showSuccess("Customer deleted successfully!")
+    },
+    onError: (error) => {
+      showError(error, "Failed to delete customer. Please try again.")
     },
   })
 
@@ -182,9 +187,17 @@ export function CustomerList() {
                               </span>
                             </div>
                             <div>
-                              <span className="text-base font-normal text-neutral-900 dark:text-white">
-                                {customer.first_name} {customer.last_name}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-base font-normal text-neutral-900 dark:text-white">
+                                  {customer.first_name} {customer.last_name}
+                                </span>
+                                {customer.passport_photo_path && (
+                                  <FileCheck
+                                    className="w-4 h-4 text-success-600 dark:text-success-400"
+                                    title="Passport uploaded"
+                                  />
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>

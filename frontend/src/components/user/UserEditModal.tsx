@@ -1,5 +1,6 @@
 import { updateUser } from "@/api/users"
 import type { UserPublic, UserRole, UserUpdate } from "@/client/types.gen"
+import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, X } from "lucide-react"
 import type React from "react"
@@ -53,24 +54,12 @@ export function UserEditModal({
   const updateMutation = useMutation({
     mutationFn: (data: UserUpdate) => updateUser(user.id, data),
     onSuccess: () => {
+      showSuccess("User updated successfully!")
       onSuccess()
       resetForm()
     },
-    onError: (error: any) => {
-      if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === "string") {
-          setErrors({ full_name: error.response.data.detail })
-        } else if (Array.isArray(error.response.data.detail)) {
-          // Handle validation errors
-          const newErrors: Record<string, string> = {}
-          error.response.data.detail.forEach((err: any) => {
-            if (err.loc?.[1] && typeof err.loc[1] === "string") {
-              newErrors[err.loc[1]] = err.msg
-            }
-          })
-          setErrors(newErrors)
-        }
-      }
+    onError: (error) => {
+      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to update user")
     },
   })
 
@@ -111,8 +100,8 @@ export function UserEditModal({
     const newErrors: Partial<UserUpdate> = {}
 
     if (changePassword && formData.password) {
-      if (formData.password.length < 6) {
-        newErrors.password = "Password must be at least 6 characters"
+      if (formData.password.length < 8) {
+        newErrors.password = "Password must be at least 8 characters"
       }
     }
 

@@ -166,7 +166,8 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
 **Current Architecture:**
 - **Types only**: `@hey-api/openapi-ts` generates only TypeScript types (no client functions)
 - **Custom wrappers**: API calls implemented manually in `src/api/*.ts`
-- **Axios client**: Centralized axios instance in `src/lib/axios.ts` with auth interceptors
+- **HTTP client**: Uses axios throughout the application
+- **Centralized client**: Axios instance in `src/lib/axios.ts` with auth interceptors
 
 **API URL Configuration (VITE_API_URL):**
 
@@ -180,7 +181,7 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
 - **Build time**: Variable is embedded into the built JavaScript bundle
 - **Runtime**: axios uses `import.meta.env.VITE_API_URL || ""` as baseURL
 
-**Flow:** `backend/models.py` → auto-generates → `src/client/types.gen.ts` → use in API wrappers → use in components
+**Flow:** `backend/models.py` → auto-generates → `frontend/openapi.json` → `src/client/types.gen.ts` → use in API wrappers → use in components
 
 1. **Usage in components with custom API wrappers:**
    ```typescript
@@ -201,13 +202,13 @@ Available HTML templates in `wowdash-templates-tailwand/pages/`:
 
    const { data, error, isLoading } = useQuery({
      queryKey: ["users"],
-     queryFn: () => apiClient.get<{ data: UserPublic[], count: number }>('/api/v1/users/', { 
-       params: { limit: 100 } 
+     queryFn: () => apiClient.get<{ data: UserPublic[], count: number }>('/api/v1/users/', {
+       params: { limit: 100 }
      }).then(res => res.data),
    })
    ```
 
-3. **Auto-generation:** When `models.py` changes, TypeScript types regenerate via hook (only types, not functions)
+3. **Auto-generation:** When `models.py` changes, TypeScript types regenerate via hook (generates only types, no client functions - we use custom axios wrappers)
 
 ### Authentication
 - JWT token in localStorage
