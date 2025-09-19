@@ -700,9 +700,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   <button
                     onClick={() => {
                       setShowDateModification(true)
+                      // Initialize with current dates for easier modification
+                      const checkIn = new Date(booking.check_in)
+                      const checkOut = new Date(booking.check_out)
                       setDateModification({
-                        new_check_in: booking.check_in,
-                        new_check_out: booking.check_out,
+                        new_check_in: checkIn.toISOString(),
+                        new_check_out: checkOut.toISOString(),
                       })
                     }}
                     className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
@@ -715,56 +718,148 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
               {showDateModification ? (
                 <div className="space-y-3">
+                  {/* Show current dates for reference */}
+                  <div className="p-3 bg-neutral-100 dark:bg-dark-3 rounded-lg text-sm">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-neutral-600 dark:text-neutral-400">Current dates:</span>
+                    </div>
+                    <div className="font-medium text-neutral-900 dark:text-white">
+                      {format(new Date(booking.check_in), "PPP")} → {format(new Date(booking.check_out), "PPP")}
+                    </div>
+                  </div>
+
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        New Check-in
+                        New Check-in Date
                       </label>
-                      <input
-                        type="datetime-local"
-                        value={
-                          dateModification.new_check_in
-                            ? new Date(dateModification.new_check_in)
-                                .toISOString()
-                                .slice(0, 16)
-                            : ""
-                        }
-                        onChange={(e) =>
-                          setDateModification({
-                            ...dateModification,
-                            new_check_in: e.target.value
-                              ? new Date(e.target.value).toISOString()
-                              : undefined,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="date"
+                          value={
+                            dateModification.new_check_in
+                              ? new Date(dateModification.new_check_in).toISOString().split('T')[0]
+                              : ""
+                          }
+                          min={new Date().toISOString().split('T')[0]}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              // Preserve the time from the original check-in
+                              const originalDate = new Date(dateModification.new_check_in || booking.check_in)
+                              const newDate = new Date(e.target.value)
+                              newDate.setHours(originalDate.getHours())
+                              newDate.setMinutes(originalDate.getMinutes())
+                              setDateModification({
+                                ...dateModification,
+                                new_check_in: newDate.toISOString(),
+                              })
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                        <select
+                          value={
+                            dateModification.new_check_in
+                              ? new Date(dateModification.new_check_in).getHours().toString().padStart(2, '0') + ':00'
+                              : "12:00"
+                          }
+                          onChange={(e) => {
+                            const [hours] = e.target.value.split(':')
+                            const date = new Date(dateModification.new_check_in || booking.check_in)
+                            date.setHours(parseInt(hours), 0, 0, 0)
+                            setDateModification({
+                              ...dateModification,
+                              new_check_in: date.toISOString(),
+                            })
+                          }}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>
+                              {i.toString().padStart(2, '0')}:00
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        New Check-out
+                        New Check-out Date
                       </label>
-                      <input
-                        type="datetime-local"
-                        value={
-                          dateModification.new_check_out
-                            ? new Date(dateModification.new_check_out)
-                                .toISOString()
-                                .slice(0, 16)
-                            : ""
-                        }
-                        onChange={(e) =>
-                          setDateModification({
-                            ...dateModification,
-                            new_check_out: e.target.value
-                              ? new Date(e.target.value).toISOString()
-                              : undefined,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="date"
+                          value={
+                            dateModification.new_check_out
+                              ? new Date(dateModification.new_check_out).toISOString().split('T')[0]
+                              : ""
+                          }
+                          min={
+                            dateModification.new_check_in
+                              ? new Date(new Date(dateModification.new_check_in).getTime() + 86400000).toISOString().split('T')[0]
+                              : new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
+                          }
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              // Preserve the time from the original check-out
+                              const originalDate = new Date(dateModification.new_check_out || booking.check_out)
+                              const newDate = new Date(e.target.value)
+                              newDate.setHours(originalDate.getHours())
+                              newDate.setMinutes(originalDate.getMinutes())
+                              setDateModification({
+                                ...dateModification,
+                                new_check_out: newDate.toISOString(),
+                              })
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                        <select
+                          value={
+                            dateModification.new_check_out
+                              ? new Date(dateModification.new_check_out).getHours().toString().padStart(2, '0') + ':00'
+                              : "12:00"
+                          }
+                          onChange={(e) => {
+                            const [hours] = e.target.value.split(':')
+                            const date = new Date(dateModification.new_check_out || booking.check_out)
+                            date.setHours(parseInt(hours), 0, 0, 0)
+                            setDateModification({
+                              ...dateModification,
+                              new_check_out: date.toISOString(),
+                            })
+                          }}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>
+                              {i.toString().padStart(2, '0')}:00
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Preview of new dates */}
+                  {dateModification.new_check_in && dateModification.new_check_out && (
+                    <div className="p-3 bg-primary-50 dark:bg-primary-600/10 rounded-lg text-sm">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-primary-600 dark:text-primary-400">New dates:</span>
+                      </div>
+                      <div className="font-medium text-primary-700 dark:text-primary-300">
+                        {format(new Date(dateModification.new_check_in), "PPP")} → {format(new Date(dateModification.new_check_out), "PPP")}
+                      </div>
+                      <div className="text-xs text-primary-600 dark:text-primary-400 mt-1">
+                        {Math.ceil(
+                          (new Date(dateModification.new_check_out).getTime() -
+                            new Date(dateModification.new_check_in).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )}{" "}
+                        nights
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <button
                       onClick={handleDateModification}
@@ -991,12 +1086,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                       Price Calculation
                     </label>
-                    <div className="space-y-2 p-3 bg-neutral-100 dark:bg-dark-4 rounded-lg">
+                    <div className="space-y-2 p-3 bg-neutral-100 dark:bg-dark-3 rounded-lg">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
                           Room Rate:
                         </span>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-neutral-900 dark:text-white">
                           ${booking.room?.price_per_night}/night
                         </span>
                       </div>
@@ -1004,7 +1099,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
                           Nights:
                         </span>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-neutral-900 dark:text-white">
                           {Math.ceil(
                             (new Date(booking.check_out).getTime() -
                               new Date(booking.check_in).getTime()) /
@@ -1016,7 +1111,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
                           Base Amount:
                         </span>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-neutral-900 dark:text-white">
                           ${formData.totalAmount}
                         </span>
                       </div>
