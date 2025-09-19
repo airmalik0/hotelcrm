@@ -7,7 +7,6 @@ from app.api.deps import CurrentUser, SessionDep
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.rate_limit import RateLimits, limiter
 from app.crud.base import ConcurrentUpdateError
-from app.crud.customer import customer as crud_customer
 from app.models import (
     CustomerCreate,
     CustomerPublic,
@@ -33,11 +32,8 @@ def read_customers(
     """
     Retrieve customers.
     """
-    customers = crud_customer.get_multi_with_search(
-        session, skip=skip, limit=limit, search=search
-    )
-    count = crud_customer.count_with_search(session, search=search)
-    return CustomersPublic(data=customers, count=count)
+    service = CustomerService(session)
+    return service.get_customers(skip=skip, limit=limit, search=search)
 
 
 @router.get("/{customer_id}", response_model=CustomerPublic)
@@ -49,10 +45,11 @@ def read_customer(
     """
     Get customer by ID.
     """
-    customer = crud_customer.get(session, id=customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-    return customer
+    service = CustomerService(session)
+    try:
+        return service.get_customer_by_id(customer_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/", response_model=CustomerPublic)
@@ -100,9 +97,11 @@ def update_customer(
     """
     Update a customer.
     """
-    customer = crud_customer.get(session, id=customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    service = CustomerService(session)
+    try:
+        customer = service.get_customer_by_id(customer_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
     service = CustomerService(session)
 
@@ -146,9 +145,11 @@ def delete_customer(
     """
     Delete a customer.
     """
-    customer = crud_customer.get(session, id=customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    service = CustomerService(session)
+    try:
+        customer = service.get_customer_by_id(customer_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
     service = CustomerService(session)
 

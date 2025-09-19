@@ -95,8 +95,9 @@ def db_retry(
             except RetryError as e:
                 # All retries exhausted
                 logger.error(f"All retries exhausted for {func.__name__}: {e.last_attempt.exception()}")
-                if e.last_attempt.exception():
-                    raise e.last_attempt.exception() from None
+                last_exception = e.last_attempt.exception()
+                if last_exception and isinstance(last_exception, BaseException):
+                    raise last_exception from None
                 else:
                     raise RuntimeError(f"Retry failed for {func.__name__}") from e
 
@@ -144,8 +145,9 @@ def critical_db_operation(
             return retryable_func(*args, **kwargs)
         except RetryError as e:
             logger.critical(f"Critical operation failed after all retries {func.__name__}: {e.last_attempt.exception()}")
-            if e.last_attempt.exception():
-                raise e.last_attempt.exception() from None
+            last_exception = e.last_attempt.exception()
+            if last_exception and isinstance(last_exception, BaseException):
+                raise last_exception from None
             else:
                 raise RuntimeError(f"Critical operation failed: {func.__name__}") from e
 

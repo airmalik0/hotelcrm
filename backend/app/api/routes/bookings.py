@@ -8,7 +8,6 @@ from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.rate_limit import RateLimits, limiter
 from app.crud.base import ConcurrentUpdateError
-from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
     BookingPublic,
@@ -43,8 +42,8 @@ def read_bookings(
     parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00")) if date_from else None
     parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00")) if date_to else None
 
-    bookings = crud_booking.get_multi_filtered(
-        session,
+    service = BookingService(session)
+    return service.get_bookings(
         skip=skip,
         limit=limit,
         status=status,
@@ -53,15 +52,6 @@ def read_bookings(
         date_from=parsed_date_from,
         date_to=parsed_date_to
     )
-    count = crud_booking.count_filtered(
-        session,
-        status=status,
-        room_id=room_id,
-        customer_id=customer_id,
-        date_from=parsed_date_from,
-        date_to=parsed_date_to
-    )
-    return BookingsPublic(data=bookings, count=count)
 
 
 @router.get("/{booking_id}", response_model=BookingPublic)
@@ -73,10 +63,11 @@ def read_booking(
     """
     Get booking by ID.
     """
-    booking = crud_booking.get_with_relations(session, booking_id=booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
-    return booking
+    service = BookingService(session)
+    try:
+        return service.get_booking_by_id(booking_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/", response_model=BookingPublic)
@@ -110,8 +101,8 @@ def create_booking(
         # Commit everything
         session.commit()
 
-        # Get booking with relationships in one query
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
+        # Get booking with relationships using service
+        return service.get_booking_by_id(booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -130,7 +121,8 @@ def update_booking(
     """
     Update a booking.
     """
-    booking = crud_booking.get(session, id=booking_id)
+    service = BookingService(session)
+    booking = service.crud_booking.get(session, id=booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -161,8 +153,6 @@ def update_booking(
                 status_code=400,
                 detail=f"Invalid status transition from {booking.status} to {booking_in.status}"
             )
-
-    service = BookingService(session)
 
     # Get old values for audit
     update_dict = booking_in.model_dump(exclude_unset=True)
@@ -197,8 +187,8 @@ def update_booking(
         session.commit()
         session.refresh(booking)
 
-        # Reload with relationships
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
+        # Reload with relationships using service
+        return service.get_booking_by_id(booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -216,7 +206,8 @@ def delete_booking(
     """
     Delete a booking. Requires admin or manager role.
     """
-    booking = crud_booking.get(session, id=booking_id)
+    service = BookingService(session)
+    booking = service.crud_booking.get(session, id=booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -254,7 +245,8 @@ def check_in_booking(
     """
     Check in a booking.
     """
-    booking = crud_booking.get(session, id=booking_id)
+    service = BookingService(session)
+    booking = service.crud_booking.get(session, id=booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -277,8 +269,8 @@ def check_in_booking(
         session.commit()
         session.refresh(booking)
 
-        # Reload with relationships
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
+        # Reload with relationships using service
+        return service.get_booking_by_id(booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -296,7 +288,8 @@ def check_out_booking(
     """
     Check out a booking.
     """
-    booking = crud_booking.get(session, id=booking_id)
+    service = BookingService(session)
+    booking = service.crud_booking.get(session, id=booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -319,8 +312,8 @@ def check_out_booking(
         session.commit()
         session.refresh(booking)
 
-        # Reload with relationships
-        return crud_booking.get_with_relations(session, booking_id=booking.id)
+        # Reload with relationships using service
+        return service.get_booking_by_id(booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

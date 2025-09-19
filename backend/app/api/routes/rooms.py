@@ -7,6 +7,7 @@ from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.crud.room import room as crud_room
 from app.models import (
+    BookingStatus,
     Message,
     RoomCreate,
     RoomPublic,
@@ -29,9 +30,8 @@ def read_rooms(
     """
     Retrieve rooms.
     """
-    rooms = crud_room.get_multi(session, skip=skip, limit=limit)
-    count = crud_room.count(session)
-    return RoomsPublic(data=rooms, count=count)
+    service = RoomService(session)
+    return service.get_rooms(skip=skip, limit=limit)
 
 
 @router.get("/{room_id}", response_model=RoomPublic)
@@ -43,10 +43,11 @@ def read_room(
     """
     Get room by ID.
     """
-    room = crud_room.get(session, id=room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-    return room
+    service = RoomService(session)
+    try:
+        return service.get_room_by_id(room_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])

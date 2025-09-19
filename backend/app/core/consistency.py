@@ -16,7 +16,7 @@ from app.models import Booking, BookingStatus, Customer, Room, RoomStatus
 logger = logging.getLogger(__name__)
 
 
-async def verify_customer_stats_task() -> dict[str, Any]:
+def verify_customer_stats_task() -> dict[str, Any]:
     """
     Periodic task to verify and fix customer statistics.
     Runs through all customers and recalculates their statistics.
@@ -24,7 +24,7 @@ async def verify_customer_stats_task() -> dict[str, Any]:
     Returns:
         Dictionary with results of the verification
     """
-    results = {
+    results: dict[str, Any] = {
         "customers_checked": 0,
         "customers_fixed": 0,
         "errors": []
@@ -56,7 +56,7 @@ async def verify_customer_stats_task() -> dict[str, Any]:
                         customer.first_booking_date != old_first_booking or
                         customer.last_booking_date != old_last_booking):
 
-                        results["customers_fixed"] = results["customers_fixed"] + 1
+                        results["customers_fixed"] += 1
                         logger.info(f"Fixed stats for customer {customer.id}: "
                                   f"spent {old_total_spent}->{customer.total_spent}, "
                                   f"bookings {old_total_bookings}->{customer.total_bookings}")
@@ -80,7 +80,7 @@ async def verify_customer_stats_task() -> dict[str, Any]:
     return results
 
 
-async def verify_room_status_consistency_task() -> dict[str, Any]:
+def verify_room_status_consistency_task() -> dict[str, Any]:
     """
     Verify room statuses are consistent with bookings.
     Fixes rooms that should be available but are marked otherwise.
@@ -88,7 +88,7 @@ async def verify_room_status_consistency_task() -> dict[str, Any]:
     Returns:
         Dictionary with results of the verification
     """
-    results = {
+    results: dict[str, Any] = {
         "rooms_checked": 0,
         "rooms_fixed": 0,
         "errors": []
@@ -119,7 +119,7 @@ async def verify_room_status_consistency_task() -> dict[str, Any]:
                             logger.info(f"Fixing room {room.room_number}: {room.status} -> OCCUPIED")
                             room.status = RoomStatus.OCCUPIED
                             session.add(room)
-                            results["rooms_fixed"] = results["rooms_fixed"] + 1
+                            results["rooms_fixed"] += 1
                     else:
                         # Room should not be occupied (unless maintenance or cleaning)
                         if room.status == RoomStatus.OCCUPIED:
@@ -127,7 +127,7 @@ async def verify_room_status_consistency_task() -> dict[str, Any]:
                             logger.info(f"Fixing room {room.room_number}: OCCUPIED -> AVAILABLE")
                             room.status = RoomStatus.AVAILABLE
                             session.add(room)
-                            results["rooms_fixed"] = results["rooms_fixed"] + 1
+                            results["rooms_fixed"] += 1
 
                 except Exception as e:
                     logger.error(f"Error processing room {room.id}: {e}")
@@ -148,7 +148,7 @@ async def verify_room_status_consistency_task() -> dict[str, Any]:
     return results
 
 
-async def run_all_consistency_checks() -> dict[str, Any]:
+def run_all_consistency_checks() -> dict[str, Any]:
     """
     Run all consistency checks.
 
@@ -158,8 +158,8 @@ async def run_all_consistency_checks() -> dict[str, Any]:
     logger.info("Running all consistency checks")
 
     results = {
-        "customer_stats": await verify_customer_stats_task(),
-        "room_status": await verify_room_status_consistency_task()
+        "customer_stats": verify_customer_stats_task(),
+        "room_status": verify_room_status_consistency_task()
     }
 
     logger.info("All consistency checks completed")
