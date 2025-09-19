@@ -9,7 +9,7 @@ interface ConfirmModalProps {
   message: string | ReactNode
   confirmText?: string
   cancelText?: string
-  variant?: "danger" | "warning" | "info"
+  variant?: "danger" | "warning" | "info" | "primary"
   isLoading?: boolean
 }
 
@@ -41,6 +41,11 @@ export function ConfirmModal({
       iconBg: "bg-blue-100 dark:bg-blue-600/25",
       iconColor: "text-blue-600 dark:text-blue-400",
       confirmBtn: "bg-blue-600 hover:bg-blue-700 text-white",
+    },
+    primary: {
+      iconBg: "bg-primary-100 dark:bg-primary-600/25",
+      iconColor: "text-primary-600 dark:text-primary-400",
+      confirmBtn: "bg-primary-600 hover:bg-primary-700 text-white",
     },
   }
 
