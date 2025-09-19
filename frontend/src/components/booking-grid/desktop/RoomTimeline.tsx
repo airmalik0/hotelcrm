@@ -4,6 +4,7 @@ import {
   calculateBookingPosition,
   getBookingTimesFromClick,
 } from "@/utils/date-helpers"
+import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
 import { memo, useRef } from "react"
 import { BookingBlock } from "../BookingBlock"
@@ -13,6 +14,7 @@ interface RoomTimelineProps {
   bookings: BookingPublic[]
   viewStart: Date
   viewEnd: Date
+  viewMode: ViewMode
   height?: number
   onBookingClick: (booking: BookingPublic) => void
   onEmptyClick: (room: RoomPublic, checkIn: Date, checkOut: Date) => void
@@ -35,6 +37,7 @@ export const RoomTimeline = memo(function RoomTimeline({
   bookings,
   viewStart,
   viewEnd,
+  viewMode,
   height = 64,
   onBookingClick,
   onEmptyClick,
@@ -52,7 +55,10 @@ export const RoomTimeline = memo(function RoomTimeline({
   isTouchDevice = false,
 }: RoomTimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { fontSize } = useGridZoom()
+  const { fontSize, dayWidth, actualDaysInView } = useGridZoom()
+
+  // Calculate total timeline width in pixels
+  const totalTimelineWidth = dayWidth * actualDaysInView
 
   const handleEmptyClick = (event: React.MouseEvent<HTMLDivElement>) => {
     // Only handle clicks on the container itself, not on bookings
@@ -108,11 +114,16 @@ export const RoomTimeline = memo(function RoomTimeline({
           return null
         }
 
+        // Calculate real width in pixels from percentage
+        const widthPercent = Number.parseFloat(position.width)
+        const realWidthPx = (widthPercent / 100) * totalTimelineWidth
+
         return (
           <BookingBlock
             key={booking.id}
             booking={booking}
             position={position}
+            realWidthPx={realWidthPx}
             onClick={onBookingClick}
             onMouseEnter={!isTouchDevice ? onBookingHover : undefined}
             onMouseLeave={!isTouchDevice ? onBookingLeave : undefined}

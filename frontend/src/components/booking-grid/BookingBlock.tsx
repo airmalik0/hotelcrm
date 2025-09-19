@@ -6,6 +6,10 @@ import {
 } from "@/utils/booking-colors"
 import { getGuestInitials } from "@/utils/booking-grid"
 import { formatDuration } from "@/utils/date-helpers"
+import {
+  getBestFittingName,
+  getMinimumReadableWidth,
+} from "@/utils/text-fitting"
 import clsx from "clsx"
 import { memo } from "react"
 
@@ -17,6 +21,7 @@ interface BookingBlockProps {
     isPartialStart: boolean
     isPartialEnd: boolean
   }
+  realWidthPx?: number
   onClick: (booking: BookingPublic) => void
   onMouseEnter?: (booking: BookingPublic, event: React.MouseEvent) => void
   onMouseLeave?: () => void
@@ -32,6 +37,7 @@ interface BookingBlockProps {
 export const BookingBlock = memo(function BookingBlock({
   booking,
   position,
+  realWidthPx,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -46,7 +52,6 @@ export const BookingBlock = memo(function BookingBlock({
   const guestName = booking.customer
     ? `${booking.customer.first_name} ${booking.customer.last_name}`
     : "Guest"
-  const initials = getGuestInitials(guestName)
   const duration = formatDuration(booking.check_in, booking.check_out)
 
   // Memoize status to avoid repetition
@@ -55,15 +60,37 @@ export const BookingBlock = memo(function BookingBlock({
   const hoverColor = getBookingHoverColor(bookingStatus)
   const indicatorColor = getBookingIndicatorColor(bookingStatus)
 
-  // Calculate if we should show full name or initials based on width
-  const widthPercent = Number.parseFloat(position.width)
-  const showFullName = widthPercent > 10 // Show full name if width > 10%
-  const showInitials = widthPercent > 1.5 // Show initials if width > 1.5%
-  const showStatusDot = widthPercent > 0.8 // Show status dot if width > 0.8%
+  // Smart text fitting - use real pixel width if available, fallback to percentage logic
+  let displayText = ""
+  let showStatusDot = false
+  let paddingClass = "px-2"
 
-  // Adaptive padding based on width
-  const paddingClass =
-    widthPercent < 2 ? "px-0.5" : widthPercent < 5 ? "px-1" : "px-2"
+  if (realWidthPx !== undefined) {
+    // New smart logic using real pixel measurements
+    const minimumReadableWidth = getMinimumReadableWidth(fontSize)
+    showStatusDot = realWidthPx > 16 // Show dot if width > 16px
+
+    if (realWidthPx >= minimumReadableWidth) {
+      displayText = getBestFittingName(guestName, realWidthPx, fontSize, 16) // 16px padding for dot + margins
+    }
+
+    // Adaptive padding based on real width
+    paddingClass =
+      realWidthPx < 30 ? "px-0.5" : realWidthPx < 80 ? "px-1" : "px-2"
+  } else {
+    // Fallback to old percentage logic for compatibility
+    const widthPercent = Number.parseFloat(position.width)
+    showStatusDot = widthPercent > 0.8
+
+    if (widthPercent > 3) {
+      displayText = guestName
+    } else if (widthPercent > 1.5) {
+      displayText = getGuestInitials(guestName)
+    }
+
+    paddingClass =
+      widthPercent < 2 ? "px-0.5" : widthPercent < 5 ? "px-1" : "px-2"
+  }
 
   // Only allow dragging for confirmed bookings (not checked in/out) and not on touch devices
   const canDrag = isDraggable && bookingStatus === "confirmed" && !isTouchDevice
@@ -108,14 +135,12 @@ export const BookingBlock = memo(function BookingBlock({
         />
       )}
 
-      {/* Guest name or initials - only show if there's enough space */}
-      {showInitials && (
+      {/* Guest name - dynamically fitted to available space */}
+      {displayText && (
         <div className="flex-1 min-w-0">
-          {showFullName ? (
-            <div className="font-medium truncate" style={{ fontSize: `${fontSize}px` }}>{guestName}</div>
-          ) : (
-            <div className="font-bold" style={{ fontSize: `${fontSize}px` }}>{initials}</div>
-          )}
+          <div className="font-medium" style={{ fontSize: `${fontSize}px` }}>
+            {displayText}
+          </div>
         </div>
       )}
 

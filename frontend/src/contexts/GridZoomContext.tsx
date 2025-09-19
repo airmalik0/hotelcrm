@@ -1,51 +1,67 @@
 import {
+  DEFAULT_ZOOM,
+  MIN_ZOOM,
+  ZOOM_PRESETS,
+  ZOOM_STEP,
+  type ZoomPreset,
+  clampZoom,
+  getMaxZoomForView,
+  getMinZoomForView,
+} from "@/constants/zoom"
+import { useViewportWidth } from "@/hooks/useViewportWidth"
+import { differenceInDays } from "date-fns"
+import {
+  type ReactNode,
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react"
 
-interface ZoomPreset {
-  name: string
-  scale: number
-  daysPerView: number
-  description: string
-}
+// Layout Constants (following best practices - no magic numbers)
+const LAYOUT_CONSTANTS = {
+  ROOM_COLUMN_WIDTH: 200,     // Fixed width of room column in grid
+  SIDEBAR_WIDTH_LG: 256,      // w-64 in Tailwind = 256px
+  MAIN_CONTAINER_PADDING: 48, // p-6 = 24px * 2 sides
+  MIN_TIMELINE_WIDTH: 400,    // Minimum usable width for timeline
+  LG_BREAKPOINT: 1024,        // Tailwind lg: breakpoint
+  XL_BREAKPOINT: 1200,        // Custom xl: breakpoint from tailwind.config.js - when sidebar becomes static
+} as const
 
 interface GridZoomContextValue {
-  // Current zoom level (0.5 - 2.0)
+  // Current zoom level (1.0 - dynamic max)
   zoomLevel: number
   // Predefined zoom presets
   presets: ZoomPreset[]
   // Current preset (if matches)
   currentPreset: ZoomPreset | null
-  // Actions
+  // Current view mode
+  currentViewMode: "week" | "month"
+  // View dates for calculating actual days
+  viewStart: Date | null
+  viewEnd: Date | null
+  actualDaysInView: number
+  // Actions - viewMode passed as parameter when needed
   setZoomLevel: (level: number) => void
-  zoomIn: () => void
-  zoomOut: () => void
+  zoomIn: (viewMode?: "week" | "month") => void
+  zoomOut: (viewMode?: "week" | "month") => void
   resetZoom: () => void
   applyPreset: (preset: ZoomPreset) => void
+  // View mode switching
+  switchViewMode: (viewMode: "week" | "month") => void
+  // View dates updating
+  setViewDates: (start: Date, end: Date) => void
+  // Zoom limits helper
+  getMinZoom: () => number
+  getMaxZoom: () => number
   // Computed values
   dayWidth: number
   roomHeight: number
   fontSize: number
   padding: number
 }
-
-const ZOOM_PRESETS: ZoomPreset[] = [
-  { name: "Compact", scale: 0.5, daysPerView: 14, description: "2 weeks view" },
-  { name: "Normal", scale: 1.0, daysPerView: 7, description: "1 week view" },
-  { name: "Detailed", scale: 1.5, daysPerView: 5, description: "5 days view" },
-  { name: "Large", scale: 2.0, daysPerView: 3, description: "3 days view" },
-]
-
-const DEFAULT_ZOOM = 1.0
-const MIN_ZOOM = 0.5
-const MAX_ZOOM = 2.0
-const ZOOM_STEP = 0.1
 
 const GridZoomContext = createContext<GridZoomContextValue | null>(null)
 
@@ -54,31 +70,112 @@ interface GridZoomProviderProps {
 }
 
 export function GridZoomProvider({ children }: GridZoomProviderProps) {
-  // Load saved zoom from localStorage
-  const [zoomLevel, setZoomLevelState] = useState(() => {
+  // Get viewport width for responsive calculations
+  const viewportWidth = useViewportWidth()
+
+  // Track view dates to calculate actual days
+  const [viewStart, setViewStart] = useState<Date | null>(null)
+  const [viewEnd, setViewEnd] = useState<Date | null>(null)
+
+  // Track current view mode
+  const [currentViewMode, setCurrentViewMode] = useState<"week" | "month">(
+    "week",
+  )
+
+  // Calculate actual days in view
+  const actualDaysInView = useMemo(() => {
+    if (!viewStart || !viewEnd) {
+      // Default fallback
+      return currentViewMode === "week" ? 7 : 30
+    }
+    // Calculate actual difference in days (add 1 because dates are inclusive)
+    return differenceInDays(viewEnd, viewStart) + 1
+  }, [viewStart, viewEnd, currentViewMode])
+
+  // Load saved zoom levels from localStorage
+  const [weekZoom, setWeekZoom] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("booking-grid-zoom")
-      return saved ? Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, parseFloat(saved))) : DEFAULT_ZOOM
+      const saved = localStorage.getItem("booking-grid-zoom-week")
+      return saved ? clampZoom(Number.parseFloat(saved), "week") : DEFAULT_ZOOM
     }
     return DEFAULT_ZOOM
   })
 
-  // Save zoom level to localStorage when it changes
+  const [monthZoom, setMonthZoom] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("booking-grid-zoom-month")
+      return saved
+        ? clampZoom(Number.parseFloat(saved), "month", actualDaysInView)
+        : DEFAULT_ZOOM
+    }
+    return DEFAULT_ZOOM
+  })
+
+  // Current zoom level based on view mode
+  const zoomLevel = currentViewMode === "week" ? weekZoom : monthZoom
+
+  // Save zoom levels to localStorage when they change
   useEffect(() => {
-    localStorage.setItem("booking-grid-zoom", zoomLevel.toString())
-  }, [zoomLevel])
+    localStorage.setItem("booking-grid-zoom-week", weekZoom.toString())
+  }, [weekZoom])
+
+  useEffect(() => {
+    localStorage.setItem("booking-grid-zoom-month", monthZoom.toString())
+  }, [monthZoom])
 
   // Find current preset if zoom matches
   const currentPreset = useMemo(
-    () => ZOOM_PRESETS.find((p) => Math.abs(p.scale - zoomLevel) < 0.05) || null,
-    [zoomLevel]
+    () =>
+      ZOOM_PRESETS.find((p) => Math.abs(p.scale - zoomLevel) < 0.05) || null,
+    [zoomLevel],
   )
+
+  // Calculate available width for timeline (excluding room column)
+  const availableWidth = useMemo(() => {
+    // IMPORTANT: The grid is rendered inside a flex container structure:
+    // <div flex> <aside w-64 xl:static> <div flex-1> <main p-6> [GRID HERE]
+    //
+    // On mobile (<1200px): Sidebar is fixed (out of flow), main gets full viewport
+    // On desktop (>=1200px): Sidebar is static (in flow), main gets remaining space
+
+    const hasSidebar = viewportWidth >= LAYOUT_CONSTANTS.XL_BREAKPOINT
+
+    // Calculate the actual container width (not viewport width!)
+    let containerWidth: number
+    if (hasSidebar) {
+      // Desktop: main content area = viewport - sidebar
+      // Then padding is applied INSIDE this container
+      containerWidth = viewportWidth - LAYOUT_CONSTANTS.SIDEBAR_WIDTH_LG
+    } else {
+      // Mobile/Tablet: main content gets full viewport width
+      // Sidebar is position:fixed so doesn't affect layout
+      containerWidth = viewportWidth
+    }
+
+    // Now subtract padding from the container width
+    // The grid has overflow-x-auto so horizontal scrollbar appears only when needed
+    // and doesn't affect the layout calculation
+    const gridAvailableWidth =
+      containerWidth -
+      LAYOUT_CONSTANTS.MAIN_CONTAINER_PADDING
+
+    // Available width for timeline (grid minus fixed room column)
+    const timelineAvailableWidth = gridAvailableWidth - LAYOUT_CONSTANTS.ROOM_COLUMN_WIDTH
+
+    return Math.max(
+      timelineAvailableWidth,
+      LAYOUT_CONSTANTS.MIN_TIMELINE_WIDTH
+    )
+  }, [viewportWidth])
 
   // Computed dimensions based on zoom level
   const dayWidth = useMemo(() => {
-    // Base width for a day at zoom 1.0 is ~114px (800px / 7 days)
-    return Math.round(114 * zoomLevel)
-  }, [zoomLevel])
+    // At zoom 1.0, all days should fit exactly in available width
+    // dayWidth = (availableWidth / actualDaysInView) * zoomLevel
+    const baseDayWidth = availableWidth / actualDaysInView
+    // Don't round to maintain precision, especially at max zoom
+    return baseDayWidth * zoomLevel
+  }, [availableWidth, actualDaysInView, zoomLevel])
 
   const roomHeight = useMemo(() => {
     // Base height at zoom 1.0 is 64px
@@ -101,37 +198,86 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     return 8
   }, [zoomLevel])
 
-  // Actions
-  const setZoomLevel = useCallback((level: number) => {
-    setZoomLevelState(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, level)))
+  // Get dynamic min and max zoom
+  const getMinZoom = useCallback(() => {
+    return MIN_ZOOM
   }, [])
 
-  const zoomIn = useCallback(() => {
-    setZoomLevel(zoomLevel + ZOOM_STEP)
-  }, [zoomLevel, setZoomLevel])
+  const getMaxZoom = useCallback(() => {
+    return getMaxZoomForView(currentViewMode, actualDaysInView)
+  }, [currentViewMode, actualDaysInView])
 
-  const zoomOut = useCallback(() => {
-    setZoomLevel(zoomLevel - ZOOM_STEP)
-  }, [zoomLevel, setZoomLevel])
+  // Actions
+  const setZoomLevel = useCallback(
+    (level: number) => {
+      const clampedLevel = clampZoom(level, currentViewMode, actualDaysInView)
+      if (currentViewMode === "week") {
+        setWeekZoom(clampedLevel)
+      } else {
+        setMonthZoom(clampedLevel)
+      }
+    },
+    [currentViewMode, actualDaysInView],
+  )
+
+  const switchViewMode = useCallback((viewMode: "week" | "month") => {
+    setCurrentViewMode(viewMode)
+  }, [])
+
+  const setViewDates = useCallback((start: Date, end: Date) => {
+    setViewStart(start)
+    setViewEnd(end)
+  }, [])
+
+  const zoomIn = useCallback(
+    (viewMode?: "week" | "month") => {
+      const maxZoom = getMaxZoomForView(
+        viewMode || currentViewMode,
+        actualDaysInView,
+      )
+      const newLevel = Math.min(maxZoom, zoomLevel + ZOOM_STEP)
+      setZoomLevel(newLevel)
+    },
+    [zoomLevel, setZoomLevel, currentViewMode, actualDaysInView],
+  )
+
+  const zoomOut = useCallback(
+    (viewMode?: "week" | "month") => {
+      const newLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP)
+      setZoomLevel(newLevel)
+    },
+    [zoomLevel, setZoomLevel],
+  )
 
   const resetZoom = useCallback(() => {
     setZoomLevel(DEFAULT_ZOOM)
   }, [setZoomLevel])
 
-  const applyPreset = useCallback((preset: ZoomPreset) => {
-    setZoomLevel(preset.scale)
-  }, [setZoomLevel])
+  const applyPreset = useCallback(
+    (preset: ZoomPreset) => {
+      setZoomLevel(preset.scale)
+    },
+    [setZoomLevel],
+  )
 
   const value = useMemo(
     () => ({
       zoomLevel,
       presets: ZOOM_PRESETS,
       currentPreset,
+      currentViewMode,
+      viewStart,
+      viewEnd,
+      actualDaysInView,
       setZoomLevel,
       zoomIn,
       zoomOut,
       resetZoom,
       applyPreset,
+      switchViewMode,
+      setViewDates,
+      getMinZoom,
+      getMaxZoom,
       dayWidth,
       roomHeight,
       fontSize,
@@ -140,19 +286,31 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     [
       zoomLevel,
       currentPreset,
+      currentViewMode,
+      viewStart,
+      viewEnd,
+      actualDaysInView,
       setZoomLevel,
       zoomIn,
       zoomOut,
       resetZoom,
       applyPreset,
+      switchViewMode,
+      setViewDates,
+      getMinZoom,
+      getMaxZoom,
       dayWidth,
       roomHeight,
       fontSize,
       padding,
-    ]
+    ],
   )
 
-  return <GridZoomContext.Provider value={value}>{children}</GridZoomContext.Provider>
+  return (
+    <GridZoomContext.Provider value={value}>
+      {children}
+    </GridZoomContext.Provider>
+  )
 }
 
 export function useGridZoom() {

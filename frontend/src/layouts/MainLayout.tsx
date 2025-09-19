@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
 import {
   ArrowRight,
+  BarChart3,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
   Home,
   LayoutGrid,
   LogOut,
+  Mail,
   Menu,
   Moon,
   Settings,
@@ -67,6 +69,20 @@ const menuItems: MenuItem[] = [
     icon: Settings,
     href: "/users",
     roles: ["admin"],
+  },
+  {
+    key: "analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    href: "/analytics",
+    roles: ["admin", "manager"],
+  },
+  {
+    key: "marketing",
+    label: "Marketing",
+    icon: Mail,
+    href: "/marketing",
+    roles: ["admin", "manager"],
   },
   {
     key: "audit",
@@ -190,13 +206,13 @@ export function MainLayout({ children }: MainLayoutProps) {
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}
+        } transition-transform duration-300 ease-in-out xl:translate-x-0 xl:static xl:inset-0`}
       >
         {/* Close button for mobile */}
         <button
           type="button"
           onClick={() => setSidebarOpen(false)}
-          className="absolute top-4 right-4 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+          className="absolute top-4 right-4 xl:hidden w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
         >
           <ArrowRight className="w-5 h-5" />
         </button>
@@ -227,7 +243,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <header className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -236,7 +252,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                className="xl:hidden w-10 h-10 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >
                 <Menu className="w-5 h-5" />
               </button>
@@ -292,7 +308,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 xl:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

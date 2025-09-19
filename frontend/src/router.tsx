@@ -1,10 +1,13 @@
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { MainLayout } from "@/layouts/MainLayout"
+import { Analytics } from "@/pages/Analytics"
+import { AuditLogs } from "@/pages/AuditLogs"
 import { BookingGridPage } from "@/pages/BookingGrid"
 import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
 import { Login } from "@/pages/Login"
+import { MarketingCampaigns } from "@/pages/MarketingCampaigns"
 import { RoomList } from "@/pages/RoomList"
 import { UserList } from "@/pages/UserList"
 import { Navigate, createBrowserRouter } from "react-router-dom"
@@ -89,14 +92,27 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin"]}>
         <MainLayout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
-              Audit Logs
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              Audit log interface coming soon...
-            </p>
-          </div>
+          <AuditLogs />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/analytics",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+        <MainLayout>
+          <Analytics />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/marketing",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+        <MainLayout>
+          <MarketingCampaigns />
         </MainLayout>
       </ProtectedRoute>
     ),

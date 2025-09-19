@@ -9,9 +9,9 @@ import {
   ChevronRight,
   LayoutGrid,
   Plus,
+  RotateCcw,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
 } from "lucide-react"
 import { memo, useState } from "react"
 
@@ -41,8 +41,23 @@ export const GridHeader = memo(function GridHeader({
   onAddBooking,
 }: GridHeaderProps) {
   // Get zoom context
-  const { zoomLevel, zoomIn, zoomOut, resetZoom, presets, applyPreset } = useGridZoom()
+  const {
+    zoomLevel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    presets,
+    applyPreset,
+    getMinZoom,
+    getMaxZoom,
+  } = useGridZoom()
   const [showZoomPresets, setShowZoomPresets] = useState(false)
+
+  // Check zoom limits
+  const minZoom = getMinZoom()
+  const maxZoom = getMaxZoom()
+  const isAtMinZoom = zoomLevel <= minZoom
+  const isAtMaxZoom = zoomLevel >= maxZoom
 
   // Format zoom percentage
   const zoomPercent = Math.round(zoomLevel * 100)
@@ -148,7 +163,10 @@ export const GridHeader = memo(function GridHeader({
               onClick={onToday}
               className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
-              Today
+              <span className="xl:hidden">
+                <Calendar className="w-4 h-4" />
+              </span>
+              <span className="hidden xl:inline">Today</span>
             </button>
 
             {/* Date range display */}
@@ -188,20 +206,20 @@ export const GridHeader = memo(function GridHeader({
           {/* Right side - Controls */}
           <div className="flex items-center gap-1 md:gap-2">
             {/* Zoom controls - hidden on small screens */}
-            <div className="hidden lg:flex items-center gap-1">
+            <div className="hidden xl:flex items-center gap-1">
               {/* Zoom out button */}
               <button
-                onClick={zoomOut}
-                disabled={zoomLevel <= 0.5}
+                onClick={() => zoomOut(viewMode)}
+                disabled={isAtMinZoom}
                 className={clsx(
                   "p-2 rounded-lg border transition-colors",
                   "border-neutral-200 dark:border-neutral-600",
-                  zoomLevel <= 0.5
+                  isAtMinZoom
                     ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-neutral-100 dark:hover:bg-dark-3"
+                    : "hover:bg-neutral-100 dark:hover:bg-dark-3",
                 )}
                 aria-label="Zoom out"
-                title={`Zoom out (Ctrl+-)`}
+                title={"Zoom out (Ctrl+-)"}
               >
                 <ZoomOut className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
@@ -234,10 +252,12 @@ export const GridHeader = memo(function GridHeader({
                               "w-full px-3 py-2 rounded-md text-sm transition-colors text-left",
                               Math.abs(preset.scale - zoomLevel) < 0.05
                                 ? "bg-primary-100 dark:bg-primary-600/25 text-primary-700 dark:text-primary-400"
-                                : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3"
+                                : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
                             )}
                           >
-                            <div className="font-medium">{preset.name} ({Math.round(preset.scale * 100)}%)</div>
+                            <div className="font-medium">
+                              {preset.name} ({Math.round(preset.scale * 100)}%)
+                            </div>
                             <div className="text-xs text-neutral-500 dark:text-neutral-400">
                               {preset.description}
                             </div>
@@ -251,17 +271,17 @@ export const GridHeader = memo(function GridHeader({
 
               {/* Zoom in button */}
               <button
-                onClick={zoomIn}
-                disabled={zoomLevel >= 2.0}
+                onClick={() => zoomIn(viewMode)}
+                disabled={isAtMaxZoom}
                 className={clsx(
                   "p-2 rounded-lg border transition-colors",
                   "border-neutral-200 dark:border-neutral-600",
-                  zoomLevel >= 2.0
+                  isAtMaxZoom
                     ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-neutral-100 dark:hover:bg-dark-3"
+                    : "hover:bg-neutral-100 dark:hover:bg-dark-3",
                 )}
                 aria-label="Zoom in"
-                title={`Zoom in (Ctrl++)`}
+                title={"Zoom in (Ctrl++)"}
               >
                 <ZoomIn className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
@@ -271,7 +291,7 @@ export const GridHeader = memo(function GridHeader({
                 onClick={resetZoom}
                 className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
                 aria-label="Reset zoom"
-                title={`Reset zoom (Ctrl+0)`}
+                title={"Reset zoom (Ctrl+0)"}
               >
                 <RotateCcw className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
@@ -291,7 +311,7 @@ export const GridHeader = memo(function GridHeader({
                 )}
               >
                 <LayoutGrid className="w-4 h-4" />
-                <span className="hidden lg:inline">Week</span>
+                <span className="hidden xl:inline">Week</span>
               </button>
               <button
                 onClick={() => onViewModeChange("month")}
@@ -303,7 +323,7 @@ export const GridHeader = memo(function GridHeader({
                 )}
               >
                 <CalendarDays className="w-4 h-4" />
-                <span className="hidden lg:inline">Month</span>
+                <span className="hidden xl:inline">Month</span>
               </button>
             </div>
 
@@ -313,7 +333,7 @@ export const GridHeader = memo(function GridHeader({
               className="px-3 md:px-4 py-1.5 md:py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-1 md:gap-2 text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden lg:inline">Add Booking</span>
+              <span className="hidden xl:inline">Add Booking</span>
             </button>
           </div>
         </div>

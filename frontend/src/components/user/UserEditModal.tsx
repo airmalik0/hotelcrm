@@ -64,7 +64,7 @@ export function UserEditModal({
           // Handle validation errors
           const newErrors: Record<string, string> = {}
           error.response.data.detail.forEach((err: any) => {
-            if (err.loc?.[1] && typeof err.loc[1] === 'string') {
+            if (err.loc?.[1] && typeof err.loc[1] === "string") {
               newErrors[err.loc[1]] = err.msg
             }
           })

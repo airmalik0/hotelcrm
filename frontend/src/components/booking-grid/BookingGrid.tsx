@@ -41,9 +41,16 @@ function BookingGridContent() {
     null,
   )
 
-  // Get zoom context
-  const { zoomLevel, dayWidth, roomHeight } = useGridZoom()
-  const gridContainerRef = useGridZoomControls({ enabled: true })
+  // Get zoom context and dimensions
+  const {
+    zoomLevel,
+    roomHeight,
+    dayWidth,
+    actualDaysInView,
+    switchViewMode,
+    setViewDates,
+  } = useGridZoom()
+  const gridContainerRef = useGridZoomControls({ enabled: true, viewMode })
 
   // Touch device detection only (for drag-n-drop)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
@@ -55,6 +62,11 @@ function BookingGridContent() {
     }
     setIsTouchDevice(checkTouch())
   }, [])
+
+  // Sync initial viewMode with context
+  useEffect(() => {
+    switchViewMode(viewMode)
+  }, [switchViewMode, viewMode])
 
   // Modal state
   const [quickBookingModal, setQuickBookingModal] = useState<{
@@ -85,6 +97,11 @@ function BookingGridContent() {
     () => getViewDateRange(currentDate, viewMode),
     [currentDate, viewMode],
   )
+
+  // Update context with current view dates
+  useEffect(() => {
+    setViewDates(viewStart, viewEnd)
+  }, [viewStart, viewEnd, setViewDates])
 
   // Fetch rooms
   const { data: roomsData, isLoading: roomsLoading } = useQuery({
@@ -185,10 +202,44 @@ function BookingGridContent() {
 
   const handleToday = () => {
     setCurrentDate(new Date())
+
+    // Center today's column in the grid
+    requestAnimationFrame(() => {
+      if (gridContainerRef.current) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        // Calculate days from view start to today
+        const msPerDay = 24 * 60 * 60 * 1000
+        const daysSinceStart = Math.floor(
+          (today.getTime() - viewStart.getTime()) / msPerDay,
+        )
+
+        // Only scroll if today is within the current view
+        if (
+          daysSinceStart >= 0 &&
+          daysSinceStart < (viewMode === "week" ? 7 : 30)
+        ) {
+          // Calculate pixel position of today's column
+          // Account for the 200px room column + day columns
+          const todayPixelPos = 200 + daysSinceStart * dayWidth + dayWidth / 2
+
+          // Get container width and calculate center position
+          const containerWidth = gridContainerRef.current.clientWidth
+          const scrollLeft = todayPixelPos - containerWidth / 2
+
+          gridContainerRef.current.scrollTo({
+            left: Math.max(0, scrollLeft),
+            behavior: "smooth",
+          })
+        }
+      }
+    })
   }
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
+    switchViewMode(mode)
   }
 
   // Filter handlers
@@ -326,12 +377,9 @@ function BookingGridContent() {
               <div className="relative overflow-x-auto" ref={gridContainerRef}>
                 {/* Main Grid */}
                 <div
-                  className="grid bg-white dark:bg-dark-2"
+                  className="grid bg-white dark:bg-dark-2 min-w-fit"
                   style={{
-                    gridTemplateColumns: "200px 1fr",
-                    minWidth: viewMode === "week"
-                      ? `${200 + dayWidth * 7}px`
-                      : `${200 + dayWidth * 30}px`,
+                    gridTemplateColumns: `200px ${dayWidth * actualDaysInView}px`,
                   }}
                 >
                   {/* Header Row */}
@@ -360,6 +408,7 @@ function BookingGridContent() {
                       bookings={bookingsByRoom.get(room.id) || []}
                       viewStart={viewStart}
                       viewEnd={viewEnd}
+                      viewMode={viewMode}
                       height={roomHeight}
                       onBookingClick={handleBookingClick}
                       onEmptyClick={handleEmptyClick}
@@ -389,10 +438,7 @@ function BookingGridContent() {
                   className="absolute top-10 bottom-0 pointer-events-none"
                   style={{
                     left: "200px",
-                    right: 0,
-                    minWidth: viewMode === "week"
-                      ? `${dayWidth * 7}px`
-                      : `${dayWidth * 30}px`,
+                    width: `${dayWidth * actualDaysInView}px`,
                   }}
                 >
                   {/* Vertical grid lines */}

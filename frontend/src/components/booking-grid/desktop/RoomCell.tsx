@@ -10,7 +10,10 @@ interface RoomCellProps {
   height?: number
 }
 
-export const RoomCell = memo(function RoomCell({ room, height = 64 }: RoomCellProps) {
+export const RoomCell = memo(function RoomCell({
+  room,
+  height = 64,
+}: RoomCellProps) {
   return (
     <div
       className={clsx(
