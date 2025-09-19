@@ -39,11 +39,7 @@ def create_user(*, session: SessionDep, current_user: CurrentUser, user_in: User
     Create new user. Only admin can create users.
     """
     service = UserService(session)
-
-    try:
-        user = service.create_user(user_in)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = service.create_user(user_in)
 
     # Log audit in the same transaction
     entity_name = get_entity_name("user", user)
@@ -75,10 +71,7 @@ def update_user_me(
     user_data = user_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(current_user, user_data)
 
-    try:
-        current_user = service.update_user_me(current_user, user_in)
-    except ValueError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    current_user = service.update_user_me(current_user, user_in)
 
     # Log audit if there were changes
     if old_values:
@@ -109,10 +102,7 @@ def update_password_me(
     """
     service = UserService(session)
 
-    try:
-        current_user = service.update_password(current_user, body)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    current_user = service.update_password(current_user, body)
 
     session.flush()  # Use flush instead of commit
 
@@ -147,21 +137,18 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     service = UserService(session)
 
-    try:
-        # Log audit before deletion
-        entity_name = get_entity_name("user", current_user)
-        log_audit(
-            session=session,
-            user=current_user,
-            action="self_deleted",
-            entity_type="user",
-            entity_id=current_user.id,
-            entity_name=entity_name,
-        )
+    # Log audit before deletion
+    entity_name = get_entity_name("user", current_user)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="self_deleted",
+        entity_type="user",
+        entity_id=current_user.id,
+        entity_name=entity_name,
+    )
 
-        service.delete_user_me(current_user)
-    except ValueError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+    service.delete_user_me(current_user)
     session.commit()
     return Message(message="User deleted successfully")
 
@@ -175,10 +162,7 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     service = UserService(session)
 
     user_create = UserCreate.model_validate(user_in)
-    try:
-        user = service.create_user(user_create)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = service.create_user(user_create)
 
     # Log audit for self-registration
     entity_name = get_entity_name("user", user)
@@ -241,10 +225,7 @@ def update_user(
     update_data = user_in.model_dump(exclude_unset=True)
     old_values, new_values = get_change_values(user, update_data)
 
-    try:
-        user = service.update_user(user, user_in)
-    except ValueError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+    user = service.update_user(user, user_in)
 
     # Log audit if there were changes
     if old_values:
@@ -279,20 +260,17 @@ def delete_user(
 
     service = UserService(session)
 
-    try:
-        # Log audit before deletion
-        entity_name = get_entity_name("user", user)
-        log_audit(
-            session=session,
-            user=current_user,
-            action="deleted",
-            entity_type="user",
-            entity_id=user.id,
-            entity_name=entity_name,
-        )
+    # Log audit before deletion
+    entity_name = get_entity_name("user", user)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="deleted",
+        entity_type="user",
+        entity_id=user.id,
+        entity_name=entity_name,
+    )
 
-        service.delete_user(user, current_user)
-    except ValueError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+    service.delete_user(user, current_user)
     session.commit()
     return Message(message="User deleted successfully")

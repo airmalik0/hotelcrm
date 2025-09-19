@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlmodel import Session
 
 from app.core.customer_stats import update_customer_stats_on_booking_change
+from app.core.exceptions import BusinessRuleViolation, NotFoundError
 from app.crud.booking import booking as crud_booking
 from app.crud.customer import customer as crud_customer
 from app.crud.room import room as crud_room
@@ -45,7 +46,7 @@ class BookingService:
         # Verify customer exists
         customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
         if not customer:
-            raise ValueError("customer_id: Customer not found")
+            raise NotFoundError("Customer", str(booking_in.customer_id))
 
         # Create booking with room lock to prevent race conditions
         # This handles ALL validations atomically: room check, status check, overlapping check, total amount
@@ -84,7 +85,7 @@ class BookingService:
         if booking_in.room_id and booking_in.room_id != booking.room_id:
             new_room = self.crud_room.get(self.session, id=booking_in.room_id)
             if not new_room:
-                raise ValueError("room_id: Room not found")
+                raise NotFoundError("Room", str(booking_in.room_id))
 
             # If booking is currently checked in, handle room status transitions
             if booking.status == BookingStatus.CHECKED_IN:
@@ -95,7 +96,7 @@ class BookingService:
 
                 # New room must not be under maintenance
                 if new_room.status == RoomStatus.MAINTENANCE:
-                    raise ValueError("New room is under maintenance and cannot be used")
+                    raise BusinessRuleViolation("New room is under maintenance and cannot be used")
 
                 # New room becomes occupied
                 self.crud_room.update_status(self.session, room=new_room, status=RoomStatus.OCCUPIED)
@@ -104,7 +105,7 @@ class BookingService:
         if booking_in.customer_id and booking_in.customer_id != booking.customer_id:
             new_customer = self.crud_customer.get(self.session, id=booking_in.customer_id)
             if not new_customer:
-                raise ValueError("customer_id: Customer not found")
+                raise NotFoundError("Customer", str(booking_in.customer_id))
 
         # Check room availability if dates or room changed
         if (booking_in.check_in or booking_in.check_out or booking_in.room_id):
@@ -121,7 +122,7 @@ class BookingService:
             )
 
             if overlapping:
-                raise ValueError("dates: Room is not available for the selected dates")
+                raise BusinessRuleViolation("Room is not available for the selected dates", field="dates")
 
         # Recalculate total if needed
         if any([booking_in.check_in, booking_in.check_out, booking_in.room_id,
@@ -136,7 +137,7 @@ class BookingService:
 
             # Verify provided total matches calculated
             if booking_in.total_amount and abs(booking_in.total_amount - new_total) > 1:
-                raise ValueError(
+                raise BusinessRuleViolation(
                     f"Total amount mismatch. Expected: {new_total:.2f}, got: {booking_in.total_amount:.2f}"
                 )
 
@@ -194,7 +195,7 @@ class BookingService:
             ValueError: If check-in is not allowed
         """
         if booking.status != BookingStatus.CONFIRMED:
-            raise ValueError("Only confirmed bookings can be checked in")
+            raise BusinessRuleViolation("Only confirmed bookings can be checked in")
 
         # Validate check-in time has arrived
         from datetime import datetime, timezone
@@ -204,24 +205,24 @@ class BookingService:
             hours = int(time_until_checkin.total_seconds() / 3600)
             minutes = int((time_until_checkin.total_seconds() % 3600) / 60)
             if hours > 0:
-                raise ValueError(f"Check-in time has not arrived yet. Please wait {hours} hours and {minutes} minutes")
+                raise BusinessRuleViolation(f"Check-in time has not arrived yet. Please wait {hours} hours and {minutes} minutes")
             else:
-                raise ValueError(f"Check-in time has not arrived yet. Please wait {minutes} minutes")
+                raise BusinessRuleViolation(f"Check-in time has not arrived yet. Please wait {minutes} minutes")
 
         room = self.crud_room.get(self.session, id=booking.room_id)
         if not room:
-            raise ValueError("room_id: Room not found")
+            raise NotFoundError("Room", str(booking.room_id))
 
         if room.status == RoomStatus.MAINTENANCE:
-            raise ValueError("Room is under maintenance and cannot be checked in")
+            raise BusinessRuleViolation("Room is under maintenance and cannot be checked in")
 
         # Check if room needs cleaning first
         if room.status == RoomStatus.CLEANING:
-            raise ValueError("Room is being cleaned. Please confirm it's ready for check-in")
+            raise BusinessRuleViolation("Room is being cleaned. Please confirm it's ready for check-in")
 
         # Check if room is already occupied
         if room.status == RoomStatus.OCCUPIED:
-            raise ValueError("Room is already occupied. This might be a data inconsistency - please contact support")
+            raise BusinessRuleViolation("Room is already occupied. This might be a data inconsistency - please contact support")
 
         # Check for conflicts
         overlapping = self.crud_booking.get_overlapping(
@@ -233,7 +234,7 @@ class BookingService:
         )
 
         if overlapping:
-            raise ValueError("Cannot check in: room has conflicting bookings")
+            raise BusinessRuleViolation("Cannot check in: room has conflicting bookings")
 
         # Update statuses
         self.crud_booking.update_status(self.session, booking=booking, status=BookingStatus.CHECKED_IN)
@@ -255,7 +256,7 @@ class BookingService:
             ValueError: If check-out is not allowed
         """
         if booking.status != BookingStatus.CHECKED_IN:
-            raise ValueError("Only checked-in bookings can be checked out")
+            raise BusinessRuleViolation("Only checked-in bookings can be checked out")
 
         room = self.crud_room.get(self.session, id=booking.room_id)
         if room:
@@ -349,7 +350,7 @@ class BookingService:
         room_id = new_room_id or booking.room_id
         room = self.crud_room.get(self.session, id=room_id)
         if not room:
-            raise ValueError(f"room_id: Room {room_id} not found")
+            raise NotFoundError("Room", str(room_id))
 
         # Use new or existing dates
         check_in = new_check_in or booking.check_in

@@ -83,6 +83,8 @@ services:
         restart: true
       prestart:
         condition: service_completed_successfully
+    volumes:
+      - app-uploads:/app/uploads
     env_file:
       - .env
     environment:
@@ -160,6 +162,7 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
 volumes:
   app-db-data:
+  app-uploads:
 
 networks:
   traefik-public:

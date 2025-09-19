@@ -2,6 +2,7 @@ import uuid
 
 from sqlmodel import Session
 
+from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation
 from app.crud.customer import customer as crud_customer
 from app.models import Customer, CustomerCreate, CustomerUpdate
 
@@ -15,7 +16,7 @@ class CustomerService:
         """Create customer with business logic."""
         # Check if phone exists (phone is required)
         if customer_in.phone and self.crud.get_by_phone(self.session, phone=customer_in.phone):
-            raise ValueError("phone: Phone number already registered")
+            raise AlreadyExistsError("phone", "Phone number already registered")
 
         return self.crud.create(self.session, obj_in=customer_in)
 
@@ -23,7 +24,7 @@ class CustomerService:
         """Update customer with validations."""
         if customer_in.phone and customer_in.phone != customer.phone:
             if self.crud.get_by_phone(self.session, phone=customer_in.phone):
-                raise ValueError("phone: Phone number already in use")
+                raise AlreadyExistsError("phone", "Phone number already in use")
 
         return self.crud.update(self.session, db_obj=customer, obj_in=customer_in)
 
@@ -34,6 +35,6 @@ class CustomerService:
         # Check for existing bookings
         booking_count = crud_booking.count_filtered(self.session, customer_id=customer_id)
         if booking_count > 0:
-            raise ValueError(f"Cannot delete customer with {booking_count} existing booking(s)")
+            raise BusinessRuleViolation(f"Cannot delete customer with {booking_count} existing booking(s)")
 
         return self.crud.delete(self.session, id=customer_id)

@@ -4,6 +4,7 @@ User service layer for centralizing user business logic.
 
 from sqlmodel import Session
 
+from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation
 from app.core.security import get_password_hash, verify_password
 from app.crud.user import user as crud_user
 from app.models import UpdatePassword, User, UserCreate, UserUpdate, UserUpdateMe
@@ -32,7 +33,7 @@ class UserService:
         """
         # Check if username exists
         if self.crud.get_by_username(self.session, username=user_in.username):
-            raise ValueError("username: The user with this username already exists in the system")
+            raise AlreadyExistsError("username", "The user with this username already exists in the system")
 
         return self.crud.create(self.session, obj_in=user_in)
 
@@ -54,7 +55,7 @@ class UserService:
         if user_in.username and user_in.username != user.username:
             existing_user = self.crud.get_by_username(self.session, username=user_in.username)
             if existing_user and existing_user.id != user.id:
-                raise ValueError("username: User with this username already exists")
+                raise AlreadyExistsError("username", "User with this username already exists")
 
         return self.crud.update(self.session, db_obj=user, obj_in=user_in)
 
@@ -76,7 +77,7 @@ class UserService:
         if user_in.username:
             existing_user = self.crud.get_by_username(self.session, username=user_in.username)
             if existing_user and existing_user.id != current_user.id:
-                raise ValueError("username: User with this username already exists")
+                raise AlreadyExistsError("username", "User with this username already exists")
 
         # Convert UserUpdateMe to UserUpdate for CRUD layer
         update_data = UserUpdate(**user_in.model_dump(exclude_unset=True))
@@ -98,11 +99,11 @@ class UserService:
         """
         # Verify current password
         if not verify_password(password_update.current_password, current_user.hashed_password):
-            raise ValueError("password: Incorrect password")
+            raise BusinessRuleViolation("Incorrect password", field="password")
 
         # Check that new password is different
         if password_update.current_password == password_update.new_password:
-            raise ValueError("new_password: New password cannot be the same as the current one")
+            raise BusinessRuleViolation("New password cannot be the same as the current one", field="new_password")
 
         # Update password through CRUD
         update_data = UserUpdate(hashed_password=get_password_hash(password_update.new_password))
@@ -122,12 +123,12 @@ class UserService:
         # Check if trying to delete self
         if user_to_delete.id == current_user.id:
             if user_to_delete.is_superuser:
-                raise ValueError("Super users are not allowed to delete themselves")
-            raise ValueError("You cannot delete your own account. Use /me endpoint instead")
+                raise BusinessRuleViolation("Super users are not allowed to delete themselves")
+            raise BusinessRuleViolation("You cannot delete your own account. Use /me endpoint instead")
 
         # Cannot delete superuser accounts
         if user_to_delete.is_superuser:
-            raise ValueError("Cannot delete superuser accounts")
+            raise BusinessRuleViolation("Cannot delete superuser accounts")
 
         self.crud.delete(self.session, id=user_to_delete.id)
 
@@ -142,6 +143,6 @@ class UserService:
             ValueError: If user is superuser
         """
         if current_user.is_superuser:
-            raise ValueError("Super users are not allowed to delete themselves")
+            raise BusinessRuleViolation("Super users are not allowed to delete themselves")
 
         self.crud.delete(self.session, id=current_user.id)

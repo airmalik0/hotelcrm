@@ -15,6 +15,7 @@ from app.api.main import api_router
 from app.core.config import settings
 from app.core.consistency import run_all_consistency_checks
 from app.core.db_events import setup_db_events
+from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation, NotFoundError
 from app.core.rate_limit import custom_rate_limit_exceeded_handler, ip_blocker, limiter
 from app.crud.base import ConcurrentUpdateError
 from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
@@ -120,43 +121,70 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-@app.exception_handler(ValueError)
-async def business_logic_exception_handler(request: Request, exc: ValueError) -> JSONResponse:  # noqa: ARG001
+@app.exception_handler(NotFoundError)
+async def not_found_exception_handler(request: Request, exc: NotFoundError) -> JSONResponse:  # noqa: ARG001
     """
-    Handle business logic errors with unified format.
-
-    Business logic errors (e.g., from services) are returned with 400 status.
-    If the error message contains field information, we try to extract it.
+    Handle resource not found errors.
+    Maps to HTTP 404.
     """
-    error_message = str(exc)
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc)}
+    )
 
-    # Try to parse field-specific errors (e.g., "field_name: error message")
-    if ":" in error_message:
-        parts = error_message.split(":", 1)
-        if len(parts) == 2:
-            field = parts[0].strip()
-            message = parts[1].strip()
-            error_details = [
-                ValidationErrorDetail(
-                    field=field,
-                    message=message,
-                    type="business_error"
-                )
-            ]
-            response = ValidationErrorResponse(
-                detail="Business logic error",
-                errors=error_details,
-                status_code=400
-            )
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content=response.model_dump()
-            )
 
-    # Generic business error without field information
+@app.exception_handler(AlreadyExistsError)
+async def already_exists_exception_handler(request: Request, exc: AlreadyExistsError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle resource already exists errors.
+    Maps to HTTP 409 with field information.
+    """
+    error_details = [
+        ValidationErrorDetail(
+            field=exc.field,
+            message=exc.message,
+            type="already_exists"
+        )
+    ]
+    response = ValidationErrorResponse(
+        detail="Resource already exists",
+        errors=error_details,
+        status_code=409
+    )
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump()
+    )
+
+
+@app.exception_handler(BusinessRuleViolation)
+async def business_rule_exception_handler(request: Request, exc: BusinessRuleViolation) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle business rule violations.
+    Maps to HTTP 400 with optional field information.
+    """
+    if exc.field:
+        error_details = [
+            ValidationErrorDetail(
+                field=exc.field,
+                message=exc.message,
+                type="business_error"
+            )
+        ]
+        response = ValidationErrorResponse(
+            detail="Business rule violation",
+            errors=error_details,
+            status_code=400
+        )
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=response.model_dump()
+        )
+
+    # Business error without field information
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": error_message}
+        content={"detail": exc.message}
     )
 
 

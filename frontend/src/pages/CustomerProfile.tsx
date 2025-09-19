@@ -6,6 +6,7 @@ import {
   Calendar,
   DollarSign,
   Edit,
+  FileImage,
   FileText,
   MapPin,
   Phone,
@@ -138,6 +139,31 @@ export function CustomerProfile() {
                 )}
               </ul>
             </div>
+
+            {/* Passport Photo */}
+            {customer.passport_photo_path && (
+              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
+                <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
+                  <FileImage className="w-5 h-5" />
+                  Passport Photo
+                </h6>
+                <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600">
+                  <img
+                    src={`/api/v1/files/${customer.passport_photo_path}`}
+                    alt="Passport"
+                    className="w-full h-auto object-contain bg-neutral-50 dark:bg-neutral-800"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      target.parentElement?.insertAdjacentHTML(
+                        'beforeend',
+                        '<div class="p-4 text-center text-neutral-500">Failed to load passport image</div>'
+                      )
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Statistics */}
             <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
@@ -274,6 +300,37 @@ export function CustomerProfile() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Passport Photo in Details Tab */}
+                  {customer.passport_photo_path && (
+                    <div className="mt-8">
+                      <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
+                        <FileImage className="w-5 h-5" />
+                        Document - Passport Photo
+                      </h5>
+                      <div className="max-w-2xl">
+                        <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800">
+                          <img
+                            src={`/api/v1/files/${customer.passport_photo_path}`}
+                            alt="Customer Passport"
+                            className="w-full h-auto object-contain"
+                            style={{ maxHeight: '500px' }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                              target.parentElement?.insertAdjacentHTML(
+                                'beforeend',
+                                '<div class="p-8 text-center text-neutral-500"><svg class="w-16 h-16 mx-auto mb-2 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Failed to load passport image</div>'
+                              )
+                            }}
+                          />
+                        </div>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
+                          Uploaded document for verification purposes
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                     <h6 className="text-base font-semibold mb-3 text-neutral-900 dark:text-white">
