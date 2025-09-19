@@ -106,8 +106,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { hasAnyRole } = useRole()
   const viewportWidth = useViewportWidth()
 
-  // Determine if we're on a large screen for layout optimization
-  const isLargeScreen = viewportWidth >= BREAKPOINTS["2xl"]
+  // Determine if we're on a 2xl+ screen for wider sidebar
+  const isExtraLarge = viewportWidth >= BREAKPOINTS["2xl"]
 
   // Setup navigation listener for external navigation
   useEffect(() => {
@@ -218,7 +218,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 ${
-          isLargeScreen ? 'w-80' : 'w-64'
+          isExtraLarge ? 'w-80' : 'w-64'
         } bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 ease-in-out xl:translate-x-0 xl:static xl:inset-0`}
@@ -317,9 +317,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </header>
 
         {/* Main content */}
-        <main className={`flex-1 p-6 ${
-          isLargeScreen ? 'max-w-screen-2xl mx-auto w-full' : ''
-        }`}>
+        <main className="flex-1 p-6">
           {children}
         </main>
       </div>

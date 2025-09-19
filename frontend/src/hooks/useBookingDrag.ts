@@ -1,5 +1,12 @@
-import { updateBooking } from "@/api/bookings"
-import type { BookingPublic, RoomPublic } from "@/client/types.gen"
+import { changeBookingRoom } from "@/api/bookings"
+import { getRooms } from "@/api/rooms"
+import type {
+  BookingPublic,
+  PaymentAdjustmentResponse,
+  RoomPublic,
+} from "@/client/types.gen"
+import { useConfirm } from "@/hooks/useConfirm"
+import { showError, showSuccess } from "@/utils/error-handling"
 import { isRoomAvailable } from "@/utils/booking-grid"
 import { invalidateAfterBookingUpdate } from "@/utils/query-invalidation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -15,6 +22,7 @@ interface DragState {
 export function useBookingDrag(existingBookings: BookingPublic[]) {
   const queryClient = useQueryClient()
   const dragImageRef = useRef<HTMLDivElement | null>(null)
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
@@ -23,14 +31,14 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
     isValidDrop: false,
   })
 
-  // Mutation for updating booking room with optimistic updates
-  const updateBookingMutation = useMutation({
-    mutationFn: ({
-      id,
-      roomId,
-      oldRoomId,
-    }: { id: string; roomId: string; oldRoomId: string }) =>
-      updateBooking(id, { room_id: roomId }),
+  // Mutation for changing booking room with payment adjustment
+  const changeRoomMutation = useMutation<
+    PaymentAdjustmentResponse,
+    unknown,
+    { id: string; roomId: string; oldRoomId: string }
+  >({
+    mutationFn: ({ id, roomId }) =>
+      changeBookingRoom(id, { new_room_id: roomId }),
     onMutate: async ({ id, roomId }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["bookings"] })
@@ -57,17 +65,33 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       if (context?.previousBookings) {
         queryClient.setQueryData(["bookings"], context.previousBookings)
       }
+      // Show error message
+      showError(err, "Failed to change room")
     },
-    onSuccess: (updatedBooking, variables) => {
+    onSuccess: (response, variables) => {
       // When moving a checked-in booking, room statuses change:
       // - Old room: OCCUPIED → CLEANING
       // - New room: (any) → OCCUPIED
-      invalidateAfterBookingUpdate(queryClient, updatedBooking.id, {
+      invalidateAfterBookingUpdate(queryClient, response.booking.id, {
         roomChanged: true,
         customerChanged: false,
         oldRoomId: variables.oldRoomId,
         newRoomId: variables.roomId,
       })
+
+      // Show payment adjustment notification
+      const diff = response.payment_difference
+      if (diff > 0) {
+        showSuccess(
+          `Room changed. Guest needs to pay additional $${diff.toFixed(2)}`,
+        )
+      } else if (diff < 0) {
+        showSuccess(
+          `Room changed. Refund amount: $${Math.abs(diff).toFixed(2)}`,
+        )
+      } else {
+        showSuccess("Room changed successfully!")
+      }
     },
   })
 
@@ -159,7 +183,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
 
   // Handle drop
   const handleDrop = useCallback(
-    (e: React.DragEvent, room: RoomPublic) => {
+    async (e: React.DragEvent, targetRoom: RoomPublic) => {
       e.preventDefault()
 
       if (!dragState.draggedBooking || !dragState.isValidDrop) {
@@ -174,12 +198,44 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       }
 
       // Only update if moving to a different room
-      if (dragState.draggedBooking.room_id !== room.id) {
-        updateBookingMutation.mutate({
-          id: dragState.draggedBooking.id,
-          roomId: room.id,
-          oldRoomId: dragState.draggedBooking.room_id,
+      if (dragState.draggedBooking.room_id !== targetRoom.id) {
+        const booking = dragState.draggedBooking
+        const currentRoom = booking.room
+        const priceDiff =
+          targetRoom.price_per_night - (currentRoom?.price_per_night || 0)
+        const nights = Math.ceil(
+          (new Date(booking.check_out).getTime() -
+            new Date(booking.check_in).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
+        const totalDiff = priceDiff * nights
+
+        // Show confirmation with price difference
+        let message = `Move booking from Room ${currentRoom?.room_number} to Room ${targetRoom.room_number}?\n\n`
+        if (totalDiff > 0) {
+          message += `⚠️ Additional charge: $${totalDiff.toFixed(2)}\n`
+          message += `(${nights} nights × $${priceDiff.toFixed(2)}/night difference)`
+        } else if (totalDiff < 0) {
+          message += `✅ Refund amount: $${Math.abs(totalDiff).toFixed(2)}\n`
+          message += `(${nights} nights × $${Math.abs(priceDiff).toFixed(2)}/night difference)`
+        } else {
+          message += "No price difference"
+        }
+
+        const confirmed = await confirm({
+          title: "Confirm Room Change",
+          message,
+          confirmText: "Change Room",
+          variant: totalDiff > 0 ? "warning" : "primary",
         })
+
+        if (confirmed) {
+          changeRoomMutation.mutate({
+            id: booking.id,
+            roomId: targetRoom.id,
+            oldRoomId: booking.room_id,
+          })
+        }
       }
 
       // Reset drag state
@@ -190,7 +246,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
         isValidDrop: false,
       })
     },
-    [dragState, updateBookingMutation],
+    [dragState, changeRoomMutation, confirm],
   )
 
   // Handle drag end (cleanup)
@@ -220,6 +276,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
     handleDrop,
     handleDragEnd,
     createDragImageContainer,
-    isUpdating: updateBookingMutation.isPending,
+    isUpdating: changeRoomMutation.isPending,
+    ConfirmDialog,
   }
 }

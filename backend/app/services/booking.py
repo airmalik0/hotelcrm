@@ -329,6 +329,34 @@ class BookingService:
         # Delete the booking
         self.crud_booking.delete(self.session, id=booking.id)
 
+    def calculate_original_booking_total(self, booking: Booking) -> float:
+        """
+        Calculate the original booking total without any adjustments.
+        Uses the original room price and dates.
+
+        Args:
+            booking: Booking to calculate original total for
+
+        Returns:
+            Original booking total amount
+        """
+        room = self.crud_room.get(self.session, id=booking.room_id)
+        if not room:
+            return booking.total_amount  # Fallback to current total
+
+        nights = (booking.check_out - booking.check_in).days
+        if nights <= 0:
+            nights = 1  # Minimum 1 night
+
+        # Calculate base amount without any adjustments
+        base_amount = room.price_per_night * nights
+
+        # Apply original discount if any
+        if booking.discount and booking.discount > 0:
+            base_amount = base_amount * (1 - booking.discount / 100)
+
+        return base_amount
+
     def recalculate_booking_total(
         self,
         booking: Booking,

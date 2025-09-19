@@ -248,6 +248,65 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     },
   })
 
+  // Helper to handle date modification with confirmation
+  const handleDateModification = async () => {
+    if (!booking || !booking.room) return
+
+    const newCheckIn = dateModification.new_check_in
+      ? new Date(dateModification.new_check_in)
+      : new Date(booking.check_in)
+    const newCheckOut = dateModification.new_check_out
+      ? new Date(dateModification.new_check_out)
+      : new Date(booking.check_out)
+
+    const oldNights = Math.ceil(
+      (new Date(booking.check_out).getTime() -
+        new Date(booking.check_in).getTime()) /
+        (1000 * 60 * 60 * 24),
+    )
+    const newNights = Math.ceil(
+      (newCheckOut.getTime() - newCheckIn.getTime()) / (1000 * 60 * 60 * 24),
+    )
+
+    const nightsDiff = newNights - oldNights
+    const priceDiff = nightsDiff * booking.room.price_per_night
+
+    // Build confirmation message
+    let message = `Change booking dates?\n\n`
+    message += `Old: ${format(new Date(booking.check_in), "PPP")} - ${format(
+      new Date(booking.check_out),
+      "PPP",
+    )} (${oldNights} nights)\n`
+    message += `New: ${format(newCheckIn, "PPP")} - ${format(
+      newCheckOut,
+      "PPP",
+    )} (${newNights} nights)\n\n`
+
+    if (priceDiff > 0) {
+      message += `⚠️ Additional charge: $${priceDiff.toFixed(2)}\n`
+      message += `(${nightsDiff} additional nights × $${booking.room.price_per_night}/night)`
+    } else if (priceDiff < 0) {
+      message += `✅ Refund amount: $${Math.abs(priceDiff).toFixed(2)}\n`
+      message += `(${Math.abs(nightsDiff)} fewer nights × $${booking.room.price_per_night}/night)`
+    } else {
+      message += "No price difference"
+    }
+
+    const confirmed = await confirm({
+      title: "Confirm Date Modification",
+      message,
+      confirmText: "Modify Dates",
+      variant: priceDiff > 0 ? "warning" : "primary",
+    })
+
+    if (confirmed) {
+      modifyDatesMutation.mutate({
+        id: booking.id,
+        data: dateModification,
+      })
+    }
+  }
+
   // Change room mutation
   const changeRoomMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: RoomChangeRequest }) =>
@@ -280,8 +339,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       return
     }
 
+    // Don't allow changing total amount directly - keep original base amount
+    // and apply discount to calculate final amount
+    const finalAmount = formData.totalAmount * (1 - formData.discount / 100)
+
     const updateData: BookingUpdate = {
-      total_amount: formData.totalAmount,
+      total_amount: finalAmount,
       discount: formData.discount || undefined,
       discount_reason: formData.discountReason || undefined,
       payment_method: formData.paymentMethod,
@@ -704,18 +767,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        if (booking) {
-                          modifyDatesMutation.mutate({
-                            id: booking.id,
-                            data: dateModification,
-                          })
-                        }
-                      }}
+                      onClick={handleDateModification}
                       disabled={modifyDatesMutation.isPending}
                       className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
                     >
-                      {modifyDatesMutation.isPending ? "Saving..." : "Save Changes"}
+                      {modifyDatesMutation.isPending ? "Saving..." : "Preview Changes"}
                     </button>
                     <button
                       onClick={() => {
@@ -933,23 +989,67 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                      Total Amount
+                      Price Calculation
                     </label>
-                    <input
-                      type="number"
-                      value={formData.totalAmount}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          totalAmount: Number(e.target.value),
-                        }))
-                      }
-                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      style={{
-                        appearance: "textfield",
-                        MozAppearance: "textfield",
-                      }}
-                    />
+                    <div className="space-y-2 p-3 bg-neutral-100 dark:bg-dark-4 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Room Rate:
+                        </span>
+                        <span className="text-sm font-medium">
+                          ${booking.room?.price_per_night}/night
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Nights:
+                        </span>
+                        <span className="text-sm font-medium">
+                          {Math.ceil(
+                            (new Date(booking.check_out).getTime() -
+                              new Date(booking.check_in).getTime()) /
+                              (1000 * 60 * 60 * 24)
+                          )}
+                        </span>
+                      </div>
+                      <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Base Amount:
+                        </span>
+                        <span className="text-sm font-medium">
+                          ${formData.totalAmount}
+                        </span>
+                      </div>
+                      {formData.discount > 0 && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                              Discount ({formData.discount}%):
+                            </span>
+                            <span className="text-sm text-red-600 dark:text-red-400">
+                              -${
+                                ((formData.totalAmount * formData.discount) / 100).toFixed(
+                                  2
+                                )
+                              }
+                            </span>
+                          </div>
+                          <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">
+                            <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                              Final Amount:
+                            </span>
+                            <span className="font-bold text-lg text-neutral-900 dark:text-white">
+                              ${
+                                (
+                                  formData.totalAmount *
+                                  (1 - formData.discount / 100)
+                                ).toFixed(2)
+                              }
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <div className="grid grid-cols-3 gap-2">

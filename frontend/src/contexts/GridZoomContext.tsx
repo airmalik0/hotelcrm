@@ -1,6 +1,5 @@
 import {
   BREAKPOINTS,
-  LARGE_SCREEN_LIMITS,
   GRID_STATES,
   type GridState
 } from "@/constants/breakpoints"
@@ -30,15 +29,14 @@ import {
 function getGridState(viewportWidth: number): GridState {
   if (viewportWidth < GRID_STATES.tablet.min) return 'mobile'
   if (viewportWidth < GRID_STATES.desktop.min) return 'tablet'
-  if (viewportWidth < GRID_STATES.large.min) return 'desktop'
-  return 'large'
+  return 'desktop'
 }
 
 // Layout Constants (following best practices - no magic numbers)
 const LAYOUT_CONSTANTS = {
   ROOM_COLUMN_WIDTH: 200, // Fixed width of room column in grid
-  SIDEBAR_WIDTH_LG: 256, // w-64 in Tailwind = 256px
-  SIDEBAR_WIDTH_2XL: 320, // w-80 in Tailwind = 320px (for large screens)
+  SIDEBAR_WIDTH: 256, // w-64 in Tailwind = 256px
+  SIDEBAR_WIDTH_LARGE: 320, // w-80 in Tailwind = 320px (for 2xl+ screens)
   MAIN_CONTAINER_PADDING: 48, // p-6 = 24px * 2 sides
   MIN_TIMELINE_WIDTH: 400, // Minimum usable width for timeline
 } as const
@@ -76,9 +74,8 @@ interface GridZoomContextValue {
   roomHeight: number
   fontSize: number
   padding: number
-  // Large screen optimizations
-  isLargeScreen: boolean
-  maxContentWidth: number
+  // Desktop state check
+  isDesktop: boolean
 }
 
 const GridZoomContext = createContext<GridZoomContextValue | null>(null)
@@ -91,9 +88,9 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
   // Get viewport width for responsive calculations
   const viewportWidth = useViewportWidth()
 
-  // Calculate current grid state and large screen status
+  // Calculate current grid state
   const currentGridState = useMemo(() => getGridState(viewportWidth), [viewportWidth])
-  const isLargeScreen = currentGridState === 'large'
+  const isDesktop = currentGridState === 'desktop'
 
   // Track view dates to calculate actual days
   const [viewStart, setViewStart] = useState<Date | null>(null)
@@ -166,20 +163,15 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     let containerWidth: number
     if (hasSidebar) {
       // Desktop: main content area = viewport - sidebar
-      // Use appropriate sidebar width based on screen size
-      const sidebarWidth = isLargeScreen
-        ? LAYOUT_CONSTANTS.SIDEBAR_WIDTH_2XL
-        : LAYOUT_CONSTANTS.SIDEBAR_WIDTH_LG
+      // Use larger sidebar width for 2xl+ screens
+      const sidebarWidth = viewportWidth >= BREAKPOINTS["2xl"]
+        ? LAYOUT_CONSTANTS.SIDEBAR_WIDTH_LARGE
+        : LAYOUT_CONSTANTS.SIDEBAR_WIDTH
       containerWidth = viewportWidth - sidebarWidth
     } else {
       // Mobile/Tablet: main content gets full viewport width
       // Sidebar is position:fixed so doesn't affect layout
       containerWidth = viewportWidth
-    }
-
-    // Apply max-width constraint for large screens to prevent over-stretching
-    if (isLargeScreen) {
-      containerWidth = Math.min(containerWidth, LARGE_SCREEN_LIMITS.MAX_CONTENT_WIDTH)
     }
 
     // Now subtract padding from the container width
@@ -189,35 +181,22 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
       containerWidth - LAYOUT_CONSTANTS.MAIN_CONTAINER_PADDING
 
     // Available width for timeline (grid minus fixed room column)
-    let timelineAvailableWidth =
+    const timelineAvailableWidth =
       gridAvailableWidth - LAYOUT_CONSTANTS.ROOM_COLUMN_WIDTH
 
-    // Apply large screen constraints to prevent over-stretching
-    if (isLargeScreen) {
-      timelineAvailableWidth = Math.min(
-        timelineAvailableWidth,
-        LARGE_SCREEN_LIMITS.MAX_TIMELINE_WIDTH
-      )
-    }
-
     return Math.max(timelineAvailableWidth, LAYOUT_CONSTANTS.MIN_TIMELINE_WIDTH)
-  }, [viewportWidth, isLargeScreen])
+  }, [viewportWidth])
 
   // Computed dimensions based on zoom level
   const dayWidth = useMemo(() => {
     // At zoom 1.0, all days should fit exactly in available width
     // dayWidth = (availableWidth / actualDaysInView) * zoomLevel
     const baseDayWidth = availableWidth / actualDaysInView
-    let calculatedDayWidth = baseDayWidth * zoomLevel
-
-    // Apply maximum day width constraint for large screens to maintain readability
-    if (isLargeScreen) {
-      calculatedDayWidth = Math.min(calculatedDayWidth, LARGE_SCREEN_LIMITS.MAX_DAY_WIDTH)
-    }
+    const calculatedDayWidth = baseDayWidth * zoomLevel
 
     // Don't round to maintain precision, especially at max zoom
     return calculatedDayWidth
-  }, [availableWidth, actualDaysInView, zoomLevel, isLargeScreen])
+  }, [availableWidth, actualDaysInView, zoomLevel])
 
   const roomHeight = useMemo(() => {
     // Base height at zoom 1.0 is 64px
@@ -240,11 +219,6 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     return 8
   }, [zoomLevel])
 
-  // Calculate maximum content width for large screen centering
-  const maxContentWidth = useMemo(() => {
-    if (!isLargeScreen) return Infinity
-    return LARGE_SCREEN_LIMITS.MAX_CONTENT_WIDTH
-  }, [isLargeScreen])
 
   // Get dynamic min and max zoom
   const getMinZoom = useCallback(() => {
@@ -331,8 +305,7 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
       roomHeight,
       fontSize,
       padding,
-      isLargeScreen,
-      maxContentWidth,
+      isDesktop,
     }),
     [
       zoomLevel,
@@ -355,8 +328,7 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
       roomHeight,
       fontSize,
       padding,
-      isLargeScreen,
-      maxContentWidth,
+      isDesktop,
     ],
   )
 

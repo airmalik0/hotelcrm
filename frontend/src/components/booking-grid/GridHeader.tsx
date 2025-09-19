@@ -48,9 +48,7 @@ export const GridHeader = memo(function GridHeader({
     resetZoom,
     getMinZoom,
     getMaxZoom,
-    currentGridState,
-    isLargeScreen,
-    maxContentWidth
+    currentGridState
   } = useGridZoom()
 
   // Check zoom limits
@@ -67,10 +65,7 @@ export const GridHeader = memo(function GridHeader({
 
   return (
     <div className="bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600">
-      <div className={clsx(
-        "px-3 py-2 md:px-4 md:py-3",
-        isLargeScreen && "max-w-screen-2xl mx-auto"
-      )}>
+      <div className="px-3 py-2 md:px-4 md:py-3">
         {/* Mobile layout */}
         <div className={currentGridState === 'mobile' ? 'block' : 'hidden'}>
           {/* Top row - date and add button */}
@@ -139,7 +134,7 @@ export const GridHeader = memo(function GridHeader({
           </div>
         </div>
 
-        {/* Desktop/Tablet/Large layout */}
+        {/* Desktop/Tablet layout */}
         <div className={clsx(
           "flex-row items-center justify-between gap-2 md:gap-4",
           currentGridState !== 'mobile' ? 'flex' : 'hidden'
@@ -211,10 +206,10 @@ export const GridHeader = memo(function GridHeader({
 
           {/* Right side - Controls */}
           <div className="flex items-center gap-1 md:gap-2">
-            {/* Zoom controls - show on desktop and large screens */}
+            {/* Zoom controls - show on desktop only */}
             <div className={clsx(
               "items-center gap-1",
-              currentGridState === 'desktop' || currentGridState === 'large' ? 'flex' : 'hidden'
+              currentGridState === 'desktop' ? 'flex' : 'hidden'
             )}>
               {/* Zoom out button */}
               <button

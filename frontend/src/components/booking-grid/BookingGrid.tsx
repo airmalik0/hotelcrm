@@ -50,8 +50,7 @@ function BookingGridContent() {
     switchViewMode,
     setViewDates,
     currentGridState,
-    isLargeScreen,
-    maxContentWidth,
+    isDesktop,
   } = useGridZoom()
   const gridContainerRef = useGridZoomControls({ enabled: true, viewMode })
 
@@ -177,6 +176,7 @@ function BookingGridContent() {
     handleDragEnd,
     createDragImageContainer,
     isUpdating,
+    ConfirmDialog,
   } = useBookingDrag(allBookings)
 
   // Create drag image container on mount
@@ -368,14 +368,9 @@ function BookingGridContent() {
             />
           )}
 
-          {/* Grid views - Tablet, Desktop, and Large states (≥ 768px) */}
-          {(currentGridState === 'tablet' || currentGridState === 'desktop' || currentGridState === 'large') && (
-            <div className={`
-              ${isLargeScreen ? 'mx-auto' : ''}
-            `}
-            style={{
-              maxWidth: isLargeScreen ? maxContentWidth : undefined
-            }}>
+          {/* Grid views - Tablet and Desktop states (≥ 768px) */}
+          {(currentGridState === 'tablet' || currentGridState === 'desktop') && (
+            <div>
             {filteredRooms.length === 0 ? (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center max-w-md">
@@ -498,6 +493,9 @@ function BookingGridContent() {
           </span>
         </div>
       )}
+
+      {/* Confirm Dialog for room changes */}
+      {ConfirmDialog}
     </div>
   )
 }
