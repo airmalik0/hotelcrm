@@ -36,17 +36,17 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
   const queryClient = useQueryClient()
 
   const [formData, setFormData] = useState<CustomerUpdate>({
-    first_name: customer.first_name,
-    last_name: customer.last_name,
+    first_name: customer.first_name || "",
+    last_name: customer.last_name || "",
     phone: customer.phone || "",
     date_of_birth: customer.date_of_birth
       ? new Date(customer.date_of_birth).toISOString().split("T")[0]
       : "",
-    district: customer.district || null,
+    district: customer.district || undefined,
     notes: customer.notes || "",
   })
 
-  const [errors, setErrors] = useState<Partial<CustomerUpdate>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const updateMutation = useMutation({
     mutationFn: (data: CustomerUpdate) => updateCustomer(customer.id, data),
@@ -75,15 +75,16 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     }))
     // Clear error for this field
     if (errors[name as keyof CustomerUpdate]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }))
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
     }
   }
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<CustomerUpdate> = {}
+    const newErrors: Record<string, string> = {}
 
     if (formData.first_name && !formData.first_name.trim()) {
       newErrors.first_name = "First name cannot be empty"
@@ -127,10 +128,11 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     }))
     // Clear error for district field
     if (errors.district) {
-      setErrors((prev) => ({
-        ...prev,
-        district: undefined,
-      }))
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors.district
+        return newErrors
+      })
     }
   }
 
@@ -182,7 +184,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               type="text"
               id="first_name"
               name="first_name"
-              value={formData.first_name}
+              value={formData.first_name || ""}
               onChange={handleInputChange}
               className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none ${
                 errors.first_name ? "border-danger-600" : ""
@@ -208,7 +210,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               type="text"
               id="last_name"
               name="last_name"
-              value={formData.last_name}
+              value={formData.last_name || ""}
               onChange={handleInputChange}
               className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none ${
                 errors.last_name ? "border-danger-600" : ""
@@ -232,7 +234,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               type="tel"
               id="phone"
               name="phone"
-              value={formData.phone}
+              value={formData.phone || ""}
               onChange={handleInputChange}
               className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none ${
                 errors.phone ? "border-danger-600" : ""
@@ -256,7 +258,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               type="date"
               id="date_of_birth"
               name="date_of_birth"
-              value={formData.date_of_birth}
+              value={formData.date_of_birth || ""}
               onChange={handleInputChange}
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none"
             />
@@ -266,7 +268,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
           <div className="sm:col-span-2">
             <SearchableSelect
               label="District"
-              value={formData.district}
+              value={formData.district || ""}
               onChange={handleDistrictChange}
               options={DISTRICT_OPTIONS}
               placeholder="Select a district"
@@ -285,7 +287,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
             <textarea
               id="notes"
               name="notes"
-              value={formData.notes}
+              value={formData.notes || ""}
               onChange={handleInputChange}
               rows={4}
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none resize-none"

@@ -76,15 +76,15 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       resetForm()
       onClose()
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // Handle validation errors from backend
-      if (error.response?.data?.detail) {
+      if (isAxiosError(error) && error.response?.data?.detail) {
         const detail = error.response.data.detail
         if (typeof detail === "string") {
           setErrors({ general: detail })
         } else if (Array.isArray(detail)) {
           const fieldErrors: Record<string, string> = {}
-          detail.forEach((err: any) => {
+          detail.forEach((err: ValidationError) => {
             if (err.loc && err.msg) {
               const field = err.loc[err.loc.length - 1]
               fieldErrors[field] = err.msg
@@ -92,6 +92,8 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
           })
           setErrors(fieldErrors)
         }
+      } else {
+        setErrors({ general: "Failed to create customer" })
       }
     },
   })

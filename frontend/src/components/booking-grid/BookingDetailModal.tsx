@@ -41,7 +41,7 @@ import { memo, useEffect, useState } from "react"
 interface BookingDetailModalProps {
   isOpen: boolean
   onClose: () => void
-  bookingId: string | null
+  bookingId: string | undefined
 }
 
 export const BookingDetailModal = memo(function BookingDetailModal({

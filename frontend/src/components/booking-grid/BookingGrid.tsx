@@ -470,7 +470,7 @@ function BookingGridContent() {
         isOpen={detailModalOpen}
         onClose={() => {
           setDetailModalOpen(false)
-          setSelectedBookingId(null)
+          setSelectedBookingId(undefined)
         }}
         bookingId={selectedBookingId}
       />
