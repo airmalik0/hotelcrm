@@ -10,12 +10,12 @@ export default {
       serif: ["Inter", "sans-serif"],
     },
     screens: {
-      sm: "576px",
+      sm: "640px", // Migrated to standard Tailwind
       md: "768px",
-      lg: "992px",
-      xl: "1200px",
-      "2xl": "1400px",
-      "3xl": "1650px",
+      lg: "1024px", // Migrated to standard Tailwind
+      "lg-plus": "1200px", // Temporary breakpoint for smooth xl migration
+      xl: "1280px", // Migrated to standard Tailwind
+      "2xl": "1536px", // Migrated to standard Tailwind
     },
     container: {
       center: true,

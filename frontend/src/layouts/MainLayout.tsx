@@ -206,13 +206,13 @@ export function MainLayout({ children }: MainLayoutProps) {
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out xl:translate-x-0 xl:static xl:inset-0`}
+        } transition-transform duration-300 ease-in-out lg-plus:translate-x-0 lg-plus:static lg-plus:inset-0`}
       >
         {/* Close button for mobile */}
         <button
           type="button"
           onClick={() => setSidebarOpen(false)}
-          className="absolute top-4 right-4 xl:hidden w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+          className="absolute top-4 right-4 lg-plus:hidden w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
         >
           <ArrowRight className="w-5 h-5" />
         </button>
@@ -252,7 +252,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="xl:hidden w-10 h-10 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                className="lg-plus:hidden w-10 h-10 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >
                 <Menu className="w-5 h-5" />
               </button>
@@ -308,7 +308,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 xl:hidden"
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg-plus:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

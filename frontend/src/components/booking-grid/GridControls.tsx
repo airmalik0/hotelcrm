@@ -110,7 +110,7 @@ export const GridControls = memo(function GridControls({
           </div>
 
           {/* Status Filters - inline on desktop, dropdown on tablet/mobile */}
-          <div className="hidden xl:flex items-center gap-1 flex-shrink-0">
+          <div className="hidden lg-plus:flex items-center gap-1 flex-shrink-0">
             {Object.entries(statusConfig).map(([status, config]) => {
               const Icon = config.icon
               const isActive = statusFilters.includes(status as BookingStatus)
@@ -136,7 +136,7 @@ export const GridControls = memo(function GridControls({
           </div>
 
           {/* Status Filter Dropdown - show on tablet/mobile */}
-          <div className="relative xl:hidden">
+          <div className="relative lg-plus:hidden">
             <button
               ref={statusButtonRef}
               type="button"
