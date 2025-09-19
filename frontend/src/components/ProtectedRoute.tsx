@@ -1,7 +1,7 @@
 import type { UserRole } from "@/client/types.gen"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
-import React, { type ReactNode, useEffect } from "react"
+import { type ReactNode, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 
 interface ProtectedRouteProps {
@@ -57,7 +57,7 @@ export function ProtectedRoute({
             administrator if you believe this is an error.
           </p>
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate(-1)}
             className="rounded-lg py-2 px-4 inline-flex transition bg-primary-600 text-white hover:bg-primary-700 font-medium"
           >
             Go Back

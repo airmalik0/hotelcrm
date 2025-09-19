@@ -15,7 +15,11 @@ const measurementCache: TextMeasurementContext = {}
 function getTextMeasurementContext(): CanvasRenderingContext2D {
   if (!measurementCache.canvas) {
     measurementCache.canvas = document.createElement("canvas")
-    measurementCache.context = measurementCache.canvas.getContext("2d")
+    const context = measurementCache.canvas.getContext("2d")
+    if (!context) {
+      throw new Error("Unable to create 2D canvas context")
+    }
+    measurementCache.context = context
   }
   return measurementCache.context!
 }

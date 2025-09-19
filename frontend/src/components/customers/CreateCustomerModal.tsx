@@ -5,6 +5,7 @@ import type {
   District,
 } from "@/client/types.gen"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { isAxiosError } from "axios"
 import {
   Calendar,
   Camera,
@@ -15,6 +16,12 @@ import {
   X,
 } from "lucide-react"
 import { memo, useState } from "react"
+
+interface ValidationError {
+  loc: (string | number)[]
+  msg: string
+  type: string
+}
 
 interface CreateCustomerModalProps {
   isOpen: boolean

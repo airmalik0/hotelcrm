@@ -1,3 +1,4 @@
+import { navigateFromOutside } from "@/utils/navigation"
 import axios from "axios"
 
 // Create axios instance with base configuration
@@ -39,7 +40,7 @@ apiClient.interceptors.response.use(
       removeToken()
       // Only redirect if we're not already on the login page
       if (window.location.pathname !== "/login") {
-        window.location.href = "/login"
+        navigateFromOutside("/login", true)
       }
     }
 

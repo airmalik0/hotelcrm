@@ -30,8 +30,9 @@ def read_rooms(
     """
     Retrieve rooms.
     """
-    service = RoomService(session)
-    return service.get_rooms(skip=skip, limit=limit)
+    rooms = crud_room.get_multi(session, skip=skip, limit=limit)
+    count = crud_room.count(session)
+    return RoomsPublic(data=rooms, count=count)
 
 
 @router.get("/{room_id}", response_model=RoomPublic)
@@ -43,11 +44,10 @@ def read_room(
     """
     Get room by ID.
     """
-    service = RoomService(session)
-    try:
-        return service.get_room_by_id(room_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    room = crud_room.get(session, id=room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return room
 
 
 @router.post("/", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])

@@ -45,7 +45,7 @@ export function getBookingIndicatorColor(status: BookingStatus): string {
 /**
  * Get room status color
  */
-export function getRoomStatusColor(status: string): string {
+export function getRoomStatusColor(status: string | undefined): string {
   const colors: Record<string, string> = {
     AVAILABLE:
       "bg-green-100 dark:bg-green-600/25 text-green-700 dark:text-green-400",
@@ -57,7 +57,7 @@ export function getRoomStatusColor(status: string): string {
       "bg-gray-100 dark:bg-gray-600/25 text-gray-700 dark:text-gray-400",
   }
 
-  return colors[status] || colors.AVAILABLE
+  return colors[status ?? "AVAILABLE"] || colors.AVAILABLE
 }
 
 /**

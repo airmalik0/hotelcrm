@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
+import { setupNavigationListener } from "@/utils/navigation"
 import {
   ArrowRight,
   BarChart3,
@@ -19,7 +20,7 @@ import {
 } from "lucide-react"
 import type React from "react"
 import { type ReactNode, useEffect, useState } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 interface MainLayoutProps {
   children: ReactNode
@@ -98,8 +99,14 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [darkMode, setDarkMode] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { hasAnyRole } = useRole()
+
+  // Setup navigation listener for external navigation
+  useEffect(() => {
+    return setupNavigationListener(navigate)
+  }, [navigate])
 
   // Initialize dark mode from localStorage
   useEffect(() => {

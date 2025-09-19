@@ -60,7 +60,7 @@ export const RoomCell = memo(function RoomCell({
           getRoomStatusColor(room.status),
         )}
       >
-        {room.status.replace("_", " ")}
+        {room.status?.replace("_", " ") || "Unknown"}
       </div>
     </div>
   )

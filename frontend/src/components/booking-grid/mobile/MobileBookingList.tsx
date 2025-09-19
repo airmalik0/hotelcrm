@@ -20,7 +20,7 @@ interface MobileBookingListProps {
   viewEnd: Date
   onBookingClick: (booking: BookingPublic) => void
   onEmptyClick: (room: RoomPublic, checkIn: Date, checkOut: Date) => void
-  selectedBookingId: string | null
+  selectedBookingId: string | undefined
 }
 
 export function MobileBookingList({

@@ -3,51 +3,13 @@ import uuid
 from sqlmodel import Session
 
 from app.crud.customer import customer as crud_customer
-from app.models import Customer, CustomerCreate, CustomersPublic, CustomerUpdate
+from app.models import Customer, CustomerCreate, CustomerUpdate
 
 
 class CustomerService:
     def __init__(self, session: Session):
         self.session = session
         self.crud = crud_customer
-
-    def get_customers(
-        self, skip: int = 0, limit: int = 100, search: str | None = None
-    ) -> CustomersPublic:
-        """
-        Get customers with pagination and optional search.
-
-        Args:
-            skip: Number of records to skip
-            limit: Maximum number of records to return
-            search: Optional search string
-
-        Returns:
-            CustomersPublic with data and count
-        """
-        customers = self.crud.get_multi_with_search(
-            self.session, skip=skip, limit=limit, search=search
-        )
-        count = self.crud.count_with_search(self.session, search=search)
-        return CustomersPublic(data=customers, count=count)
-
-    def get_customer_by_id(self, customer_id: uuid.UUID) -> Customer:
-        """
-        Get customer by ID.
-
-        Args:
-            customer_id: Customer UUID
-
-        Returns:
-            Customer object
-
-        Raises:
-            ValueError: If customer not found
-        """
-        customer = self.crud.get(self.session, id=customer_id)
-        if not customer:
-            raise ValueError("Customer not found")
-        return customer
 
     def create_customer(self, customer_in: CustomerCreate) -> Customer:
         """Create customer with business logic."""

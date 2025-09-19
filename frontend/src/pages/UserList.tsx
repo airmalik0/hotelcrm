@@ -2,6 +2,7 @@ import { deleteUser, getUsers } from "@/api/users"
 import type { UserPublic, UserRole } from "@/client/types.gen"
 import { UserCreateModal } from "@/components/user/UserCreateModal"
 import { UserEditModal } from "@/components/user/UserEditModal"
+import { useConfirm } from "@/hooks/useConfirm"
 import { formatDate } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -39,6 +40,7 @@ export function UserList() {
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const queryClient = useQueryClient()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // Fetch users
   const { data, isLoading, error } = useQuery({
@@ -68,10 +70,15 @@ export function UserList() {
     )
   })
 
-  const handleDelete = (user: UserPublic) => {
-    if (
-      window.confirm(`Are you sure you want to delete user "${user.username}"?`)
-    ) {
+  const handleDelete = async (user: UserPublic) => {
+    const confirmed = await confirm({
+      title: "Delete User",
+      message: `Are you sure you want to delete user "${user.username}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(user.id)
     }
   }
@@ -358,6 +365,7 @@ export function UserList() {
           }}
         />
       )}
+      {ConfirmDialog}
     </>
   )
 }

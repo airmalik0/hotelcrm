@@ -1,6 +1,7 @@
 import { deleteCustomer, getCustomers } from "@/api/customers"
 import type { CustomerPublic } from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { useConfirm } from "@/hooks/useConfirm"
 import {
   formatCurrency,
   formatDate,
@@ -18,6 +19,7 @@ export function CustomerList() {
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const queryClient = useQueryClient()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // Fetch customers
   const { data, isLoading, error } = useQuery({
@@ -38,12 +40,15 @@ export function CustomerList() {
     },
   })
 
-  const handleDelete = (customer: CustomerPublic) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${customer.first_name} ${customer.last_name}?`,
-      )
-    ) {
+  const handleDelete = async (customer: CustomerPublic) => {
+    const confirmed = await confirm({
+      title: "Delete Customer",
+      message: `Are you sure you want to delete ${customer.first_name} ${customer.last_name}? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(customer.id)
     }
   }
@@ -291,6 +296,7 @@ export function CustomerList() {
           // queryClient.invalidateQueries is already called inside CreateCustomerModal
         }}
       />
+      {ConfirmDialog}
     </>
   )
 }

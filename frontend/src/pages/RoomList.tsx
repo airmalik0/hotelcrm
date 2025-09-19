@@ -3,6 +3,7 @@ import type { RoomPublic, RoomStatus, RoomType } from "@/client/types.gen"
 import { RoomCard } from "@/components/room/RoomCard"
 import { RoomCreateModal } from "@/components/room/RoomCreateModal"
 import { RoomEditModal } from "@/components/room/RoomEditModal"
+import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Building2, Filter, Plus, Search } from "lucide-react"
@@ -19,6 +20,7 @@ export function RoomList() {
   const [filterFloor, setFilterFloor] = useState<number | "all">("all")
   const queryClient = useQueryClient()
   const { hasAnyRole } = useRole()
+  const { confirm, ConfirmDialog } = useConfirm()
   const canEdit = hasAnyRole(["admin", "manager"])
 
   // Fetch rooms
@@ -88,12 +90,15 @@ export function RoomList() {
     setShowEditModal(true)
   }
 
-  const handleDelete = (room: RoomPublic) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete Room ${room.room_number}?`,
-      )
-    ) {
+  const handleDelete = async (room: RoomPublic) => {
+    const confirmed = await confirm({
+      title: "Delete Room",
+      message: `Are you sure you want to delete Room ${room.room_number}? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    })
+
+    if (confirmed) {
       deleteMutation.mutate(room.id)
     }
   }
@@ -334,6 +339,7 @@ export function RoomList() {
           viewOnly={!canEdit}
         />
       )}
+      {ConfirmDialog}
     </>
   )
 }

@@ -54,7 +54,7 @@ export function Login() {
         throw new Error("Authentication failed")
       }
     },
-    onError: (error: any) => {
+    onError: () => {
       // Don't log authentication errors to console (security best practice)
       // Error will be shown in UI instead
     },

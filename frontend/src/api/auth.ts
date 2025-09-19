@@ -1,5 +1,6 @@
 import type { UserPublic } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
+import { isAxiosError } from "axios"
 
 interface LoginResponse {
   access_token: string
@@ -33,10 +34,10 @@ export async function login(
     )
 
     return response.data
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Silently handle authentication errors without logging to console
     // The UI will show the error message to the user
-    if (error.response?.status === 401) {
+    if (isAxiosError(error) && error.response?.status === 401) {
       throw new Error("Invalid credentials")
     }
     // For other errors, re-throw

@@ -8,6 +8,7 @@ from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.rate_limit import RateLimits, limiter
 from app.crud.base import ConcurrentUpdateError
+from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
     BookingPublic,
@@ -42,8 +43,8 @@ def read_bookings(
     parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00")) if date_from else None
     parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00")) if date_to else None
 
-    service = BookingService(session)
-    return service.get_bookings(
+    bookings = crud_booking.get_multi_filtered(
+        session,
         skip=skip,
         limit=limit,
         status=status,
@@ -52,6 +53,15 @@ def read_bookings(
         date_from=parsed_date_from,
         date_to=parsed_date_to
     )
+    count = crud_booking.count_filtered(
+        session,
+        status=status,
+        room_id=room_id,
+        customer_id=customer_id,
+        date_from=parsed_date_from,
+        date_to=parsed_date_to
+    )
+    return BookingsPublic(data=bookings, count=count)
 
 
 @router.get("/{booking_id}", response_model=BookingPublic)
@@ -63,11 +73,10 @@ def read_booking(
     """
     Get booking by ID.
     """
-    service = BookingService(session)
-    try:
-        return service.get_booking_by_id(booking_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    booking = crud_booking.get_with_relations(session, booking_id=booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
 
 
 @router.post("/", response_model=BookingPublic)
@@ -101,8 +110,8 @@ def create_booking(
         # Commit everything
         session.commit()
 
-        # Get booking with relationships using service
-        return service.get_booking_by_id(booking.id)
+        # Get booking with relationships in one query
+        return crud_booking.get_with_relations(session, booking_id=booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -187,8 +196,8 @@ def update_booking(
         session.commit()
         session.refresh(booking)
 
-        # Reload with relationships using service
-        return service.get_booking_by_id(booking.id)
+        # Reload with relationships
+        return crud_booking.get_with_relations(session, booking_id=booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -269,8 +278,8 @@ def check_in_booking(
         session.commit()
         session.refresh(booking)
 
-        # Reload with relationships using service
-        return service.get_booking_by_id(booking.id)
+        # Reload with relationships
+        return crud_booking.get_with_relations(session, booking_id=booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -312,8 +321,8 @@ def check_out_booking(
         session.commit()
         session.refresh(booking)
 
-        # Reload with relationships using service
-        return service.get_booking_by_id(booking.id)
+        # Reload with relationships
+        return crud_booking.get_with_relations(session, booking_id=booking.id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

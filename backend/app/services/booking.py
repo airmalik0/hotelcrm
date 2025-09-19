@@ -13,7 +13,6 @@ from app.crud.room import room as crud_room
 from app.models import (
     Booking,
     BookingCreate,
-    BookingsPublic,
     BookingStatus,
     BookingUpdate,
     RoomStatus,
@@ -29,69 +28,6 @@ class BookingService:
         self.crud_booking = crud_booking
         self.crud_room = crud_room
         self.crud_customer = crud_customer
-
-    def get_bookings(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        status: BookingStatus | None = None,
-        room_id: uuid.UUID | None = None,
-        customer_id: uuid.UUID | None = None,
-        date_from: datetime | None = None,
-        date_to: datetime | None = None,
-    ) -> BookingsPublic:
-        """
-        Get bookings with filters and pagination.
-
-        Args:
-            skip: Number of records to skip
-            limit: Maximum number of records to return
-            status: Filter by booking status
-            room_id: Filter by room ID
-            customer_id: Filter by customer ID
-            date_from: Filter bookings from this date
-            date_to: Filter bookings to this date
-
-        Returns:
-            BookingsPublic with data and count
-        """
-        bookings = self.crud_booking.get_multi_filtered(
-            self.session,
-            skip=skip,
-            limit=limit,
-            status=status,
-            room_id=room_id,
-            customer_id=customer_id,
-            date_from=date_from,
-            date_to=date_to
-        )
-        count = self.crud_booking.count_filtered(
-            self.session,
-            status=status,
-            room_id=room_id,
-            customer_id=customer_id,
-            date_from=date_from,
-            date_to=date_to
-        )
-        return BookingsPublic(data=bookings, count=count)
-
-    def get_booking_by_id(self, booking_id: uuid.UUID) -> Booking:
-        """
-        Get booking by ID with relations.
-
-        Args:
-            booking_id: Booking UUID
-
-        Returns:
-            Booking with customer and room relations
-
-        Raises:
-            ValueError: If booking not found
-        """
-        booking = self.crud_booking.get_with_relations(self.session, booking_id=booking_id)
-        if not booking:
-            raise ValueError("Booking not found")
-        return booking
 
     def create_booking(self, booking_in: BookingCreate) -> Booking:
         """

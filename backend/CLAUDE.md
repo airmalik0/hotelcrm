@@ -76,11 +76,12 @@ backend/
 ## Architecture Guidelines
 
 ### CRITICAL: Follow Clean Architecture Pattern
-```
-Request → Router → Service → CRUD → Database
-           ↓         ↓         ↓
-        (HTTP)   (Business)  (SQL)
-```
+
+**Architecture Rules:**
+1. **Simple CRUD operations** (reads, lists): `Router → CRUD → Database`
+2. **Business logic operations** (creates, updates, complex logic): `Router → Service → CRUD → Database`
+3. **Services**: ONLY for business logic, validation, orchestration
+4. **CRUD**: ALL database queries MUST be here. NEVER put SQL in routers or services
 
 **MANDATORY RULES:**
 1. **Routers**: ONLY handle HTTP concerns. NEVER write SQL queries or business logic here
@@ -92,7 +93,18 @@ Request → Router → Service → CRUD → Database
 
 #### Routers (app/api/routes/)
 ```python
-# CORRECT: Router only handles HTTP
+# CORRECT: Simple read - Router → CRUD
+@router.get("/", response_model=CustomersPublic)
+def read_customers(
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    customers = crud_customer.get_multi(session, skip=skip, limit=limit)
+    count = crud_customer.count(session)
+    return CustomersPublic(data=customers, count=count)
+
+# CORRECT: Business logic - Router → Service → CRUD
 @router.post("/", response_model=CustomerPublic)
 def create_customer(
     session: SessionDep,  # ALWAYS use 'session', not 'db'
