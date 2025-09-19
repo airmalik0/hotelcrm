@@ -1,3 +1,4 @@
+import { BREAKPOINTS } from "@/constants/breakpoints"
 import {
   DEFAULT_ZOOM,
   MIN_ZOOM,
@@ -26,8 +27,6 @@ const LAYOUT_CONSTANTS = {
   SIDEBAR_WIDTH_LG: 256,      // w-64 in Tailwind = 256px
   MAIN_CONTAINER_PADDING: 48, // p-6 = 24px * 2 sides
   MIN_TIMELINE_WIDTH: 400,    // Minimum usable width for timeline
-  LG_BREAKPOINT: 1024,        // Tailwind lg: breakpoint
-  XL_BREAKPOINT: 1280,        // Standard Tailwind xl: breakpoint - when sidebar becomes static
 } as const
 
 interface GridZoomContextValue {
@@ -138,7 +137,7 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     // On mobile (<1280px): Sidebar is fixed (out of flow), main gets full viewport
     // On desktop (>=1280px): Sidebar is static (in flow), main gets remaining space
 
-    const hasSidebar = viewportWidth >= LAYOUT_CONSTANTS.XL_BREAKPOINT
+    const hasSidebar = viewportWidth >= BREAKPOINTS.xl
 
     // Calculate the actual container width (not viewport width!)
     let containerWidth: number
