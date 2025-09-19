@@ -296,7 +296,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       title: "Confirm Date Modification",
       message,
       confirmText: "Modify Dates",
-      variant: priceDiff > 0 ? "warning" : "primary",
+      variant: priceDiff > 0 ? "warning" : priceDiff < 0 ? "success" : "primary",
     })
 
     if (confirmed) {

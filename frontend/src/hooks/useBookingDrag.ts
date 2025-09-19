@@ -226,7 +226,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
           title: "Confirm Room Change",
           message,
           confirmText: "Change Room",
-          variant: totalDiff > 0 ? "warning" : "primary",
+          variant: totalDiff > 0 ? "warning" : totalDiff < 0 ? "success" : "primary",
         })
 
         if (confirmed) {
