@@ -21,12 +21,12 @@ export default {
       center: true,
       padding: "1rem",
       screens: {
-        sm: "540px",
-        md: "720px",
-        lg: "960px",
-        xl: "1140px",
-        "2xl": "1320px",
-        "3xl": "1600px",
+        sm: "600px",   // Updated for 640px breakpoint
+        md: "720px",   // Good for 768px breakpoint
+        lg: "960px",   // Updated for 1024px breakpoint
+        "lg-plus": "1140px", // For 1200px temp breakpoint
+        xl: "1200px",  // Updated for 1280px breakpoint
+        "2xl": "1400px", // Updated for 1536px breakpoint
       },
     },
     extend: {

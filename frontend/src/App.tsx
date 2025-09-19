@@ -1,3 +1,4 @@
+import { ResponsiveDebug, ResponsiveIndicator } from "@/components/debug/ResponsiveDebug"
 import { AuthProvider } from "@/contexts/AuthContext"
 import "@/lib/axios" // Initialize axios on import
 import { router } from "@/router"
@@ -21,6 +22,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouterProvider router={router} />
+        {/* Debug components - only visible in development with keyboard shortcuts */}
+        {import.meta.env.DEV && (
+          <>
+            <ResponsiveDebug />
+            <ResponsiveIndicator />
+          </>
+        )}
       </AuthProvider>
     </QueryClientProvider>
   )
