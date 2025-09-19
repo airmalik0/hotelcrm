@@ -100,7 +100,7 @@ async def upload_passport(
     )
 
 
-@router.get("/files/{file_type}/{filename}")
+@router.get("/{file_type}/{filename}")
 async def get_file(
     file_type: str,
     filename: str,
@@ -150,7 +150,7 @@ async def get_file(
     )
 
 
-@router.delete("/files/{file_type}/{filename}")
+@router.delete("/{file_type}/{filename}")
 async def delete_file(
     *,
     current_user: CurrentUser,  # noqa: ARG001

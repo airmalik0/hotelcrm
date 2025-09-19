@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, and_, func, select
 
+from app.core.exceptions import BusinessRuleViolation, NotFoundError
 from app.core.retry import db_retry
 from app.crud.base import CRUDBase
 from app.models import Booking, BookingCreate, BookingStatus, BookingUpdate, Room
@@ -130,13 +131,13 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         ).first()
 
         if not room:
-            raise ValueError("Room not found")
+            raise NotFoundError("Room", str(obj_in.room_id))
 
         # Always validate total amount
         temp_booking = Booking.model_validate(obj_in)
         calculated_total = temp_booking.calculate_total_amount(room.price_per_night)
         if abs(obj_in.total_amount - calculated_total) > 1:
-            raise ValueError(
+            raise BusinessRuleViolation(
                 f"Total amount mismatch. Expected: {calculated_total:.2f}, got: {obj_in.total_amount:.2f}"
             )
 
@@ -144,12 +145,12 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         # OCCUPIED and CLEANING rooms can be booked for future dates
         from app.models import RoomStatus
         if room.status == RoomStatus.MAINTENANCE:
-            raise ValueError("Room is currently under maintenance and cannot be booked")
+            raise BusinessRuleViolation("Room is currently under maintenance and cannot be booked")
 
         # Validate booking dates are not in the past
         current_time = datetime.now(timezone.utc)
         if obj_in.check_in < current_time:
-            raise ValueError("Cannot create booking with check-in date in the past")
+            raise BusinessRuleViolation("Cannot create booking with check-in date in the past")
 
         # Now check for overlapping bookings while room is locked
         overlapping = self.get_overlapping(
@@ -160,7 +161,7 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         )
 
         if overlapping:
-            raise ValueError("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
+            raise BusinessRuleViolation("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
 
         # Create the booking - safe now as room is locked
         booking = Booking.model_validate(obj_in)
