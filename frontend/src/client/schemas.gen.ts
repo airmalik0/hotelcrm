@@ -919,7 +919,7 @@ export const DiscountModificationRequestSchema = {
 
 export const DistrictSchema = {
     type: 'string',
-    enum: ['Almazar', 'Bektemir', 'Mirabad', 'Mirzo Ulugbek', 'Sergeli', 'Uchtepa', 'Chilanzar', 'Shaykhantakhur', 'Yunusabad', 'Yakkasaray', 'Yashnabad', 'Yangihayot'],
+    enum: ['ALMAZAR', 'BEKTEMIR', 'MIRABAD', 'MIRZO_ULUGBEK', 'SERGELI', 'UCHTEPA', 'CHILANZAR', 'SHAYKHANTAKHUR', 'YUNUSABAD', 'YAKKASARAY', 'YASHNABAD', 'YANGIHAYOT'],
     title: 'District',
     description: 'Districts of Tashkent'
 } as const;

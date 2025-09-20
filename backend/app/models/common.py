@@ -55,18 +55,18 @@ class PaymentAdjustmentType(str, Enum):
 
 class District(str, Enum):
     """Districts of Tashkent"""
-    Almazar = "Almazar"
-    Bektemir = "Bektemir"
-    Mirabad = "Mirabad"
-    Mirzo_Ulugbek = "Mirzo Ulugbek"
-    Sergeli = "Sergeli"
-    Uchtepa = "Uchtepa"
-    Chilanzar = "Chilanzar"
-    Shaykhantakhur = "Shaykhantakhur"
-    Yunusabad = "Yunusabad"
-    Yakkasaray = "Yakkasaray"
-    Yashnabad = "Yashnabad"
-    Yangihayot = "Yangihayot"
+    ALMAZAR = "ALMAZAR"
+    BEKTEMIR = "BEKTEMIR"
+    MIRABAD = "MIRABAD"
+    MIRZO_ULUGBEK = "MIRZO_ULUGBEK"
+    SERGELI = "SERGELI"
+    UCHTEPA = "UCHTEPA"
+    CHILANZAR = "CHILANZAR"
+    SHAYKHANTAKHUR = "SHAYKHANTAKHUR"
+    YUNUSABAD = "YUNUSABAD"
+    YAKKASARAY = "YAKKASARAY"
+    YASHNABAD = "YASHNABAD"
+    YANGIHAYOT = "YANGIHAYOT"
 
 
 class Message(SQLModel):

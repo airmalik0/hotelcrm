@@ -158,7 +158,7 @@ export type DiscountModificationRequest = {
 /**
  * Districts of Tashkent
  */
-export type District = 'Almazar' | 'Bektemir' | 'Mirabad' | 'Mirzo Ulugbek' | 'Sergeli' | 'Uchtepa' | 'Chilanzar' | 'Shaykhantakhur' | 'Yunusabad' | 'Yakkasaray' | 'Yashnabad' | 'Yangihayot';
+export type District = 'ALMAZAR' | 'BEKTEMIR' | 'MIRABAD' | 'MIRZO_ULUGBEK' | 'SERGELI' | 'UCHTEPA' | 'CHILANZAR' | 'SHAYKHANTAKHUR' | 'YUNUSABAD' | 'YAKKASARAY' | 'YASHNABAD' | 'YANGIHAYOT';
 
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
