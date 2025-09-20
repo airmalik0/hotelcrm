@@ -156,7 +156,7 @@ export type DiscountModificationRequest = {
 };
 
 /**
- * Districts of Tashkent
+ * Districts of Tashkent - stored as uppercase in DB
  */
 export type District = 'ALMAZAR' | 'BEKTEMIR' | 'MIRABAD' | 'MIRZO_ULUGBEK' | 'SERGELI' | 'UCHTEPA' | 'CHILANZAR' | 'SHAYKHANTAKHUR' | 'YUNUSABAD' | 'YAKKASARAY' | 'YASHNABAD' | 'YANGIHAYOT';
 

@@ -25,18 +25,18 @@ interface CreateCustomerModalProps {
 }
 
 const DISTRICTS: District[] = [
-  "Almazar",
-  "Bektemir",
-  "Mirabad",
-  "Mirzo Ulugbek",
-  "Sergeli",
-  "Uchtepa",
-  "Chilanzar",
-  "Shaykhantakhur",
-  "Yunusabad",
-  "Yakkasaray",
-  "Yashnabad",
-  "Yangihayot",
+  "ALMAZAR",
+  "BEKTEMIR",
+  "MIRABAD",
+  "MIRZO_ULUGBEK",
+  "SERGELI",
+  "UCHTEPA",
+  "CHILANZAR",
+  "SHAYKHANTAKHUR",
+  "YUNUSABAD",
+  "YAKKASARAY",
+  "YASHNABAD",
+  "YANGIHAYOT",
 ]
 
 export const CreateCustomerModal = memo(function CreateCustomerModal({
@@ -310,7 +310,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                 <option value="">Select district</option>
                 {DISTRICTS.map((district) => (
                   <option key={district} value={district}>
-                    {district}
+                    {district.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
                   </option>
                 ))}
               </select>

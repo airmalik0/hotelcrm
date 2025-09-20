@@ -14,18 +14,18 @@ import { useNavigate } from "react-router-dom"
 
 // District options from the enum
 const DISTRICT_OPTIONS: Array<{ value: District; label: string }> = [
-  { value: "Almazar", label: "Almazar" },
-  { value: "Bektemir", label: "Bektemir" },
-  { value: "Mirabad", label: "Mirabad" },
-  { value: "Mirzo Ulugbek", label: "Mirzo Ulugbek" },
-  { value: "Sergeli", label: "Sergeli" },
-  { value: "Uchtepa", label: "Uchtepa" },
-  { value: "Chilanzar", label: "Chilanzar" },
-  { value: "Shaykhantakhur", label: "Shaykhantakhur" },
-  { value: "Yunusabad", label: "Yunusabad" },
-  { value: "Yakkasaray", label: "Yakkasaray" },
-  { value: "Yashnabad", label: "Yashnabad" },
-  { value: "Yangihayot", label: "Yangihayot" },
+  { value: "ALMAZAR", label: "Almazar" },
+  { value: "BEKTEMIR", label: "Bektemir" },
+  { value: "MIRABAD", label: "Mirabad" },
+  { value: "MIRZO_ULUGBEK", label: "Mirzo Ulugbek" },
+  { value: "SERGELI", label: "Sergeli" },
+  { value: "UCHTEPA", label: "Uchtepa" },
+  { value: "CHILANZAR", label: "Chilanzar" },
+  { value: "SHAYKHANTAKHUR", label: "Shaykhantakhur" },
+  { value: "YUNUSABAD", label: "Yunusabad" },
+  { value: "YAKKASARAY", label: "Yakkasaray" },
+  { value: "YASHNABAD", label: "Yashnabad" },
+  { value: "YANGIHAYOT", label: "Yangihayot" },
 ]
 
 interface CustomerEditFormProps {

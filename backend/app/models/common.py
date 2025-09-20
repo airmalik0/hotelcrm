@@ -54,7 +54,7 @@ class PaymentAdjustmentType(str, Enum):
 
 
 class District(str, Enum):
-    """Districts of Tashkent"""
+    """Districts of Tashkent - stored as uppercase in DB"""
     ALMAZAR = "ALMAZAR"
     BEKTEMIR = "BEKTEMIR"
     MIRABAD = "MIRABAD"

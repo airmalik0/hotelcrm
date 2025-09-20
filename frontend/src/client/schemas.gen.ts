@@ -921,7 +921,7 @@ export const DistrictSchema = {
     type: 'string',
     enum: ['ALMAZAR', 'BEKTEMIR', 'MIRABAD', 'MIRZO_ULUGBEK', 'SERGELI', 'UCHTEPA', 'CHILANZAR', 'SHAYKHANTAKHUR', 'YUNUSABAD', 'YAKKASARAY', 'YASHNABAD', 'YANGIHAYOT'],
     title: 'District',
-    description: 'Districts of Tashkent'
+    description: 'Districts of Tashkent - stored as uppercase in DB'
 } as const;
 
 export const HTTPValidationErrorSchema = {
