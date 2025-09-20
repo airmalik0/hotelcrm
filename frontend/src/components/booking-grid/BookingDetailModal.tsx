@@ -785,7 +785,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                         New Check-in Date
                       </label>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <input
                           type="date"
                           value={
@@ -807,38 +807,35 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               })
                             }
                           }}
-                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
-                        <select
+                        <input
+                          type="time"
                           value={
                             dateModification.new_check_in
-                              ? new Date(dateModification.new_check_in).getHours().toString().padStart(2, '0') + ':00'
-                              : "12:00"
+                              ? new Date(dateModification.new_check_in).toTimeString().slice(0, 5)
+                              : new Date(booking.check_in).toTimeString().slice(0, 5)
                           }
                           onChange={(e) => {
-                            const [hours] = e.target.value.split(':')
-                            const date = new Date(dateModification.new_check_in || booking.check_in)
-                            date.setHours(parseInt(hours), 0, 0, 0)
-                            setDateModification({
-                              ...dateModification,
-                              new_check_in: date.toISOString(),
-                            })
+                            if (e.target.value) {
+                              const [hours, minutes] = e.target.value.split(':')
+                              const date = new Date(dateModification.new_check_in || booking.check_in)
+                              date.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+                              setDateModification({
+                                ...dateModification,
+                                new_check_in: date.toISOString(),
+                              })
+                            }
                           }}
-                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>
-                              {i.toString().padStart(2, '0')}:00
-                            </option>
-                          ))}
-                        </select>
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                         New Check-out Date
                       </label>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <input
                           type="date"
                           value={
@@ -864,31 +861,28 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               })
                             }
                           }}
-                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
-                        <select
+                        <input
+                          type="time"
                           value={
                             dateModification.new_check_out
-                              ? new Date(dateModification.new_check_out).getHours().toString().padStart(2, '0') + ':00'
-                              : "12:00"
+                              ? new Date(dateModification.new_check_out).toTimeString().slice(0, 5)
+                              : new Date(booking.check_out).toTimeString().slice(0, 5)
                           }
                           onChange={(e) => {
-                            const [hours] = e.target.value.split(':')
-                            const date = new Date(dateModification.new_check_out || booking.check_out)
-                            date.setHours(parseInt(hours), 0, 0, 0)
-                            setDateModification({
-                              ...dateModification,
-                              new_check_out: date.toISOString(),
-                            })
+                            if (e.target.value) {
+                              const [hours, minutes] = e.target.value.split(':')
+                              const date = new Date(dateModification.new_check_out || booking.check_out)
+                              date.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+                              setDateModification({
+                                ...dateModification,
+                                new_check_out: date.toISOString(),
+                              })
+                            }
                           }}
-                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>
-                              {i.toString().padStart(2, '0')}:00
-                            </option>
-                          ))}
-                        </select>
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
                       </div>
                     </div>
                   </div>
