@@ -76,7 +76,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   const [showDiscountFields, setShowDiscountFields] = useState(false)
   const [showDateModification, setShowDateModification] = useState(false)
   const [showRoomChange, setShowRoomChange] = useState(false)
-  const [dateModification, setDateModification] = useState<DateModificationRequest>({})
+  const [dateModification, setDateModification] =
+    useState<DateModificationRequest>({})
   const [selectedNewRoom, setSelectedNewRoom] = useState<string>("")
 
   // Form state for editing
@@ -209,7 +210,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     },
   })
 
-
   // Modify dates mutation
   const modifyDatesMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: DateModificationRequest }) =>
@@ -221,7 +221,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       if (diff > 0) {
         showSuccess(`Dates modified. Additional charge: $${diff.toFixed(2)}`)
       } else if (diff < 0) {
-        showSuccess(`Dates modified. Refund amount: $${Math.abs(diff).toFixed(2)}`)
+        showSuccess(
+          `Dates modified. Refund amount: $${Math.abs(diff).toFixed(2)}`,
+        )
       } else {
         showSuccess("Dates modified successfully!")
       }
@@ -259,49 +261,61 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     // Build confirmation message
     // Calculate actual amounts with discount
     const hasDiscount = booking.discount && booking.discount > 0
-    const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
+    const discountMultiplier = hasDiscount ? 1 - booking.discount / 100 : 1
     const actualDiff = priceDiff * discountMultiplier
 
     const message = (
       <div className="space-y-3">
         <div className="text-sm space-y-2">
           <div>
-            <span className="text-neutral-500 dark:text-neutral-400">Current dates:</span>
+            <span className="text-neutral-500 dark:text-neutral-400">
+              Current dates:
+            </span>
             <div className="font-medium">
-              {format(new Date(booking.check_in), "PPP")} - {format(new Date(booking.check_out), "PPP")}
-              <span className="text-neutral-600 dark:text-neutral-400 text-xs ml-2">({oldNights} nights)</span>
+              {format(new Date(booking.check_in), "PPP")} -{" "}
+              {format(new Date(booking.check_out), "PPP")}
+              <span className="text-neutral-600 dark:text-neutral-400 text-xs ml-2">
+                ({oldNights} nights)
+              </span>
             </div>
           </div>
           <div>
-            <span className="text-neutral-500 dark:text-neutral-400">New dates:</span>
+            <span className="text-neutral-500 dark:text-neutral-400">
+              New dates:
+            </span>
             <div className="font-medium">
               {format(newCheckIn, "PPP")} - {format(newCheckOut, "PPP")}
-              <span className="text-neutral-600 dark:text-neutral-400 text-xs ml-2">({newNights} nights)</span>
+              <span className="text-neutral-600 dark:text-neutral-400 text-xs ml-2">
+                ({newNights} nights)
+              </span>
             </div>
           </div>
         </div>
         {actualDiff > 0 && (
-          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-sm">
-            <div className="font-medium text-orange-700 dark:text-orange-400">
+          <div className="bg-warning-100 dark:bg-warning-600/25 rounded-lg p-3 text-sm border border-warning-200 dark:border-warning-600/50">
+            <div className="font-medium text-warning-700 dark:text-warning-400">
               Additional charge: ${actualDiff.toFixed(2)}
             </div>
-            <div className="text-orange-600 dark:text-orange-500 text-xs mt-1">
-              ({nightsDiff} additional nights × ${booking.room.price_per_night}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            <div className="text-warning-600 dark:text-warning-500 text-xs mt-1">
+              ({nightsDiff} additional nights × ${booking.room.price_per_night}
+              /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
         )}
         {actualDiff < 0 && (
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-sm">
-            <div className="font-medium text-emerald-700 dark:text-emerald-400">
+          <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-3 text-sm border border-success-200 dark:border-success-600/50">
+            <div className="font-medium text-success-700 dark:text-success-400">
               Refund amount: ${Math.abs(actualDiff).toFixed(2)}
             </div>
-            <div className="text-emerald-600 dark:text-emerald-500 text-xs mt-1">
-              ({Math.abs(nightsDiff)} fewer nights × ${booking.room.price_per_night}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            <div className="text-success-600 dark:text-success-500 text-xs mt-1">
+              ({Math.abs(nightsDiff)} fewer nights × $
+              {booking.room.price_per_night}/night
+              {hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
         )}
         {actualDiff === 0 && (
-          <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400">
+          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600">
             No price difference
           </div>
         )}
@@ -312,7 +326,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       title: "Confirm Date Modification",
       message,
       confirmText: "Modify Dates",
-      variant: actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
+      variant:
+        actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
     })
 
     if (confirmed) {
@@ -339,7 +354,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       if (diff > 0) {
         showSuccess(`Room changed. Additional charge: $${diff.toFixed(2)}`)
       } else if (diff < 0) {
-        showSuccess(`Room changed. Refund amount: $${Math.abs(diff).toFixed(2)}`)
+        showSuccess(
+          `Room changed. Refund amount: $${Math.abs(diff).toFixed(2)}`,
+        )
       } else {
         showSuccess("Room changed successfully!")
       }
@@ -356,50 +373,65 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     if (!booking || !selectedNewRoom) return
 
     // Find the new room details
-    const newRoom = availableRooms?.data?.find(r => r.id === selectedNewRoom)
+    const newRoom = availableRooms?.data?.find((r) => r.id === selectedNewRoom)
     if (!newRoom) return
 
     const nights = Math.ceil(
       (new Date(booking.check_out).getTime() -
         new Date(booking.check_in).getTime()) /
-        (1000 * 60 * 60 * 24)
+        (1000 * 60 * 60 * 24),
     )
 
-    const priceDiff = (newRoom.price_per_night - (booking.room?.price_per_night || 0)) * nights
+    const priceDiff =
+      (newRoom.price_per_night - (booking.room?.price_per_night || 0)) * nights
 
     // Calculate actual amounts with discount
     const hasDiscount = booking.discount && booking.discount > 0
-    const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
+    const discountMultiplier = hasDiscount ? 1 - booking.discount / 100 : 1
     const actualDiff = priceDiff * discountMultiplier
 
     // Build confirmation message
-    let message = (
+    const message = (
       <div className="space-y-3">
         <div className="text-sm">
-          <div>Move booking from <span className="font-medium">Room {booking.room?.room_number}</span> to <span className="font-medium">Room {newRoom.room_number}</span>?</div>
+          <div>
+            Move booking from{" "}
+            <span className="font-medium">
+              Room {booking.room?.room_number}
+            </span>{" "}
+            to <span className="font-medium">Room {newRoom.room_number}</span>?
+          </div>
         </div>
         {actualDiff > 0 && (
-          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-sm">
-            <div className="font-medium text-orange-700 dark:text-orange-400">
+          <div className="bg-warning-100 dark:bg-warning-600/25 rounded-lg p-3 text-sm border border-warning-200 dark:border-warning-600/50">
+            <div className="font-medium text-warning-700 dark:text-warning-400">
               Additional charge: ${actualDiff.toFixed(2)}
             </div>
-            <div className="text-orange-600 dark:text-orange-500 text-xs mt-1">
-              ({nights} nights × ${Math.abs(newRoom.price_per_night - (booking.room?.price_per_night || 0)).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            <div className="text-warning-600 dark:text-warning-500 text-xs mt-1">
+              ({nights} nights × $
+              {Math.abs(
+                newRoom.price_per_night - (booking.room?.price_per_night || 0),
+              ).toFixed(2)}
+              /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
         )}
         {actualDiff < 0 && (
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-sm">
-            <div className="font-medium text-emerald-700 dark:text-emerald-400">
+          <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-3 text-sm border border-success-200 dark:border-success-600/50">
+            <div className="font-medium text-success-700 dark:text-success-400">
               Refund amount: ${Math.abs(actualDiff).toFixed(2)}
             </div>
-            <div className="text-emerald-600 dark:text-emerald-500 text-xs mt-1">
-              ({nights} nights × ${Math.abs(newRoom.price_per_night - (booking.room?.price_per_night || 0)).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            <div className="text-success-600 dark:text-success-500 text-xs mt-1">
+              ({nights} nights × $
+              {Math.abs(
+                newRoom.price_per_night - (booking.room?.price_per_night || 0),
+              ).toFixed(2)}
+              /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
         )}
         {actualDiff === 0 && (
-          <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400">
+          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600">
             Same price - no payment adjustment needed
           </div>
         )}
@@ -410,7 +442,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       title: "Confirm Room Change",
       message,
       confirmText: "Change Room",
-      variant: actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
+      variant:
+        actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
     })
 
     if (confirmed) {
@@ -469,18 +502,26 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       const hours = Math.floor(timeDiff / (1000 * 60 * 60))
       const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
 
-      let earlyMessage = (
+      const earlyMessage = (
         <div className="space-y-2">
           <div className="text-sm">
-            You are attempting to check in <span className="font-semibold text-orange-600 dark:text-orange-400">
-              {hours > 0 ? `${hours} hours and ${minutes} minutes` : `${minutes} minutes`}
-            </span> earlier than the planned check-in time.
+            You are attempting to check in{" "}
+            <span className="font-semibold text-orange-600 dark:text-orange-400">
+              {hours > 0
+                ? `${hours} hours and ${minutes} minutes`
+                : `${minutes} minutes`}
+            </span>{" "}
+            earlier than the planned check-in time.
           </div>
           <div className="text-sm text-neutral-600 dark:text-neutral-400">
-            Planned check-in: <span className="font-medium">{format(plannedCheckIn, "PPP 'at' HH:mm")}</span>
+            Planned check-in:{" "}
+            <span className="font-medium">
+              {format(plannedCheckIn, "PPP 'at' HH:mm")}
+            </span>
           </div>
           <div className="text-sm text-neutral-600 dark:text-neutral-400">
-            Current time: <span className="font-medium">{format(now, "PPP 'at' HH:mm")}</span>
+            Current time:{" "}
+            <span className="font-medium">{format(now, "PPP 'at' HH:mm")}</span>
           </div>
         </div>
       )
@@ -640,7 +681,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
             {/* Guest and Room Info */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               {/* Guest Info */}
-              <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4">
+              <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <User className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
                   <h3 className="font-medium text-neutral-900 dark:text-white">
@@ -672,7 +713,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               </div>
 
               {/* Room Info */}
-              <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4">
+              <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -681,7 +722,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </h3>
                   </div>
                   {canChangeRoom(booking.status) &&
-                    ["confirmed", "checked_in"].includes(booking.status || "") && (
+                    ["confirmed", "checked_in"].includes(
+                      booking.status || "",
+                    ) && (
                       <button
                         onClick={() => setShowRoomChange(true)}
                         className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
@@ -700,7 +743,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       <select
                         value={selectedNewRoom}
                         onChange={(e) => setSelectedNewRoom(e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full ps-3 pe-5 py-1.5 text-sm border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                         disabled={!availableRooms || !allBookings}
                       >
                         <option value="">
@@ -708,39 +751,43 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             ? "Loading rooms..."
                             : "Choose a room..."}
                         </option>
-                        {availableRooms?.data && allBookings?.data && (() => {
-                          const filteredRooms = availableRooms.data.filter(
-                            (room) =>
-                              // Exclude current room
-                              room.id !== booking.room_id &&
-                              // Exclude maintenance rooms
-                              room.status !== "maintenance" &&
-                              // Check for booking conflicts in the date range
-                              // (not room status, as room might be occupied now but available for guest's dates)
-                              isRoomAvailable(
-                                room.id,
-                                new Date(booking.check_in),
-                                new Date(booking.check_out),
-                                allBookings.data || [],
-                                booking.id, // Exclude current booking from conflict check
-                              ),
-                          )
-
-                          if (filteredRooms.length === 0) {
-                            return (
-                              <option value="" disabled>
-                                No rooms available for these dates
-                              </option>
+                        {availableRooms?.data &&
+                          allBookings?.data &&
+                          (() => {
+                            const filteredRooms = availableRooms.data.filter(
+                              (room) =>
+                                // Exclude current room
+                                room.id !== booking.room_id &&
+                                // Exclude maintenance rooms
+                                room.status !== "maintenance" &&
+                                // Check for booking conflicts in the date range
+                                // (not room status, as room might be occupied now but available for guest's dates)
+                                isRoomAvailable(
+                                  room.id,
+                                  new Date(booking.check_in),
+                                  new Date(booking.check_out),
+                                  allBookings.data || [],
+                                  booking.id, // Exclude current booking from conflict check
+                                ),
                             )
-                          }
 
-                          return filteredRooms.map((room) => (
-                            <option key={room.id} value={room.id}>
-                              {room.room_number} - {room.room_type} (${room.price_per_night}/night)
-                              {room.status !== "available" && ` [${room.status}]`}
-                            </option>
-                          ))
-                        })()}
+                            if (filteredRooms.length === 0) {
+                              return (
+                                <option value="" disabled>
+                                  No rooms available for these dates
+                                </option>
+                              )
+                            }
+
+                            return filteredRooms.map((room) => (
+                              <option key={room.id} value={room.id}>
+                                {room.room_number} - {room.room_type} ($
+                                {room.price_per_night}/night)
+                                {room.status !== "available" &&
+                                  ` [${room.status}]`}
+                              </option>
+                            ))
+                          })()}
                       </select>
                     </div>
                     <div className="flex gap-2">
@@ -749,7 +796,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         disabled={
                           changeRoomMutation.isPending || !selectedNewRoom
                         }
-                        className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
                       >
                         {changeRoomMutation.isPending
                           ? "Changing..."
@@ -760,7 +807,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           setShowRoomChange(false)
                           setSelectedNewRoom("")
                         }}
-                        className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                        className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
                       >
                         Cancel
                       </button>
@@ -776,53 +823,53 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         {booking.room?.room_number} - {booking.room?.room_type}
                       </span>
                     </div>
-                  <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Price/Night:
-                    </span>
-                    <span className="ml-2 text-neutral-700 dark:text-neutral-300">
-                      ${booking.room?.price_per_night}
-                    </span>
+                    <div>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Price/Night:
+                      </span>
+                      <span className="ml-2 text-neutral-700 dark:text-neutral-300">
+                        ${booking.room?.price_per_night}
+                      </span>
+                    </div>
+                    {/* Room Status Indicator */}
+                    <div>
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Status:
+                      </span>
+                      <span className="ml-2">
+                        {booking.room?.status === "available" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-600/25 dark:text-emerald-400 text-xs font-medium">
+                            <CheckCircle className="w-3 h-3" />
+                            Available
+                          </span>
+                        )}
+                        {booking.room?.status === "occupied" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-600/25 dark:text-red-400 text-xs font-medium">
+                            <Home className="w-3 h-3" />
+                            Occupied
+                          </span>
+                        )}
+                        {booking.room?.status === "cleaning" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-600/25 dark:text-yellow-400 text-xs font-medium">
+                            <Sparkles className="w-3 h-3" />
+                            Cleaning
+                          </span>
+                        )}
+                        {booking.room?.status === "maintenance" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-600/25 dark:text-gray-400 text-xs font-medium">
+                            <Wrench className="w-3 h-3" />
+                            Maintenance
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                  {/* Room Status Indicator */}
-                  <div>
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Status:
-                    </span>
-                    <span className="ml-2">
-                      {booking.room?.status === "available" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-600/25 dark:text-emerald-400 text-xs font-medium">
-                          <CheckCircle className="w-3 h-3" />
-                          Available
-                        </span>
-                      )}
-                      {booking.room?.status === "occupied" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-600/25 dark:text-red-400 text-xs font-medium">
-                          <Home className="w-3 h-3" />
-                          Occupied
-                        </span>
-                      )}
-                      {booking.room?.status === "cleaning" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-600/25 dark:text-yellow-400 text-xs font-medium">
-                          <Sparkles className="w-3 h-3" />
-                          Cleaning
-                        </span>
-                      )}
-                      {booking.room?.status === "maintenance" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-600/25 dark:text-gray-400 text-xs font-medium">
-                          <Wrench className="w-3 h-3" />
-                          Maintenance
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </div>
                 )}
               </div>
             </div>
 
             {/* Dates */}
-            <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4 mb-6">
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4 mb-6">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -853,12 +900,15 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               {showDateModification ? (
                 <div className="space-y-3">
                   {/* Show current dates for reference */}
-                  <div className="p-3 bg-neutral-100 dark:bg-dark-3 rounded-lg text-sm">
+                  <div className="p-3 bg-white dark:bg-dark-2 rounded-lg text-sm border border-neutral-200 dark:border-neutral-600">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-neutral-600 dark:text-neutral-400">Current dates:</span>
+                      <span className="text-neutral-600 dark:text-neutral-400">
+                        Current dates:
+                      </span>
                     </div>
                     <div className="font-medium text-neutral-900 dark:text-white">
-                      {format(new Date(booking.check_in), "PPP")} → {format(new Date(booking.check_out), "PPP")}
+                      {format(new Date(booking.check_in), "PPP")} →{" "}
+                      {format(new Date(booking.check_out), "PPP")}
                     </div>
                   </div>
 
@@ -872,14 +922,19 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           type="date"
                           value={
                             dateModification.new_check_in
-                              ? new Date(dateModification.new_check_in).toISOString().split('T')[0]
+                              ? new Date(dateModification.new_check_in)
+                                  .toISOString()
+                                  .split("T")[0]
                               : ""
                           }
-                          min={new Date().toISOString().split('T')[0]}
+                          min={new Date().toISOString().split("T")[0]}
                           onChange={(e) => {
                             if (e.target.value) {
                               // Preserve the time from the original check-in
-                              const originalDate = new Date(dateModification.new_check_in || booking.check_in)
+                              const originalDate = new Date(
+                                dateModification.new_check_in ||
+                                  booking.check_in,
+                              )
                               const newDate = new Date(e.target.value)
                               newDate.setHours(originalDate.getHours())
                               newDate.setMinutes(originalDate.getMinutes())
@@ -889,27 +944,39 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               })
                             }
                           }}
-                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
                         <input
                           type="time"
                           value={
                             dateModification.new_check_in
-                              ? new Date(dateModification.new_check_in).toTimeString().slice(0, 5)
-                              : new Date(booking.check_in).toTimeString().slice(0, 5)
+                              ? new Date(dateModification.new_check_in)
+                                  .toTimeString()
+                                  .slice(0, 5)
+                              : new Date(booking.check_in)
+                                  .toTimeString()
+                                  .slice(0, 5)
                           }
                           onChange={(e) => {
                             if (e.target.value) {
-                              const [hours, minutes] = e.target.value.split(':')
-                              const date = new Date(dateModification.new_check_in || booking.check_in)
-                              date.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+                              const [hours, minutes] = e.target.value.split(":")
+                              const date = new Date(
+                                dateModification.new_check_in ||
+                                  booking.check_in,
+                              )
+                              date.setHours(
+                                Number.parseInt(hours),
+                                Number.parseInt(minutes),
+                                0,
+                                0,
+                              )
                               setDateModification({
                                 ...dateModification,
                                 new_check_in: date.toISOString(),
                               })
                             }
                           }}
-                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
                       </div>
                     </div>
@@ -922,18 +989,31 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           type="date"
                           value={
                             dateModification.new_check_out
-                              ? new Date(dateModification.new_check_out).toISOString().split('T')[0]
+                              ? new Date(dateModification.new_check_out)
+                                  .toISOString()
+                                  .split("T")[0]
                               : ""
                           }
                           min={
                             dateModification.new_check_in
-                              ? new Date(new Date(dateModification.new_check_in).getTime() + 86400000).toISOString().split('T')[0]
-                              : new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
+                              ? new Date(
+                                  new Date(
+                                    dateModification.new_check_in,
+                                  ).getTime() + 86400000,
+                                )
+                                  .toISOString()
+                                  .split("T")[0]
+                              : new Date(new Date().getTime() + 86400000)
+                                  .toISOString()
+                                  .split("T")[0]
                           }
                           onChange={(e) => {
                             if (e.target.value) {
                               // Preserve the time from the original check-out
-                              const originalDate = new Date(dateModification.new_check_out || booking.check_out)
+                              const originalDate = new Date(
+                                dateModification.new_check_out ||
+                                  booking.check_out,
+                              )
                               const newDate = new Date(e.target.value)
                               newDate.setHours(originalDate.getHours())
                               newDate.setMinutes(originalDate.getMinutes())
@@ -943,65 +1023,94 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               })
                             }
                           }}
-                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
                         <input
                           type="time"
                           value={
                             dateModification.new_check_out
-                              ? new Date(dateModification.new_check_out).toTimeString().slice(0, 5)
-                              : new Date(booking.check_out).toTimeString().slice(0, 5)
+                              ? new Date(dateModification.new_check_out)
+                                  .toTimeString()
+                                  .slice(0, 5)
+                              : new Date(booking.check_out)
+                                  .toTimeString()
+                                  .slice(0, 5)
                           }
                           onChange={(e) => {
                             if (e.target.value) {
-                              const [hours, minutes] = e.target.value.split(':')
-                              const date = new Date(dateModification.new_check_out || booking.check_out)
-                              date.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+                              const [hours, minutes] = e.target.value.split(":")
+                              const date = new Date(
+                                dateModification.new_check_out ||
+                                  booking.check_out,
+                              )
+                              date.setHours(
+                                Number.parseInt(hours),
+                                Number.parseInt(minutes),
+                                0,
+                                0,
+                              )
                               setDateModification({
                                 ...dateModification,
                                 new_check_out: date.toISOString(),
                               })
                             }
                           }}
-                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Preview of new dates */}
-                  {dateModification.new_check_in && dateModification.new_check_out && (
-                    <div className="p-3 bg-primary-50 dark:bg-primary-600/10 rounded-lg text-sm">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-primary-600 dark:text-primary-400">New dates:</span>
+                  {dateModification.new_check_in &&
+                    dateModification.new_check_out && (
+                      <div className="p-3 bg-primary-50 dark:bg-primary-600/10 rounded-lg text-sm">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-primary-600 dark:text-primary-400">
+                            New dates:
+                          </span>
+                        </div>
+                        <div className="font-medium text-primary-700 dark:text-primary-300">
+                          {format(
+                            new Date(dateModification.new_check_in),
+                            "PPP",
+                          )}{" "}
+                          →{" "}
+                          {format(
+                            new Date(dateModification.new_check_out),
+                            "PPP",
+                          )}
+                        </div>
+                        <div className="text-xs text-primary-600 dark:text-primary-400 mt-1">
+                          {Math.ceil(
+                            (new Date(
+                              dateModification.new_check_out,
+                            ).getTime() -
+                              new Date(
+                                dateModification.new_check_in,
+                              ).getTime()) /
+                              (1000 * 60 * 60 * 24),
+                          )}{" "}
+                          nights
+                        </div>
                       </div>
-                      <div className="font-medium text-primary-700 dark:text-primary-300">
-                        {format(new Date(dateModification.new_check_in), "PPP")} → {format(new Date(dateModification.new_check_out), "PPP")}
-                      </div>
-                      <div className="text-xs text-primary-600 dark:text-primary-400 mt-1">
-                        {Math.ceil(
-                          (new Date(dateModification.new_check_out).getTime() -
-                            new Date(dateModification.new_check_in).getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        )}{" "}
-                        nights
-                      </div>
-                    </div>
-                  )}
+                    )}
                   <div className="flex gap-2">
                     <button
                       onClick={handleDateModification}
                       disabled={modifyDatesMutation.isPending}
-                      className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
                     >
-                      {modifyDatesMutation.isPending ? "Saving..." : "Preview Changes"}
+                      {modifyDatesMutation.isPending
+                        ? "Saving..."
+                        : "Preview Changes"}
                     </button>
                     <button
                       onClick={() => {
                         setShowDateModification(false)
                         setDateModification({})
                       }}
-                      className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                      className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
@@ -1038,7 +1147,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               Actual Check-in:
                             </span>
                             <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">
-                              {format(new Date(booking.actual_check_in), "PPP p")}
+                              {format(
+                                new Date(booking.actual_check_in),
+                                "PPP p",
+                              )}
                             </span>
                           </div>
                         )}
@@ -1048,20 +1160,22 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               Actual Check-out:
                             </span>
                             <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">
-                              {format(new Date(booking.actual_check_out), "PPP p")}
+                              {format(
+                                new Date(booking.actual_check_out),
+                                "PPP p",
+                              )}
                             </span>
                           </div>
                         )}
                       </div>
                     </div>
                   )}
-
                 </div>
               )}
             </div>
 
             {/* Payment Info */}
-            <div className="bg-neutral-50 dark:bg-dark-3 rounded-lg p-4 mb-6">
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4 mb-6">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -1095,7 +1209,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             discountReason: "",
                           }))
                         }}
-                        className="w-full px-4 py-2 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2"
+                        className="w-full px-6 py-3 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2"
                       >
                         <DollarSign className="w-4 h-4" />
                         Apply Discount
@@ -1127,7 +1241,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                 }}
                                 min="0"
                                 max="100"
-                                className="w-full pl-3 pr-8 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="w-full pl-3 pr-8 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 style={{
                                   appearance: "textfield",
                                   MozAppearance: "textfield",
@@ -1147,7 +1261,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                   discountReason: "",
                                 }))
                               }}
-                              className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                              className="px-2 py-2 text-danger-600 dark:text-danger-400 hover:bg-danger-100 dark:hover:bg-danger-900/20 rounded-lg transition-colors flex-shrink-0"
                               title="Remove discount"
                             >
                               ×
@@ -1175,7 +1289,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             placeholder={
                               formData.discount > 0 ? "Required" : ""
                             }
-                            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             required={formData.discount > 0}
                           />
                         </div>
@@ -1187,7 +1301,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                       Price Calculation
                     </label>
-                    <div className="space-y-2 p-3 bg-neutral-100 dark:bg-dark-3 rounded-lg">
+                    <div className="space-y-2 p-3 bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
                           Room Rate:
@@ -1204,7 +1318,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           {Math.ceil(
                             (new Date(booking.check_out).getTime() -
                               new Date(booking.check_in).getTime()) /
-                              (1000 * 60 * 60 * 24)
+                              (1000 * 60 * 60 * 24),
                           )}
                         </span>
                       </div>
@@ -1222,12 +1336,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             <span className="text-sm text-neutral-600 dark:text-neutral-400">
                               Discount ({formData.discount}%):
                             </span>
-                            <span className="text-sm text-red-600 dark:text-red-400">
-                              -${
-                                ((formData.totalAmount * formData.discount) / 100).toFixed(
-                                  2
-                                )
-                              }
+                            <span className="text-sm text-danger-600 dark:text-danger-400">
+                              -$
+                              {(
+                                (formData.totalAmount * formData.discount) /
+                                100
+                              ).toFixed(2)}
                             </span>
                           </div>
                           <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">
@@ -1235,12 +1349,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               Final Amount:
                             </span>
                             <span className="font-bold text-lg text-neutral-900 dark:text-white">
-                              ${
-                                (
-                                  formData.totalAmount *
-                                  (1 - formData.discount / 100)
-                                ).toFixed(2)
-                              }
+                              $
+                              {(
+                                formData.totalAmount *
+                                (1 - formData.discount / 100)
+                              ).toFixed(2)}
                             </span>
                           </div>
                         </>
@@ -1281,14 +1394,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <button
                       onClick={handleSave}
                       disabled={updateMutation.isPending}
-                      className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed flex items-center gap-1"
+                      className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed flex items-center gap-1"
                     >
                       <Save className="w-3 h-3" />
                       {updateMutation.isPending ? "Saving..." : "Save"}
                     </button>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                      className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
@@ -1309,7 +1422,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       <span className="text-neutral-500 dark:text-neutral-400">
                         Discount:
                       </span>
-                      <span className="text-red-600 dark:text-red-400">
+                      <span className="text-danger-600 dark:text-danger-400">
                         -{booking.discount}%
                       </span>
                     </div>
@@ -1380,7 +1493,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 <button
                   onClick={handleCheckIn}
                   disabled={checkInMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
                   {checkInMutation.isPending ? "Processing..." : "Check In"}
@@ -1391,7 +1504,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 <button
                   onClick={handleCheckOut}
                   disabled={checkOutMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
                   {checkOutMutation.isPending ? "Processing..." : "Check Out"}
@@ -1404,7 +1517,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 (!showDeleteConfirm ? (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="px-4 py-2 border border-red-300 dark:border-red-600/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
+                    className="px-6 py-3 border border-red-300 dark:border-red-600/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -1414,7 +1527,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <button
                       onClick={handleDelete}
                       disabled={deleteMutation.isPending}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
+                      className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
                     >
                       {deleteMutation.isPending
                         ? "Deleting..."
@@ -1422,7 +1535,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors font-medium"
+                      className="px-6 py-3 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors font-medium"
                     >
                       Cancel
                     </button>

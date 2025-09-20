@@ -1,7 +1,7 @@
 import {
   BREAKPOINTS,
   GRID_STATES,
-  type GridState
+  type GridState,
 } from "@/constants/breakpoints"
 import {
   DEFAULT_ZOOM,
@@ -27,9 +27,9 @@ import {
 
 // Helper function to determine current grid state based on viewport width
 function getGridState(viewportWidth: number): GridState {
-  if (viewportWidth < GRID_STATES.tablet.min) return 'mobile'
-  if (viewportWidth < GRID_STATES.desktop.min) return 'tablet'
-  return 'desktop'
+  if (viewportWidth < GRID_STATES.tablet.min) return "mobile"
+  if (viewportWidth < GRID_STATES.desktop.min) return "tablet"
+  return "desktop"
 }
 
 // Layout Constants (following best practices - no magic numbers)
@@ -89,8 +89,11 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
   const viewportWidth = useViewportWidth()
 
   // Calculate current grid state
-  const currentGridState = useMemo(() => getGridState(viewportWidth), [viewportWidth])
-  const isDesktop = currentGridState === 'desktop'
+  const currentGridState = useMemo(
+    () => getGridState(viewportWidth),
+    [viewportWidth],
+  )
+  const isDesktop = currentGridState === "desktop"
 
   // Track view dates to calculate actual days
   const [viewStart, setViewStart] = useState<Date | null>(null)
@@ -164,9 +167,10 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     if (hasSidebar) {
       // Desktop: main content area = viewport - sidebar
       // Use larger sidebar width for 2xl+ screens
-      const sidebarWidth = viewportWidth >= BREAKPOINTS["2xl"]
-        ? LAYOUT_CONSTANTS.SIDEBAR_WIDTH_LARGE
-        : LAYOUT_CONSTANTS.SIDEBAR_WIDTH
+      const sidebarWidth =
+        viewportWidth >= BREAKPOINTS["2xl"]
+          ? LAYOUT_CONSTANTS.SIDEBAR_WIDTH_LARGE
+          : LAYOUT_CONSTANTS.SIDEBAR_WIDTH
       containerWidth = viewportWidth - sidebarWidth
     } else {
       // Mobile/Tablet: main content gets full viewport width
@@ -218,7 +222,6 @@ export function GridZoomProvider({ children }: GridZoomProviderProps) {
     if (zoomLevel > 1.5) return 12
     return 8
   }, [zoomLevel])
-
 
   // Get dynamic min and max zoom
   const getMinZoom = useCallback(() => {

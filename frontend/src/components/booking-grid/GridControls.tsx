@@ -111,17 +111,22 @@ export const GridControls = memo(function GridControls({
               className={clsx(
                 "pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
                 // Responsive widths based on grid state
-                currentGridState === 'tablet' ? 'w-48' :
-                currentGridState === 'desktop' ? 'w-80' : 'w-32'
+                currentGridState === "tablet"
+                  ? "w-48"
+                  : currentGridState === "desktop"
+                    ? "w-80"
+                    : "w-32",
               )}
             />
           </div>
 
           {/* Status Filters - inline on desktop, dropdown on tablet */}
-          <div className={clsx(
-            "items-center gap-1 flex-shrink-0",
-            currentGridState === 'desktop' ? 'flex' : 'hidden'
-          )}>
+          <div
+            className={clsx(
+              "items-center gap-1 flex-shrink-0",
+              currentGridState === "desktop" ? "flex" : "hidden",
+            )}
+          >
             {Object.entries(statusConfig).map(([status, config]) => {
               const Icon = config.icon
               const isActive = statusFilters.includes(status as BookingStatus)
@@ -147,10 +152,12 @@ export const GridControls = memo(function GridControls({
           </div>
 
           {/* Status Filter Dropdown - show on tablet only */}
-          <div className={clsx(
-            "relative",
-            currentGridState === 'tablet' ? 'block' : 'hidden'
-          )}>
+          <div
+            className={clsx(
+              "relative",
+              currentGridState === "tablet" ? "block" : "hidden",
+            )}
+          >
             <button
               ref={statusButtonRef}
               type="button"
@@ -302,10 +309,12 @@ export const GridControls = memo(function GridControls({
         </div>
 
         {/* Right side - Stats - show on desktop */}
-        <div className={clsx(
-          "items-center gap-4 flex-shrink-0",
-          currentGridState === 'desktop' ? 'flex' : 'hidden'
-        )}>
+        <div
+          className={clsx(
+            "items-center gap-4 flex-shrink-0",
+            currentGridState === "desktop" ? "flex" : "hidden",
+          )}
+        >
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <Users className="w-4 h-4" />

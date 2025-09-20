@@ -6,8 +6,8 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { useConfirm } from "@/hooks/useConfirm"
-import { showError, showSuccess } from "@/utils/error-handling"
 import { isRoomAvailable } from "@/utils/booking-grid"
+import { showError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingUpdate } from "@/utils/query-invalidation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useRef, useState } from "react"
@@ -211,33 +211,42 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
 
         // Calculate actual amounts with discount
         const hasDiscount = booking.discount && booking.discount > 0
-        const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
+        const discountMultiplier = hasDiscount ? 1 - booking.discount / 100 : 1
         const totalDiffBeforeDiscount = priceDiff * nights
         const actualDiff = totalDiffBeforeDiscount * discountMultiplier
 
         // Show confirmation with price difference
+        // Using JSX for proper formatting - DO NOT CONVERT TO STRING
         const message = (
           <div className="space-y-3">
             <div className="text-sm">
-              <div>Move booking from <span className="font-medium">Room {currentRoom?.room_number}</span> to <span className="font-medium">Room {targetRoom.room_number}</span>?</div>
+              Move booking from{" "}
+              <span className="font-medium">
+                Room {currentRoom?.room_number}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium">Room {targetRoom.room_number}</span>
+              ?
             </div>
             {actualDiff > 0 && (
-              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-sm">
-                <div className="font-medium text-orange-700 dark:text-orange-400">
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                <div className="font-medium text-orange-700 dark:text-orange-400 text-sm">
                   Additional charge: ${actualDiff.toFixed(2)}
                 </div>
                 <div className="text-orange-600 dark:text-orange-500 text-xs mt-1">
-                  ({nights} nights × ${Math.abs(priceDiff).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+                  ({nights} nights × ${Math.abs(priceDiff).toFixed(2)}/night
+                  {hasDiscount && ` with ${booking.discount}% discount`})
                 </div>
               </div>
             )}
             {actualDiff < 0 && (
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-sm">
-                <div className="font-medium text-emerald-700 dark:text-emerald-400">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
+                <div className="font-medium text-emerald-700 dark:text-emerald-400 text-sm">
                   Refund amount: ${Math.abs(actualDiff).toFixed(2)}
                 </div>
                 <div className="text-emerald-600 dark:text-emerald-500 text-xs mt-1">
-                  ({nights} nights × ${Math.abs(priceDiff).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+                  ({nights} nights × ${Math.abs(priceDiff).toFixed(2)}/night
+                  {hasDiscount && ` with ${booking.discount}% discount`})
                 </div>
               </div>
             )}
@@ -253,7 +262,8 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
           title: "Confirm Room Change",
           message,
           confirmText: "Change Room",
-          variant: actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
+          variant:
+            actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
         })
 
         if (confirmed) {

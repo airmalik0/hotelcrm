@@ -1,7 +1,7 @@
+import { BREAKPOINTS } from "@/constants/breakpoints"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
 import { useViewportWidth } from "@/hooks/useViewportWidth"
-import { BREAKPOINTS } from "@/constants/breakpoints"
 import { setupNavigationListener } from "@/utils/navigation"
 import {
   ArrowRight,
@@ -218,7 +218,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 ${
-          isExtraLarge ? 'w-80' : 'w-64'
+          isExtraLarge ? "w-80" : "w-64"
         } bg-white dark:bg-dark-2 border-r border-neutral-200 dark:border-neutral-600 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 ease-in-out xl:translate-x-0 xl:static xl:inset-0`}
@@ -317,9 +317,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
 
       {/* Mobile overlay */}

@@ -325,7 +325,7 @@ function BookingGridContent() {
       />
 
       {/* Grid Controls - show for all states except mobile */}
-      {currentGridState !== 'mobile' && (
+      {currentGridState !== "mobile" && (
         <div className="relative z-20">
           <GridControls
             searchTerm={filters.searchTerm}
@@ -356,7 +356,7 @@ function BookingGridContent() {
       ) : (
         <div>
           {/* Mobile state - vertical list (< 768px) */}
-          {currentGridState === 'mobile' && (
+          {currentGridState === "mobile" && (
             <MobileBookingList
               rooms={filteredRooms}
               bookings={filteredBookings}
@@ -369,97 +369,101 @@ function BookingGridContent() {
           )}
 
           {/* Grid views - Tablet and Desktop states (≥ 768px) */}
-          {(currentGridState === 'tablet' || currentGridState === 'desktop') && (
+          {(currentGridState === "tablet" ||
+            currentGridState === "desktop") && (
             <div>
-            {filteredRooms.length === 0 ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="text-center max-w-md">
-                  <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
-                    {allRooms.length === 0
-                      ? "No rooms available. Please add rooms to start managing bookings."
-                      : "No rooms match your current filters. Try adjusting your search criteria."}
-                  </p>
+              {filteredRooms.length === 0 ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="text-center max-w-md">
+                    <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
+                      {allRooms.length === 0
+                        ? "No rooms available. Please add rooms to start managing bookings."
+                        : "No rooms match your current filters. Try adjusting your search criteria."}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="relative overflow-x-auto" ref={gridContainerRef}>
-                {/* Main Grid */}
+              ) : (
                 <div
-                  className="grid bg-white dark:bg-dark-2 min-w-fit"
-                  style={{
-                    gridTemplateColumns: `200px ${dayWidth * actualDaysInView}px`,
-                  }}
+                  className="relative overflow-x-auto"
+                  ref={gridContainerRef}
                 >
-                  {/* Header Row */}
-                  <div className="sticky left-0 z-30 h-10 bg-white dark:bg-dark-2 border-b border-r border-neutral-200 dark:border-neutral-600" />
-                  <div className="h-10 border-b border-neutral-200 dark:border-neutral-600">
-                    <TimeScale
+                  {/* Main Grid */}
+                  <div
+                    className="grid bg-white dark:bg-dark-2 min-w-fit"
+                    style={{
+                      gridTemplateColumns: `200px ${dayWidth * actualDaysInView}px`,
+                    }}
+                  >
+                    {/* Header Row */}
+                    <div className="sticky left-0 z-30 h-10 bg-white dark:bg-dark-2 border-b border-r border-neutral-200 dark:border-neutral-600" />
+                    <div className="h-10 border-b border-neutral-200 dark:border-neutral-600">
+                      <TimeScale
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
+                        viewMode={viewMode}
+                      />
+                    </div>
+
+                    {/* Room Rows */}
+                    {filteredRooms.flatMap((room) => [
+                      /* Room Cell */
+                      <RoomCell
+                        key={`cell-${room.id}`}
+                        room={room}
+                        height={roomHeight}
+                      />,
+
+                      /* Timeline Cell */
+                      <RoomTimeline
+                        key={`timeline-${room.id}`}
+                        room={room}
+                        bookings={bookingsByRoom.get(room.id) || []}
+                        viewStart={viewStart}
+                        viewEnd={viewEnd}
+                        viewMode={viewMode}
+                        height={roomHeight}
+                        onBookingClick={handleBookingClick}
+                        onEmptyClick={handleEmptyClick}
+                        onBookingHover={handleBookingHover}
+                        onBookingLeave={handleBookingLeave}
+                        onBookingDragStart={handleDragStart}
+                        onBookingDragEnd={handleDragEnd}
+                        onRoomDragOver={handleDragOver}
+                        onRoomDragLeave={handleDragLeave}
+                        onRoomDrop={handleDrop}
+                        selectedBookingId={selectedBookingId}
+                        isDraggedBooking={(id) =>
+                          dragState.draggedBooking?.id === id
+                        }
+                        isDropTarget={dragState.dragOverRoomId === room.id}
+                        isValidDropTarget={
+                          dragState.dragOverRoomId === room.id &&
+                          dragState.isValidDrop
+                        }
+                        isTouchDevice={isTouchDevice}
+                      />,
+                    ])}
+                  </div>
+
+                  {/* Overlay container for grid lines and today line */}
+                  <div
+                    className="absolute top-10 bottom-0 pointer-events-none"
+                    style={{
+                      left: "200px",
+                      width: `${dayWidth * actualDaysInView}px`,
+                    }}
+                  >
+                    {/* Vertical grid lines */}
+                    <TimelineGrid
                       viewStart={viewStart}
                       viewEnd={viewEnd}
                       viewMode={viewMode}
                     />
+                    {/* Today line */}
+                    <TodayLine viewStart={viewStart} viewEnd={viewEnd} />
                   </div>
-
-                  {/* Room Rows */}
-                  {filteredRooms.flatMap((room) => [
-                    /* Room Cell */
-                    <RoomCell
-                      key={`cell-${room.id}`}
-                      room={room}
-                      height={roomHeight}
-                    />,
-
-                    /* Timeline Cell */
-                    <RoomTimeline
-                      key={`timeline-${room.id}`}
-                      room={room}
-                      bookings={bookingsByRoom.get(room.id) || []}
-                      viewStart={viewStart}
-                      viewEnd={viewEnd}
-                      viewMode={viewMode}
-                      height={roomHeight}
-                      onBookingClick={handleBookingClick}
-                      onEmptyClick={handleEmptyClick}
-                      onBookingHover={handleBookingHover}
-                      onBookingLeave={handleBookingLeave}
-                      onBookingDragStart={handleDragStart}
-                      onBookingDragEnd={handleDragEnd}
-                      onRoomDragOver={handleDragOver}
-                      onRoomDragLeave={handleDragLeave}
-                      onRoomDrop={handleDrop}
-                      selectedBookingId={selectedBookingId}
-                      isDraggedBooking={(id) =>
-                        dragState.draggedBooking?.id === id
-                      }
-                      isDropTarget={dragState.dragOverRoomId === room.id}
-                      isValidDropTarget={
-                        dragState.dragOverRoomId === room.id &&
-                        dragState.isValidDrop
-                      }
-                      isTouchDevice={isTouchDevice}
-                    />,
-                  ])}
                 </div>
-
-                {/* Overlay container for grid lines and today line */}
-                <div
-                  className="absolute top-10 bottom-0 pointer-events-none"
-                  style={{
-                    left: "200px",
-                    width: `${dayWidth * actualDaysInView}px`,
-                  }}
-                >
-                  {/* Vertical grid lines */}
-                  <TimelineGrid
-                    viewStart={viewStart}
-                    viewEnd={viewEnd}
-                    viewMode={viewMode}
-                  />
-                  {/* Today line */}
-                  <TodayLine viewStart={viewStart} viewEnd={viewEnd} />
-                </div>
-              </div>
-            )}
+              )}
             </div>
           )}
         </div>

@@ -94,7 +94,17 @@ export function ConfirmModal({
             {title}
           </h3>
           <div className="text-neutral-600 dark:text-neutral-400">
-            {message}
+            {typeof message === "string"
+              ? // Handle string messages with newlines
+                message
+                  .split("\n")
+                  .map((line, index) => (
+                    <div key={index} className={line === "" ? "h-2" : ""}>
+                      {line}
+                    </div>
+                  ))
+              : // Handle JSX/ReactNode messages
+                message}
           </div>
         </div>
 

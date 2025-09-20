@@ -17,9 +17,9 @@ export const BREAKPOINTS = {
  * Responsive grid states for 3-state system
  */
 export const GRID_STATES = {
-  mobile: { min: 0, max: BREAKPOINTS.md - 1 },           // < 768px
+  mobile: { min: 0, max: BREAKPOINTS.md - 1 }, // < 768px
   tablet: { min: BREAKPOINTS.md, max: BREAKPOINTS.xl - 1 }, // 768px - 1279px
-  desktop: { min: BREAKPOINTS.xl, max: Infinity },          // ≥ 1280px
+  desktop: { min: BREAKPOINTS.xl, max: Number.POSITIVE_INFINITY }, // ≥ 1280px
 } as const
 
 export type Breakpoint = keyof typeof BREAKPOINTS

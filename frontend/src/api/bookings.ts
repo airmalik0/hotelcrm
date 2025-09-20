@@ -80,7 +80,9 @@ export async function actualCheckInBooking(id: string): Promise<BookingPublic> {
   return response.data
 }
 
-export async function actualCheckOutBooking(id: string): Promise<BookingPublic> {
+export async function actualCheckOutBooking(
+  id: string,
+): Promise<BookingPublic> {
   const response = await apiClient.post<BookingPublic>(
     `/api/v1/bookings/${id}/actual-check-out`,
   )
