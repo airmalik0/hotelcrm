@@ -292,22 +292,22 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         </div>
         {actualDiff > 0 && (
-          <div className="bg-warning-100 dark:bg-warning-600/25 rounded-lg p-3 text-sm border border-warning-200 dark:border-warning-600/50">
-            <div className="font-medium text-warning-700 dark:text-warning-400">
+          <div className="bg-orange-50 dark:bg-orange-900/25 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
+            <div className="font-medium text-orange-800 dark:text-orange-300">
               Additional charge: ${actualDiff.toFixed(2)}
             </div>
-            <div className="text-warning-600 dark:text-warning-500 text-xs mt-1">
+            <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
               ({nightsDiff} additional nights × ${booking.room.price_per_night}
               /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
         )}
         {actualDiff < 0 && (
-          <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-3 text-sm border border-success-200 dark:border-success-600/50">
-            <div className="font-medium text-success-700 dark:text-success-400">
+          <div className="bg-emerald-50 dark:bg-emerald-900/25 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
+            <div className="font-medium text-emerald-800 dark:text-emerald-300">
               Refund amount: ${Math.abs(actualDiff).toFixed(2)}
             </div>
-            <div className="text-success-600 dark:text-success-500 text-xs mt-1">
+            <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
               ({Math.abs(nightsDiff)} fewer nights × $
               {booking.room.price_per_night}/night
               {hasDiscount && ` with ${booking.discount}% discount`})
@@ -315,7 +315,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         )}
         {actualDiff === 0 && (
-          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600">
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
             No price difference
           </div>
         )}
@@ -403,11 +403,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         </div>
         {actualDiff > 0 && (
-          <div className="bg-warning-100 dark:bg-warning-600/25 rounded-lg p-3 text-sm border border-warning-200 dark:border-warning-600/50">
-            <div className="font-medium text-warning-700 dark:text-warning-400">
+          <div className="bg-orange-50 dark:bg-orange-900/25 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
+            <div className="font-medium text-orange-800 dark:text-orange-300">
               Additional charge: ${actualDiff.toFixed(2)}
             </div>
-            <div className="text-warning-600 dark:text-warning-500 text-xs mt-1">
+            <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
               ({nights} nights × $
               {Math.abs(
                 newRoom.price_per_night - (booking.room?.price_per_night || 0),
@@ -417,11 +417,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         )}
         {actualDiff < 0 && (
-          <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-3 text-sm border border-success-200 dark:border-success-600/50">
-            <div className="font-medium text-success-700 dark:text-success-400">
+          <div className="bg-emerald-50 dark:bg-emerald-900/25 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
+            <div className="font-medium text-emerald-800 dark:text-emerald-300">
               Refund amount: ${Math.abs(actualDiff).toFixed(2)}
             </div>
-            <div className="text-success-600 dark:text-success-500 text-xs mt-1">
+            <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
               ({nights} nights × $
               {Math.abs(
                 newRoom.price_per_night - (booking.room?.price_per_night || 0),
@@ -431,7 +431,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         )}
         {actualDiff === 0 && (
-          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600">
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
             Same price - no payment adjustment needed
           </div>
         )}
@@ -796,7 +796,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         disabled={
                           changeRoomMutation.isPending || !selectedNewRoom
                         }
-                        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
+                        className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400"
                       >
                         {changeRoomMutation.isPending
                           ? "Changing..."
@@ -807,7 +807,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           setShowRoomChange(false)
                           setSelectedNewRoom("")
                         }}
-                        className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                        className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm font-medium"
                       >
                         Cancel
                       </button>
@@ -1099,7 +1099,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <button
                       onClick={handleDateModification}
                       disabled={modifyDatesMutation.isPending}
-                      className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed"
+                      className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400"
                     >
                       {modifyDatesMutation.isPending
                         ? "Saving..."
@@ -1110,7 +1110,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         setShowDateModification(false)
                         setDateModification({})
                       }}
-                      className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                      className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
@@ -1209,7 +1209,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             discountReason: "",
                           }))
                         }}
-                        className="w-full px-6 py-3 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2"
+                        className="w-full px-5 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2 font-medium"
                       >
                         <DollarSign className="w-4 h-4" />
                         Apply Discount
@@ -1394,14 +1394,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <button
                       onClick={handleSave}
                       disabled={updateMutation.isPending}
-                      className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-sm font-medium disabled:cursor-not-allowed flex items-center gap-1"
+                      className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400 flex items-center gap-1"
                     >
                       <Save className="w-3 h-3" />
                       {updateMutation.isPending ? "Saving..." : "Save"}
                     </button>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors text-sm font-medium"
+                      className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
@@ -1493,7 +1493,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 <button
                   onClick={handleCheckIn}
                   disabled={checkInMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
                   {checkInMutation.isPending ? "Processing..." : "Check In"}
@@ -1504,7 +1504,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 <button
                   onClick={handleCheckOut}
                   disabled={checkOutMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
                   {checkOutMutation.isPending ? "Processing..." : "Check Out"}
@@ -1517,7 +1517,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 (!showDeleteConfirm ? (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="px-6 py-3 border border-red-300 dark:border-red-600/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
+                    className="px-5 py-2.5 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors font-medium flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -1527,7 +1527,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     <button
                       onClick={handleDelete}
                       disabled={deleteMutation.isPending}
-                      className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
                     >
                       {deleteMutation.isPending
                         ? "Deleting..."
@@ -1535,7 +1535,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-6 py-3 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors font-medium"
+                      className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors font-medium"
                     >
                       Cancel
                     </button>

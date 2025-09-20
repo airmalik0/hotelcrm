@@ -193,29 +193,29 @@ function BookingGridContent() {
               to <span className="font-medium">Room {data.toRoom.room_number}</span>?
             </div>
             {data.actualDiff > 0 && (
-              <div className="bg-warning-100 dark:bg-warning-600/25 rounded-lg p-3 text-sm border border-warning-200 dark:border-warning-600/50">
-                <div className="font-medium text-warning-700 dark:text-warning-400">
+              <div className="bg-orange-50 dark:bg-orange-900/25 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
+                <div className="font-medium text-orange-800 dark:text-orange-300">
                   Additional charge: ${data.actualDiff.toFixed(2)}
                 </div>
-                <div className="text-warning-600 dark:text-warning-500 text-xs mt-1">
+                <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
                   ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}/night
                   {data.discount && ` with ${data.discount}% discount`})
                 </div>
               </div>
             )}
             {data.actualDiff < 0 && (
-              <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-3 text-sm border border-success-200 dark:border-success-600/50">
-                <div className="font-medium text-success-700 dark:text-success-400">
+              <div className="bg-emerald-50 dark:bg-emerald-900/25 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
+                <div className="font-medium text-emerald-800 dark:text-emerald-300">
                   Refund amount: ${Math.abs(data.actualDiff).toFixed(2)}
                 </div>
-                <div className="text-success-600 dark:text-success-500 text-xs mt-1">
+                <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
                   ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}/night
                   {data.discount && ` with ${data.discount}% discount`})
                 </div>
               </div>
             )}
             {data.actualDiff === 0 && (
-              <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
                 Same price - no payment adjustment needed
               </div>
             )}
