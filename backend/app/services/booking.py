@@ -216,21 +216,28 @@ class BookingService:
         if room.status == RoomStatus.OCCUPIED:
             raise BusinessRuleViolation("Room is already occupied. This might be a data inconsistency - please contact support")
 
-        # Check for conflicts
-        overlapping = self.crud_booking.get_overlapping(
+        # Get current time for validation
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+
+        # Check for bookings between now and the end of this booking
+        # This prevents checking in when there are other bookings scheduled before this one ends
+        future_overlapping = self.crud_booking.get_overlapping(
             self.session,
             room_id=booking.room_id,
-            check_in=booking.check_in,
-            check_out=booking.check_out,
+            check_in=current_time,  # From now
+            check_out=booking.check_out,  # Until this booking ends
             exclude_id=booking.id
         )
 
-        if overlapping:
-            raise BusinessRuleViolation("Cannot check in: room has conflicting bookings")
-
-        # Update statuses and set actual check-in time
-        from datetime import datetime, timezone
-        current_time = datetime.now(timezone.utc)
+        if future_overlapping:
+            # Find the earliest conflicting booking
+            earliest_conflict = min(future_overlapping, key=lambda b: b.check_in)
+            conflict_time = earliest_conflict.check_in.strftime("%Y-%m-%d %H:%M")
+            raise BusinessRuleViolation(
+                f"Cannot check in: another booking exists before this one ends (starting at {conflict_time}). "
+                "Please resolve the conflict first."
+            )
 
         booking_update = BookingUpdate(
             status=BookingStatus.CHECKED_IN,
@@ -467,21 +474,28 @@ class BookingService:
         if room.status == RoomStatus.OCCUPIED:
             raise BusinessRuleViolation("Room is already occupied. This might be a data inconsistency - please contact support")
 
-        # Check for conflicts with other bookings
-        overlapping = self.crud_booking.get_overlapping(
+        # Get current time for validation
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+
+        # Check for bookings between now and the end of this booking
+        # This prevents checking in when there are other bookings scheduled before this one ends
+        future_overlapping = self.crud_booking.get_overlapping(
             self.session,
             room_id=booking.room_id,
-            check_in=booking.check_in,
-            check_out=booking.check_out,
+            check_in=current_time,  # From now
+            check_out=booking.check_out,  # Until this booking ends
             exclude_id=booking.id
         )
 
-        if overlapping:
-            raise BusinessRuleViolation("Cannot check in: room has conflicting bookings")
-
-        # Set actual check-in time to now and update statuses
-        from datetime import datetime, timezone
-        current_time = datetime.now(timezone.utc)
+        if future_overlapping:
+            # Find the earliest conflicting booking
+            earliest_conflict = min(future_overlapping, key=lambda b: b.check_in)
+            conflict_time = earliest_conflict.check_in.strftime("%Y-%m-%d %H:%M")
+            raise BusinessRuleViolation(
+                f"Cannot check in: another booking exists before this one ends (starting at {conflict_time}). "
+                "Please resolve the conflict first."
+            )
 
         # Update booking with actual check-in time
         booking_update = BookingUpdate(

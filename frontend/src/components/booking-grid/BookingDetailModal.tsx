@@ -257,38 +257,56 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     const priceDiff = nightsDiff * booking.room.price_per_night
 
     // Build confirmation message
-    let message = `Change booking dates?\n\n`
-    message += `Old: ${format(new Date(booking.check_in), "PPP")} - ${format(
-      new Date(booking.check_out),
-      "PPP",
-    )} (${oldNights} nights)\n`
-    message += `New: ${format(newCheckIn, "PPP")} - ${format(
-      newCheckOut,
-      "PPP",
-    )} (${newNights} nights)\n\n`
-
     // Calculate actual amounts with discount
     const hasDiscount = booking.discount && booking.discount > 0
     const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
     const actualDiff = priceDiff * discountMultiplier
 
-    if (actualDiff > 0) {
-      message += `⚠️ Additional charge: $${actualDiff.toFixed(2)}\n`
-      if (hasDiscount) {
-        message += `(${nightsDiff} additional nights × $${booking.room.price_per_night}/night with ${booking.discount}% discount)`
-      } else {
-        message += `(${nightsDiff} additional nights × $${booking.room.price_per_night}/night)`
-      }
-    } else if (actualDiff < 0) {
-      message += `✅ Refund amount: $${Math.abs(actualDiff).toFixed(2)}\n`
-      if (hasDiscount) {
-        message += `(${Math.abs(nightsDiff)} fewer nights × $${booking.room.price_per_night}/night with ${booking.discount}% discount)`
-      } else {
-        message += `(${Math.abs(nightsDiff)} fewer nights × $${booking.room.price_per_night}/night)`
-      }
-    } else {
-      message += "No price difference"
-    }
+    const message = (
+      <div className="space-y-3">
+        <div className="text-sm space-y-2">
+          <div>
+            <span className="text-neutral-500 dark:text-neutral-400">Current dates:</span>
+            <div className="font-medium">
+              {format(new Date(booking.check_in), "PPP")} - {format(new Date(booking.check_out), "PPP")}
+              <span className="text-neutral-600 dark:text-neutral-400 text-xs ml-2">({oldNights} nights)</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-neutral-500 dark:text-neutral-400">New dates:</span>
+            <div className="font-medium">
+              {format(newCheckIn, "PPP")} - {format(newCheckOut, "PPP")}
+              <span className="text-neutral-600 dark:text-neutral-400 text-xs ml-2">({newNights} nights)</span>
+            </div>
+          </div>
+        </div>
+        {actualDiff > 0 && (
+          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-sm">
+            <div className="font-medium text-orange-700 dark:text-orange-400">
+              Additional charge: ${actualDiff.toFixed(2)}
+            </div>
+            <div className="text-orange-600 dark:text-orange-500 text-xs mt-1">
+              ({nightsDiff} additional nights × ${booking.room.price_per_night}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            </div>
+          </div>
+        )}
+        {actualDiff < 0 && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-sm">
+            <div className="font-medium text-emerald-700 dark:text-emerald-400">
+              Refund amount: ${Math.abs(actualDiff).toFixed(2)}
+            </div>
+            <div className="text-emerald-600 dark:text-emerald-500 text-xs mt-1">
+              ({Math.abs(nightsDiff)} fewer nights × ${booking.room.price_per_night}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            </div>
+          </div>
+        )}
+        {actualDiff === 0 && (
+          <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400">
+            No price difference
+          </div>
+        )}
+      </div>
+    )
 
     const confirmed = await confirm({
       title: "Confirm Date Modification",
@@ -438,6 +456,45 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     if (booking.room?.status === "maintenance") {
       showError("Cannot check in: Room is under maintenance")
       return
+    }
+
+    // Check if checking in earlier than planned
+    const now = new Date()
+    const plannedCheckIn = new Date(booking.check_in)
+    const isEarlyCheckIn = now < plannedCheckIn
+
+    // If early check-in, show warning
+    if (isEarlyCheckIn) {
+      const timeDiff = plannedCheckIn.getTime() - now.getTime()
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60))
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+
+      let earlyMessage = (
+        <div className="space-y-2">
+          <div className="text-sm">
+            You are attempting to check in <span className="font-semibold text-orange-600 dark:text-orange-400">
+              {hours > 0 ? `${hours} hours and ${minutes} minutes` : `${minutes} minutes`}
+            </span> earlier than the planned check-in time.
+          </div>
+          <div className="text-sm text-neutral-600 dark:text-neutral-400">
+            Planned check-in: <span className="font-medium">{format(plannedCheckIn, "PPP 'at' HH:mm")}</span>
+          </div>
+          <div className="text-sm text-neutral-600 dark:text-neutral-400">
+            Current time: <span className="font-medium">{format(now, "PPP 'at' HH:mm")}</span>
+          </div>
+        </div>
+      )
+
+      const confirmedEarly = await confirm({
+        title: "Early Check-in Confirmation",
+        message: earlyMessage,
+        confirmText: "Proceed with Early Check-in",
+        variant: "warning",
+      })
+
+      if (!confirmedEarly) {
+        return
+      }
     }
 
     // Handle cleaning status with confirmation and two API calls
