@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import field_validator, model_validator
 from pydantic_core import core_schema
-from sqlalchemy import Column, DateTime
+from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from .common import BookingStatus, PaymentMethod
@@ -14,6 +14,33 @@ from .room import RoomPublic
 if TYPE_CHECKING:
     from .customer import Customer
     from .room import Room
+
+
+class PaymentCalculationMixin:
+    """Mixin class for payment calculation methods used by both Booking and BookingPublic."""
+
+    @property
+    def refund_amount(self) -> float:
+        """Calculate total refunds from payment adjustments."""
+        if not hasattr(self, 'payment_adjustments') or not self.payment_adjustments:
+            return 0.0
+        total = sum(
+            adj.get("amount", 0)
+            for adj in self.payment_adjustments
+            if adj.get("amount", 0) < 0
+        )
+        return abs(total)
+
+    @property
+    def additional_payment(self) -> float:
+        """Calculate total additional payments from payment adjustments."""
+        if not hasattr(self, 'payment_adjustments') or not self.payment_adjustments:
+            return 0.0
+        return sum(
+            adj.get("amount", 0)
+            for adj in self.payment_adjustments
+            if adj.get("amount", 0) > 0
+        )
 
 
 class BookingBase(SQLModel):
@@ -44,7 +71,7 @@ class BookingBase(SQLModel):
         return self
 
 
-class Booking(BookingBase, table=True):
+class Booking(BookingBase, PaymentCalculationMixin, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     customer: Optional["Customer"] = Relationship(back_populates="bookings")
     room: Optional["Room"] = Relationship(back_populates="bookings")
@@ -57,9 +84,8 @@ class Booking(BookingBase, table=True):
     actual_check_in: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))
     actual_check_out: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))
 
-    # Payment adjustments for room changes, early checkout, etc.
-    refund_amount: float = Field(default=0.0, ge=0, le=1000000)
-    additional_payment: float = Field(default=0.0, ge=0, le=1000000)
+    # Payment adjustments history as JSON list (stored as JSONB in PostgreSQL)
+    payment_adjustments: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
 
     def calculate_total_amount(self, room_price_per_night: float) -> float:
         nights = (self.check_out.date() - self.check_in.date()).days
@@ -96,11 +122,10 @@ class BookingUpdate(SQLModel):
     registration_need: bool | None = None
     actual_check_in: datetime | None = None
     actual_check_out: datetime | None = None
-    refund_amount: float | None = None
-    additional_payment: float | None = None
+    payment_adjustments: list[dict[str, Any]] | None = None
 
 
-class BookingPublic(BookingBase):
+class BookingPublic(BookingBase, PaymentCalculationMixin):
     id: uuid.UUID
     customer: CustomerPublic | None = None
     room: RoomPublic | None = None
@@ -108,8 +133,13 @@ class BookingPublic(BookingBase):
     created_at: datetime
     actual_check_in: datetime | None = None
     actual_check_out: datetime | None = None
-    refund_amount: float = 0.0
-    additional_payment: float = 0.0
+    payment_adjustments: list[dict[str, Any]] = Field(default_factory=list)
+
+    @field_validator("payment_adjustments", mode="before")
+    @classmethod
+    def validate_payment_adjustments(cls, v: Any) -> list[dict[str, Any]]:
+        """Convert NULL payment_adjustments to empty list."""
+        return v if v is not None else []
 
 
 class BookingsPublic(SQLModel):
@@ -132,3 +162,9 @@ class PaymentAdjustmentResponse(SQLModel):
     """Response model for operations that result in payment adjustments."""
     booking: BookingPublic
     payment_difference: float  # Positive = customer pays more, negative = refund
+
+
+class DiscountModificationRequest(SQLModel):
+    """Request model for modifying booking discount with payment adjustment."""
+    new_discount: float = Field(ge=0, le=100)
+    discount_reason: str | None = None

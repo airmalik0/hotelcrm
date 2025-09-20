@@ -28,31 +28,31 @@ export function ConfirmModal({
 
   const variantStyles = {
     danger: {
-      iconBg: "bg-red-100 dark:bg-red-600/25",
-      iconColor: "text-red-600 dark:text-red-400",
-      confirmBtn: "bg-red-600 hover:bg-red-700 text-white",
+      iconBg: "bg-danger-100 dark:bg-danger-600/30",
+      iconColor: "text-danger-600 dark:text-danger-400",
+      confirmBtn: "bg-danger-600 hover:bg-danger-700 text-white",
       Icon: AlertTriangle,
     },
     warning: {
-      iconBg: "bg-orange-100 dark:bg-orange-600/25",
+      iconBg: "bg-orange-100 dark:bg-orange-600/30",
       iconColor: "text-orange-600 dark:text-orange-400",
       confirmBtn: "bg-orange-600 hover:bg-orange-700 text-white",
       Icon: AlertTriangle,
     },
     info: {
-      iconBg: "bg-blue-100 dark:bg-blue-600/25",
+      iconBg: "bg-blue-100 dark:bg-blue-600/30",
       iconColor: "text-blue-600 dark:text-blue-400",
       confirmBtn: "bg-blue-600 hover:bg-blue-700 text-white",
       Icon: Info,
     },
     primary: {
-      iconBg: "bg-primary-100 dark:bg-primary-600/25",
+      iconBg: "bg-primary-100 dark:bg-primary-600/30",
       iconColor: "text-primary-600 dark:text-primary-400",
       confirmBtn: "bg-primary-600 hover:bg-primary-700 text-white",
       Icon: Info,
     },
     success: {
-      iconBg: "bg-emerald-100 dark:bg-emerald-600/25",
+      iconBg: "bg-emerald-100 dark:bg-emerald-600/30",
       iconColor: "text-emerald-600 dark:text-emerald-400",
       confirmBtn: "bg-emerald-600 hover:bg-emerald-700 text-white",
       Icon: CheckCircle,
@@ -99,7 +99,10 @@ export function ConfirmModal({
                 message
                   .split("\n")
                   .map((line, index) => (
-                    <div key={index} className={line === "" ? "h-2" : ""}>
+                    <div
+                      key={`line-${index}-${line.slice(0, 20)}`}
+                      className={line === "" ? "h-2" : ""}
+                    >
                       {line}
                     </div>
                   ))
@@ -113,7 +116,7 @@ export function ConfirmModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelText}
           </button>

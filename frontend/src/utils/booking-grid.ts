@@ -1,5 +1,5 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
-import { bookingsOverlap, isBookingInView } from "./date-helpers"
+import { bookingsOverlap, isBookingInView, safeParseDate } from "./date-helpers"
 
 export interface BookingWithLane extends BookingPublic {
   lane: number
@@ -18,15 +18,16 @@ export function assignBookingLanes(
 
   // Sort by check-in date
   const sortedBookings = [...bookings].sort(
-    (a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime(),
+    (a, b) =>
+      safeParseDate(a.check_in).getTime() - safeParseDate(b.check_in).getTime(),
   )
 
   const bookingsWithLanes: BookingWithLane[] = []
   const lanes: Array<{ endTime: number }> = []
 
   for (const booking of sortedBookings) {
-    const startTime = new Date(booking.check_in).getTime()
-    const endTime = new Date(booking.check_out).getTime()
+    const startTime = safeParseDate(booking.check_in).getTime()
+    const endTime = safeParseDate(booking.check_out).getTime()
 
     // Find the first available lane
     let assignedLane = -1
@@ -71,7 +72,9 @@ export function groupBookingsByRoom(
   // Sort bookings within each room by check-in time
   for (const [roomId, roomBookings] of grouped) {
     roomBookings.sort(
-      (a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime(),
+      (a, b) =>
+        safeParseDate(a.check_in).getTime() -
+        safeParseDate(b.check_in).getTime(),
     )
   }
 
@@ -80,6 +83,7 @@ export function groupBookingsByRoom(
 
 /**
  * Check if a room is available for a time period
+ * Uses actual_check_out if the booking has already been checked out
  */
 export function isRoomAvailable(
   roomId: string,
@@ -93,10 +97,19 @@ export function isRoomAvailable(
   )
 
   for (const booking of roomBookings) {
+    // If booking has been cancelled, skip it
+    if (booking.status === "cancelled") {
+      continue
+    }
+
+    // Use actual check-out if available (early checkout frees room earlier)
+    // BUT always use planned check-in (room is blocked from planned time regardless of actual arrival)
+    const effectiveCheckOut = booking.actual_check_out || booking.check_out
+
     if (
       bookingsOverlap(
         { check_in: checkIn, check_out: checkOut },
-        { check_in: booking.check_in, check_out: booking.check_out },
+        { check_in: booking.check_in, check_out: effectiveCheckOut },
       )
     ) {
       return false
@@ -143,11 +156,11 @@ export function calculateOccupancy(
       isBookingInView(booking.check_in, booking.check_out, startDate, endDate)
     ) {
       const bookingStart = Math.max(
-        new Date(booking.check_in).getTime(),
+        safeParseDate(booking.check_in).getTime(),
         startDate.getTime(),
       )
       const bookingEnd = Math.min(
-        new Date(booking.check_out).getTime(),
+        safeParseDate(booking.check_out).getTime(),
         endDate.getTime(),
       )
       const days = Math.ceil(

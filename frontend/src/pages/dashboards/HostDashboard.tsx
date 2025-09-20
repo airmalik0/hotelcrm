@@ -1,5 +1,6 @@
 // import { bookingsReadBookings, customersReadCustomers } from "@/client"
 import { KPICard } from "@/components/dashboard/KPICard"
+import { safeParseDate } from "@/utils/date-helpers"
 // import { useQuery } from "@tanstack/react-query"
 import {
   Calendar,
@@ -23,12 +24,12 @@ export function HostDashboard() {
 
   const todayCheckIns =
     bookings?.data?.filter(
-      (booking) => new Date(booking.check_in).toDateString() === today,
+      (booking) => safeParseDate(booking.check_in).toDateString() === today,
     ) || []
 
   const todayCheckOuts =
     bookings?.data?.filter(
-      (booking) => new Date(booking.check_out).toDateString() === today,
+      (booking) => safeParseDate(booking.check_out).toDateString() === today,
     ) || []
 
   const pendingCheckIns = todayCheckIns.filter(
@@ -126,7 +127,7 @@ export function HostDashboard() {
                 {todayCheckIns.slice(0, 3).map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-600/10 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-600/30 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
@@ -142,7 +143,7 @@ export function HostDashboard() {
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           Room {booking.room?.room_number} •{" "}
-                          {new Date(booking.check_in).toLocaleTimeString(
+                          {safeParseDate(booking.check_in).toLocaleTimeString(
                             "en-US",
                             {
                               hour: "2-digit",
@@ -156,8 +157,8 @@ export function HostDashboard() {
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           booking.status === "confirmed"
-                            ? "bg-warning-100 dark:bg-warning-600/25 text-warning-600 dark:text-warning-400"
-                            : "bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400"
+                            ? "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400"
+                            : "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400"
                         }`}
                       >
                         {booking.status === "confirmed"
@@ -192,7 +193,7 @@ export function HostDashboard() {
                 {todayCheckOuts.slice(0, 3).map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center justify-between p-3 bg-success-50 dark:bg-success-600/10 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-success-50 dark:bg-success-600/30 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-success-600 rounded-full flex items-center justify-center">
@@ -208,7 +209,7 @@ export function HostDashboard() {
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           Room {booking.room?.room_number} •{" "}
-                          {new Date(booking.check_out).toLocaleTimeString(
+                          {safeParseDate(booking.check_out).toLocaleTimeString(
                             "en-US",
                             {
                               hour: "2-digit",
@@ -248,17 +249,17 @@ export function HostDashboard() {
             </h3>
 
             <div className="space-y-3">
-              <button className="w-full flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-600/10 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-600/20 transition-colors">
+              <button className="w-full flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-600/40 transition-colors">
                 <LogIn className="w-5 h-5" />
                 <span className="font-medium">Quick Check-in</span>
               </button>
 
-              <button className="w-full flex items-center gap-3 p-3 bg-success-50 dark:bg-success-600/10 text-success-600 dark:text-success-400 rounded-lg hover:bg-success-100 dark:hover:bg-success-600/20 transition-colors">
+              <button className="w-full flex items-center gap-3 p-3 bg-success-50 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-lg hover:bg-success-100 dark:hover:bg-success-600/40 transition-colors">
                 <LogOut className="w-5 h-5" />
                 <span className="font-medium">Quick Check-out</span>
               </button>
 
-              <button className="w-full flex items-center gap-3 p-3 bg-warning-50 dark:bg-warning-600/10 text-warning-600 dark:text-warning-400 rounded-lg hover:bg-warning-100 dark:hover:bg-warning-600/20 transition-colors">
+              <button className="w-full flex items-center gap-3 p-3 bg-warning-50 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400 rounded-lg hover:bg-warning-100 dark:hover:bg-warning-600/40 transition-colors">
                 <Calendar className="w-5 h-5" />
                 <span className="font-medium">New Booking</span>
               </button>

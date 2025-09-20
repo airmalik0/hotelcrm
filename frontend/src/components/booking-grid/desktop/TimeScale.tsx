@@ -42,9 +42,9 @@ export const TimeScale = memo(function TimeScale({
   return (
     <div ref={containerRef} className="relative h-10 bg-white dark:bg-dark-2">
       {/* Time markers */}
-      {markers.map((marker, index) => (
+      {markers.map((marker) => (
         <div
-          key={index}
+          key={marker.date.getTime()}
           className="absolute top-0 h-full flex items-center"
           style={{ left: marker.position }}
         >

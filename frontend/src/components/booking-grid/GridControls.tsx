@@ -33,25 +33,25 @@ const statusConfig = {
   confirmed: {
     icon: CheckCircle,
     color:
-      "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-600/25 dark:text-emerald-400 dark:border-emerald-600/50",
+      "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-600/30 dark:text-emerald-400 dark:border-emerald-600/50",
     label: "Confirmed",
   },
   checked_in: {
     icon: Clock,
     color:
-      "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/25 dark:text-blue-400 dark:border-blue-600/50",
+      "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/30 dark:text-blue-400 dark:border-blue-600/50",
     label: "Checked In",
   },
   checked_out: {
     icon: LogOut,
     color:
-      "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-600/25 dark:text-violet-400 dark:border-violet-600/50",
+      "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-600/30 dark:text-violet-400 dark:border-violet-600/50",
     label: "Checked Out",
   },
   cancelled: {
     icon: XCircle,
     color:
-      "bg-red-100 text-red-700 border-red-200 dark:bg-red-600/25 dark:text-red-400 dark:border-red-600/50",
+      "bg-danger-100 text-danger-700 border-danger-200 dark:bg-danger-600/30 dark:text-danger-400 dark:border-danger-600/50",
     label: "Cancelled",
   },
 }
@@ -165,7 +165,7 @@ export const GridControls = memo(function GridControls({
               className={clsx(
                 "px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-2",
                 statusFilters.length > 0
-                  ? "bg-blue-100 dark:bg-blue-600/25 border-blue-300 dark:border-blue-600/50 text-blue-700 dark:text-blue-400"
+                  ? "bg-blue-100 dark:bg-blue-600/30 border-blue-300 dark:border-blue-600/50 text-blue-700 dark:text-blue-400"
                   : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
               )}
             >
@@ -205,7 +205,7 @@ export const GridControls = memo(function GridControls({
                         className={clsx(
                           "w-full px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
                           isActive
-                            ? "bg-blue-100 dark:bg-blue-600/25 text-blue-700 dark:text-blue-400"
+                            ? "bg-blue-100 dark:bg-blue-600/30 text-blue-700 dark:text-blue-400"
                             : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
                         )}
                       >
@@ -240,7 +240,7 @@ export const GridControls = memo(function GridControls({
               className={clsx(
                 "px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-2",
                 roomTypeFilters.length > 0
-                  ? "bg-primary-100 dark:bg-primary-600/25 border-primary-300 dark:border-primary-600/50 text-primary-700 dark:text-primary-400"
+                  ? "bg-primary-100 dark:bg-primary-600/30 border-primary-300 dark:border-primary-600/50 text-primary-700 dark:text-primary-400"
                   : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
               )}
             >
@@ -271,7 +271,7 @@ export const GridControls = memo(function GridControls({
                       className={clsx(
                         "w-full px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
                         roomTypeFilters.includes(roomType)
-                          ? "bg-primary-100 dark:bg-primary-600/25 text-primary-700 dark:text-primary-400"
+                          ? "bg-primary-100 dark:bg-primary-600/30 text-primary-700 dark:text-primary-400"
                           : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
                       )}
                     >

@@ -98,10 +98,10 @@ export function ImageUpload({
             type="button"
             onClick={handleRemove}
             disabled={disabled || uploading}
-            className="absolute top-2 right-2 z-10 bg-white dark:bg-neutral-800 rounded-full p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-md"
+            className="absolute top-2 right-2 z-10 bg-white dark:bg-neutral-800 rounded-full p-1.5 hover:bg-danger-50 dark:hover:bg-danger-600/30 transition-colors shadow-md"
             aria-label="Remove photo"
           >
-            <X className="w-4 h-4 text-red-600" />
+            <X className="w-4 h-4 text-danger-600" />
           </button>
           <div className="border border-neutral-300 dark:border-neutral-500 rounded-lg overflow-hidden bg-white dark:bg-neutral-900">
             <img

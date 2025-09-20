@@ -88,8 +88,10 @@ export const RoomTimeline = memo(function RoomTimeline({
         "relative cursor-pointer",
         "border-b border-neutral-200 dark:border-neutral-700",
         "transition-colors touch-manipulation",
-        isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-900/20",
-        isDropTarget && !isValidDropTarget && "bg-red-50 dark:bg-red-900/20",
+        isDropTarget && isValidDropTarget && "bg-green-50 dark:bg-green-600/30",
+        isDropTarget &&
+          !isValidDropTarget &&
+          "bg-danger-50 dark:bg-danger-600/30",
         !isDropTarget && "hover:bg-neutral-50 dark:hover:bg-dark-3",
       )}
       style={{

@@ -44,6 +44,7 @@ from .booking import (
     BookingPublic,
     BookingsPublic,
     DateModificationRequest,
+    DiscountModificationRequest,
     RoomChangeRequest,
     PaymentAdjustmentResponse,
 )

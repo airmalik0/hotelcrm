@@ -42,16 +42,19 @@ class CRUDCustomer(CRUDBase[Customer, CustomerCreate, CustomerUpdate]):
             if any(c.isdigit() for c in search):
                 # Normalize the search term for phone search (keep only digits)
                 normalized_search = re.sub(r'\D', '', search)
+                search_pattern = f"%{search}%"
+                normalized_pattern = f"%{normalized_search}%"
                 search_filter = or_(
-                    col(Customer.first_name).ilike(f"%{search}%"),
-                    col(Customer.last_name).ilike(f"%{search}%"),
-                    col(Customer.phone).ilike(f"%{normalized_search}%"),  # Search normalized
+                    col(Customer.first_name).ilike(search_pattern),
+                    col(Customer.last_name).ilike(search_pattern),
+                    col(Customer.phone).ilike(normalized_pattern),
                 )
             else:
                 # Regular search for names only
+                search_pattern = f"%{search}%"
                 search_filter = or_(
-                    col(Customer.first_name).ilike(f"%{search}%"),
-                    col(Customer.last_name).ilike(f"%{search}%"),
+                    col(Customer.first_name).ilike(search_pattern),
+                    col(Customer.last_name).ilike(search_pattern),
                 )
             statement = statement.where(search_filter)
 
@@ -66,16 +69,19 @@ class CRUDCustomer(CRUDBase[Customer, CustomerCreate, CustomerUpdate]):
             if any(c.isdigit() for c in search):
                 # Normalize the search term for phone search (keep only digits)
                 normalized_search = re.sub(r'\D', '', search)
+                search_pattern = f"%{search}%"
+                normalized_pattern = f"%{normalized_search}%"
                 search_filter = or_(
-                    col(Customer.first_name).ilike(f"%{search}%"),
-                    col(Customer.last_name).ilike(f"%{search}%"),
-                    col(Customer.phone).ilike(f"%{normalized_search}%"),  # Search normalized
+                    col(Customer.first_name).ilike(search_pattern),
+                    col(Customer.last_name).ilike(search_pattern),
+                    col(Customer.phone).ilike(normalized_pattern),
                 )
             else:
                 # Regular search for names only
+                search_pattern = f"%{search}%"
                 search_filter = or_(
-                    col(Customer.first_name).ilike(f"%{search}%"),
-                    col(Customer.last_name).ilike(f"%{search}%"),
+                    col(Customer.first_name).ilike(search_pattern),
+                    col(Customer.last_name).ilike(search_pattern),
                 )
             statement = statement.where(search_filter)
 

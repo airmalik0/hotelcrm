@@ -67,8 +67,9 @@ export type BookingPublic = {
     created_at: string;
     actual_check_in?: (string | null);
     actual_check_out?: (string | null);
-    refund_amount?: number;
-    additional_payment?: number;
+    payment_adjustments?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type BookingsPublic = {
@@ -91,8 +92,9 @@ export type BookingUpdate = {
     registration_need?: (boolean | null);
     actual_check_in?: (string | null);
     actual_check_out?: (string | null);
-    refund_amount?: (number | null);
-    additional_payment?: (number | null);
+    payment_adjustments?: (Array<{
+    [key: string]: unknown;
+}> | null);
 };
 
 export type CustomerCreate = {
@@ -143,6 +145,14 @@ export type CustomerUpdate = {
 export type DateModificationRequest = {
     new_check_in?: (string | null);
     new_check_out?: (string | null);
+};
+
+/**
+ * Request model for modifying booking discount with payment adjustment.
+ */
+export type DiscountModificationRequest = {
+    new_discount: number;
+    discount_reason?: (string | null);
 };
 
 /**
@@ -569,6 +579,17 @@ export type BookingsModifyBookingDatesData = {
 export type BookingsModifyBookingDatesResponse = (PaymentAdjustmentResponse);
 
 export type BookingsModifyBookingDatesError = (HTTPValidationError);
+
+export type BookingsModifyBookingDiscountData = {
+    body: DiscountModificationRequest;
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsModifyBookingDiscountResponse = (PaymentAdjustmentResponse);
+
+export type BookingsModifyBookingDiscountError = (HTTPValidationError);
 
 export type BookingsChangeBookingRoomData = {
     body: RoomChangeRequest;

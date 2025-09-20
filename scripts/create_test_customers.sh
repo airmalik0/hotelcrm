@@ -3,13 +3,20 @@
 # Create test customers for Hotel CRM
 # Run from project root: ./scripts/create_test_customers.sh
 
-API_URL="http://localhost:8000/api/v1"
+# Check required environment variable
+if [ -z "$ADMIN_PASSWORD" ]; then
+    echo "Error: ADMIN_PASSWORD environment variable is required"
+    echo "Usage: ADMIN_PASSWORD=your_password $0"
+    exit 1
+fi
+
+API_URL="${API_URL:-http://localhost:8000/api/v1}"
 
 # Get auth token
 echo "Getting auth token..."
 TOKEN=$(curl -s -X POST "$API_URL/login/access-token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=changethis123" | \
+  -d "username=admin&password=$ADMIN_PASSWORD" | \
   python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
 
 if [ -z "$TOKEN" ]; then

@@ -349,15 +349,12 @@ export const BookingPublicSchema = {
             ],
             title: 'Actual Check Out'
         },
-        refund_amount: {
-            type: 'number',
-            title: 'Refund Amount',
-            default: 0
-        },
-        additional_payment: {
-            type: 'number',
-            title: 'Additional Payment',
-            default: 0
+        payment_adjustments: {
+            items: {
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Payment Adjustments'
         }
     },
     type: 'object',
@@ -509,27 +506,19 @@ export const BookingUpdateSchema = {
             ],
             title: 'Actual Check Out'
         },
-        refund_amount: {
+        payment_adjustments: {
             anyOf: [
                 {
-                    type: 'number'
+                    items: {
+                        type: 'object'
+                    },
+                    type: 'array'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Refund Amount'
-        },
-        additional_payment: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Additional Payment'
+            title: 'Payment Adjustments'
         }
     },
     type: 'object',
@@ -900,6 +889,32 @@ export const DateModificationRequestSchema = {
     type: 'object',
     title: 'DateModificationRequest',
     description: 'Request model for modifying booking dates.'
+} as const;
+
+export const DiscountModificationRequestSchema = {
+    properties: {
+        new_discount: {
+            type: 'number',
+            maximum: 100,
+            minimum: 0,
+            title: 'New Discount'
+        },
+        discount_reason: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Discount Reason'
+        }
+    },
+    type: 'object',
+    required: ['new_discount'],
+    title: 'DiscountModificationRequest',
+    description: 'Request model for modifying booking discount with payment adjustment.'
 } as const;
 
 export const DistrictSchema = {

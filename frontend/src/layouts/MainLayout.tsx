@@ -1,3 +1,4 @@
+import type { UserRole } from "@/client/types.gen"
 import { BREAKPOINTS } from "@/constants/breakpoints"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRole } from "@/hooks/useRole"
@@ -34,7 +35,7 @@ interface MenuItem {
   icon: React.ComponentType<{ className?: string }>
   href?: string
   children?: MenuItem[]
-  roles: string[]
+  roles: UserRole[]
 }
 
 const menuItems: MenuItem[] = [
@@ -141,9 +142,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     )
   }
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    hasAnyRole(item.roles as any),
-  )
+  const filteredMenuItems = menuItems.filter((item) => hasAnyRole(item.roles))
 
   const renderMenuItem = (item: MenuItem) => {
     const hasChildren = item.children && item.children.length > 0
@@ -174,14 +173,14 @@ export function MainLayout({ children }: MainLayoutProps) {
           {isExpanded && (
             <ul className="ml-8 mt-2 space-y-1">
               {item.children
-                ?.filter((child) => hasAnyRole(child.roles as any))
+                ?.filter((child) => hasAnyRole(child.roles))
                 .map((child) => (
                   <li key={child.key}>
                     <Link
                       to={child.href!}
-                      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors hover:bg-primary-50 dark:hover:bg-primary-600/25 ${
+                      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors hover:bg-primary-50 dark:hover:bg-primary-600/30 ${
                         isActive(child.href!)
-                          ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
+                          ? "bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400"
                           : "text-neutral-700 dark:text-neutral-300"
                       }`}
                     >
@@ -200,9 +199,9 @@ export function MainLayout({ children }: MainLayoutProps) {
       <li key={item.key}>
         <Link
           to={item.href!}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-primary-50 dark:hover:bg-primary-600/25 ${
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-primary-50 dark:hover:bg-primary-600/30 ${
             itemActive
-              ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
+              ? "bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400"
               : "text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400"
           }`}
         >
@@ -306,7 +305,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <button
                   type="button"
                   onClick={logout}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-danger-100 dark:hover:bg-danger-600/25 hover:text-danger-600 dark:hover:text-danger-400 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-danger-100 dark:hover:bg-danger-600/30 hover:text-danger-600 dark:hover:text-danger-400 transition-colors"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />

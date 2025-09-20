@@ -2,13 +2,17 @@
 Booking service layer for centralizing booking business logic.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 from sqlmodel import Session
 
 from app.core.customer_stats import update_customer_stats_on_booking_change
-from app.core.exceptions import BusinessRuleViolation, NotFoundError
+from app.core.exceptions import (
+    BusinessRuleViolation,
+    NotFoundError,
+    PermissionDeniedError,
+)
 
 if TYPE_CHECKING:
     from app.models import User
@@ -21,7 +25,9 @@ from app.models import (
     BookingStatus,
     BookingUpdate,
     RoomStatus,
+    UserRole,
 )
+from app.models.common import PaymentAdjustmentType
 
 
 class BookingService:
@@ -33,6 +39,48 @@ class BookingService:
         self.crud_booking = crud_booking
         self.crud_room = crud_room
         self.crud_customer = crud_customer
+
+    def validate_update_permissions(self, current_user: "User", booking: Booking, booking_in: BookingUpdate) -> None:
+        """
+        Validate user permissions for booking update operations.
+
+        Args:
+            current_user: User making the request
+            booking: Current booking state
+            booking_in: Proposed changes
+
+        Raises:
+            PermissionDeniedError: If user lacks required permissions
+        """
+        # Admin and superuser can do everything
+        if current_user.role == UserRole.ADMIN or current_user.is_superuser:
+            return
+
+        # Manager can do most things
+        if current_user.role == UserRole.MANAGER:
+            return
+
+        # Host restrictions - only allow basic updates, not sensitive operations
+        if current_user.role == UserRole.HOST:
+            # Check for operations that require admin/manager privileges
+            if booking_in.discount is not None and booking_in.discount != booking.discount:
+                raise PermissionDeniedError("Admin or manager access required to change discount")
+
+            # Only admin/manager can directly change total_amount without recalculation
+            if booking_in.total_amount is not None and not any([
+                booking_in.check_in, booking_in.check_out, booking_in.room_id,
+                booking_in.discount is not None
+            ]):
+                raise PermissionDeniedError("Admin or manager access required to manually adjust total amount")
+
+            # Only admin/manager can change payment method on checked-in booking
+            if booking_in.payment_method and booking.status == BookingStatus.CHECKED_IN:
+                raise PermissionDeniedError("Admin or manager access required to change payment method for checked-in booking")
+
+            return
+
+        # Any other role should not have access
+        raise PermissionDeniedError("Insufficient permissions for booking updates")
 
     def create_booking(self, booking_in: BookingCreate) -> Booking:
         """
@@ -563,6 +611,10 @@ class BookingService:
         if booking.status == BookingStatus.CANCELLED:
             raise BusinessRuleViolation("Cannot modify cancelled bookings")
 
+        # For checked-in bookings, only allow check-out modification (not check-in)
+        if booking.status == BookingStatus.CHECKED_IN and new_check_in:
+            raise BusinessRuleViolation("Cannot modify check-in date for already checked-in bookings")
+
         old_total = booking.total_amount
         changes: dict[str, Any] = {}
 
@@ -600,12 +652,26 @@ class BookingService:
 
         # Update booking
         changes["total_amount"] = new_total
-        if payment_difference < 0:
-            # Customer gets refund
-            changes["refund_amount"] = booking.refund_amount + abs(payment_difference)
-        elif payment_difference > 0:
-            # Customer pays additional amount
-            changes["additional_payment"] = booking.additional_payment + payment_difference
+
+        # Add payment adjustment to history
+        if payment_difference != 0:
+            adjustment = {
+                "type": PaymentAdjustmentType.DATE_MODIFICATION.value,
+                "amount": payment_difference,
+                "reason": f"Date modification: {(new_check_out or booking.check_out).date()} - {(new_check_in or booking.check_in).date()}",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "old_check_in": booking.check_in.isoformat() if new_check_in else None,
+                "old_check_out": booking.check_out.isoformat() if new_check_out else None,
+                "new_check_in": new_check_in.isoformat() if new_check_in else None,
+                "new_check_out": new_check_out.isoformat() if new_check_out else None,
+            }
+
+            # No need to update cumulative amounts - they're computed from adjustments
+
+            # Add to payment adjustments list
+            payment_adjustments = list(booking.payment_adjustments) if booking.payment_adjustments else []
+            payment_adjustments.append(adjustment)
+            changes["payment_adjustments"] = payment_adjustments
 
         booking_update = BookingUpdate(**changes)
         booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
@@ -684,17 +750,125 @@ class BookingService:
             self.crud_room.update_status(self.session, room=new_room, status=RoomStatus.OCCUPIED)
 
         # Update booking
-        changes = {
+        changes: dict[str, Any] = {
             "room_id": new_room_id,
             "total_amount": new_total
         }
 
-        if payment_difference < 0:
-            # Customer gets refund
-            changes["refund_amount"] = booking.refund_amount + abs(payment_difference)
-        elif payment_difference > 0:
-            # Customer pays additional amount
-            changes["additional_payment"] = booking.additional_payment + payment_difference
+        # Add payment adjustment to history
+        if payment_difference != 0:
+            old_room = self.crud_room.get(self.session, id=booking.room_id)
+            adjustment = {
+                "type": PaymentAdjustmentType.ROOM_CHANGE.value,
+                "amount": payment_difference,
+                "reason": f"Room change: {old_room.room_number if old_room else 'N/A'} → {new_room.room_number}",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "old_room_id": str(booking.room_id),
+                "new_room_id": str(new_room_id),
+                "old_room_number": old_room.room_number if old_room else None,
+                "new_room_number": new_room.room_number,
+                "old_room_price": old_room.price_per_night if old_room else 0,
+                "new_room_price": new_room.price_per_night,
+            }
+
+            # No need to update cumulative amounts - they're computed from adjustments
+
+            # Add to payment adjustments list
+            payment_adjustments = list(booking.payment_adjustments) if booking.payment_adjustments else []
+            payment_adjustments.append(adjustment)
+            changes["payment_adjustments"] = payment_adjustments
+
+        booking_update = BookingUpdate(**changes)
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
+
+        # Update customer stats if amount changed
+        if payment_difference != 0:
+            update_customer_stats_on_booking_change(
+                session=self.session,
+                customer_id=booking.customer_id,
+                amount_delta=payment_difference,
+                booking_delta=0
+            )
+
+        return booking, payment_difference
+
+    def modify_discount_with_payment_adjustment(
+        self,
+        booking: Booking,
+        new_discount: float,
+        discount_reason: str | None = None
+    ) -> tuple[Booking, float]:
+        """
+        Modify booking discount with automatic payment adjustment.
+        Works for both CONFIRMED and CHECKED_IN bookings.
+
+        Args:
+            booking: Booking to modify
+            new_discount: New discount percentage (0-100)
+            discount_reason: Reason for discount (required if discount > 0)
+
+        Returns:
+            Tuple of (updated booking, payment difference - positive means charge, negative means refund)
+
+        Raises:
+            BusinessRuleViolation: If modification is not allowed
+        """
+        if booking.status == BookingStatus.CANCELLED:
+            raise BusinessRuleViolation("Cannot modify discount for cancelled bookings")
+
+        if booking.status == BookingStatus.CHECKED_OUT:
+            raise BusinessRuleViolation("Cannot modify discount for checked-out bookings")
+
+        # Validate discount parameters
+        if new_discount < 0 or new_discount > 100:
+            raise BusinessRuleViolation("Discount must be between 0 and 100")
+
+        if new_discount > 0 and not discount_reason:
+            raise BusinessRuleViolation("Discount reason is required when applying discount")
+
+        # Get room price to recalculate
+        room = self.crud_room.get(self.session, id=booking.room_id)
+        if not room:
+            raise NotFoundError("Room", str(booking.room_id))
+
+        # Calculate nights
+        nights = (booking.check_out.date() - booking.check_in.date()).days
+        nights = max(1, nights)
+
+        # Calculate base amount (without any discount)
+        base_amount = room.price_per_night * nights
+
+        # Calculate old and new totals
+        old_total = booking.total_amount
+        new_total = base_amount * (1 - new_discount / 100)
+
+        payment_difference = new_total - old_total
+
+        # Prepare update
+        changes: dict[str, Any] = {
+            "discount": new_discount,
+            "discount_reason": discount_reason,
+            "total_amount": new_total
+        }
+
+        # Add payment adjustment to history
+        if payment_difference != 0 or new_discount != (booking.discount or 0):
+            adjustment = {
+                "type": PaymentAdjustmentType.DISCOUNT_CHANGE.value,
+                "amount": payment_difference,
+                "reason": f"Discount changed: {booking.discount or 0}% → {new_discount}% - {discount_reason or 'No reason'}",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "old_discount": booking.discount or 0,
+                "new_discount": new_discount,
+                "discount_reason": discount_reason,
+            }
+
+            # No need to update cumulative amounts - they're computed from adjustments
+
+            # Add to payment adjustments list
+            payment_adjustments = list(booking.payment_adjustments) if booking.payment_adjustments else []
+            payment_adjustments.append(adjustment)
+            changes["payment_adjustments"] = payment_adjustments
 
         booking_update = BookingUpdate(**changes)
         booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)

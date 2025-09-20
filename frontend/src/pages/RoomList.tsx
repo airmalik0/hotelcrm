@@ -170,7 +170,7 @@ export function RoomList() {
                 {stats.total}
               </p>
             </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center">
               <Building2 className="w-6 h-6" />
             </div>
           </div>
@@ -185,7 +185,7 @@ export function RoomList() {
                 {stats.available}
               </p>
             </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-lg flex items-center justify-center">
               <Building2 className="w-6 h-6" />
             </div>
           </div>
@@ -200,7 +200,7 @@ export function RoomList() {
                 {stats.occupied}
               </p>
             </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 rounded-lg flex items-center justify-center">
               <Building2 className="w-6 h-6" />
             </div>
           </div>

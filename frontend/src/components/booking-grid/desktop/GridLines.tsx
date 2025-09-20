@@ -18,9 +18,9 @@ export const GridLines = memo(function GridLines({
 
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {markers.map((marker, index) => (
+      {markers.map((marker) => (
         <div
-          key={index}
+          key={marker.date.getTime()}
           className={clsx(
             "absolute top-0 bottom-0 w-px",
             marker.isToday

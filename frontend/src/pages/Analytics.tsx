@@ -19,7 +19,7 @@ export function Analytics() {
       </div>
 
       {/* Description Card */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700 p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
             <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />

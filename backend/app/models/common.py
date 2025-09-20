@@ -40,6 +40,19 @@ class CustomerTag(str, Enum):
     PROBLEMATIC = "problematic"
 
 
+class PaymentAdjustmentType(str, Enum):
+    """Types of payment adjustments for bookings"""
+    ROOM_CHANGE = "room_change"  # Room upgrade/downgrade
+    DATE_MODIFICATION = "date_modification"  # Extended/shortened stay
+    DISCOUNT_CHANGE = "discount_change"  # Discount applied/modified
+    EARLY_CHECKOUT = "early_checkout"  # Guest left early (with refund)
+    LATE_CHECKIN = "late_checkin"  # Guest arrived late
+    DAMAGE_CHARGE = "damage_charge"  # Room damage charges
+    SERVICE_CHARGE = "service_charge"  # Additional services
+    CANCELLATION_FEE = "cancellation_fee"  # Cancellation penalty
+    MANUAL_ADJUSTMENT = "manual_adjustment"  # Manual correction by staff
+
+
 class District(str, Enum):
     """Districts of Tashkent"""
     Almazar = "Almazar"

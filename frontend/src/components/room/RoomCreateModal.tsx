@@ -102,7 +102,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
           <form onSubmit={handleSubmit}>
             <div className="px-6 py-4 space-y-4">
               {errors.general && (
-                <div className="bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 px-4 py-3 rounded-lg text-sm">
                   {errors.general}
                 </div>
               )}

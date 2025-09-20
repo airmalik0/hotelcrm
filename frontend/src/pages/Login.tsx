@@ -160,7 +160,7 @@ export function Login() {
 
         {/* Error Message */}
         {loginMutation.isError && (
-          <div className="mt-4 p-3 bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400 border border-danger-200 dark:border-danger-600/50 rounded-lg text-sm">
+          <div className="mt-4 p-3 bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 border border-danger-200 dark:border-danger-600/50 rounded-lg text-sm">
             Invalid username or password. Please try again.
           </div>
         )}

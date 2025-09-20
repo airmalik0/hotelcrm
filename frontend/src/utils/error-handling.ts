@@ -131,7 +131,7 @@ export class ErrorHandler {
       // Handle unified validation error format
       if (data?.errors && Array.isArray(data.errors)) {
         const messages = data.errors
-          .map((err: any) => err.message)
+          .map((err: ValidationErrorDetail) => err.message)
           .filter(Boolean)
         return messages.length > 0
           ? messages.join(", ")

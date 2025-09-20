@@ -3,6 +3,7 @@ import type {
   BookingStatus,
   RoomPublic,
 } from "@/client/types.gen"
+import { safeParseDate } from "./date-helpers"
 
 export interface BookingFilters {
   searchTerm: string
@@ -168,11 +169,11 @@ export function calculateFilteredStats(
 
   relevantBookings.forEach((booking) => {
     const bookingStart = Math.max(
-      new Date(booking.check_in).getTime(),
+      safeParseDate(booking.check_in).getTime(),
       viewStart.getTime(),
     )
     const bookingEnd = Math.min(
-      new Date(booking.check_out).getTime(),
+      safeParseDate(booking.check_out).getTime(),
       viewEnd.getTime(),
     )
     const days = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60 * 24))

@@ -203,7 +203,7 @@ export function CustomerList() {
                           </span>
                         </td>
                         <td className="py-3 px-2">
-                          <span className="bg-info-100 dark:bg-info-600/25 text-info-600 dark:text-info-400 px-3 py-1 rounded-full text-sm font-medium">
+                          <span className="bg-info-100 dark:bg-info-600/30 text-info-600 dark:text-info-400 px-3 py-1 rounded-full text-sm font-medium">
                             {customer.total_bookings}
                           </span>
                         </td>
@@ -214,20 +214,20 @@ export function CustomerList() {
                           <div className="flex items-center gap-2 justify-center">
                             <Link
                               to={`/customers/${customer.id}`}
-                              className="w-8 h-8 bg-info-100 dark:bg-info-600/25 hover:bg-info-200 text-info-600 dark:text-info-400 rounded-full inline-flex items-center justify-center"
+                              className="w-8 h-8 bg-info-100 dark:bg-info-600/30 hover:bg-info-200 text-info-600 dark:text-info-400 rounded-full inline-flex items-center justify-center"
                             >
                               <Eye className="w-4 h-4" />
                             </Link>
                             <Link
                               to={`/customers/${customer.id}/edit`}
-                              className="w-8 h-8 bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 hover:bg-success-200 rounded-full inline-flex items-center justify-center"
+                              className="w-8 h-8 bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 hover:bg-success-200 rounded-full inline-flex items-center justify-center"
                             >
                               <Edit className="w-4 h-4" />
                             </Link>
                             <button
                               onClick={() => handleDelete(customer)}
                               disabled={deleteMutation.isPending}
-                              className="w-8 h-8 bg-danger-100 dark:bg-danger-600/25 hover:bg-danger-200 text-danger-600 dark:text-danger-500 rounded-full inline-flex items-center justify-center disabled:opacity-50"
+                              className="w-8 h-8 bg-danger-100 dark:bg-danger-600/30 hover:bg-danger-200 text-danger-600 dark:text-danger-500 rounded-full inline-flex items-center justify-center disabled:opacity-50"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

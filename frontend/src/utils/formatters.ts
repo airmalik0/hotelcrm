@@ -65,6 +65,8 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
   return `+${digits}`
 }
 
+import { safeParseDateOrNull } from "./date-helpers"
+
 /**
  * Format currency amount
  */
@@ -80,7 +82,9 @@ export function formatCurrency(amount: number): string {
  */
 export function formatDate(date: string | null | undefined): string {
   if (!date) return "N/A"
-  return new Date(date).toLocaleDateString()
+  const parsedDate = safeParseDateOrNull(date)
+  if (!parsedDate) return "Invalid Date"
+  return parsedDate.toLocaleDateString()
 }
 
 /**
@@ -88,5 +92,7 @@ export function formatDate(date: string | null | undefined): string {
  */
 export function formatDateTime(date: string | null | undefined): string {
   if (!date) return "N/A"
-  return new Date(date).toLocaleString()
+  const parsedDate = safeParseDateOrNull(date)
+  if (!parsedDate) return "Invalid Date"
+  return parsedDate.toLocaleString()
 }

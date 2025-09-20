@@ -7,6 +7,7 @@ import {
   endOfWeek,
   format,
   isSameDay,
+  isValid,
   isWithinInterval,
   setHours,
   setMinutes,
@@ -14,6 +15,42 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns"
+
+/**
+ * Safe date parsing utilities to prevent app crashes from invalid dates
+ */
+export function safeParseDate(input: string | Date | number): Date {
+  try {
+    const date = new Date(input)
+    if (!isValid(date)) {
+      throw new Error(`Invalid date: ${input}`)
+    }
+    return date
+  } catch (error) {
+    throw new Error(
+      `Failed to parse date: ${input}. ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+export function safeParseDateOrNull(
+  input: string | Date | number,
+): Date | null {
+  try {
+    return safeParseDate(input)
+  } catch {
+    return null
+  }
+}
+
+export function isValidDateInput(input: string | Date | number): boolean {
+  try {
+    const date = new Date(input)
+    return isValid(date)
+  } catch {
+    return false
+  }
+}
 
 export type ViewMode = "week" | "month"
 
@@ -54,8 +91,8 @@ export function calculateBookingPosition(
   viewStart: Date,
   viewEnd: Date,
 ) {
-  const bookingStart = new Date(checkIn)
-  const bookingEnd = new Date(checkOut)
+  const bookingStart = safeParseDate(checkIn)
+  const bookingEnd = safeParseDate(checkOut)
   const viewStartTime = viewStart.getTime()
   const viewEndTime = viewEnd.getTime()
   const totalMs = viewEndTime - viewStartTime
@@ -161,10 +198,10 @@ export function bookingsOverlap(
   booking1: { check_in: string | Date; check_out: string | Date },
   booking2: { check_in: string | Date; check_out: string | Date },
 ): boolean {
-  const start1 = new Date(booking1.check_in)
-  const end1 = new Date(booking1.check_out)
-  const start2 = new Date(booking2.check_in)
-  const end2 = new Date(booking2.check_out)
+  const start1 = safeParseDate(booking1.check_in)
+  const end1 = safeParseDate(booking1.check_out)
+  const start2 = safeParseDate(booking2.check_in)
+  const end2 = safeParseDate(booking2.check_out)
 
   return start1 < end2 && start2 < end1
 }
@@ -178,8 +215,8 @@ export function isBookingInView(
   viewStart: Date,
   viewEnd: Date,
 ): boolean {
-  const bookingStart = new Date(checkIn)
-  const bookingEnd = new Date(checkOut)
+  const bookingStart = safeParseDate(checkIn)
+  const bookingEnd = safeParseDate(checkOut)
 
   return bookingStart < viewEnd && bookingEnd > viewStart
 }
@@ -191,7 +228,10 @@ export function formatDuration(
   checkIn: string | Date,
   checkOut: string | Date,
 ): string {
-  const hours = differenceInHours(new Date(checkOut), new Date(checkIn))
+  const hours = differenceInHours(
+    safeParseDate(checkOut),
+    safeParseDate(checkIn),
+  )
   const days = Math.floor(hours / 24)
   const remainingHours = hours % 24
 

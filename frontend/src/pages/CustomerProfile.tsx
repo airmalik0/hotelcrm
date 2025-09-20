@@ -2,6 +2,7 @@ import { getCustomer, updateCustomer } from "@/api/customers"
 import { BookingHistoryTab } from "@/components/customer/BookingHistoryTab"
 import { CustomerEditForm } from "@/components/customer/CustomerEditForm"
 import { ImageUpload } from "@/components/ui/ImageUpload"
+import { safeParseDate } from "@/utils/date-helpers"
 import { showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -44,12 +45,12 @@ export function CustomerProfile() {
 
   const formatDate = (date: string | null | undefined) => {
     if (!date) return "N/A"
-    return new Date(date).toLocaleDateString()
+    return safeParseDate(date).toLocaleDateString()
   }
 
   const formatDateTime = (date: string | null | undefined) => {
     if (!date) return "N/A"
-    return new Date(date).toLocaleString()
+    return safeParseDate(date).toLocaleString()
   }
 
   const formatCurrency = (amount: number) => {
@@ -62,15 +63,15 @@ export function CustomerProfile() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
-        return "bg-blue-100 dark:bg-blue-600/25 text-blue-600 dark:text-blue-400"
+        return "bg-blue-100 dark:bg-blue-600/30 text-blue-600 dark:text-blue-400"
       case "checked_in":
-        return "bg-green-100 dark:bg-green-600/25 text-green-600 dark:text-green-400"
+        return "bg-green-100 dark:bg-green-600/30 text-green-600 dark:text-green-400"
       case "checked_out":
-        return "bg-gray-100 dark:bg-gray-600/25 text-gray-600 dark:text-gray-400"
+        return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
       case "cancelled":
-        return "bg-red-100 dark:bg-red-600/25 text-red-600 dark:text-red-400"
+        return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400"
       default:
-        return "bg-neutral-100 dark:bg-neutral-600/25 text-neutral-600 dark:text-neutral-400"
+        return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
     }
   }
 
@@ -98,7 +99,7 @@ export function CustomerProfile() {
           <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
           <div className="pb-6 px-6 -mt-16">
             <div className="text-center border-b border-neutral-200 dark:border-neutral-600 pb-6">
-              <div className="w-32 h-32 rounded-lg bg-primary-100 dark:bg-primary-600/25 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
+              <div className="w-32 h-32 rounded-lg bg-primary-100 dark:bg-primary-600/30 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
                 <User className="w-16 h-16 text-primary-600 dark:text-primary-400" />
               </div>
               <h4 className="text-xl font-semibold mt-4 mb-1 text-neutral-900 dark:text-white">
@@ -156,7 +157,7 @@ export function CustomerProfile() {
                 Statistics
               </h6>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-4">
+                <div className="bg-success-100 dark:bg-success-600/30 rounded-lg p-4">
                   <DollarSign className="w-8 h-8 text-success-600 dark:text-success-400 mb-2" />
                   <p className="text-2xl font-bold text-success-600 dark:text-success-400">
                     {formatCurrency(customer.total_spent)}
@@ -165,7 +166,7 @@ export function CustomerProfile() {
                     Total Spent
                   </p>
                 </div>
-                <div className="bg-info-100 dark:bg-info-600/25 rounded-lg p-4">
+                <div className="bg-info-100 dark:bg-info-600/30 rounded-lg p-4">
                   <ShoppingBag className="w-8 h-8 text-info-600 dark:text-info-400 mb-2" />
                   <p className="text-2xl font-bold text-info-600 dark:text-info-400">
                     {customer.total_bookings}
@@ -335,7 +336,7 @@ export function CustomerProfile() {
                           Customer Since
                         </p>
                         <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                          {new Date(customer.created_at).getFullYear()}
+                          {safeParseDate(customer.created_at).getFullYear()}
                         </p>
                       </div>
                     </div>

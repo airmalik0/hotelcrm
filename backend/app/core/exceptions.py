@@ -34,3 +34,39 @@ class BusinessRuleViolation(DomainError):
         self.message = message
         self.field = field
         super().__init__(message)
+
+
+class PermissionDeniedError(DomainError):
+    """Permission denied. Maps to HTTP 403."""
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+class AuthenticationError(DomainError):
+    """Authentication failed. Maps to HTTP 401."""
+    def __init__(self, message: str = "Authentication required"):
+        self.message = message
+        super().__init__(message)
+
+
+class AuthorizationError(DomainError):
+    """Authorization failed. Maps to HTTP 403."""
+    def __init__(self, message: str = "Insufficient permissions"):
+        self.message = message
+        super().__init__(message)
+
+
+class ValidationError(DomainError):
+    """Input validation failed. Maps to HTTP 422."""
+    def __init__(self, message: str, field: str | None = None):
+        self.message = message
+        self.field = field
+        super().__init__(message)
+
+
+class ConfigurationError(DomainError):
+    """Configuration error. Maps to HTTP 500."""
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)

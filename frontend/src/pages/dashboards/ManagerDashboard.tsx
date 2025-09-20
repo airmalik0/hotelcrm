@@ -4,6 +4,7 @@
 //   roomsReadRooms,
 // } from "@/client"
 import { KPICard } from "@/components/dashboard/KPICard"
+import { safeParseDate } from "@/utils/date-helpers"
 // import { useQuery } from "@tanstack/react-query"
 import {
   Building2,
@@ -35,7 +36,7 @@ export function ManagerDashboard() {
   const todayBookings =
     bookings?.data?.filter((booking) => {
       const today = new Date().toDateString()
-      return new Date(booking.check_in).toDateString() === today
+      return safeParseDate(booking.check_in).toDateString() === today
     }) || []
 
   const occupancyRate = rooms?.count
@@ -113,7 +114,7 @@ export function ManagerDashboard() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
-                <div className="w-12 h-12 bg-success-100 dark:bg-success-600/25 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-success-100 dark:bg-success-600/30 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Building2 className="w-6 h-6 text-success-600 dark:text-success-400" />
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -125,7 +126,7 @@ export function ManagerDashboard() {
               </div>
 
               <div className="text-center">
-                <div className="w-12 h-12 bg-danger-100 dark:bg-danger-600/25 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-danger-100 dark:bg-danger-600/30 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Building2 className="w-6 h-6 text-danger-600 dark:text-danger-400" />
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -137,7 +138,7 @@ export function ManagerDashboard() {
               </div>
 
               <div className="text-center">
-                <div className="w-12 h-12 bg-warning-100 dark:bg-warning-600/25 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-warning-100 dark:bg-warning-600/30 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Building2 className="w-6 h-6 text-warning-600 dark:text-warning-400" />
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -150,7 +151,7 @@ export function ManagerDashboard() {
               </div>
 
               <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-600/25 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-600/30 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Building2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -175,7 +176,7 @@ export function ManagerDashboard() {
                     className="flex items-center justify-between py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-600/25 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-600/30 rounded-full flex items-center justify-center">
                         <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                       </div>
                       <div>
@@ -193,7 +194,7 @@ export function ManagerDashboard() {
                         ${booking.total_amount}
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {new Date(booking.check_in).toLocaleDateString()}
+                        {safeParseDate(booking.check_in).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -230,7 +231,9 @@ export function ManagerDashboard() {
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
                   {bookings?.data?.filter((booking) => {
                     const today = new Date().toDateString()
-                    return new Date(booking.check_out).toDateString() === today
+                    return (
+                      safeParseDate(booking.check_out).toDateString() === today
+                    )
                   }).length || 0}
                 </span>
               </div>

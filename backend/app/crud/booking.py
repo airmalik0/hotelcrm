@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.orm import joinedload
-from sqlmodel import Session, and_, func, select
+from sqlmodel import Session, and_, case, func, select
 
 from app.core.exceptions import BusinessRuleViolation, NotFoundError
 from app.core.retry import db_retry
@@ -93,12 +93,19 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         exclude_id: UUID | None = None,
         buffer_minutes: int = 0
     ) -> list[Booking]:
+        # Use actual check-out if available (early checkout frees room earlier)
+        # BUT always use planned check-in (room is blocked from planned time regardless of actual arrival)
+        effective_check_out = case(
+            (Booking.actual_check_out.isnot(None), Booking.actual_check_out),
+            else_=Booking.check_out
+        )
+
         query = select(Booking).where(
             and_(
                 Booking.room_id == room_id,
                 Booking.status != BookingStatus.CANCELLED,
-                Booking.check_out > check_in,
-                Booking.check_in < check_out,
+                effective_check_out > check_in,
+                Booking.check_in < check_out,  # Always use planned check_in
             )
         )
         if exclude_id:

@@ -22,12 +22,12 @@ export function KPICard({
   loading = false,
 }: KPICardProps) {
   const colorClasses = {
-    cyan: "from-cyan-600/10 to-bg-white",
-    purple: "from-purple-600/10 to-bg-white",
-    primary: "from-primary-600/10 to-bg-white",
-    success: "from-success-600/10 to-bg-white",
-    warning: "from-warning-600/10 to-bg-white",
-    danger: "from-danger-600/10 to-bg-white",
+    cyan: "from-cyan-600/30 to-bg-white",
+    purple: "from-purple-600/30 to-bg-white",
+    primary: "from-primary-600/30 to-bg-white",
+    success: "from-success-600/30 to-bg-white",
+    warning: "from-warning-600/30 to-bg-white",
+    danger: "from-danger-600/30 to-bg-white",
   }
 
   const iconColorClasses = {

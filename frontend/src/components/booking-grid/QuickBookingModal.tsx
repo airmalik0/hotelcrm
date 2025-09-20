@@ -7,6 +7,7 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -137,8 +138,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   useEffect(() => {
     const activeRoom = room || selectedRoom
     if (formData.checkIn && formData.checkOut && activeRoom) {
-      const start = new Date(formData.checkIn)
-      const end = new Date(formData.checkOut)
+      const start = safeParseDate(formData.checkIn)
+      const end = safeParseDate(formData.checkOut)
       const nights = Math.ceil(
         (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
       )
@@ -247,7 +248,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     }
 
     // Validate dates are not in the past
-    const checkInDate = new Date(formData.checkIn)
+    const checkInDate = safeParseDate(formData.checkIn)
     const now = new Date()
     if (checkInDate < now) {
       setErrors({ dates: "Check-in date cannot be in the past" })
@@ -269,8 +270,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     const bookingData: BookingCreate = {
       customer_id: selectedCustomer.id,
       room_id: activeRoom.id,
-      check_in: new Date(formData.checkIn).toISOString(),
-      check_out: new Date(formData.checkOut).toISOString(),
+      check_in: safeParseDate(formData.checkIn).toISOString(),
+      check_out: safeParseDate(formData.checkOut).toISOString(),
       total_amount: formData.totalAmount,
       discount:
         showDiscountFields && formData.discount > 0
@@ -364,14 +365,14 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   </div>
                   {/* Room Status Warning */}
                   {selectedRoom.status === "maintenance" && (
-                    <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700">
-                      <p className="text-xs text-red-700 dark:text-red-400 font-medium">
+                    <div className="p-2 rounded-lg bg-danger-100 dark:bg-danger-600/30 border border-danger-300 dark:border-danger-600">
+                      <p className="text-xs text-danger-700 dark:text-danger-400 font-medium">
                         ⚠️ Room is under maintenance. Cannot create booking.
                       </p>
                     </div>
                   )}
                   {selectedRoom.status === "occupied" && (
-                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700">
+                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700">
                       <p className="text-xs text-blue-700 dark:text-blue-400">
                         ℹ️ Room is currently occupied. You can book it for future
                         dates.
@@ -391,7 +392,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
 
             {selectedCustomer ? (
               // Selected customer display
-              <div className="flex items-center gap-2 p-3 border border-primary-500 dark:border-primary-600 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+              <div className="flex items-center gap-2 p-3 border border-primary-500 dark:border-primary-600 rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
@@ -445,7 +446,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <button
                     type="button"
                     onClick={() => setShowCreateCustomerModal(true)}
-                    className="p-2 bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/35 transition-colors"
+                    className="p-2 bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/40 transition-colors"
                     title="Create new customer"
                   >
                     <Plus className="w-4 h-4" />
@@ -645,7 +646,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                             discountReason: undefined,
                           }))
                         }}
-                        className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                        className="px-2 py-2 text-danger-600 dark:text-danger-400 hover:bg-danger-100 dark:hover:bg-danger-600/40 rounded-lg transition-colors flex-shrink-0"
                         title="Remove discount"
                       >
                         ×
@@ -705,8 +706,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   )
                 }
 
-                const start = new Date(formData.checkIn)
-                const end = new Date(formData.checkOut)
+                const start = safeParseDate(formData.checkIn)
+                const end = safeParseDate(formData.checkOut)
                 const nights = Math.ceil(
                   (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
                 )
@@ -734,7 +735,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                           <span className="text-neutral-600 dark:text-neutral-400">
                             Discount ({formData.discount}%)
                           </span>
-                          <span className="text-red-600 dark:text-red-400">
+                          <span className="text-danger-600 dark:text-danger-400">
                             -${discountAmount.toFixed(2)}
                           </span>
                         </div>
@@ -771,7 +772,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     className={clsx(
                       "px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
                       formData.paymentMethod === method
-                        ? "bg-primary-100 dark:bg-primary-600/25 border-primary-500 text-primary-600 dark:text-primary-400"
+                        ? "bg-primary-100 dark:bg-primary-600/30 border-primary-500 text-primary-600 dark:text-primary-400"
                         : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3",
                     )}
                   >

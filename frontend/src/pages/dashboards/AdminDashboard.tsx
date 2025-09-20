@@ -1,5 +1,6 @@
 import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
+import { safeParseDate } from "@/utils/date-helpers"
 import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
@@ -38,7 +39,7 @@ export function AdminDashboard() {
   const todayBookings =
     bookings?.data?.filter((booking) => {
       const today = new Date().toDateString()
-      return new Date(booking.check_in).toDateString() === today
+      return safeParseDate(booking.check_in).toDateString() === today
     }).length || 0
 
   return (
@@ -108,7 +109,7 @@ export function AdminDashboard() {
                   className="flex items-center justify-between py-3 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-600/25 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-600/30 rounded-full flex items-center justify-center">
                       <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
@@ -127,7 +128,7 @@ export function AdminDashboard() {
                       ${booking.total_amount}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {new Date(booking.created_at).toLocaleDateString()}
+                      {safeParseDate(booking.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>

@@ -21,9 +21,9 @@ import { useState } from "react"
 // Role badge colors
 const roleBadgeColors: Record<UserRole, string> = {
   admin:
-    "bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400",
-  manager: "bg-info-100 dark:bg-info-600/25 text-info-600 dark:text-info-400",
-  host: "bg-warning-100 dark:bg-warning-600/25 text-warning-600 dark:text-warning-400",
+    "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400",
+  manager: "bg-info-100 dark:bg-info-600/30 text-info-600 dark:text-info-400",
+  host: "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400",
 }
 
 // Role display names
@@ -217,7 +217,7 @@ export function UserList() {
                         </td>
                         <td className="py-3 px-2">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-600/25 flex items-center justify-center mr-3">
+                            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-600/30 flex items-center justify-center mr-3">
                               <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                             </div>
                             <span className="text-base font-normal text-neutral-900 dark:text-white">
@@ -239,11 +239,11 @@ export function UserList() {
                         </td>
                         <td className="text-center py-3 px-2">
                           {user.is_active ? (
-                            <span className="bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-600/50 px-3 py-1 rounded-full text-sm font-medium">
+                            <span className="bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-600/50 px-3 py-1 rounded-full text-sm font-medium">
                               Active
                             </span>
                           ) : (
-                            <span className="bg-neutral-100 dark:bg-neutral-600/25 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600/50 px-3 py-1 rounded-full text-sm font-medium">
+                            <span className="bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600/50 px-3 py-1 rounded-full text-sm font-medium">
                               Inactive
                             </span>
                           )}
@@ -252,7 +252,7 @@ export function UserList() {
                           <div className="flex justify-center gap-2">
                             {user.is_superuser && (
                               <span
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-600/25"
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-600/30"
                                 title="Superuser"
                               >
                                 <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -260,7 +260,7 @@ export function UserList() {
                             )}
                             {!user.is_superuser && user.role === "admin" && (
                               <span
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-danger-100 dark:bg-danger-600/25"
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-danger-100 dark:bg-danger-600/30"
                                 title="Admin"
                               >
                                 <UserCheck className="w-4 h-4 text-danger-600 dark:text-danger-400" />
@@ -272,14 +272,14 @@ export function UserList() {
                           <div className="flex items-center gap-2 justify-center">
                             <button
                               onClick={() => handleEdit(user)}
-                              className="w-8 h-8 bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 hover:bg-success-200 rounded-full inline-flex items-center justify-center"
+                              className="w-8 h-8 bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 hover:bg-success-200 rounded-full inline-flex items-center justify-center"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(user)}
                               disabled={deleteMutation.isPending}
-                              className="w-8 h-8 bg-danger-100 dark:bg-danger-600/25 hover:bg-danger-200 text-danger-600 dark:text-danger-500 rounded-full inline-flex items-center justify-center disabled:opacity-50"
+                              className="w-8 h-8 bg-danger-100 dark:bg-danger-600/30 hover:bg-danger-200 text-danger-600 dark:text-danger-500 rounded-full inline-flex items-center justify-center disabled:opacity-50"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

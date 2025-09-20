@@ -189,33 +189,41 @@ function BookingGridContent() {
           <div className="space-y-3">
             <div className="text-sm">
               Move booking from{" "}
-              <span className="font-medium">Room {data.fromRoom?.room_number}</span>{" "}
-              to <span className="font-medium">Room {data.toRoom.room_number}</span>?
+              <span className="font-medium">
+                Room {data.fromRoom?.room_number}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium">
+                Room {data.toRoom.room_number}
+              </span>
+              ?
             </div>
             {data.actualDiff > 0 && (
-              <div className="bg-orange-50 dark:bg-orange-900/25 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
+              <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
                 <div className="font-medium text-orange-800 dark:text-orange-300">
                   Additional charge: ${data.actualDiff.toFixed(2)}
                 </div>
                 <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
-                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}/night
+                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}
+                  /night
                   {data.discount && ` with ${data.discount}% discount`})
                 </div>
               </div>
             )}
             {data.actualDiff < 0 && (
-              <div className="bg-emerald-50 dark:bg-emerald-900/25 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
+              <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
                 <div className="font-medium text-emerald-800 dark:text-emerald-300">
                   Refund amount: ${Math.abs(data.actualDiff).toFixed(2)}
                 </div>
                 <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
-                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}/night
+                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}
+                  /night
                   {data.discount && ` with ${data.discount}% discount`})
                 </div>
               </div>
             )}
             {data.actualDiff === 0 && (
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+              <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-600">
                 Same price - no payment adjustment needed
               </div>
             )}
@@ -226,7 +234,12 @@ function BookingGridContent() {
           title: "Confirm Room Change",
           message,
           confirmText: "Change Room",
-          variant: data.actualDiff > 0 ? "warning" : data.actualDiff < 0 ? "success" : "primary",
+          variant:
+            data.actualDiff > 0
+              ? "warning"
+              : data.actualDiff < 0
+                ? "success"
+                : "primary",
         })
       })
     },
@@ -348,11 +361,13 @@ function BookingGridContent() {
     booking: BookingPublic,
     event: React.MouseEvent,
   ) => {
-    // TODO: Show tooltip
+    // Reserved for future tooltip implementation
+    // Could show booking details, guest info, or status on hover
   }
 
   const handleBookingLeave = () => {
-    // TODO: Hide tooltip
+    // Reserved for future tooltip implementation
+    // Would hide the tooltip shown in handleBookingHover
   }
 
   const isLoading = roomsLoading || bookingsLoading

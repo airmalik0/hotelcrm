@@ -1,6 +1,7 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import { getRoomTypeColor } from "@/utils/booking-colors"
 import { formatRoomName } from "@/utils/booking-grid"
+import { safeParseDate } from "@/utils/date-helpers"
 import clsx from "clsx"
 import {
   eachDayOfInterval,
@@ -43,8 +44,8 @@ export function MobileBookingList({
       const dayKey = format(day, "yyyy-MM-dd")
 
       const dayBookings = bookings.filter((booking) => {
-        const checkIn = new Date(booking.check_in)
-        const checkOut = new Date(booking.check_out)
+        const checkIn = safeParseDate(booking.check_in)
+        const checkOut = safeParseDate(booking.check_out)
 
         // Check if booking overlaps with this day
         return (
@@ -63,8 +64,8 @@ export function MobileBookingList({
   // Get available rooms for a specific day
   const getAvailableRoomsForDay = (date: Date) => {
     const dayBookings = bookings.filter((booking) => {
-      const checkIn = new Date(booking.check_in)
-      const checkOut = new Date(booking.check_out)
+      const checkIn = safeParseDate(booking.check_in)
+      const checkOut = safeParseDate(booking.check_out)
       return (
         isWithinInterval(date, { start: checkIn, end: checkOut }) ||
         isSameDay(date, checkIn) ||
@@ -133,7 +134,7 @@ export function MobileBookingList({
                         "hover:border-primary-300 dark:hover:border-primary-700",
                         "hover:shadow-md",
                         selectedBookingId === booking.id
-                          ? "border-primary-500 dark:border-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                          ? "border-primary-500 dark:border-primary-600 bg-primary-50 dark:bg-primary-900/30"
                           : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-dark-2",
                       )}
                     >
@@ -154,12 +155,12 @@ export function MobileBookingList({
                               className={clsx(
                                 "text-xs px-2 py-1 rounded",
                                 booking.status === "confirmed"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-600/30 dark:text-green-400"
                                   : booking.status === "checked_in"
-                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-600/30 dark:text-blue-400"
                                     : booking.status === "checked_out"
-                                      ? "bg-neutral-100 text-neutral-700 dark:bg-neutral-900/30 dark:text-neutral-400"
-                                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                                      ? "bg-neutral-100 text-neutral-700 dark:bg-neutral-600/30 dark:text-neutral-400"
+                                      : "bg-danger-100 text-danger-700 dark:bg-danger-600/30 dark:text-danger-400",
                               )}
                             >
                               {booking.status.replace("_", " ")}
@@ -177,8 +178,15 @@ export function MobileBookingList({
                             <div className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5" />
                               <span>
-                                {format(new Date(booking.check_in), "MMM d")} -
-                                {format(new Date(booking.check_out), "MMM d")}
+                                {format(
+                                  safeParseDate(booking.check_in),
+                                  "MMM d",
+                                )}{" "}
+                                -
+                                {format(
+                                  safeParseDate(booking.check_out),
+                                  "MMM d",
+                                )}
                               </span>
                             </div>
                           </div>

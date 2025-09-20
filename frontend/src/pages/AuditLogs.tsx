@@ -19,7 +19,7 @@ export function AuditLogs() {
       </div>
 
       {/* Description Card */}
-      <div className="bg-gradient-to-r from-primary-50 to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20 rounded-lg border border-primary-200 dark:border-primary-700 p-6">
+      <div className="bg-gradient-to-r from-primary-50 to-purple-50 dark:from-primary-900/30 dark:to-purple-900/30 rounded-lg border border-primary-200 dark:border-primary-700 p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-primary-100 dark:bg-primary-800 rounded-lg flex items-center justify-center flex-shrink-0">
             <Activity className="w-6 h-6 text-primary-600 dark:text-primary-400" />

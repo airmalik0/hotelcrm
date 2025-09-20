@@ -1,5 +1,6 @@
 import { getBookings } from "@/api/bookings"
 import type { BookingPublic, BookingStatus } from "@/client/types.gen"
+import { safeParseDate } from "@/utils/date-helpers"
 import { useQuery } from "@tanstack/react-query"
 import {
   ArrowDownUp,
@@ -25,25 +26,26 @@ type SortOrder = "asc" | "desc"
 const statusConfig = {
   confirmed: {
     label: "Confirmed",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-600/25 dark:text-blue-400",
+    color: "bg-blue-100 text-blue-700 dark:bg-blue-600/30 dark:text-blue-400",
     dotColor: "bg-blue-500",
   },
   checked_in: {
     label: "Checked In",
     color:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-600/25 dark:text-emerald-400",
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-600/30 dark:text-emerald-400",
     dotColor: "bg-emerald-500",
   },
   checked_out: {
     label: "Checked Out",
     color:
-      "bg-neutral-100 text-neutral-700 dark:bg-neutral-600/25 dark:text-neutral-400",
+      "bg-neutral-100 text-neutral-700 dark:bg-neutral-600/30 dark:text-neutral-400",
     dotColor: "bg-neutral-500",
   },
   cancelled: {
     label: "Cancelled",
-    color: "bg-red-100 text-red-700 dark:bg-red-600/25 dark:text-red-400",
-    dotColor: "bg-red-500",
+    color:
+      "bg-danger-100 text-danger-700 dark:bg-danger-600/30 dark:text-danger-400",
+    dotColor: "bg-danger-500",
   },
 }
 
@@ -85,13 +87,13 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
 
     // Sort
     filtered.sort((a, b) => {
-      let aValue: any
-      let bValue: any
+      let aValue: number | string
+      let bValue: number | string
 
       switch (sortField) {
         case "check_in":
-          aValue = new Date(a.check_in).getTime()
-          bValue = new Date(b.check_in).getTime()
+          aValue = safeParseDate(a.check_in).getTime()
+          bValue = safeParseDate(b.check_in).getTime()
           break
         case "total_amount":
           aValue = a.total_amount
@@ -102,8 +104,8 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
           bValue = b.status || ""
           break
         case "booking_date":
-          aValue = new Date(a.booking_date).getTime()
-          bValue = new Date(b.booking_date).getTime()
+          aValue = safeParseDate(a.booking_date).getTime()
+          bValue = safeParseDate(b.booking_date).getTime()
           break
       }
 
@@ -133,7 +135,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
   }
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
+    return safeParseDate(date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -149,7 +151,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
 
   const calculateNights = (checkIn: string, checkOut: string) => {
     const nights = Math.ceil(
-      (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
+      (safeParseDate(checkOut).getTime() - safeParseDate(checkIn).getTime()) /
         (1000 * 60 * 60 * 24),
     )
     return nights
@@ -239,7 +241,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
             {bookings.length}
           </p>
         </div>
-        <div className="bg-blue-50 dark:bg-blue-600/10 rounded-lg p-4">
+        <div className="bg-blue-50 dark:bg-blue-600/30 rounded-lg p-4">
           <p className="text-sm text-blue-600 dark:text-blue-400 mb-1">
             Confirmed
           </p>
@@ -247,7 +249,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
             {bookings.filter((b) => b.status === "confirmed").length}
           </p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-600/10 rounded-lg p-4">
+        <div className="bg-emerald-50 dark:bg-emerald-600/30 rounded-lg p-4">
           <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-1">
             Completed
           </p>
@@ -255,11 +257,11 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
             {bookings.filter((b) => b.status === "checked_out").length}
           </p>
         </div>
-        <div className="bg-red-50 dark:bg-red-600/10 rounded-lg p-4">
-          <p className="text-sm text-red-600 dark:text-red-400 mb-1">
+        <div className="bg-danger-100 dark:bg-danger-600/30 rounded-lg p-4">
+          <p className="text-sm text-danger-600 dark:text-danger-400 mb-1">
             Cancelled
           </p>
-          <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+          <p className="text-2xl font-bold text-danger-700 dark:text-danger-400">
             {bookings.filter((b) => b.status === "cancelled").length}
           </p>
         </div>
@@ -316,8 +318,8 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
                             {formatCurrency(booking.total_amount)}
                           </p>
                           {booking.discount && booking.discount > 0 && (
-                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                              {booking.discount}% discount
+                            <p className="text-xs text-danger-600 dark:text-danger-400">
+                              -{booking.discount}% discount
                             </p>
                           )}
                         </div>

@@ -119,7 +119,7 @@ export const GridHeader = memo(function GridHeader({
                   className={clsx(
                     "h-full transition-all duration-300",
                     occupancyRate >= 80
-                      ? "bg-red-500"
+                      ? "bg-danger-500"
                       : occupancyRate >= 60
                         ? "bg-amber-500"
                         : "bg-green-500",
@@ -192,7 +192,7 @@ export const GridHeader = memo(function GridHeader({
                   className={clsx(
                     "h-full transition-all duration-300",
                     occupancyRate >= 80
-                      ? "bg-red-500"
+                      ? "bg-danger-500"
                       : occupancyRate >= 60
                         ? "bg-amber-500"
                         : "bg-green-500",
@@ -274,7 +274,7 @@ export const GridHeader = memo(function GridHeader({
                 className={clsx(
                   "px-2 md:px-3 py-1.5 md:py-2 text-sm font-medium transition-colors flex items-center gap-1",
                   viewMode === "week"
-                    ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
+                    ? "bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400"
                     : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400",
                 )}
               >
@@ -286,7 +286,7 @@ export const GridHeader = memo(function GridHeader({
                 className={clsx(
                   "px-2 md:px-3 py-1.5 md:py-2 text-sm font-medium transition-colors flex items-center gap-1 border-l border-neutral-200 dark:border-neutral-600",
                   viewMode === "month"
-                    ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
+                    ? "bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400"
                     : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400",
                 )}
               >

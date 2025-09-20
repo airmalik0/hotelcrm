@@ -5,6 +5,7 @@ import type {
   District,
 } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
+import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type React from "react"
@@ -40,7 +41,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     last_name: customer.last_name || "",
     phone: customer.phone || "",
     date_of_birth: customer.date_of_birth
-      ? new Date(customer.date_of_birth).toISOString().split("T")[0]
+      ? safeParseDate(customer.date_of_birth).toISOString().split("T")[0]
       : "",
     district: customer.district || undefined,
     notes: customer.notes || "",
@@ -280,7 +281,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
           <button
             type="button"
             onClick={handleCancel}
-            className="border border-danger-600 text-danger-600 hover:bg-danger-100 dark:hover:bg-danger-600/25 text-base px-14 py-2.5 rounded-lg"
+            className="border border-danger-600 text-danger-600 hover:bg-danger-100 dark:hover:bg-danger-600/30 text-base px-14 py-2.5 rounded-lg"
           >
             Cancel
           </button>

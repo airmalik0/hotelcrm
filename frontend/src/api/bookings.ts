@@ -5,6 +5,7 @@ import type {
   BookingUpdate,
   BookingsPublic,
   DateModificationRequest,
+  DiscountModificationRequest,
   PaymentAdjustmentResponse,
   RoomChangeRequest,
 } from "@/client/types.gen"
@@ -106,6 +107,17 @@ export async function changeBookingRoom(
 ): Promise<PaymentAdjustmentResponse> {
   const response = await apiClient.put<PaymentAdjustmentResponse>(
     `/api/v1/bookings/${id}/change-room`,
+    data,
+  )
+  return response.data
+}
+
+export async function modifyBookingDiscount(
+  id: string,
+  data: DiscountModificationRequest,
+): Promise<PaymentAdjustmentResponse> {
+  const response = await apiClient.put<PaymentAdjustmentResponse>(
+    `/api/v1/bookings/${id}/modify-discount`,
     data,
   )
   return response.data

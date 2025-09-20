@@ -15,7 +15,18 @@ from app.api.main import api_router
 from app.core.config import settings
 from app.core.consistency import run_all_consistency_checks
 from app.core.db_events import setup_db_events
-from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation, NotFoundError
+from app.core.exceptions import (
+    AlreadyExistsError,
+    AuthenticationError,
+    AuthorizationError,
+    BusinessRuleViolation,
+    ConfigurationError,
+    NotFoundError,
+    PermissionDeniedError,
+)
+from app.core.exceptions import (
+    ValidationError as DomainValidationError,
+)
 from app.core.rate_limit import custom_rate_limit_exceeded_handler, ip_blocker, limiter
 from app.crud.base import ConcurrentUpdateError
 from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
@@ -154,6 +165,84 @@ async def already_exists_exception_handler(request: Request, exc: AlreadyExistsE
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content=response.model_dump()
+    )
+
+
+@app.exception_handler(AuthenticationError)
+async def authentication_exception_handler(request: Request, exc: AuthenticationError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle authentication errors.
+    Maps to HTTP 401.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": str(exc)},
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+@app.exception_handler(AuthorizationError)
+async def authorization_exception_handler(request: Request, exc: AuthorizationError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle authorization errors.
+    Maps to HTTP 403.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": str(exc)}
+    )
+
+
+@app.exception_handler(PermissionDeniedError)
+async def permission_denied_exception_handler(request: Request, exc: PermissionDeniedError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle permission denied errors.
+    Maps to HTTP 403.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": str(exc)}
+    )
+
+
+@app.exception_handler(DomainValidationError)
+async def domain_validation_exception_handler(request: Request, exc: DomainValidationError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle domain validation errors.
+    Maps to HTTP 422.
+    """
+    if exc.field:
+        error_details = [
+            ValidationErrorDetail(
+                field=exc.field,
+                message=exc.message,
+                type="validation_error"
+            )
+        ]
+        response = ValidationErrorResponse(
+            detail="Validation error",
+            errors=error_details,
+            status_code=422
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=response.model_dump()
+        )
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": str(exc)}
+    )
+
+
+@app.exception_handler(ConfigurationError)
+async def configuration_exception_handler(request: Request, exc: ConfigurationError) -> JSONResponse:  # noqa: ARG001
+    """
+    Handle configuration errors.
+    Maps to HTTP 500.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": str(exc)}
     )
 
 

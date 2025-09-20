@@ -19,7 +19,7 @@ export function MarketingCampaigns() {
       </div>
 
       {/* Description Card */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700 p-6">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 rounded-lg border border-green-200 dark:border-green-700 p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
             <Zap className="w-6 h-6 text-green-600 dark:text-green-400" />

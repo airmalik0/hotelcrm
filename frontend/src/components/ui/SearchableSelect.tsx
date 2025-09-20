@@ -1,6 +1,6 @@
 import { ChevronDown, MapPin, Search, X } from "lucide-react"
 import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 
 interface SearchableSelectProps {
   value: string | null | undefined
@@ -29,10 +29,22 @@ export function SearchableSelect({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Generate unique IDs for accessibility
+  const id = useId()
+  const labelId = `${id}-label`
+  const comboboxId = `${id}-combobox`
+  const listboxId = `${id}-listbox`
+  const searchInputId = `${id}-search`
+  const errorId = `${id}-error`
+
   // Filter options based on search term
   const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  const activeDescendantId = filteredOptions[highlightedIndex]
+    ? `${id}-option-${highlightedIndex}`
+    : undefined
 
   // Get display value
   const selectedOption = options.find((opt) => opt.value === value)
@@ -114,15 +126,29 @@ export function SearchableSelect({
   return (
     <div className="relative" ref={dropdownRef}>
       {label && (
-        <label className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2">
+        <label
+          id={labelId}
+          htmlFor={comboboxId}
+          className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
+        >
           {label} {required && <span className="text-danger-600">*</span>}
         </label>
       )}
 
       {/* Main Select Button */}
       <div
+        id={comboboxId}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-labelledby={label ? labelId : undefined}
+        aria-describedby={error ? errorId : undefined}
+        aria-activedescendant={isOpen ? activeDescendantId : undefined}
+        tabIndex={0}
         onClick={handleOpen}
-        className={`relative cursor-pointer border rounded-lg bg-neutral-50 dark:bg-neutral-700 px-4 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus-within:ring-2 focus-within:ring-primary-300 ${
+        onKeyDown={handleKeyDown}
+        className={`relative cursor-pointer border rounded-lg bg-neutral-50 dark:bg-neutral-700 px-4 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-300 ${
           error
             ? "border-danger-600"
             : "border-neutral-300 dark:border-neutral-500"
@@ -140,6 +166,7 @@ export function SearchableSelect({
               <button
                 type="button"
                 onClick={handleClear}
+                aria-label="Clear selection"
                 className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded"
               >
                 <X className="w-3 h-3" />
@@ -163,18 +190,27 @@ export function SearchableSelect({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 ref={inputRef}
+                id={searchInputId}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type to search..."
+                aria-label="Search options"
+                aria-controls={listboxId}
+                aria-activedescendant={activeDescendantId}
                 className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
               />
             </div>
           </div>
 
           {/* Options List */}
-          <div className="max-h-60 overflow-y-auto">
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-labelledby={label ? labelId : undefined}
+            className="max-h-60 overflow-y-auto"
+          >
             {filteredOptions.length === 0 ? (
               <div className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">
                 No options found
@@ -183,15 +219,18 @@ export function SearchableSelect({
               filteredOptions.map((option, index) => (
                 <div
                   key={option.value}
+                  id={`${id}-option-${index}`}
+                  role="option"
+                  aria-selected={option.value === value}
                   onClick={() => handleSelect(option.value)}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={`px-4 py-2.5 cursor-pointer flex items-center gap-2 transition-colors ${
                     index === highlightedIndex
-                      ? "bg-primary-50 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400"
+                      ? "bg-primary-50 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400"
                       : "hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
                   } ${
                     option.value === value
-                      ? "bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 font-medium"
+                      ? "bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 font-medium"
                       : ""
                   }`}
                 >
@@ -220,7 +259,11 @@ export function SearchableSelect({
       )}
 
       {/* Error Message */}
-      {error && <p className="text-danger-600 text-sm mt-1">{error}</p>}
+      {error && (
+        <p id={errorId} className="text-danger-600 text-sm mt-1" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

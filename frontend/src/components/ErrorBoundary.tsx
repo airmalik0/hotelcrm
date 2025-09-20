@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-neutral-50 dark:bg-dark-1 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-8 text-center">
-            <div className="w-16 h-16 bg-danger-100 dark:bg-danger-600/25 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-danger-100 dark:bg-danger-600/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">⚠️</span>
             </div>
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
@@ -62,11 +62,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </button>
             </div>
             {process.env.NODE_ENV === "development" && this.state.error && (
-              <details className="mt-6 p-4 bg-red-50 dark:bg-red-900/25 rounded-lg text-left">
-                <summary className="font-medium text-red-700 dark:text-red-400 cursor-pointer">
+              <details className="mt-6 p-4 bg-danger-50 dark:bg-danger-600/30 rounded-lg text-left">
+                <summary className="font-medium text-danger-700 dark:text-danger-400 cursor-pointer">
                   Error Details (Development Only)
                 </summary>
-                <pre className="mt-2 text-xs text-red-600 dark:text-red-300 overflow-auto">
+                <pre className="mt-2 text-xs text-danger-600 dark:text-danger-300 overflow-auto">
                   {this.state.error.stack}
                 </pre>
               </details>

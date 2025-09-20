@@ -18,9 +18,9 @@ export const TimelineGrid = memo(function TimelineGrid({
 
   return (
     <>
-      {markers.map((marker, index) => (
+      {markers.map((marker) => (
         <div
-          key={index}
+          key={marker.date.getTime()}
           className={clsx(
             "absolute top-0 bottom-0 w-px pointer-events-none",
             marker.isToday

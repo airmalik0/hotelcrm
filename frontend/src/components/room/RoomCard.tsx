@@ -15,15 +15,15 @@ interface RoomCardProps {
 function getStatusBadgeClasses(status: RoomStatus): string {
   switch (status) {
     case "available":
-      return "text-success-600 bg-success-100 dark:bg-success-600/25 dark:text-success-400"
+      return "text-success-600 bg-success-100 dark:bg-success-600/30 dark:text-success-400"
     case "occupied":
-      return "text-danger-600 bg-danger-100 dark:bg-danger-600/25 dark:text-danger-400"
+      return "text-danger-600 bg-danger-100 dark:bg-danger-600/30 dark:text-danger-400"
     case "cleaning":
-      return "text-warning-600 bg-warning-100 dark:bg-warning-600/25 dark:text-warning-400"
+      return "text-warning-600 bg-warning-100 dark:bg-warning-600/30 dark:text-warning-400"
     case "maintenance":
-      return "text-purple-600 bg-purple-100 dark:bg-purple-600/25 dark:text-purple-400"
+      return "text-purple-600 bg-purple-100 dark:bg-purple-600/30 dark:text-purple-400"
     default:
-      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/25 dark:text-neutral-400"
+      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/30 dark:text-neutral-400"
   }
 }
 
@@ -47,11 +47,11 @@ function getStatusText(status: RoomStatus): string {
 function getRoomTypeBadgeClasses(type: string): string {
   switch (type) {
     case "vip":
-      return "text-primary-600 bg-primary-100 dark:bg-primary-600/25 dark:text-primary-400"
+      return "text-primary-600 bg-primary-100 dark:bg-primary-600/30 dark:text-primary-400"
     case "standard":
-      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/25 dark:text-neutral-400"
+      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/30 dark:text-neutral-400"
     default:
-      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/25 dark:text-neutral-400"
+      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/30 dark:text-neutral-400"
   }
 }
 
@@ -65,7 +65,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
       <div className="border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-4 md:px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary-100 dark:bg-primary-600/25 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
@@ -93,7 +93,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
         {/* Status Badge */}
         <div className="mb-4">
           <span
-            className={`inline-flex text-sm font-semibold px-5 py-1.5 rounded-full ${getStatusBadgeClasses(
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClasses(
               room.status || "available",
             )}`}
           >
@@ -122,7 +122,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
         <div className="flex items-center gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-600">
           <button
             onClick={() => onView(room)}
-            className="w-8 h-8 bg-primary-50 dark:bg-primary-600/10 text-primary-600 dark:text-primary-400 rounded-full inline-flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-600/25 transition-colors"
+            className="w-8 h-8 bg-primary-50 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-full inline-flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-600/40 transition-colors"
             title="View Details"
           >
             <Eye className="w-4 h-4" />
@@ -131,14 +131,14 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
             <>
               <button
                 onClick={() => onEdit(room)}
-                className="w-8 h-8 bg-success-100 dark:bg-success-600/25 text-success-600 dark:text-success-400 rounded-full inline-flex items-center justify-center hover:bg-success-200 dark:hover:bg-success-600/35 transition-colors"
+                className="w-8 h-8 bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-full inline-flex items-center justify-center hover:bg-success-200 dark:hover:bg-success-600/40 transition-colors"
                 title="Edit Room"
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(room)}
-                className="w-8 h-8 bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400 rounded-full inline-flex items-center justify-center hover:bg-danger-200 dark:hover:bg-danger-600/35 transition-colors"
+                className="w-8 h-8 bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 rounded-full inline-flex items-center justify-center hover:bg-danger-200 dark:hover:bg-danger-600/40 transition-colors"
                 title="Delete Room"
               >
                 <Trash2 className="w-4 h-4" />

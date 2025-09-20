@@ -171,7 +171,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
         <form onSubmit={handleSubmit} className="p-6">
           {/* Error Alert */}
           {errors.general && (
-            <div className="mb-4 p-3 bg-danger-100 dark:bg-danger-600/25 text-danger-600 dark:text-danger-400 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 rounded-lg text-sm">
               {errors.general}
             </div>
           )}

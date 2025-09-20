@@ -50,13 +50,14 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
             statement = statement.where(AuditLog.entity_id == entity_id)
 
         if search:
-            # Use text representation of JSON for PostgreSQL
+            # Use parameterized queries to prevent SQL injection
+            search_pattern = f"%{search}%"
             search_filter = or_(
-                AuditLog.entity_name.ilike(f"%{search}%"),
-                AuditLog.description.ilike(f"%{search}%"),
-                # Cast JSON to text for searching in PostgreSQL
-                text(f"CAST(new_values AS TEXT) ILIKE '%{search}%'"),
-                text(f"CAST(old_values AS TEXT) ILIKE '%{search}%'"),
+                AuditLog.entity_name.ilike(search_pattern),
+                AuditLog.description.ilike(search_pattern),
+                # Cast JSON to text for searching in PostgreSQL with parameterized query
+                text("CAST(new_values AS TEXT) ILIKE :search_param").params(search_param=search_pattern),
+                text("CAST(old_values AS TEXT) ILIKE :search_param").params(search_param=search_pattern),
             )
             statement = statement.where(search_filter)
 
@@ -111,13 +112,14 @@ class CRUDAudit(CRUDBase[AuditLog, dict[str, Any], dict[str, Any]]):
             statement = statement.where(AuditLog.entity_id == entity_id)
 
         if search:
-            # Use text representation of JSON for PostgreSQL
+            # Use parameterized queries to prevent SQL injection
+            search_pattern = f"%{search}%"
             search_filter = or_(
-                AuditLog.entity_name.ilike(f"%{search}%"),
-                AuditLog.description.ilike(f"%{search}%"),
-                # Cast JSON to text for searching in PostgreSQL
-                text(f"CAST(new_values AS TEXT) ILIKE '%{search}%'"),
-                text(f"CAST(old_values AS TEXT) ILIKE '%{search}%'"),
+                AuditLog.entity_name.ilike(search_pattern),
+                AuditLog.description.ilike(search_pattern),
+                # Cast JSON to text for searching in PostgreSQL with parameterized query
+                text("CAST(new_values AS TEXT) ILIKE :search_param").params(search_param=search_pattern),
+                text("CAST(old_values AS TEXT) ILIKE :search_param").params(search_param=search_pattern),
             )
             statement = statement.where(search_filter)
 

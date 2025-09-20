@@ -5,6 +5,7 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { isRoomAvailable } from "@/utils/booking-grid"
+import { safeParseDate } from "@/utils/date-helpers"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingUpdate } from "@/utils/query-invalidation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -55,7 +56,9 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       await queryClient.cancelQueries({ queryKey: ["bookings"] })
 
       // Snapshot the previous value
-      const previousBookings = queryClient.getQueryData<BookingsQueryData>(["bookings"])
+      const previousBookings = queryClient.getQueryData<BookingsQueryData>([
+        "bookings",
+      ])
 
       // Optimistically update to the new value
       queryClient.setQueriesData<BookingsQueryData>(
@@ -68,7 +71,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
               booking.id === id ? { ...booking, room_id: roomId } : booking,
             ),
           }
-        }
+        },
       )
 
       // Return context with snapshot
@@ -116,8 +119,8 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       const priceDiff =
         targetRoom.price_per_night - (currentRoom?.price_per_night || 0)
       const nights = Math.ceil(
-        (new Date(booking.check_out).getTime() -
-          new Date(booking.check_in).getTime()) /
+        (safeParseDate(booking.check_out).getTime() -
+          safeParseDate(booking.check_in).getTime()) /
           (1000 * 60 * 60 * 24),
       )
 
@@ -172,8 +175,8 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       // Check if room is available for this booking
       const isAvailable = isRoomAvailable(
         room.id,
-        new Date(dragState.draggedBooking.check_in),
-        new Date(dragState.draggedBooking.check_out),
+        safeParseDate(dragState.draggedBooking.check_in),
+        safeParseDate(dragState.draggedBooking.check_out),
         existingBookings,
         dragState.draggedBooking.id,
       )
@@ -181,7 +184,8 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       setDragState((prev) => ({
         ...prev,
         dragOverRoomId: room.id,
-        isValidDrop: isAvailable && room.id !== dragState.draggedBooking.room_id,
+        isValidDrop:
+          isAvailable && room.id !== dragState.draggedBooking.room_id,
       }))
     },
     [dragState.draggedBooking, existingBookings],
