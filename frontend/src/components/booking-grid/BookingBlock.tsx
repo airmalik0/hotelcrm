@@ -108,7 +108,7 @@ export const BookingBlock = memo(function BookingBlock({
         "shadow-sm hover:shadow-md hover:z-10",
         statusColor,
         hoverColor,
-        canDrag && "cursor-move",
+        canDrag && "cursor-move draggable",
         !canDrag && "cursor-pointer",
         isDragging && "opacity-50 cursor-grabbing",
         isSelected && "ring-2 ring-primary-500 ring-offset-1",

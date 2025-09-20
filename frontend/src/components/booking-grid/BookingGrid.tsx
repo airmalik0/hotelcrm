@@ -6,7 +6,9 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { GridZoomProvider, useGridZoom } from "@/contexts/GridZoomContext"
+import type { RoomChangeData } from "@/hooks/useBookingDrag"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
+import { useConfirm } from "@/hooks/useConfirm"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useGridZoomControls } from "@/hooks/useGridZoomControls"
 import {
@@ -167,6 +169,7 @@ function BookingGridContent() {
   )
 
   // Drag & Drop functionality
+  const { confirm, ConfirmDialog } = useConfirm()
   const {
     dragState,
     handleDragStart,
@@ -174,15 +177,61 @@ function BookingGridContent() {
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    createDragImageContainer,
+    calculateRoomChangeData,
     isUpdating,
-    ConfirmDialog,
   } = useBookingDrag(allBookings)
 
-  // Create drag image container on mount
-  useEffect(() => {
-    createDragImageContainer()
-  }, [createDragImageContainer])
+  // Handle room drop with confirmation
+  const handleRoomDrop = useCallback(
+    async (e: React.DragEvent, room: RoomPublic) => {
+      await handleDrop(e, room, async (data: RoomChangeData) => {
+        const message = (
+          <div className="space-y-3">
+            <div className="text-sm">
+              Move booking from{" "}
+              <span className="font-medium">Room {data.fromRoom?.room_number}</span>{" "}
+              to <span className="font-medium">Room {data.toRoom.room_number}</span>?
+            </div>
+            {data.actualDiff > 0 && (
+              <div className="bg-warning-100 dark:bg-warning-600/25 rounded-lg p-3 text-sm border border-warning-200 dark:border-warning-600/50">
+                <div className="font-medium text-warning-700 dark:text-warning-400">
+                  Additional charge: ${data.actualDiff.toFixed(2)}
+                </div>
+                <div className="text-warning-600 dark:text-warning-500 text-xs mt-1">
+                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}/night
+                  {data.discount && ` with ${data.discount}% discount`})
+                </div>
+              </div>
+            )}
+            {data.actualDiff < 0 && (
+              <div className="bg-success-100 dark:bg-success-600/25 rounded-lg p-3 text-sm border border-success-200 dark:border-success-600/50">
+                <div className="font-medium text-success-700 dark:text-success-400">
+                  Refund amount: ${Math.abs(data.actualDiff).toFixed(2)}
+                </div>
+                <div className="text-success-600 dark:text-success-500 text-xs mt-1">
+                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}/night
+                  {data.discount && ` with ${data.discount}% discount`})
+                </div>
+              </div>
+            )}
+            {data.actualDiff === 0 && (
+              <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600">
+                Same price - no payment adjustment needed
+              </div>
+            )}
+          </div>
+        )
+
+        return await confirm({
+          title: "Confirm Room Change",
+          message,
+          confirmText: "Change Room",
+          variant: data.actualDiff > 0 ? "warning" : data.actualDiff < 0 ? "success" : "primary",
+        })
+      })
+    },
+    [handleDrop, confirm],
+  )
 
   // Navigation handlers - use full week jump and full month jump
   // Because startOfWeek/startOfMonth snap to period boundaries
@@ -430,7 +479,7 @@ function BookingGridContent() {
                         onBookingDragEnd={handleDragEnd}
                         onRoomDragOver={handleDragOver}
                         onRoomDragLeave={handleDragLeave}
-                        onRoomDrop={handleDrop}
+                        onRoomDrop={handleRoomDrop}
                         selectedBookingId={selectedBookingId}
                         isDraggedBooking={(id) =>
                           dragState.draggedBooking?.id === id

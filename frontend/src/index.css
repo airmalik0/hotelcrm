@@ -21,3 +21,18 @@ body {
   --toast-color: #f9fafb;
   --toast-border: #4b5563;
 }
+
+/* Drag and drop styles */
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* Custom drag preview - add to elements that can be dragged */
+.draggable {
+  cursor: grab;
+}
+
+.draggable:active {
+  cursor: grabbing;
+}
