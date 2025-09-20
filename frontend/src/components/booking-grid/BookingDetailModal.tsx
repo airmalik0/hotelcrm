@@ -791,17 +791,53 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       </select>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={handleRoomChange}
-                        disabled={
-                          changeRoomMutation.isPending || !selectedNewRoom
+                      {(() => {
+                        // Calculate price difference for button styling
+                        if (!selectedNewRoom) {
+                          return (
+                            <button
+                              disabled
+                              className="px-4 py-2.5 bg-gray-400 text-white font-medium rounded-lg text-sm cursor-not-allowed opacity-50"
+                            >
+                              Select a Room
+                            </button>
+                          )
                         }
-                        className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400"
-                      >
-                        {changeRoomMutation.isPending
-                          ? "Changing..."
-                          : "Change Room"}
-                      </button>
+
+                        const newRoom = availableRooms?.data?.find(r => r.id === selectedNewRoom)
+                        if (!newRoom) return null
+
+                        const nights = Math.ceil(
+                          (new Date(booking.check_out).getTime() -
+                            new Date(booking.check_in).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                        const priceDiff = (newRoom.price_per_night - (booking.room?.price_per_night || 0)) * nights
+                        const discountMultiplier = booking.discount ? (1 - booking.discount / 100) : 1
+                        const actualDiff = priceDiff * discountMultiplier
+
+                        return (
+                          <button
+                            onClick={handleRoomChange}
+                            disabled={changeRoomMutation.isPending}
+                            className={`px-4 py-2.5 font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:opacity-50 text-white ${
+                              actualDiff > 0
+                                ? "bg-orange-600 hover:bg-orange-700"
+                                : actualDiff < 0
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : "bg-primary-600 hover:bg-primary-700"
+                            } disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400`}
+                          >
+                            {changeRoomMutation.isPending
+                              ? "Changing..."
+                              : actualDiff > 0
+                              ? "Add Charge & Change"
+                              : actualDiff < 0
+                              ? "Apply Refund & Change"
+                              : "Change Room"}
+                          </button>
+                        )
+                      })()}
                       <button
                         onClick={() => {
                           setShowRoomChange(false)
@@ -1061,60 +1097,101 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </div>
                   </div>
 
-                  {/* Preview of new dates */}
-                  {dateModification.new_check_in &&
-                    dateModification.new_check_out && (
-                      <div className="p-3 bg-primary-50 dark:bg-primary-600/10 rounded-lg text-sm">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-primary-600 dark:text-primary-400">
-                            New dates:
-                          </span>
+                  {/* Preview and action buttons */}
+                  {(() => {
+                    if (!dateModification.new_check_in || !dateModification.new_check_out) {
+                      return (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleDateModification}
+                            disabled={modifyDatesMutation.isPending || !dateModification.new_check_in || !dateModification.new_check_out}
+                            className="px-4 py-2.5 bg-gray-400 text-white font-medium rounded-lg transition-colors text-sm cursor-not-allowed opacity-50"
+                          >
+                            Select Dates
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDateModification(false)
+                              setDateModification({})
+                            }}
+                            className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm font-medium"
+                          >
+                            Cancel
+                          </button>
                         </div>
-                        <div className="font-medium text-primary-700 dark:text-primary-300">
-                          {format(
-                            new Date(dateModification.new_check_in),
-                            "PPP",
-                          )}{" "}
-                          →{" "}
-                          {format(
-                            new Date(dateModification.new_check_out),
-                            "PPP",
-                          )}
+                      )
+                    }
+
+                    // Calculate price difference
+                    const newNights = Math.ceil(
+                      (new Date(dateModification.new_check_out).getTime() -
+                        new Date(dateModification.new_check_in).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    )
+                    const oldNights = Math.ceil(
+                      (new Date(booking.check_out).getTime() -
+                        new Date(booking.check_in).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    )
+                    const nightsDiff = newNights - oldNights
+                    const priceDiff = nightsDiff * (booking.room?.price_per_night || 0)
+                    const discountMultiplier = booking.discount ? (1 - booking.discount / 100) : 1
+                    const actualDiff = priceDiff * discountMultiplier
+
+                    return (
+                      <>
+                        <div className="p-3 bg-primary-50 dark:bg-primary-600/10 rounded-lg text-sm">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-primary-600 dark:text-primary-400">
+                              New dates:
+                            </span>
+                          </div>
+                          <div className="font-medium text-primary-700 dark:text-primary-300">
+                            {format(new Date(dateModification.new_check_in), "PPP")} →{" "}
+                            {format(new Date(dateModification.new_check_out), "PPP")}
+                          </div>
+                          <div className="text-xs text-primary-600 dark:text-primary-400 mt-1">
+                            {newNights} nights
+                            {nightsDiff !== 0 && (
+                              <span className={nightsDiff > 0 ? "text-orange-600 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"}>
+                                {" "}({nightsDiff > 0 ? `+${nightsDiff}` : nightsDiff})
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-primary-600 dark:text-primary-400 mt-1">
-                          {Math.ceil(
-                            (new Date(
-                              dateModification.new_check_out,
-                            ).getTime() -
-                              new Date(
-                                dateModification.new_check_in,
-                              ).getTime()) /
-                              (1000 * 60 * 60 * 24),
-                          )}{" "}
-                          nights
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleDateModification}
+                            disabled={modifyDatesMutation.isPending}
+                            className={`px-4 py-2.5 font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:opacity-50 text-white ${
+                              actualDiff > 0
+                                ? "bg-orange-600 hover:bg-orange-700"
+                                : actualDiff < 0
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : "bg-primary-600 hover:bg-primary-700"
+                            } disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400`}
+                          >
+                            {modifyDatesMutation.isPending
+                              ? "Saving..."
+                              : actualDiff > 0
+                              ? "Add Charge & Modify"
+                              : actualDiff < 0
+                              ? "Apply Refund & Modify"
+                              : "Modify Dates"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDateModification(false)
+                              setDateModification({})
+                            }}
+                            className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm font-medium"
+                          >
+                            Cancel
+                          </button>
                         </div>
-                      </div>
-                    )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleDateModification}
-                      disabled={modifyDatesMutation.isPending}
-                      className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400"
-                    >
-                      {modifyDatesMutation.isPending
-                        ? "Saving..."
-                        : "Preview Changes"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowDateModification(false)
-                        setDateModification({})
-                      }}
-                      className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm font-medium"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                      </>
+                    )
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-3">
