@@ -7,6 +7,7 @@ import logging
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy.exc import DatabaseError, IntegrityError, OperationalError
 from sqlmodel import Session, select
 
 from app.core.customer_stats import recalculate_customer_stats
@@ -61,8 +62,13 @@ def verify_customer_stats_task() -> dict[str, Any]:
                                   f"spent {old_total_spent}->{customer.total_spent}, "
                                   f"bookings {old_total_bookings}->{customer.total_bookings}")
 
+                except (OperationalError, DatabaseError, IntegrityError) as e:
+                    logger.error(f"Database error processing customer {customer.id}: {e}")
+                    errors_list = results.get("errors", [])
+                    if isinstance(errors_list, list):
+                        errors_list.append(f"Customer {customer.id}: {str(e)}")
                 except Exception as e:
-                    logger.error(f"Error processing customer {customer.id}: {e}")
+                    logger.error(f"Unexpected error processing customer {customer.id}: {e}")
                     errors_list = results.get("errors", [])
                     if isinstance(errors_list, list):
                         errors_list.append(f"Customer {customer.id}: {str(e)}")
@@ -70,8 +76,13 @@ def verify_customer_stats_task() -> dict[str, Any]:
             # Commit all changes
             session.commit()
 
+    except (OperationalError, DatabaseError, IntegrityError) as e:
+        logger.error(f"Critical database error in stats verification: {e}")
+        errors_list = results.get("errors", [])
+        if isinstance(errors_list, list):
+            errors_list.append(f"Critical DB: {str(e)}")
     except Exception as e:
-        logger.error(f"Critical error in stats verification: {e}")
+        logger.error(f"Critical unexpected error in stats verification: {e}")
         errors_list = results.get("errors", [])
         if isinstance(errors_list, list):
             errors_list.append(f"Critical: {str(e)}")
@@ -129,8 +140,13 @@ def verify_room_status_consistency_task() -> dict[str, Any]:
                             session.add(room)
                             results["rooms_fixed"] += 1
 
+                except (OperationalError, DatabaseError, IntegrityError) as e:
+                    logger.error(f"Database error processing room {room.id}: {e}")
+                    errors_list = results.get("errors", [])
+                    if isinstance(errors_list, list):
+                        errors_list.append(f"Room {room.room_number}: {str(e)}")
                 except Exception as e:
-                    logger.error(f"Error processing room {room.id}: {e}")
+                    logger.error(f"Unexpected error processing room {room.id}: {e}")
                     errors_list = results.get("errors", [])
                     if isinstance(errors_list, list):
                         errors_list.append(f"Room {room.room_number}: {str(e)}")
@@ -138,8 +154,13 @@ def verify_room_status_consistency_task() -> dict[str, Any]:
             # Commit all changes
             session.commit()
 
+    except (OperationalError, DatabaseError, IntegrityError) as e:
+        logger.error(f"Critical database error in room status verification: {e}")
+        errors_list = results.get("errors", [])
+        if isinstance(errors_list, list):
+            errors_list.append(f"Critical DB: {str(e)}")
     except Exception as e:
-        logger.error(f"Critical error in room status verification: {e}")
+        logger.error(f"Critical unexpected error in room status verification: {e}")
         errors_list = results.get("errors", [])
         if isinstance(errors_list, list):
             errors_list.append(f"Critical: {str(e)}")

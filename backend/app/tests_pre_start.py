@@ -1,6 +1,7 @@
 import logging
 
 from sqlalchemy import Engine
+from sqlalchemy.exc import DatabaseError, IntegrityError, OperationalError
 from sqlmodel import Session, select
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
@@ -24,7 +25,7 @@ def init(db_engine: Engine) -> None:
         # Try to create session to check if DB is awake
         with Session(db_engine) as session:
             session.exec(select(1))
-    except Exception as e:
+    except (OperationalError, DatabaseError, IntegrityError) as e:
         logger.error(e)
         raise e
 

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.core.config import settings
+from app.core.exceptions import ConfigurationError
 
 router = APIRouter(prefix="/utils", tags=["utils"])
 
@@ -17,7 +18,4 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "production":
     async def trigger_error() -> None:
         """Test Sentry error reporting (disabled in production)"""
         # This will create an error in Sentry
-        raise HTTPException(
-            status_code=500,
-            detail="This is a test error for Sentry (only available in non-production)",
-        )
+        raise ConfigurationError("This is a test error for Sentry (only available in non-production)")

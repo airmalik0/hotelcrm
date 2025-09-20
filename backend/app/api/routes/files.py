@@ -4,10 +4,19 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.api.deps import CurrentUser
+from app.core.exceptions import (
+    BusinessRuleViolation,
+    ConfigurationError,
+    NotFoundError,
+    PermissionDeniedError,
+)
+from app.core.exceptions import (
+    ValidationError as DomainValidationError,
+)
 
 router = APIRouter()
 
@@ -26,16 +35,14 @@ def validate_image_file(file: UploadFile) -> None:
     # Check file extension
     file_ext = Path(file.filename or "").suffix.lower()
     if file_ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+        raise DomainValidationError(
+            f"Invalid file type. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
     # Check content type
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid file type. Only images are allowed."
+        raise DomainValidationError(
+            "Invalid file type. Only images are allowed."
         )
 
     # File size will be checked during reading
@@ -68,9 +75,8 @@ async def upload_passport(
     # Read file content and check size
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB"
+        raise BusinessRuleViolation(
+            f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB"
         )
 
     # Generate unique filename
@@ -81,10 +87,22 @@ async def upload_passport(
     try:
         with open(file_path, "wb") as f:
             f.write(content)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to save file: {str(e)}"
+    except PermissionError:
+        raise PermissionDeniedError(
+            "Permission denied: Cannot write to the specified location"
+        )
+    except FileNotFoundError:
+        raise NotFoundError(
+            "Directory", "Parent directory does not exist"
+        )
+    except IsADirectoryError:
+        raise DomainValidationError(
+            "Invalid path: Path points to a directory, not a file"
+        )
+    except OSError as e:
+        # Covers disk space, I/O errors, etc.
+        raise ConfigurationError(
+            f"File system error: {str(e)}"
         )
 
     # Return the relative path that should be saved in the database
@@ -111,11 +129,11 @@ async def get_file(
     """
     # Validate file type to prevent directory traversal
     if file_type not in ["passports"]:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise NotFoundError("File", "File not found")
 
     # Validate filename to prevent directory traversal
     if "/" in filename or ".." in filename:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise NotFoundError("File", "File not found")
 
     # Build safe file path
     file_path = UPLOAD_DIR / file_type / filename
@@ -127,12 +145,15 @@ async def get_file(
 
         # Ensure the resolved path is within UPLOAD_DIR
         if not str(file_path).startswith(str(UPLOAD_DIR.resolve())):
-            raise HTTPException(status_code=404, detail="File not found")
+            raise NotFoundError("File", "File not found")
 
         if not file_path.exists() or not file_path.is_file():
-            raise HTTPException(status_code=404, detail="File not found")
-    except Exception:
-        raise HTTPException(status_code=404, detail="File not found")
+            raise NotFoundError("File", "File not found")
+    except (ValueError, OSError, RuntimeError):
+        # ValueError: Invalid path characters
+        # OSError: File system errors during path resolution
+        # RuntimeError: Path resolution errors
+        raise NotFoundError("File", "File not found")
 
     # Determine media type based on file extension
     suffix = file_path.suffix.lower()
@@ -163,11 +184,11 @@ async def delete_file(
     """
     # Validate file type to prevent directory traversal
     if file_type not in ["passports"]:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise NotFoundError("File", "File not found")
 
     # Validate filename to prevent directory traversal
     if "/" in filename or ".." in filename:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise NotFoundError("File", "File not found")
 
     # Build safe file path
     file_path = UPLOAD_DIR / file_type / filename
@@ -179,18 +200,26 @@ async def delete_file(
 
         # Ensure the resolved path is within UPLOAD_DIR
         if not str(file_path).startswith(str(UPLOAD_DIR.resolve())):
-            raise HTTPException(status_code=404, detail="File not found")
+            raise NotFoundError("File", "File not found")
 
         if not file_path.exists() or not file_path.is_file():
-            raise HTTPException(status_code=404, detail="File not found")
+            raise NotFoundError("File", "File not found")
 
         file_path.unlink()
 
         return JSONResponse(
             content={"message": "File deleted successfully"}
         )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete file: {str(e)}"
+    except PermissionError:
+        raise PermissionDeniedError(
+            "Permission denied: Cannot delete the file"
+        )
+    except FileNotFoundError:
+        raise NotFoundError(
+            "File", "File not found"
+        )
+    except OSError as e:
+        # Covers disk errors, I/O errors, etc.
+        raise ConfigurationError(
+            f"File system error: {str(e)}"
         )

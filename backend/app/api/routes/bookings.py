@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
+from app.core.exceptions import ValidationError as DomainValidationError
 from app.core.rate_limit import RateLimits, limiter
 from app.crud.booking import booking as crud_booking
 from app.models import (
@@ -15,6 +16,7 @@ from app.models import (
     BookingStatus,
     BookingUpdate,
     DateModificationRequest,
+    DiscountModificationRequest,
     Message,
     PaymentAdjustmentResponse,
     RoomChangeRequest,
@@ -41,9 +43,19 @@ def read_bookings(
     """
     Retrieve bookings.
     """
-    # Parse date strings to datetime objects
-    parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00")) if date_from else None
-    parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00")) if date_to else None
+    # Parse date strings to datetime objects with error handling
+    parsed_date_from = None
+    parsed_date_to = None
+
+    try:
+        if date_from:
+            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+        if date_to:
+            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+    except ValueError as e:
+        raise DomainValidationError(
+            f"Invalid date format. Expected ISO format (YYYY-MM-DDTHH:MM:SS): {str(e)}"
+        )
 
     bookings = crud_booking.get_multi_filtered(
         session,
@@ -127,21 +139,8 @@ def update_booking(
     service = BookingService(session)
     booking = service.get_booking_or_404(booking_id)
 
-    # Check permissions for specific operations
-    # Only admin/manager can change discount
-    if booking_in.discount is not None and booking_in.discount != booking.discount:
-        require_admin_or_manager(current_user)
-
-    # Only admin/manager can directly change total_amount without recalculation
-    if booking_in.total_amount is not None and not any([
-        booking_in.check_in, booking_in.check_out, booking_in.room_id,
-        booking_in.discount is not None
-    ]):
-        require_admin_or_manager(current_user)
-
-    # Only admin/manager can change payment method on checked-in booking
-    if booking_in.payment_method and booking.status == BookingStatus.CHECKED_IN:
-        require_admin_or_manager(current_user)
+    # Validate user permissions for all proposed changes
+    service.validate_update_permissions(current_user, booking, booking_in)
 
     # Special status transitions
     if booking_in.status and booking_in.status != booking.status:
@@ -231,6 +230,54 @@ def modify_booking_dates(
 
     # Reload with relationships
     updated_booking = crud_booking.get_with_relations(session, booking_id=booking.id)
+    return PaymentAdjustmentResponse(booking=updated_booking, payment_difference=payment_difference)
+
+
+@router.put("/{booking_id}/modify-discount", response_model=PaymentAdjustmentResponse, dependencies=[Depends(require_admin_or_manager)])
+def modify_booking_discount(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    booking_id: uuid.UUID,
+    request: DiscountModificationRequest,
+) -> Any:
+    """
+    Modify booking discount with payment recalculation.
+    Works for both CONFIRMED and CHECKED_IN bookings.
+    Administrative operation - requires admin or manager role.
+    """
+    service = BookingService(session)
+    booking = service.get_booking_or_404(booking_id)
+
+    booking, payment_difference = service.modify_discount_with_payment_adjustment(
+        booking,
+        new_discount=request.new_discount,
+        discount_reason=request.discount_reason
+    )
+
+    # Log audit
+    entity_name = get_entity_name("booking", booking)
+    changes = [f"discount: {request.new_discount}%"]
+    if request.discount_reason:
+        changes.append(f"reason: {request.discount_reason}")
+    if payment_difference != 0:
+        action_type = "refund" if payment_difference < 0 else "charge"
+        changes.append(f"payment {action_type}: ${abs(payment_difference):.2f}")
+
+    log_audit(
+        session=session,
+        user=current_user,
+        action="modified_discount",
+        entity_type="booking",
+        entity_id=booking_id,
+        entity_name=entity_name,
+        description=", ".join(changes)
+    )
+
+    session.commit()
+
+    # Reload with relationships
+    updated_booking = crud_booking.get_with_relations(session, booking_id=booking_id)
     return PaymentAdjustmentResponse(booking=updated_booking, payment_difference=payment_difference)
 
 

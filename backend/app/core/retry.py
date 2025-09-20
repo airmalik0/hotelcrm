@@ -85,9 +85,13 @@ def db_retry(
                 except NON_RETRIABLE_EXCEPTIONS:
                     # Don't retry business logic errors
                     raise
-                except Exception as e:
-                    # Log the error
+                except RETRIABLE_EXCEPTIONS as e:
+                    # Log retriable errors
                     logger.warning(f"Retriable error in {func.__name__}: {e}")
+                    raise
+                except Exception as e:
+                    # Log unexpected errors (will not be retried due to retry condition)
+                    logger.error(f"Unexpected error in {func.__name__}: {e}")
                     raise
 
             try:
@@ -137,8 +141,11 @@ def critical_db_operation(
             except NON_RETRIABLE_EXCEPTIONS as e:
                 logger.error(f"Non-retriable error in critical operation {func.__name__}: {e}")
                 raise
-            except Exception as e:
+            except RETRIABLE_EXCEPTIONS as e:
                 logger.warning(f"Retriable error in critical operation {func.__name__}: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"Unexpected error in critical operation {func.__name__}: {e}")
                 raise
 
         try:
