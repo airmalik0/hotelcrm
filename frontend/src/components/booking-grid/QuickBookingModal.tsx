@@ -350,6 +350,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     {room.status === "maintenance" &&
                       " [MAINTENANCE - UNAVAILABLE]"}
                     {room.status === "occupied" && " [OCCUPIED]"}
+                    {room.status === "cleaning" && " [CLEANING]"}
                   </option>
                 ))}
               </select>
