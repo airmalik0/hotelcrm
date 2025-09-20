@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.orm import joinedload
@@ -91,14 +91,14 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         check_in: datetime,
         check_out: datetime,
         exclude_id: UUID | None = None,
-        buffer_minutes: int = 15
+        buffer_minutes: int = 0
     ) -> list[Booking]:
         query = select(Booking).where(
             and_(
                 Booking.room_id == room_id,
                 Booking.status != BookingStatus.CANCELLED,
-                Booking.check_out > check_in - timedelta(minutes=buffer_minutes),
-                Booking.check_in < check_out + timedelta(minutes=buffer_minutes),
+                Booking.check_out > check_in,
+                Booking.check_in < check_out,
             )
         )
         if exclude_id:
@@ -161,7 +161,7 @@ class CRUDBooking(CRUDBase[Booking, BookingCreate, BookingUpdate]):
         )
 
         if overlapping:
-            raise BusinessRuleViolation("Room is not available for the selected dates (minimum 15-minute gap required between bookings)")
+            raise BusinessRuleViolation("Room is not available for the selected dates")
 
         # Create the booking - safe now as room is locked
         booking = Booking.model_validate(obj_in)

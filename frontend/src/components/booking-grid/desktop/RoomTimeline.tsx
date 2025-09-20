@@ -102,9 +102,13 @@ export const RoomTimeline = memo(function RoomTimeline({
     >
       {/* Render bookings */}
       {bookings.map((booking) => {
+        // Use actual dates if available, otherwise use planned dates
+        const checkIn = booking.actual_check_in || booking.check_in
+        const checkOut = booking.actual_check_out || booking.check_out
+
         const position = calculateBookingPosition(
-          booking.check_in,
-          booking.check_out,
+          checkIn,
+          checkOut,
           viewStart,
           viewEnd,
         )

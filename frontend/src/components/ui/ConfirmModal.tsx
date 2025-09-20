@@ -1,4 +1,4 @@
-import { AlertTriangle, X } from "lucide-react"
+import { AlertTriangle, CheckCircle, Info, X } from "lucide-react"
 import type { ReactNode } from "react"
 
 interface ConfirmModalProps {
@@ -31,30 +31,36 @@ export function ConfirmModal({
       iconBg: "bg-red-100 dark:bg-red-600/25",
       iconColor: "text-red-600 dark:text-red-400",
       confirmBtn: "bg-red-600 hover:bg-red-700 text-white",
+      Icon: AlertTriangle,
     },
     warning: {
-      iconBg: "bg-yellow-100 dark:bg-yellow-600/25",
-      iconColor: "text-yellow-600 dark:text-yellow-400",
-      confirmBtn: "bg-yellow-600 hover:bg-yellow-700 text-white",
+      iconBg: "bg-orange-100 dark:bg-orange-600/25",
+      iconColor: "text-orange-600 dark:text-orange-400",
+      confirmBtn: "bg-orange-600 hover:bg-orange-700 text-white",
+      Icon: AlertTriangle,
     },
     info: {
       iconBg: "bg-blue-100 dark:bg-blue-600/25",
       iconColor: "text-blue-600 dark:text-blue-400",
       confirmBtn: "bg-blue-600 hover:bg-blue-700 text-white",
+      Icon: Info,
     },
     primary: {
       iconBg: "bg-primary-100 dark:bg-primary-600/25",
       iconColor: "text-primary-600 dark:text-primary-400",
       confirmBtn: "bg-primary-600 hover:bg-primary-700 text-white",
+      Icon: Info,
     },
     success: {
       iconBg: "bg-emerald-100 dark:bg-emerald-600/25",
       iconColor: "text-emerald-600 dark:text-emerald-400",
       confirmBtn: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      Icon: CheckCircle,
     },
   }
 
   const styles = variantStyles[variant]
+  const IconComponent = styles.Icon
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -79,7 +85,7 @@ export function ConfirmModal({
         <div
           className={`w-12 h-12 ${styles.iconBg} rounded-full flex items-center justify-center mb-4`}
         >
-          <AlertTriangle className={`w-6 h-6 ${styles.iconColor}`} />
+          <IconComponent className={`w-6 h-6 ${styles.iconColor}`} />
         </div>
 
         {/* Content */}

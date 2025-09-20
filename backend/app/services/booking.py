@@ -201,18 +201,6 @@ class BookingService:
         if booking.status != BookingStatus.CONFIRMED:
             raise BusinessRuleViolation("Only confirmed bookings can be checked in")
 
-        # Validate check-in time has arrived
-        from datetime import datetime, timezone
-        current_time = datetime.now(timezone.utc)
-        if current_time < booking.check_in:
-            time_until_checkin = booking.check_in - current_time
-            hours = int(time_until_checkin.total_seconds() / 3600)
-            minutes = int((time_until_checkin.total_seconds() % 3600) / 60)
-            if hours > 0:
-                raise BusinessRuleViolation(f"Check-in time has not arrived yet. Please wait {hours} hours and {minutes} minutes")
-            else:
-                raise BusinessRuleViolation(f"Check-in time has not arrived yet. Please wait {minutes} minutes")
-
         room = self.crud_room.get(self.session, id=booking.room_id)
         if not room:
             raise NotFoundError("Room", str(booking.room_id))
@@ -240,8 +228,15 @@ class BookingService:
         if overlapping:
             raise BusinessRuleViolation("Cannot check in: room has conflicting bookings")
 
-        # Update statuses
-        self.crud_booking.update_status(self.session, booking=booking, status=BookingStatus.CHECKED_IN)
+        # Update statuses and set actual check-in time
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+
+        booking_update = BookingUpdate(
+            status=BookingStatus.CHECKED_IN,
+            actual_check_in=current_time
+        )
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
         self.crud_room.update_status(self.session, room=room, status=RoomStatus.OCCUPIED)
 
         return booking
@@ -267,7 +262,15 @@ class BookingService:
             # Room needs cleaning after checkout
             self.crud_room.update_status(self.session, room=room, status=RoomStatus.CLEANING)
 
-        self.crud_booking.update_status(self.session, booking=booking, status=BookingStatus.CHECKED_OUT)
+        # Update status and set actual check-out time
+        from datetime import datetime, timezone
+        current_time = datetime.now(timezone.utc)
+
+        booking_update = BookingUpdate(
+            status=BookingStatus.CHECKED_OUT,
+            actual_check_out=current_time
+        )
+        booking = self.crud_booking.update(self.session, db_obj=booking, obj_in=booking_update)
 
         return booking
 

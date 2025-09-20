@@ -1,6 +1,4 @@
 import {
-  actualCheckInBooking,
-  actualCheckOutBooking,
   changeBookingRoom,
   checkInBooking,
   checkOutBooking,
@@ -211,29 +209,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     },
   })
 
-  // Actual check-in mutation
-  const actualCheckInMutation = useMutation({
-    mutationFn: (id: string) => actualCheckInBooking(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
-      showSuccess("Actual check-in time recorded!")
-    },
-    onError: (error) => {
-      showError(error, "Failed to record actual check-in")
-    },
-  })
-
-  // Actual check-out mutation
-  const actualCheckOutMutation = useMutation({
-    mutationFn: (id: string) => actualCheckOutBooking(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
-      showSuccess("Actual check-out time recorded!")
-    },
-    onError: (error) => {
-      showError(error, "Failed to record actual check-out")
-    },
-  })
 
   // Modify dates mutation
   const modifyDatesMutation = useMutation({
@@ -358,6 +333,76 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     },
   })
 
+  // Helper to handle room change with confirmation
+  const handleRoomChange = async () => {
+    if (!booking || !selectedNewRoom) return
+
+    // Find the new room details
+    const newRoom = availableRooms?.data?.find(r => r.id === selectedNewRoom)
+    if (!newRoom) return
+
+    const nights = Math.ceil(
+      (new Date(booking.check_out).getTime() -
+        new Date(booking.check_in).getTime()) /
+        (1000 * 60 * 60 * 24)
+    )
+
+    const priceDiff = (newRoom.price_per_night - (booking.room?.price_per_night || 0)) * nights
+
+    // Calculate actual amounts with discount
+    const hasDiscount = booking.discount && booking.discount > 0
+    const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
+    const actualDiff = priceDiff * discountMultiplier
+
+    // Build confirmation message
+    let message = (
+      <div className="space-y-3">
+        <div className="text-sm">
+          <div>Move booking from <span className="font-medium">Room {booking.room?.room_number}</span> to <span className="font-medium">Room {newRoom.room_number}</span>?</div>
+        </div>
+        {actualDiff > 0 && (
+          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-sm">
+            <div className="font-medium text-orange-700 dark:text-orange-400">
+              Additional charge: ${actualDiff.toFixed(2)}
+            </div>
+            <div className="text-orange-600 dark:text-orange-500 text-xs mt-1">
+              ({nights} nights × ${Math.abs(newRoom.price_per_night - (booking.room?.price_per_night || 0)).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            </div>
+          </div>
+        )}
+        {actualDiff < 0 && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-sm">
+            <div className="font-medium text-emerald-700 dark:text-emerald-400">
+              Refund amount: ${Math.abs(actualDiff).toFixed(2)}
+            </div>
+            <div className="text-emerald-600 dark:text-emerald-500 text-xs mt-1">
+              ({nights} nights × ${Math.abs(newRoom.price_per_night - (booking.room?.price_per_night || 0)).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+            </div>
+          </div>
+        )}
+        {actualDiff === 0 && (
+          <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400">
+            Same price - no payment adjustment needed
+          </div>
+        )}
+      </div>
+    )
+
+    const confirmed = await confirm({
+      title: "Confirm Room Change",
+      message,
+      confirmText: "Change Room",
+      variant: actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
+    })
+
+    if (confirmed) {
+      changeRoomMutation.mutate({
+        id: booking.id,
+        data: { new_room_id: selectedNewRoom },
+      })
+    }
+  }
+
   const handleSave = () => {
     if (!booking) return
 
@@ -388,21 +433,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
   const handleCheckIn = async () => {
     if (!booking) return
-
-    // Client-side validation: Check if check-in time has arrived
-    const now = new Date()
-    const checkInTime = new Date(booking.check_in)
-    if (now < checkInTime) {
-      const timeDiff = checkInTime.getTime() - now.getTime()
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60))
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
-      const message =
-        hours > 0
-          ? `Check-in time has not arrived yet. Please wait ${hours} hours and ${minutes} minutes.`
-          : `Check-in time has not arrived yet. Please wait ${minutes} minutes.`
-      showError(message)
-      return
-    }
 
     // Client-side validation: Check room status
     if (booking.room?.status === "maintenance") {
@@ -626,6 +656,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             (room) =>
                               // Exclude current room
                               room.id !== booking.room_id &&
+                              // Exclude maintenance rooms
+                              room.status !== "maintenance" &&
                               // Check for booking conflicts in the date range
                               // (not room status, as room might be occupied now but available for guest's dates)
                               isRoomAvailable(
@@ -656,14 +688,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => {
-                          if (booking && selectedNewRoom) {
-                            changeRoomMutation.mutate({
-                              id: booking.id,
-                              data: { new_room_id: selectedNewRoom },
-                            })
-                          }
-                        }}
+                        onClick={handleRoomChange}
                         disabled={
                           changeRoomMutation.isPending || !selectedNewRoom
                         }
@@ -974,33 +999,6 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </div>
                   )}
 
-                  {/* Actual operation buttons */}
-                  {canPerformActualOperations() && (
-                    <div className="flex gap-2 pt-2">
-                      {booking.status === "checked_in" && !booking.actual_check_in && (
-                        <button
-                          onClick={() => actualCheckInMutation.mutate(booking.id)}
-                          disabled={actualCheckInMutation.isPending}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-xs font-medium disabled:cursor-not-allowed"
-                        >
-                          {actualCheckInMutation.isPending
-                            ? "Recording..."
-                            : "Record Actual Check-in"}
-                        </button>
-                      )}
-                      {booking.status === "checked_in" && !booking.actual_check_out && (
-                        <button
-                          onClick={() => actualCheckOutMutation.mutate(booking.id)}
-                          disabled={actualCheckOutMutation.isPending}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors text-xs font-medium disabled:cursor-not-allowed"
-                        >
-                          {actualCheckOutMutation.isPending
-                            ? "Recording..."
-                            : "Record Actual Check-out"}
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </div>

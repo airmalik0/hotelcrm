@@ -216,25 +216,38 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
         const actualDiff = totalDiffBeforeDiscount * discountMultiplier
 
         // Show confirmation with price difference
-        let message = `Move booking from Room ${currentRoom?.room_number} to Room ${targetRoom.room_number}?\n\n`
-
-        if (actualDiff > 0) {
-          message += `⚠️ Additional charge: $${actualDiff.toFixed(2)}\n`
-          if (hasDiscount) {
-            message += `(${nights} nights × $${priceDiff.toFixed(2)}/night with ${booking.discount}% discount)`
-          } else {
-            message += `(${nights} nights × $${priceDiff.toFixed(2)}/night)`
-          }
-        } else if (actualDiff < 0) {
-          message += `✅ Refund amount: $${Math.abs(actualDiff).toFixed(2)}\n`
-          if (hasDiscount) {
-            message += `(${nights} nights × $${Math.abs(priceDiff).toFixed(2)}/night with ${booking.discount}% discount)`
-          } else {
-            message += `(${nights} nights × $${Math.abs(priceDiff).toFixed(2)}/night)`
-          }
-        } else {
-          message += "No price difference"
-        }
+        const message = (
+          <div className="space-y-3">
+            <div className="text-sm">
+              <div>Move booking from <span className="font-medium">Room {currentRoom?.room_number}</span> to <span className="font-medium">Room {targetRoom.room_number}</span>?</div>
+            </div>
+            {actualDiff > 0 && (
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-sm">
+                <div className="font-medium text-orange-700 dark:text-orange-400">
+                  Additional charge: ${actualDiff.toFixed(2)}
+                </div>
+                <div className="text-orange-600 dark:text-orange-500 text-xs mt-1">
+                  ({nights} nights × ${Math.abs(priceDiff).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+                </div>
+              </div>
+            )}
+            {actualDiff < 0 && (
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-sm">
+                <div className="font-medium text-emerald-700 dark:text-emerald-400">
+                  Refund amount: ${Math.abs(actualDiff).toFixed(2)}
+                </div>
+                <div className="text-emerald-600 dark:text-emerald-500 text-xs mt-1">
+                  ({nights} nights × ${Math.abs(priceDiff).toFixed(2)}/night{hasDiscount && ` with ${booking.discount}% discount`})
+                </div>
+              </div>
+            )}
+            {actualDiff === 0 && (
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 text-sm text-neutral-600 dark:text-neutral-400">
+                Same price - no payment adjustment needed
+              </div>
+            )}
+          </div>
+        )
 
         const confirmed = await confirm({
           title: "Confirm Room Change",

@@ -7,7 +7,7 @@ interface ConfirmOptions {
   message: string | ReactNode
   confirmText?: string
   cancelText?: string
-  variant?: "danger" | "warning" | "info"
+  variant?: "danger" | "warning" | "info" | "primary" | "success"
 }
 
 interface ConfirmState extends ConfirmOptions {
