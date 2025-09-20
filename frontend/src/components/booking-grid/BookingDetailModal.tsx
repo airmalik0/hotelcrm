@@ -6,6 +6,7 @@ import {
   checkOutBooking,
   deleteBooking,
   getBooking,
+  getBookings,
   modifyBookingDates,
   updateBooking,
 } from "@/api/bookings"
@@ -18,6 +19,7 @@ import type {
 } from "@/client/types.gen"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
+import { isRoomAvailable } from "@/utils/booking-grid"
 import { showError, showSuccess } from "@/utils/error-handling"
 import {
   invalidateAfterBookingCancel,
@@ -99,11 +101,18 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     enabled: !!bookingId && isOpen,
   })
 
-  // Fetch available rooms for room change
+  // Fetch rooms for room change
   const { data: availableRooms } = useQuery({
-    queryKey: ["rooms", "available"],
+    queryKey: ["rooms", "all"],
     queryFn: () => getRooms({ limit: 100 }),
     enabled: showRoomChange,
+  })
+
+  // Fetch all bookings to check for availability conflicts
+  const { data: allBookings } = useQuery({
+    queryKey: ["bookings", "forAvailability"],
+    queryFn: () => getBookings({ limit: 1000 }),
+    enabled: showRoomChange && !!booking,
   })
 
   // Set form data when booking loads
@@ -605,20 +614,44 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         value={selectedNewRoom}
                         onChange={(e) => setSelectedNewRoom(e.target.value)}
                         className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        disabled={!availableRooms || !allBookings}
                       >
-                        <option value="">Choose a room...</option>
-                        {availableRooms?.data
-                          ?.filter(
+                        <option value="">
+                          {!availableRooms || !allBookings
+                            ? "Loading rooms..."
+                            : "Choose a room..."}
+                        </option>
+                        {availableRooms?.data && allBookings?.data && (() => {
+                          const filteredRooms = availableRooms.data.filter(
                             (room) =>
-                              room.status === "available" &&
-                              room.id !== booking.room_id,
+                              // Exclude current room
+                              room.id !== booking.room_id &&
+                              // Check for booking conflicts in the date range
+                              // (not room status, as room might be occupied now but available for guest's dates)
+                              isRoomAvailable(
+                                room.id,
+                                new Date(booking.check_in),
+                                new Date(booking.check_out),
+                                allBookings.data || [],
+                                booking.id, // Exclude current booking from conflict check
+                              ),
                           )
-                          .map((room) => (
+
+                          if (filteredRooms.length === 0) {
+                            return (
+                              <option value="" disabled>
+                                No rooms available for these dates
+                              </option>
+                            )
+                          }
+
+                          return filteredRooms.map((room) => (
                             <option key={room.id} value={room.id}>
-                              {room.room_number} - {room.room_type} ($
-                              {room.price_per_night}/night)
+                              {room.room_number} - {room.room_type} (${room.price_per_night}/night)
+                              {room.status !== "available" && ` [${room.status}]`}
                             </option>
-                          ))}
+                          ))
+                        })()}
                       </select>
                     </div>
                     <div className="flex gap-2">
