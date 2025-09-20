@@ -208,16 +208,30 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
             new Date(booking.check_in).getTime()) /
             (1000 * 60 * 60 * 24),
         )
-        const totalDiff = priceDiff * nights
+
+        // Calculate actual amounts with discount
+        const hasDiscount = booking.discount && booking.discount > 0
+        const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
+        const totalDiffBeforeDiscount = priceDiff * nights
+        const actualDiff = totalDiffBeforeDiscount * discountMultiplier
 
         // Show confirmation with price difference
         let message = `Move booking from Room ${currentRoom?.room_number} to Room ${targetRoom.room_number}?\n\n`
-        if (totalDiff > 0) {
-          message += `⚠️ Additional charge: $${totalDiff.toFixed(2)}\n`
-          message += `(${nights} nights × $${priceDiff.toFixed(2)}/night difference)`
-        } else if (totalDiff < 0) {
-          message += `✅ Refund amount: $${Math.abs(totalDiff).toFixed(2)}\n`
-          message += `(${nights} nights × $${Math.abs(priceDiff).toFixed(2)}/night difference)`
+
+        if (actualDiff > 0) {
+          message += `⚠️ Additional charge: $${actualDiff.toFixed(2)}\n`
+          if (hasDiscount) {
+            message += `(${nights} nights × $${priceDiff.toFixed(2)}/night with ${booking.discount}% discount)`
+          } else {
+            message += `(${nights} nights × $${priceDiff.toFixed(2)}/night)`
+          }
+        } else if (actualDiff < 0) {
+          message += `✅ Refund amount: $${Math.abs(actualDiff).toFixed(2)}\n`
+          if (hasDiscount) {
+            message += `(${nights} nights × $${Math.abs(priceDiff).toFixed(2)}/night with ${booking.discount}% discount)`
+          } else {
+            message += `(${nights} nights × $${Math.abs(priceDiff).toFixed(2)}/night)`
+          }
         } else {
           message += "No price difference"
         }
@@ -226,7 +240,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
           title: "Confirm Room Change",
           message,
           confirmText: "Change Room",
-          variant: totalDiff > 0 ? "warning" : totalDiff < 0 ? "success" : "primary",
+          variant: actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
         })
 
         if (confirmed) {

@@ -231,7 +231,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     mutationFn: ({ id, data }: { id: string; data: DateModificationRequest }) =>
       modifyBookingDates(id, data),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+      // Use the helper to properly invalidate all relevant queries including the booking grid
+      invalidateAfterBookingUpdate(queryClient, bookingId!)
       const diff = response.payment_difference
       if (diff > 0) {
         showSuccess(`Dates modified. Additional charge: $${diff.toFixed(2)}`)
@@ -282,12 +283,25 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       "PPP",
     )} (${newNights} nights)\n\n`
 
-    if (priceDiff > 0) {
-      message += `⚠️ Additional charge: $${priceDiff.toFixed(2)}\n`
-      message += `(${nightsDiff} additional nights × $${booking.room.price_per_night}/night)`
-    } else if (priceDiff < 0) {
-      message += `✅ Refund amount: $${Math.abs(priceDiff).toFixed(2)}\n`
-      message += `(${Math.abs(nightsDiff)} fewer nights × $${booking.room.price_per_night}/night)`
+    // Calculate actual amounts with discount
+    const hasDiscount = booking.discount && booking.discount > 0
+    const discountMultiplier = hasDiscount ? (1 - booking.discount / 100) : 1
+    const actualDiff = priceDiff * discountMultiplier
+
+    if (actualDiff > 0) {
+      message += `⚠️ Additional charge: $${actualDiff.toFixed(2)}\n`
+      if (hasDiscount) {
+        message += `(${nightsDiff} additional nights × $${booking.room.price_per_night}/night with ${booking.discount}% discount)`
+      } else {
+        message += `(${nightsDiff} additional nights × $${booking.room.price_per_night}/night)`
+      }
+    } else if (actualDiff < 0) {
+      message += `✅ Refund amount: $${Math.abs(actualDiff).toFixed(2)}\n`
+      if (hasDiscount) {
+        message += `(${Math.abs(nightsDiff)} fewer nights × $${booking.room.price_per_night}/night with ${booking.discount}% discount)`
+      } else {
+        message += `(${Math.abs(nightsDiff)} fewer nights × $${booking.room.price_per_night}/night)`
+      }
     } else {
       message += "No price difference"
     }
@@ -296,7 +310,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       title: "Confirm Date Modification",
       message,
       confirmText: "Modify Dates",
-      variant: priceDiff > 0 ? "warning" : priceDiff < 0 ? "success" : "primary",
+      variant: actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
     })
 
     if (confirmed) {
@@ -312,8 +326,13 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     mutationFn: ({ id, data }: { id: string; data: RoomChangeRequest }) =>
       changeBookingRoom(id, data),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
-      queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      // Use the helper to properly invalidate all relevant queries including the booking grid
+      // Room change affects the booking grid position
+      invalidateAfterBookingUpdate(queryClient, bookingId!, {
+        roomChanged: true,
+        oldRoomId: booking?.room_id,
+        newRoomId: selectedNewRoom,
+      })
       const diff = response.payment_difference
       if (diff > 0) {
         showSuccess(`Room changed. Additional charge: $${diff.toFixed(2)}`)
