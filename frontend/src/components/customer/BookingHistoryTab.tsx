@@ -1,6 +1,7 @@
 import { getBookings } from "@/api/bookings"
 import type { BookingPublic, BookingStatus } from "@/client/types.gen"
 import { safeParseDate } from "@/utils/date-helpers"
+import { differenceInDays } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import {
   ArrowDownUp,
@@ -153,11 +154,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
     // Calculate nights the same way as backend: difference in days only
     const checkInDate = safeParseDate(checkIn)
     const checkOutDate = safeParseDate(checkOut)
-    const startDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate())
-    const endDate = new Date(checkOutDate.getFullYear(), checkOutDate.getMonth(), checkOutDate.getDate())
-    const diffTime = endDate.getTime() - startDate.getTime()
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    return Math.max(1, diffDays)
+    return Math.max(1, differenceInDays(checkOutDate, checkInDate))
   }
 
   if (isLoading) {
