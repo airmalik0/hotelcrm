@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
-from app.core.exceptions import ValidationError as DomainValidationError
+from app.core.exceptions import ValidationError
 from app.core.rate_limit import RateLimits, limiter
 from app.crud.booking import booking as crud_booking
 from app.models import (
@@ -53,7 +53,7 @@ def read_bookings(
         if date_to:
             parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
     except ValueError as e:
-        raise DomainValidationError(
+        raise ValidationError(
             f"Invalid date format. Expected ISO format (YYYY-MM-DDTHH:MM:SS): {str(e)}"
         )
 
