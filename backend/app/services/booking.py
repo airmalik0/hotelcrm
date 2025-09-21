@@ -634,10 +634,6 @@ class BookingService:
             if booking.status not in [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]:
                 raise BusinessRuleViolation("Hosts can only modify dates for confirmed or checked-in bookings")
 
-            # For checked-in bookings, hosts can only modify check-out date
-            if booking.status == BookingStatus.CHECKED_IN and new_check_in:
-                raise BusinessRuleViolation("Hosts cannot modify check-in date for already checked-in bookings")
-
         # Call the original method with validated parameters
         return self.modify_booking_dates(booking, new_check_in, new_check_out)
 
@@ -660,8 +656,10 @@ class BookingService:
         if booking.status == BookingStatus.CANCELLED:
             raise BusinessRuleViolation("Cannot modify cancelled bookings")
 
-        # Note: Role-based check-in modification restrictions are handled in modify_booking_dates_with_role_check
-        # Admin/Manager can modify check-in even for checked-in bookings
+        # Business rule: Cannot modify check-in date after guest has already checked in
+        # This is a historical record and should not be changed for ANY role
+        if booking.status == BookingStatus.CHECKED_IN and new_check_in:
+            raise BusinessRuleViolation("Cannot modify check-in date for already checked-in bookings - this is a historical record")
 
         old_total = booking.total_amount
         changes: dict[str, Any] = {}
