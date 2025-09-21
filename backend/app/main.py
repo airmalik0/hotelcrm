@@ -28,7 +28,6 @@ from app.core.exceptions import (
     ValidationError as DomainValidationError,
 )
 from app.core.rate_limit import custom_rate_limit_exceeded_handler, ip_blocker, limiter
-from app.crud.base import ConcurrentUpdateError
 from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -328,16 +327,6 @@ async def integrity_exception_handler(request: Request, exc: IntegrityError) -> 
             content={"detail": "Database constraint violation"}
         )
 
-
-@app.exception_handler(ConcurrentUpdateError)
-async def concurrent_update_exception_handler(request: Request, exc: ConcurrentUpdateError) -> JSONResponse:  # noqa: ARG001
-    """
-    Handle concurrent update conflicts (optimistic locking).
-    """
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content={"detail": "The record was modified by another user. Please refresh and try again."}
-    )
 
 
 # Setup scheduler for background tasks

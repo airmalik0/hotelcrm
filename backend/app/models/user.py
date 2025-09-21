@@ -1,7 +1,9 @@
 import re
 import uuid
+from datetime import datetime, timezone
 
 from pydantic import field_validator
+from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel
 
 from .common import UserRole
@@ -97,6 +99,8 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
 
 
 class UserPublic(UserBase):

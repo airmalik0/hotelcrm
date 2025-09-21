@@ -20,8 +20,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.crud.base import ConcurrentUpdateError
-
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
@@ -37,7 +35,6 @@ RETRIABLE_EXCEPTIONS = (
 # Exceptions that should NOT be retried (business logic errors)
 NON_RETRIABLE_EXCEPTIONS = (
     ValueError,  # Business logic validation errors
-    ConcurrentUpdateError,  # Optimistic locking conflicts
     IntegrityError,  # Foreign key, unique constraints (usually not transient)
 )
 

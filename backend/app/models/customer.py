@@ -74,7 +74,6 @@ class Customer(CustomerBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     tags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
-    version: int = Field(default=0, index=True)
 
 
 class CustomerCreate(CustomerBase):

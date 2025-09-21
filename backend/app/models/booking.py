@@ -45,7 +45,7 @@ class PaymentCalculationMixin:
 
 class BookingBase(SQLModel):
     customer_id: uuid.UUID = Field(foreign_key="customer.id", index=True)
-    room_id: uuid.UUID = Field(foreign_key="room.id")
+    room_id: uuid.UUID = Field(foreign_key="room.id", index=True)
     check_in: datetime = Field(sa_column=Column(DateTime(timezone=True)))
     check_out: datetime = Field(sa_column=Column(DateTime(timezone=True)))
     status: BookingStatus = Field(default=BookingStatus.CONFIRMED, index=True)
@@ -78,7 +78,6 @@ class Booking(BookingBase, PaymentCalculationMixin, table=True):
     booking_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
-    version: int = Field(default=0, index=True)
 
     # Actual dates (when guest really checked in/out)
     actual_check_in: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)))
