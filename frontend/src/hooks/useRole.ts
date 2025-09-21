@@ -34,7 +34,8 @@ export function useRole() {
   const canPerformActualOperations = (): boolean =>
     hasAnyRole(["admin", "manager", "host"]) // All roles can set actual times
 
-  const canModifyPlannedDates = (): boolean => isAdminOrManager() // Only admin/manager can change planned dates with payment recalc
+  const canModifyPlannedDates = (): boolean =>
+    hasAnyRole(["admin", "manager", "host"]) // Admin/manager can change any dates, host can change dates with restrictions
 
   const canChangeRoom = (bookingStatus?: string): boolean => {
     // Hosts can change rooms for confirmed bookings

@@ -509,6 +509,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     if (
       discountChanged &&
+      canUpdateDiscount &&
       (booking.status === "checked_in" || booking.status === "confirmed")
     ) {
       // Use special discount modification API for proper payment adjustments
@@ -970,22 +971,31 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     Stay Duration
                   </h3>
                 </div>
-                {canModifyPlannedDates() && booking.status === "confirmed" && (
+                {((canModifyPlannedDates() && booking.status === "confirmed") ||
+                  (canPerformActualOperations && booking.status === "checked_in")) && (
                   <button
                     onClick={() => {
                       setShowDateModification(true)
                       // Initialize with current dates for easier modification
                       const checkIn = safeParseDate(booking.check_in)
                       const checkOut = safeParseDate(booking.check_out)
-                      setDateModification({
-                        new_check_in: checkIn.toISOString(),
-                        new_check_out: checkOut.toISOString(),
-                      })
+                      // For checked-in bookings, hosts can only modify check-out date
+                      if (booking.status === "checked_in") {
+                        setDateModification({
+                          new_check_in: checkIn.toISOString(),
+                          new_check_out: checkOut.toISOString(),
+                        })
+                      } else {
+                        setDateModification({
+                          new_check_in: checkIn.toISOString(),
+                          new_check_out: checkOut.toISOString(),
+                        })
+                      }
                     }}
                     className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
                   >
                     <Edit2 className="w-3 h-3" />
-                    Modify Dates
+                    {booking.status === "checked_in" ? "Modify Check-out" : "Modify Dates"}
                   </button>
                 )}
               </div>
@@ -1037,7 +1047,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               })
                             }
                           }}
-                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          disabled={booking.status === "checked_in"}
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <input
                           type="time"
@@ -1069,7 +1080,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               })
                             }
                           }}
-                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          disabled={booking.status === "checked_in"}
+                          className="px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -1345,7 +1357,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     Payment Details
                   </h3>
                 </div>
-                {!isEditing && booking.status === "confirmed" && (
+                {!isEditing && booking.status === "confirmed" && canUpdateDiscount && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
