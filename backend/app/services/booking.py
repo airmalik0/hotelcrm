@@ -632,7 +632,7 @@ class BookingService:
         if user_role == UserRole.HOST and not is_superuser:
             # Hosts can only modify dates for confirmed or checked-in bookings
             if booking.status not in [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]:
-                raise BusinessRuleViolation("Hosts can only modify dates for confirmed or checked-in bookings")
+                raise AuthorizationError("Hosts can only modify dates for confirmed or checked-in bookings")
 
         # Call the original method with validated parameters
         return self.modify_booking_dates(booking, new_check_in, new_check_out)
