@@ -118,7 +118,6 @@ export function UserEditModal({
         full_name: formData.full_name,
         role: formData.role,
         is_active: formData.is_active,
-        is_superuser: formData.is_superuser,
       }
 
       if (changePassword && formData.password) {
