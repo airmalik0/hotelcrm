@@ -48,7 +48,8 @@ export function useRole() {
   const canCancelBooking = (): boolean =>
     hasAnyRole(["admin", "manager", "host"]) // All roles can cancel
 
-  const canViewPaymentAdjustments = (): boolean => isAdminOrManager() // Only admin/manager can see payment differences
+  const canViewPaymentAdjustments = (): boolean =>
+    hasAnyRole(["admin", "manager", "host"]) // All roles that can modify bookings should see payment adjustments
 
   return {
     user,
