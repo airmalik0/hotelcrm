@@ -13,7 +13,6 @@ from app.core.config import settings
 from app.core.db import engine
 from app.core.security import get_password_hash
 from app.models import (
-    AuditLog,
     Booking,
     BookingStatus,
     Customer,
@@ -33,19 +32,13 @@ def clear_existing_data(session: Session) -> None:
     print("🗑️  Clearing existing data...")
 
     # Delete in correct order due to foreign keys
-    session.exec(select(AuditLog)).all()
-    for audit in session.exec(select(AuditLog)).all():
-        session.delete(audit)
-
-    session.exec(select(Booking)).all()
+    # Note: Audit logs will be deleted automatically due to CASCADE
     for booking in session.exec(select(Booking)).all():
         session.delete(booking)
 
-    session.exec(select(Customer)).all()
     for customer in session.exec(select(Customer)).all():
         session.delete(customer)
 
-    session.exec(select(Room)).all()
     for room in session.exec(select(Room)).all():
         session.delete(room)
 
@@ -302,15 +295,20 @@ def create_bookings(session: Session, rooms: list[Room], customers: list[Custome
                 ])
 
                 if adjustment_type == PaymentAdjustmentType.EARLY_CHECKOUT:
-                    # Refund for early checkout
-                    nights_not_used = random.randint(1, min(3, nights - 1))
-                    refund_amount = -room.price_per_night * nights_not_used * 0.5  # 50% refund
+                    # Refund for early checkout (only if stayed more than 1 night)
+                    if nights > 1:
+                        nights_not_used = random.randint(1, min(3, nights - 1))
+                        refund_amount = -room.price_per_night * nights_not_used * 0.5  # 50% refund
+                    else:
+                        # For 1-night stays, give small service refund instead
+                        nights_not_used = 0
+                        refund_amount = -10.0  # Small refund for inconvenience
                     payment_adjustments.append({
                         "type": adjustment_type.value,
                         "amount": refund_amount,
                         "reason": f"Ранний выезд, возврат за {nights_not_used} ночь(ей)",
                         "created_at": actual_check_out.isoformat(),
-                        "created_by": random.choice(all_users).username if all_users else "system",
+                        "created_by": "system",
                     })
                 elif adjustment_type == PaymentAdjustmentType.SERVICE_CHARGE:
                     # Additional service charge
@@ -320,7 +318,7 @@ def create_bookings(session: Session, rooms: list[Room], customers: list[Custome
                         "amount": service_amount,
                         "reason": random.choice(["Мини-бар", "Услуги прачечной", "Room service", "Дополнительная уборка"]),
                         "created_at": actual_check_out.isoformat(),
-                        "created_by": random.choice(all_users).username if all_users else "system",
+                        "created_by": "system",
                     })
                 elif adjustment_type == PaymentAdjustmentType.DAMAGE_CHARGE:
                     # Damage charge
@@ -330,7 +328,7 @@ def create_bookings(session: Session, rooms: list[Room], customers: list[Custome
                         "amount": damage_amount,
                         "reason": random.choice(["Повреждение мебели", "Разбитое зеркало", "Пятна на ковре", "Сломанная техника"]),
                         "created_at": actual_check_out.isoformat(),
-                        "created_by": random.choice(all_users).username if all_users else "system",
+                        "created_by": "system",
                     })
 
         booking = Booking(
@@ -370,97 +368,7 @@ def create_bookings(session: Session, rooms: list[Room], customers: list[Custome
     return bookings
 
 
-def create_audit_logs(session: Session, users: list[User], customers: list[Customer],
-                      rooms: list[Room], bookings: list[Booking]) -> None:
-    """Create audit log entries for important operations."""
-    print("📝 Creating audit logs...")
-
-    # Get superuser
-    superuser = session.exec(select(User).where(User.is_superuser)).first()
-    all_users = users + ([superuser] if superuser else [])
-
-    if not all_users:
-        print("⚠️  No users available for audit logs")
-        return
-
-    audit_entries = []
-
-    # Log room creations
-    for room in rooms[:5]:  # Log first 5 rooms
-        audit = AuditLog(
-            user_id=random.choice(all_users).id,
-            action="CREATE",
-            entity_type="Room",
-            entity_id=room.id,
-            entity_name=f"Room {room.room_number}",
-            description=f"Создан номер {room.room_number} на {room.floor} этаже",
-            new_values={
-                "room_number": room.room_number,
-                "floor": room.floor,
-                "room_type": room.room_type.value,
-                "price_per_night": room.price_per_night,
-            },
-            timestamp=datetime.now(timezone.utc) - timedelta(days=random.randint(30, 180)),
-        )
-        audit_entries.append(audit)
-
-    # Log customer registrations
-    for customer in customers[:10]:  # Log first 10 customers
-        audit = AuditLog(
-            user_id=random.choice(all_users).id,
-            action="CREATE",
-            entity_type="Customer",
-            entity_id=customer.id,
-            entity_name=f"{customer.first_name} {customer.last_name}",
-            description=f"Зарегистрирован клиент {customer.first_name} {customer.last_name}",
-            new_values={
-                "first_name": customer.first_name,
-                "last_name": customer.last_name,
-                "phone": customer.phone,
-                "district": customer.district.value if customer.district else None,
-            },
-            timestamp=customer.created_at,
-        )
-        audit_entries.append(audit)
-
-    # Log booking status changes
-    checked_in_bookings = [b for b in bookings if b.status in [BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT]]
-    for booking in checked_in_bookings[:20]:  # Log first 20 check-ins
-        # Check-in log
-        audit = AuditLog(
-            user_id=random.choice(all_users).id,
-            action="UPDATE",
-            entity_type="Booking",
-            entity_id=booking.id,
-            entity_name=f"Booking #{str(booking.id)[:8]}",
-            description=f"Гость заселен в номер",
-            old_values={"status": BookingStatus.CONFIRMED.value},
-            new_values={"status": BookingStatus.CHECKED_IN.value},
-            timestamp=booking.actual_check_in or booking.check_in,
-        )
-        audit_entries.append(audit)
-
-        # Check-out log if applicable
-        if booking.status == BookingStatus.CHECKED_OUT:
-            audit = AuditLog(
-                user_id=random.choice(all_users).id,
-                action="UPDATE",
-                entity_type="Booking",
-                entity_id=booking.id,
-                entity_name=f"Booking #{str(booking.id)[:8]}",
-                description=f"Гость выселен из номера",
-                old_values={"status": BookingStatus.CHECKED_IN.value},
-                new_values={"status": BookingStatus.CHECKED_OUT.value},
-                timestamp=booking.actual_check_out or booking.check_out,
-            )
-            audit_entries.append(audit)
-
-    # Add audit entries to session
-    for audit in audit_entries:
-        session.add(audit)
-
-    session.commit()
-    print(f"✅ Created {len(audit_entries)} audit log entries")
+# Removed create_audit_logs function - audit logs are created automatically via API
 
 
 def main() -> None:
@@ -478,7 +386,6 @@ def main() -> None:
         rooms = create_rooms(session)
         customers = create_customers(session)
         bookings = create_bookings(session, rooms, customers, users)
-        create_audit_logs(session, users, customers, rooms, bookings)
 
         print("\n" + "="*50)
         print("✅ Database seeding completed successfully!")
@@ -488,6 +395,7 @@ def main() -> None:
         print(f"  🏨 Rooms: {len(rooms)}")
         print(f"  👥 Customers: {len(customers)}")
         print(f"  📅 Bookings: {len(bookings)}")
+        print("\n💡 Note: Audit logs will be created automatically when data is modified via API")
 
         # Show some statistics
         status_counts: dict[str, int] = {}
