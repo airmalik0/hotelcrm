@@ -1,3 +1,6 @@
+import { getBookings } from "@/api/bookings"
+import { getCustomers } from "@/api/customers"
+import { getRooms } from "@/api/rooms"
 import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { safeParseDate } from "@/utils/date-helpers"
@@ -15,19 +18,26 @@ import {
 import React from "react"
 
 export function AdminDashboard() {
-  // Fetch users data using our API wrapper
+  // Fetch all data using our API wrappers
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
     queryFn: () => getUsers({ limit: 1000 }),
   })
 
-  // Temporarily disabled until backend endpoints are created
-  const rooms = { count: 0, data: [] }
-  const customers = { count: 0, data: [] }
-  const bookings = { data: [] }
-  const roomsLoading = false
-  const customersLoading = false
-  const bookingsLoading = false
+  const { data: rooms, isLoading: roomsLoading } = useQuery({
+    queryKey: ["rooms", "all"],
+    queryFn: () => getRooms({ limit: 1000 }),
+  })
+
+  const { data: customers, isLoading: customersLoading } = useQuery({
+    queryKey: ["customers", "all"],
+    queryFn: () => getCustomers({ limit: 1000 }),
+  })
+
+  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ["bookings", "all"],
+    queryFn: () => getBookings({ limit: 1000 }),
+  })
 
   // Calculate metrics
   const totalRevenue =
