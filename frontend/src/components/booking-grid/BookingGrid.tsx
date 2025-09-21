@@ -156,12 +156,16 @@ function BookingGridContent() {
   // Auto-center on today when component mounts or view dates change
   // NOT when zoom changes!
   useEffect(() => {
-    // Simple delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      centerToToday("instant")
-    }, 100)
+    // Use requestAnimationFrame to ensure DOM is painted
+    // This is more reliable than setTimeout
+    const rafId = requestAnimationFrame(() => {
+      // Double rAF to ensure layout is complete
+      requestAnimationFrame(() => {
+        centerToToday("instant")
+      })
+    })
 
-    return () => clearTimeout(timer)
+    return () => cancelAnimationFrame(rafId)
     // IMPORTANT: Only depend on viewStart and viewMode, NOT on centerToToday or dayWidth
     // This prevents re-centering when user zooms
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -327,20 +331,26 @@ function BookingGridContent() {
   }
 
   const handleToday = () => {
-    setCurrentDate(new Date())
-    // Center on today with smooth animation
-    centerToToday("smooth")
+    const now = new Date()
+    const prevDate = currentDate
+    setCurrentDate(now)
+
+    // Only manually center if we're already in the current week/month
+    // (because viewStart won't change and useEffect won't trigger)
+    const prevRange = getViewDateRange(prevDate, viewMode)
+    const newRange = getViewDateRange(now, viewMode)
+
+    if (prevRange.start.getTime() === newRange.start.getTime()) {
+      // We're staying in the same view period, need manual centering
+      centerToToday("smooth")
+    }
+    // Otherwise, useEffect will handle centering when viewStart changes
   }
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
     switchViewMode(mode)
-
-    // After view mode changes, center on today
-    // Use setTimeout to allow state updates to propagate
-    setTimeout(() => {
-      centerToToday("instant")
-    }, 0)
+    // useEffect will handle centering when viewMode changes
   }
 
   // Filter handlers
