@@ -1199,18 +1199,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     }
 
                     // Calculate price difference
-                    const newNights = Math.ceil(
-                      (safeParseDate(dateModification.new_check_out).getTime() -
-                        safeParseDate(
-                          dateModification.new_check_in,
-                        ).getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    )
-                    const oldNights = Math.ceil(
-                      (safeParseDate(booking.check_out).getTime() -
-                        safeParseDate(booking.check_in).getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    )
+                    const newNights = Math.max(1, differenceInDays(
+                      safeParseDate(dateModification.new_check_out),
+                      safeParseDate(dateModification.new_check_in)
+                    ))
+                    const oldNights = Math.max(1, differenceInDays(
+                      safeParseDate(booking.check_out),
+                      safeParseDate(booking.check_in)
+                    ))
                     const nightsDiff = newNights - oldNights
                     const priceDiff =
                       nightsDiff * (booking.room?.price_per_night || 0)
@@ -1489,11 +1485,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           Nights:
                         </span>
                         <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {Math.ceil(
-                            (safeParseDate(booking.check_out).getTime() -
-                              safeParseDate(booking.check_in).getTime()) /
-                              (1000 * 60 * 60 * 24),
-                          )}
+                          {Math.max(1, differenceInDays(
+                            safeParseDate(booking.check_out),
+                            safeParseDate(booking.check_in)
+                          ))}
                         </span>
                       </div>
                       <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">

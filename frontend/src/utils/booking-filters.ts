@@ -4,6 +4,7 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { safeParseDate } from "./date-helpers"
+import { differenceInDays } from "date-fns"
 
 export interface BookingFilters {
   searchTerm: string
@@ -156,8 +157,7 @@ export function calculateFilteredStats(
   // Calculate occupancy rate using ALL bookings (not filtered by status)
   // but only for filtered rooms (may be filtered by room type)
   const totalRoomDays =
-    filteredRooms.length *
-    Math.ceil((viewEnd.getTime() - viewStart.getTime()) / (1000 * 60 * 60 * 24))
+    filteredRooms.length * Math.max(1, differenceInDays(viewEnd, viewStart))
 
   let occupiedRoomDays = 0
 
@@ -176,6 +176,8 @@ export function calculateFilteredStats(
       safeParseDate(booking.check_out).getTime(),
       viewEnd.getTime(),
     )
+    // For occupancy calculation we need to handle partial days within the view
+    // Math.ceil is appropriate here as we count any partial day as occupied
     const days = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60 * 24))
     occupiedRoomDays += Math.max(0, days)
   })

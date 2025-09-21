@@ -1,5 +1,6 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
 import { bookingsOverlap, isBookingInView, safeParseDate } from "./date-helpers"
+import { differenceInDays } from "date-fns"
 
 export interface BookingWithLane extends BookingPublic {
   lane: number
@@ -146,8 +147,7 @@ export function calculateOccupancy(
   if (rooms.length === 0) return 0
 
   const totalRoomDays =
-    rooms.length *
-    Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    rooms.length * Math.max(1, differenceInDays(endDate, startDate))
 
   let occupiedRoomDays = 0
 
@@ -163,6 +163,8 @@ export function calculateOccupancy(
         safeParseDate(booking.check_out).getTime(),
         endDate.getTime(),
       )
+      // For occupancy calculation we need to handle partial days within the view
+      // Math.ceil is appropriate here as we count any partial day as occupied
       const days = Math.ceil(
         (bookingEnd - bookingStart) / (1000 * 60 * 60 * 24),
       )
