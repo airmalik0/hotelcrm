@@ -38,7 +38,7 @@ import { MobileBookingList } from "./mobile/MobileBookingList"
 
 function BookingGridContent() {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [viewMode, setViewMode] = useState<ViewMode>("week")
+  const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [selectedBookingId, setSelectedBookingId] = useState<
     string | undefined
   >(undefined)
@@ -324,9 +324,42 @@ function BookingGridContent() {
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
     switchViewMode(mode)
-    // Center on today when switching views
+
+    // Calculate new view dates for the new mode
+    const { start: newViewStart } = getViewDateRange(currentDate, mode)
+
+    // Center on today when switching views with new view dates
     requestAnimationFrame(() => {
-      centerToToday("instant")
+      if (!gridContainerRef.current) return
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Calculate days from NEW view start to today
+      const msPerDay = 24 * 60 * 60 * 1000
+      const daysSinceStart = Math.floor(
+        (today.getTime() - newViewStart.getTime()) / msPerDay,
+      )
+
+      // Only scroll if today is within the new view
+      const totalDaysInView = mode === "week" ? 7 : 30
+      if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {
+        requestAnimationFrame(() => {
+          if (!gridContainerRef.current) return
+
+          // Calculate pixel position of today's column
+          const todayPixelPos = 200 + daysSinceStart * dayWidth + dayWidth / 2
+
+          // Get container width and calculate center position
+          const containerWidth = gridContainerRef.current.clientWidth
+          const scrollLeft = todayPixelPos - containerWidth / 2
+
+          gridContainerRef.current.scrollTo({
+            left: Math.max(0, scrollLeft),
+            behavior: "instant",
+          })
+        })
+      }
     })
   }
 
