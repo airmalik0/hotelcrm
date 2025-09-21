@@ -6,6 +6,7 @@ Usage: cd backend && uv run python seed_data_api.py
 """
 
 import random
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -15,7 +16,7 @@ from pydantic import BaseModel
 # API configuration
 API_BASE_URL = "http://localhost:8000/api/v1"
 ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "changethis123"  # From .env
+ADMIN_PASSWORD = "hope228_"  # From .env
 
 # Configuration
 ENABLE_VERBOSE = True
@@ -343,23 +344,61 @@ def create_bookings(
     booking_count = 0
     attempt_count = 0
     max_attempts = 300  # Prevent infinite loop
+    rate_limit_counter = 0  # Track API calls for rate limiting
 
-    while booking_count < 100 and attempt_count < max_attempts:
+    # Create different types of bookings
+    booking_configs = []
+
+    # 1. Past bookings (will create as future then immediately check-in/out)
+    for i in range(30):
+        booking_configs.append({"type": "past", "priority": 1})
+
+    # 2. Current bookings (create today and check-in)
+    for i in range(10):
+        booking_configs.append({"type": "current", "priority": 2})
+
+    # 3. Future bookings
+    for i in range(60):
+        booking_configs.append({"type": "future", "priority": 3})
+
+    random.shuffle(booking_configs)
+
+    for config in booking_configs:
+        if booking_count >= 100 or attempt_count >= max_attempts:
+            break
+
         attempt_count += 1
 
         customer = random.choice(customers)
         room = random.choice(rooms)
 
-        # Vary booking start dates (-60 to +30 days from now)
-        days_offset = random.randint(-60, 30)
-        check_in = now + timedelta(days=days_offset, hours=14)  # 2 PM check-in
+        # Handle rate limiting - wait after every 9 bookings
+        if rate_limit_counter >= 9:
+            print("⏳ Waiting 60 seconds for rate limit...")
+            time.sleep(61)  # Wait 61 seconds to be safe
+            rate_limit_counter = 0
 
-        # Booking duration 1-7 nights, with bias towards 1-3 nights
-        nights = random.choices(
-            range(1, 8),
-            weights=[30, 25, 20, 10, 8, 5, 2],
-            k=1
-        )[0]
+        # Set booking dates based on type
+        if config["type"] == "past":
+            # Create as tomorrow (will check-in/out immediately)
+            check_in = now + timedelta(days=1, hours=14)
+        elif config["type"] == "current":
+            # Create for today
+            check_in = now + timedelta(hours=1)  # 1 hour from now
+        else:  # future
+            # Create for 2-30 days from now
+            days_offset = random.randint(2, 30)
+            check_in = now + timedelta(days=days_offset, hours=14)
+
+        # Booking duration 1-3 nights for past/current, 1-7 for future
+        if config["type"] in ["past", "current"]:
+            nights = random.randint(1, 3)
+        else:
+            nights = random.choices(
+                range(1, 8),
+                weights=[30, 25, 20, 10, 8, 5, 2],
+                k=1
+            )[0]
         check_out = check_in + timedelta(days=nights, hours=12)  # 12 PM check-out
 
         # Check if room is available for these dates
@@ -403,6 +442,8 @@ def create_bookings(
         # Create the booking
         booking = client.create_booking(booking_data)
         if booking:
+            rate_limit_counter += 1
+
             # Store booking info for room availability tracking
             room_bookings[room["id"]].append({
                 "check_in": check_in,
@@ -410,42 +451,49 @@ def create_bookings(
                 "booking_id": booking["id"],
             })
 
-            # Process booking based on dates
-            if check_out < now - timedelta(days=1):
-                # Past booking - should be checked out or cancelled
-                if random.random() < 0.85:  # 85% checked out
-                    # First check in
+            # Process booking based on type
+            if config["type"] == "past":
+                # Simulate past booking - check in and out immediately
+                time.sleep(0.5)  # Small delay between operations
+                if random.random() < 0.85:  # 85% completed
                     checked_in = client.check_in_booking(booking["id"])
                     if checked_in:
-                        # Then check out
+                        rate_limit_counter += 1
+                        time.sleep(0.5)
                         checked_out = client.check_out_booking(booking["id"])
                         if checked_out:
-                            booking = checked_out  # Update booking with latest status
+                            rate_limit_counter += 1
+                            booking = checked_out
                 else:  # 15% cancelled
                     cancelled = client.cancel_booking(booking["id"])
                     if cancelled:
+                        rate_limit_counter += 1
                         booking = cancelled
 
-            elif check_in <= now <= check_out:
-                # Current booking - should be checked in
+            elif config["type"] == "current":
+                # Current booking - check in
+                time.sleep(0.5)
                 if random.random() < 0.8:  # 80% checked in
                     checked_in = client.check_in_booking(booking["id"])
                     if checked_in:
+                        rate_limit_counter += 1
                         booking = checked_in
 
-            elif check_in > now and random.random() < 0.1:
+            elif config["type"] == "future" and random.random() < 0.1:
                 # Future booking - 10% cancelled
+                time.sleep(0.5)
                 cancelled = client.cancel_booking(booking["id"])
                 if cancelled:
+                    rate_limit_counter += 1
                     booking = cancelled
 
             bookings.append(booking)
             booking_count += 1
 
-            if booking_count <= 5:  # Show first 5 for brevity
-                print(f"  ✅ Created booking: {booking['id'][:8]}... (Room {room['room_number']}, {booking['status']})")
+            if booking_count <= 10 or booking_count % 10 == 0:  # Show progress
+                print(f"  ✅ Created booking #{booking_count}: {booking['id'][:8]}... (Room {room['room_number']}, {booking['status']})")
 
-    print(f"✅ Created {len(bookings)} bookings")
+    print(f"\n✅ Created {len(bookings)} bookings")
 
     # Show statistics
     status_counts = {}

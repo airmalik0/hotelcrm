@@ -6,6 +6,7 @@ import type {
 } from "@/client/types.gen"
 import { isRoomAvailable } from "@/utils/booking-grid"
 import { safeParseDate } from "@/utils/date-helpers"
+import { differenceInDays } from "date-fns"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingUpdate } from "@/utils/query-invalidation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -121,11 +122,7 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       // Calculate nights the same way as backend: difference in days only
       const checkIn = safeParseDate(booking.check_in)
       const checkOut = safeParseDate(booking.check_out)
-      const startDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())
-      const endDate = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate())
-      const diffTime = endDate.getTime() - startDate.getTime()
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-      const nights = Math.max(1, diffDays)
+      const nights = Math.max(1, differenceInDays(checkOut, checkIn))
 
       // Calculate actual amounts with discount
       const hasDiscount = booking.discount && booking.discount > 0

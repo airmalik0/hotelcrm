@@ -12,7 +12,7 @@ import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
-import { addDays, format, setHours, setMinutes } from "date-fns"
+import { addDays, differenceInDays, format, setHours, setMinutes } from "date-fns"
 import {
   Bed,
   Calendar,
@@ -141,11 +141,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       const start = safeParseDate(formData.checkIn)
       const end = safeParseDate(formData.checkOut)
       // Calculate nights the same way as backend: difference in days only
-      const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-      const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
-      const diffTime = endDate.getTime() - startDate.getTime()
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-      const nights = Math.max(1, diffDays)
+      const nights = Math.max(1, differenceInDays(end, start))
 
       const subtotal = nights * activeRoom.price_per_night
       const discountAmount = showDiscountFields
@@ -713,11 +709,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 const start = safeParseDate(formData.checkIn)
                 const end = safeParseDate(formData.checkOut)
                 // Calculate nights the same way as backend: difference in days only
-                const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-                const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
-                const diffTime = endDate.getTime() - startDate.getTime()
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-                const nights = Math.max(1, diffDays)
+                const nights = Math.max(1, differenceInDays(end, start))
 
                 const subtotal = nights * activeRoom.price_per_night
                 const discountAmount = showDiscountFields
