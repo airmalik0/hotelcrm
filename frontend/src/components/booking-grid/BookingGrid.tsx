@@ -22,7 +22,7 @@ import { groupBookingsByRoom, sortRoomsByNumber } from "@/utils/booking-grid"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
 import { useQuery } from "@tanstack/react-query"
-import { addMonths, addWeeks } from "date-fns"
+import { addMonths, addWeeks, differenceInDays } from "date-fns"
 import { GripHorizontal, Loader2 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { BookingDetailModal } from "./BookingDetailModal"
@@ -128,15 +128,10 @@ function BookingGridContent() {
       today.setHours(0, 0, 0, 0)
 
       // Calculate days from view start to today
-      const msPerDay = 24 * 60 * 60 * 1000
-      const daysSinceStart = Math.floor(
-        (today.getTime() - currentViewStart.getTime()) / msPerDay,
-      )
+      const daysSinceStart = differenceInDays(today, currentViewStart)
 
       // Calculate total days in view
-      const totalDaysInView = Math.ceil(
-        (currentViewEnd.getTime() - currentViewStart.getTime()) / msPerDay,
-      ) + 1
+      const totalDaysInView = differenceInDays(currentViewEnd, currentViewStart) + 1
 
       // Only scroll if today is within the current view
       if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {

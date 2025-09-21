@@ -403,7 +403,7 @@ class BookingService:
         if not room:
             return booking.total_amount  # Fallback to current total
 
-        nights = (booking.check_out - booking.check_in).days
+        nights = (booking.check_out.date() - booking.check_in.date()).days
         if nights <= 0:
             nights = 1  # Minimum 1 night
 
