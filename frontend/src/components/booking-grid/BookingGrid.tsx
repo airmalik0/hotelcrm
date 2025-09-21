@@ -107,6 +107,45 @@ function BookingGridContent() {
     setViewDates(viewStart, viewEnd)
   }, [viewStart, viewEnd, setViewDates])
 
+  // Center the view on today's column if today is visible
+  const centerToToday = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      if (!gridContainerRef.current) return
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Calculate days from view start to today
+      const msPerDay = 24 * 60 * 60 * 1000
+      const daysSinceStart = Math.floor(
+        (today.getTime() - viewStart.getTime()) / msPerDay,
+      )
+
+      // Only scroll if today is within the current view
+      const totalDaysInView = actualDaysInView || (viewMode === "week" ? 7 : 30)
+      if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          if (!gridContainerRef.current) return
+
+          // Calculate pixel position of today's column
+          // Account for the 200px room column + day columns
+          const todayPixelPos = 200 + daysSinceStart * dayWidth + dayWidth / 2
+
+          // Get container width and calculate center position
+          const containerWidth = gridContainerRef.current.clientWidth
+          const scrollLeft = todayPixelPos - containerWidth / 2
+
+          gridContainerRef.current.scrollTo({
+            left: Math.max(0, scrollLeft),
+            behavior,
+          })
+        })
+      }
+    },
+    [viewStart, viewMode, dayWidth, actualDaysInView],
+  )
+
   // Auto-center on today when component mounts or view dates change
   useEffect(() => {
     // Small delay to ensure DOM is fully ready and grid is rendered
@@ -256,45 +295,6 @@ function BookingGridContent() {
     [handleDrop, confirm],
   )
 
-  // Center the view on today's column if today is visible
-  const centerToToday = useCallback(
-    (behavior: ScrollBehavior = "smooth") => {
-      if (!gridContainerRef.current) return
-
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      // Calculate days from view start to today
-      const msPerDay = 24 * 60 * 60 * 1000
-      const daysSinceStart = Math.floor(
-        (today.getTime() - viewStart.getTime()) / msPerDay,
-      )
-
-      // Only scroll if today is within the current view
-      const totalDaysInView = actualDaysInView || (viewMode === "week" ? 7 : 30)
-      if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          if (!gridContainerRef.current) return
-
-          // Calculate pixel position of today's column
-          // Account for the 200px room column + day columns
-          const todayPixelPos = 200 + daysSinceStart * dayWidth + dayWidth / 2
-
-          // Get container width and calculate center position
-          const containerWidth = gridContainerRef.current.clientWidth
-          const scrollLeft = todayPixelPos - containerWidth / 2
-
-          gridContainerRef.current.scrollTo({
-            left: Math.max(0, scrollLeft),
-            behavior,
-          })
-        })
-      }
-    },
-    [viewStart, viewMode, dayWidth, actualDaysInView],
-  )
-
   // Navigation handlers - use full week jump and full month jump
   // Because startOfWeek/startOfMonth snap to period boundaries
   const handlePrevious = () => {
@@ -317,6 +317,7 @@ function BookingGridContent() {
 
   const handleToday = () => {
     setCurrentDate(new Date())
+    // Center on today with smooth animation
     centerToToday("smooth")
   }
 
