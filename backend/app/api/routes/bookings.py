@@ -4,12 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 
-from app.api.deps import (
-    CurrentUser,
-    SessionDep,
-    require_admin_manager_or_host,
-    require_admin_or_manager,
-)
+from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.exceptions import ValidationError as DomainValidationError
 from app.core.rate_limit import RateLimits, limiter
@@ -17,8 +12,8 @@ from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
     BookingPublic,
-    BookingStatus,
     BookingsPublic,
+    BookingStatus,
     BookingUpdate,
     DateModificationRequest,
     DiscountModificationRequest,
@@ -188,7 +183,7 @@ def update_booking(
     return crud_booking.get_with_relations(session, booking_id=booking.id)
 
 
-@router.put("/{booking_id}/modify-dates", response_model=PaymentAdjustmentResponse, dependencies=[Depends(require_admin_manager_or_host)])
+@router.put("/{booking_id}/modify-dates", response_model=PaymentAdjustmentResponse)
 def modify_booking_dates(
     *,
     session: SessionDep,
@@ -198,25 +193,17 @@ def modify_booking_dates(
 ) -> Any:
     """
     Modify booking dates with payment recalculation.
-    Administrative operation - requires admin, manager, or host role.
-    For hosts: can modify both dates for confirmed bookings, only check-out for checked-in bookings.
+    Available to admin, manager, and host roles.
+    Hosts can only modify dates for confirmed/checked-in bookings.
+    For checked-in bookings, only check-out date can be modified.
     """
-    from app.models import UserRole
     service = BookingService(session)
-    booking = service.get_booking_or_404(booking_id)
 
-    # Host-specific restrictions
-    if current_user.role == UserRole.HOST and not current_user.is_superuser:
-        # Hosts can only modify dates for confirmed or checked-in bookings
-        if booking.status not in [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]:
-            raise DomainValidationError("Hosts can only modify dates for confirmed or checked-in bookings")
-
-        # For checked-in bookings, hosts can only modify check-out date
-        if booking.status == BookingStatus.CHECKED_IN and request.new_check_in:
-            raise DomainValidationError("Cannot modify check-in date for already checked-in bookings")
-
-    booking, payment_difference = service.modify_booking_dates(
-        booking,
+    # Pass user role to service for proper validation
+    booking, payment_difference = service.modify_booking_dates_with_role_check(
+        booking_id=booking_id,
+        user_role=current_user.role,
+        is_superuser=current_user.is_superuser,
         new_check_in=request.new_check_in,
         new_check_out=request.new_check_out
     )

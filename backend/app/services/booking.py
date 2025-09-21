@@ -4,6 +4,7 @@ Booking service layer for centralizing booking business logic.
 import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from sqlmodel import Session
 
@@ -591,6 +592,54 @@ class BookingService:
             self.crud_room.update_status(self.session, room=room, status=RoomStatus.CLEANING)
 
         return booking
+
+    def modify_booking_dates_with_role_check(
+        self,
+        booking_id: UUID,
+        user_role: str,
+        is_superuser: bool,
+        new_check_in: datetime | None = None,
+        new_check_out: datetime | None = None
+    ) -> tuple[Booking, float]:
+        """
+        Modify booking dates with role-based access control.
+
+        Args:
+            booking_id: ID of booking to modify
+            user_role: Role of current user
+            is_superuser: Whether user is superuser
+            new_check_in: New check-in date
+            new_check_out: New check-out date
+
+        Returns:
+            Tuple of (updated booking, payment difference)
+
+        Raises:
+            AuthorizationError: If user doesn't have permission
+            BusinessRuleViolation: If modification violates business rules
+        """
+        from app.core.exceptions import AuthorizationError
+        from app.models import UserRole
+
+        # Get booking
+        booking = self.get_booking_or_404(booking_id)
+
+        # Role-based access control
+        if user_role not in [UserRole.ADMIN, UserRole.MANAGER, UserRole.HOST] and not is_superuser:
+            raise AuthorizationError("Only admin, manager, or host can modify booking dates")
+
+        # Host-specific restrictions
+        if user_role == UserRole.HOST and not is_superuser:
+            # Hosts can only modify dates for confirmed or checked-in bookings
+            if booking.status not in [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]:
+                raise BusinessRuleViolation("Hosts can only modify dates for confirmed or checked-in bookings")
+
+            # For checked-in bookings, hosts can only modify check-out date
+            if booking.status == BookingStatus.CHECKED_IN and new_check_in:
+                raise BusinessRuleViolation("Hosts cannot modify check-in date for already checked-in bookings")
+
+        # Call the original method with validated parameters
+        return self.modify_booking_dates(booking, new_check_in, new_check_out)
 
     def modify_booking_dates(self, booking: Booking, new_check_in: datetime | None = None, new_check_out: datetime | None = None) -> tuple[Booking, float]:
         """

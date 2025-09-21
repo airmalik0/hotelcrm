@@ -76,10 +76,3 @@ def require_admin_or_manager(current_user: CurrentUser) -> User:
     if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and not current_user.is_superuser:
         raise AuthorizationError("Admin or manager access required")
     return current_user
-
-
-def require_admin_manager_or_host(current_user: CurrentUser) -> User:
-    """Require admin, manager, or host role."""
-    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER, UserRole.HOST] and not current_user.is_superuser:
-        raise AuthorizationError("Admin, manager, or host access required")
-    return current_user
