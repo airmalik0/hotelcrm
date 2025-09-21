@@ -140,9 +140,13 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     if (formData.checkIn && formData.checkOut && activeRoom) {
       const start = safeParseDate(formData.checkIn)
       const end = safeParseDate(formData.checkOut)
-      const nights = Math.ceil(
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-      )
+      // Calculate nights the same way as backend: difference in days only
+      const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+      const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+      const diffTime = endDate.getTime() - startDate.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      const nights = Math.max(1, diffDays)
+
       const subtotal = nights * activeRoom.price_per_night
       const discountAmount = showDiscountFields
         ? subtotal * (formData.discount / 100)
@@ -708,9 +712,13 @@ export const QuickBookingModal = memo(function QuickBookingModal({
 
                 const start = safeParseDate(formData.checkIn)
                 const end = safeParseDate(formData.checkOut)
-                const nights = Math.ceil(
-                  (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-                )
+                // Calculate nights the same way as backend: difference in days only
+                const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+                const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+                const diffTime = endDate.getTime() - startDate.getTime()
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+                const nights = Math.max(1, diffDays)
+
                 const subtotal = nights * activeRoom.price_per_night
                 const discountAmount = showDiscountFields
                   ? subtotal * (formData.discount / 100)

@@ -118,11 +118,14 @@ export function useBookingDrag(existingBookings: BookingPublic[]) {
       const currentRoom = booking.room
       const priceDiff =
         targetRoom.price_per_night - (currentRoom?.price_per_night || 0)
-      const nights = Math.ceil(
-        (safeParseDate(booking.check_out).getTime() -
-          safeParseDate(booking.check_in).getTime()) /
-          (1000 * 60 * 60 * 24),
-      )
+      // Calculate nights the same way as backend: difference in days only
+      const checkIn = safeParseDate(booking.check_in)
+      const checkOut = safeParseDate(booking.check_out)
+      const startDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())
+      const endDate = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate())
+      const diffTime = endDate.getTime() - startDate.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      const nights = Math.max(1, diffDays)
 
       // Calculate actual amounts with discount
       const hasDiscount = booking.discount && booking.discount > 0

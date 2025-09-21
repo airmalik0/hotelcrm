@@ -150,11 +150,14 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
   }
 
   const calculateNights = (checkIn: string, checkOut: string) => {
-    const nights = Math.ceil(
-      (safeParseDate(checkOut).getTime() - safeParseDate(checkIn).getTime()) /
-        (1000 * 60 * 60 * 24),
-    )
-    return nights
+    // Calculate nights the same way as backend: difference in days only
+    const checkInDate = safeParseDate(checkIn)
+    const checkOutDate = safeParseDate(checkOut)
+    const startDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate())
+    const endDate = new Date(checkOutDate.getFullYear(), checkOutDate.getMonth(), checkOutDate.getDate())
+    const diffTime = endDate.getTime() - startDate.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    return Math.max(1, diffDays)
   }
 
   if (isLoading) {

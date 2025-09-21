@@ -121,12 +121,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   useEffect(() => {
     if (booking?.room) {
       const hasDiscount = booking.discount && booking.discount > 0
-      // Calculate base amount (before discount)
-      const nights = Math.ceil(
-        (safeParseDate(booking.check_out).getTime() -
-          safeParseDate(booking.check_in).getTime()) /
-          (1000 * 60 * 60 * 24),
-      )
+      // Calculate base amount (before discount) - same as backend
+      const checkIn = safeParseDate(booking.check_in)
+      const checkOut = safeParseDate(booking.check_out)
+      const startDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())
+      const endDate = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate())
+      const diffTime = endDate.getTime() - startDate.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      const nights = Math.max(1, diffDays)
       const baseAmount = booking.room.price_per_night * nights
 
       setFormData({
@@ -257,14 +259,20 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       ? safeParseDate(dateModification.new_check_out)
       : safeParseDate(booking.check_out)
 
-    const oldNights = Math.ceil(
-      (safeParseDate(booking.check_out).getTime() -
-        safeParseDate(booking.check_in).getTime()) /
-        (1000 * 60 * 60 * 24),
-    )
-    const newNights = Math.ceil(
-      (newCheckOut.getTime() - newCheckIn.getTime()) / (1000 * 60 * 60 * 24),
-    )
+    // Calculate nights the same way as backend: difference in days only
+    const oldCheckIn = safeParseDate(booking.check_in)
+    const oldCheckOut = safeParseDate(booking.check_out)
+    const oldStartDate = new Date(oldCheckIn.getFullYear(), oldCheckIn.getMonth(), oldCheckIn.getDate())
+    const oldEndDate = new Date(oldCheckOut.getFullYear(), oldCheckOut.getMonth(), oldCheckOut.getDate())
+    const oldDiffTime = oldEndDate.getTime() - oldStartDate.getTime()
+    const oldDiffDays = Math.floor(oldDiffTime / (1000 * 60 * 60 * 24))
+    const oldNights = Math.max(1, oldDiffDays)
+
+    const newStartDate = new Date(newCheckIn.getFullYear(), newCheckIn.getMonth(), newCheckIn.getDate())
+    const newEndDate = new Date(newCheckOut.getFullYear(), newCheckOut.getMonth(), newCheckOut.getDate())
+    const newDiffTime = newEndDate.getTime() - newStartDate.getTime()
+    const newDiffDays = Math.floor(newDiffTime / (1000 * 60 * 60 * 24))
+    const newNights = Math.max(1, newDiffDays)
 
     const nightsDiff = newNights - oldNights
     const priceDiff = nightsDiff * booking.room.price_per_night
@@ -423,11 +431,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     const newRoom = availableRooms?.data?.find((r) => r.id === selectedNewRoom)
     if (!newRoom) return
 
-    const nights = Math.ceil(
-      (safeParseDate(booking.check_out).getTime() -
-        safeParseDate(booking.check_in).getTime()) /
-        (1000 * 60 * 60 * 24),
-    )
+    // Calculate nights the same way as backend: difference in days only
+    const checkIn = safeParseDate(booking.check_in)
+    const checkOut = safeParseDate(booking.check_out)
+    const startDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())
+    const endDate = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate())
+    const diffTime = endDate.getTime() - startDate.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    const nights = Math.max(1, diffDays)
 
     const priceDiff =
       (newRoom.price_per_night - (booking.room?.price_per_night || 0)) * nights
@@ -866,11 +877,14 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         )
                         if (!newRoom) return null
 
-                        const nights = Math.ceil(
-                          (safeParseDate(booking.check_out).getTime() -
-                            safeParseDate(booking.check_in).getTime()) /
-                            (1000 * 60 * 60 * 24),
-                        )
+                        // Calculate nights the same way as backend: difference in days only
+                        const checkIn = safeParseDate(booking.check_in)
+                        const checkOut = safeParseDate(booking.check_out)
+                        const startDate = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())
+                        const endDate = new Date(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate())
+                        const diffTime = endDate.getTime() - startDate.getTime()
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+                        const nights = Math.max(1, diffDays)
                         const priceDiff =
                           (newRoom.price_per_night -
                             (booking.room?.price_per_night || 0)) *
