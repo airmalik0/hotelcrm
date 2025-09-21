@@ -62,7 +62,9 @@ function getRoomTypeBadgeClasses(type: string): string {
 export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
   const { hasAnyRole } = useRole()
   const canEdit = hasAnyRole(["admin", "manager"])
-  const canUpdateStatus = hasAnyRole(["admin", "manager", "host"])
+  const canFullStatusUpdate = hasAnyRole(["admin", "manager"])
+  const isHost = hasAnyRole(["host"])
+  const canMarkAvailable = isHost && room.status === "cleaning"
   const queryClient = useQueryClient()
   const [isChangingStatus, setIsChangingStatus] = useState(false)
 
@@ -83,6 +85,10 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
     if (newStatus !== room.status) {
       statusMutation.mutate(newStatus)
     }
+  }
+
+  const handleMarkAvailable = () => {
+    statusMutation.mutate("available")
   }
 
   return (
@@ -118,7 +124,8 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
       <div className="px-6 py-5">
         {/* Status Badge or Selector */}
         <div className="mb-4">
-          {canUpdateStatus ? (
+          {canFullStatusUpdate ? (
+            // Managers and Admins can change to any status
             <div className="flex items-center gap-2">
               <label className="text-sm text-neutral-500 dark:text-neutral-400">
                 Status:
@@ -137,7 +144,28 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                 <option value="maintenance">Maintenance</option>
               </select>
             </div>
+          ) : canMarkAvailable ? (
+            // Hosts can only mark as available after cleaning
+            <div className="flex items-center gap-3">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClasses(
+                  room.status || "available",
+                )}`}
+              >
+                {getStatusText(room.status || "available")}
+              </span>
+              <button
+                onClick={handleMarkAvailable}
+                disabled={statusMutation.isPending}
+                className={`px-3 py-1 bg-success-50 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-lg text-xs font-medium hover:bg-success-100 dark:hover:bg-success-600/40 transition-colors ${
+                  statusMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                Mark as Available
+              </button>
+            </div>
           ) : (
+            // Others just see the status badge
             <span
               className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClasses(
                 room.status || "available",
