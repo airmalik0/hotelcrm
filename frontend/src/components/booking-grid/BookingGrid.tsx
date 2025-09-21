@@ -112,13 +112,16 @@ function BookingGridContent() {
 
   // Center the view on today's column if today is visible
   const centerToToday = useCallback(
-    (behavior: ScrollBehavior = "smooth") => {
+    (behavior: ScrollBehavior = "smooth", overrideViewMode?: ViewMode) => {
       if (!gridContainerRef.current) return
+
+      // Use override mode if provided (for immediate mode changes), otherwise use current state
+      const modeToUse = overrideViewMode ?? viewMode
 
       // Get fresh view range based on current state
       const { start: currentViewStart, end: currentViewEnd } = getViewDateRange(
         currentDate,
-        viewMode,
+        modeToUse,
       )
 
       const today = new Date()
@@ -359,9 +362,10 @@ function BookingGridContent() {
     switchViewMode(mode)
 
     // Center when view mode changes (Week/Month buttons)
-    // Use setTimeout to ensure state updates and DOM recalculation
+    // Use setTimeout to ensure DOM updates with new grid dimensions
     setTimeout(() => {
-      centerToToday("smooth")
+      // Pass the new mode directly to avoid stale closure
+      centerToToday("smooth", mode)
     }, 50)
   }
 
