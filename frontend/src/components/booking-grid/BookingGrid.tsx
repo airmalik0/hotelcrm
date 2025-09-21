@@ -43,6 +43,9 @@ function BookingGridContent() {
     string | undefined
   >(undefined)
 
+  // Track if this is the initial mount
+  const [hasInitialized, setHasInitialized] = useState(false)
+
   // Get zoom context and dimensions
   const {
     zoomLevel,
@@ -112,17 +115,27 @@ function BookingGridContent() {
     (behavior: ScrollBehavior = "smooth") => {
       if (!gridContainerRef.current) return
 
+      // Get fresh view range based on current state
+      const { start: currentViewStart, end: currentViewEnd } = getViewDateRange(
+        currentDate,
+        viewMode,
+      )
+
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
       // Calculate days from view start to today
       const msPerDay = 24 * 60 * 60 * 1000
       const daysSinceStart = Math.floor(
-        (today.getTime() - viewStart.getTime()) / msPerDay,
+        (today.getTime() - currentViewStart.getTime()) / msPerDay,
       )
 
+      // Calculate total days in view
+      const totalDaysInView = Math.ceil(
+        (currentViewEnd.getTime() - currentViewStart.getTime()) / msPerDay,
+      ) + 1
+
       // Only scroll if today is within the current view
-      const totalDaysInView = actualDaysInView || (viewMode === "week" ? 7 : 30)
       if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {
         // Use requestAnimationFrame to ensure DOM is ready
         requestAnimationFrame(() => {
@@ -150,26 +163,26 @@ function BookingGridContent() {
         })
       }
     },
-    [viewStart, viewMode, dayWidth, actualDaysInView],
+    [currentDate, viewMode, dayWidth],
   )
 
-  // Auto-center on today when component mounts or view dates change
-  // NOT when zoom changes!
+  // Center on today ONLY on initial mount
   useEffect(() => {
-    // Use requestAnimationFrame to ensure DOM is painted
-    // This is more reliable than setTimeout
-    const rafId = requestAnimationFrame(() => {
-      // Double rAF to ensure layout is complete
-      requestAnimationFrame(() => {
-        centerToToday("instant")
+    if (!hasInitialized) {
+      // Use requestAnimationFrame to ensure DOM is painted
+      const rafId = requestAnimationFrame(() => {
+        // Double rAF to ensure layout is complete
+        requestAnimationFrame(() => {
+          centerToToday("instant")
+          setHasInitialized(true)
+        })
       })
-    })
 
-    return () => cancelAnimationFrame(rafId)
-    // IMPORTANT: Only depend on viewStart and viewMode, NOT on centerToToday or dayWidth
-    // This prevents re-centering when user zooms
+      return () => cancelAnimationFrame(rafId)
+    }
+    // Only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewStart, viewMode])
+  }, [])
 
   // Fetch rooms
   const { data: roomsData, isLoading: roomsLoading } = useQuery({
@@ -332,25 +345,24 @@ function BookingGridContent() {
 
   const handleToday = () => {
     const now = new Date()
-    const prevDate = currentDate
     setCurrentDate(now)
 
-    // Only manually center if we're already in the current week/month
-    // (because viewStart won't change and useEffect won't trigger)
-    const prevRange = getViewDateRange(prevDate, viewMode)
-    const newRange = getViewDateRange(now, viewMode)
-
-    if (prevRange.start.getTime() === newRange.start.getTime()) {
-      // We're staying in the same view period, need manual centering
+    // Always center when Today button is clicked
+    // Use setTimeout to ensure state updates have been processed
+    setTimeout(() => {
       centerToToday("smooth")
-    }
-    // Otherwise, useEffect will handle centering when viewStart changes
+    }, 0)
   }
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
     switchViewMode(mode)
-    // useEffect will handle centering when viewMode changes
+
+    // Center when view mode changes (Week/Month buttons)
+    // Use setTimeout to ensure state updates and DOM recalculation
+    setTimeout(() => {
+      centerToToday("smooth")
+    }, 50)
   }
 
   // Filter handlers
