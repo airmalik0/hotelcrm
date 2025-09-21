@@ -30,7 +30,6 @@ export function UserCreateModal({
     full_name: "",
     role: "host",
     is_active: true,
-    is_superuser: false,
   })
 
   const [errors, setErrors] = useState<Partial<UserCreate>>({})
@@ -58,7 +57,6 @@ export function UserCreateModal({
       full_name: "",
       role: "host",
       is_active: true,
-      is_superuser: false,
     })
     setErrors({})
     setShowPassword(false)
@@ -254,8 +252,8 @@ export function UserCreateModal({
                 </select>
               </div>
 
-              {/* Status and Permissions */}
-              <div className="space-y-3">
+              {/* Status */}
+              <div>
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -272,25 +270,6 @@ export function UserCreateModal({
                     Active account
                   </label>
                 </div>
-
-                {formData.role === "admin" && (
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="is_superuser"
-                      name="is_superuser"
-                      checked={formData.is_superuser}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label
-                      htmlFor="is_superuser"
-                      className="ml-3 text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                    >
-                      Superuser privileges
-                    </label>
-                  </div>
-                )}
               </div>
             </div>
 

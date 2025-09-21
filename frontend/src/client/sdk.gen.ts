@@ -356,7 +356,9 @@ export const bookingsDeleteBooking = <ThrowOnError extends boolean = false>(opti
 /**
  * Modify Booking Dates
  * Modify booking dates with payment recalculation.
- * Administrative operation - requires admin or manager role.
+ * Available to admin, manager, and host roles.
+ * Hosts can only modify dates for confirmed/checked-in bookings.
+ * For checked-in bookings, only check-out date can be modified.
  */
 export const bookingsModifyBookingDates = <ThrowOnError extends boolean = false>(options: OptionsLegacyParser<BookingsModifyBookingDatesData, ThrowOnError>) => {
     return (options?.client ?? client).put<BookingsModifyBookingDatesResponse, BookingsModifyBookingDatesError, ThrowOnError>({

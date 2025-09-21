@@ -1261,15 +1261,16 @@ export const UserCreateSchema = {
             minLength: 3,
             title: 'Username'
         },
+        password: {
+            type: 'string',
+            maxLength: 40,
+            minLength: 8,
+            title: 'Password'
+        },
         is_active: {
             type: 'boolean',
             title: 'Is Active',
             default: true
-        },
-        is_superuser: {
-            type: 'boolean',
-            title: 'Is Superuser',
-            default: false
         },
         full_name: {
             anyOf: [
@@ -1286,12 +1287,6 @@ export const UserCreateSchema = {
         role: {
             '$ref': '#/components/schemas/UserRole',
             default: 'host'
-        },
-        password: {
-            type: 'string',
-            maxLength: 40,
-            minLength: 8,
-            title: 'Password'
         }
     },
     type: 'object',
@@ -1397,32 +1392,6 @@ export const UserUpdateSchema = {
             ],
             title: 'Username'
         },
-        is_active: {
-            type: 'boolean',
-            title: 'Is Active',
-            default: true
-        },
-        is_superuser: {
-            type: 'boolean',
-            title: 'Is Superuser',
-            default: false
-        },
-        full_name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Full Name'
-        },
-        role: {
-            '$ref': '#/components/schemas/UserRole',
-            default: 'host'
-        },
         password: {
             anyOf: [
                 {
@@ -1435,6 +1404,38 @@ export const UserUpdateSchema = {
                 }
             ],
             title: 'Password'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        },
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        role: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/UserRole'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',

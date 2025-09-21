@@ -7,9 +7,12 @@ from app.models import User, UserCreate, UserUpdate
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def create(self, session: Session, *, obj_in: UserCreate) -> User:
-        user = User.model_validate(
-            obj_in,
-            update={"hashed_password": get_password_hash(obj_in.password)}
+        create_data = obj_in.model_dump()
+        create_data.pop("password")  # Remove password field
+        user = User(
+            **create_data,
+            hashed_password=get_password_hash(obj_in.password),
+            is_superuser=False  # Always set to False for API-created users
         )
         session.add(user)
         session.flush()

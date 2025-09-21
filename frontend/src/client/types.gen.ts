@@ -238,11 +238,10 @@ export type UpdatePassword = {
 
 export type UserCreate = {
     username: string;
+    password: string;
     is_active?: boolean;
-    is_superuser?: boolean;
     full_name?: (string | null);
     role?: UserRole;
-    password: string;
 };
 
 export type UserPublic = {
@@ -269,11 +268,10 @@ export type UsersPublic = {
 
 export type UserUpdate = {
     username?: (string | null);
-    is_active?: boolean;
-    is_superuser?: boolean;
-    full_name?: (string | null);
-    role?: UserRole;
     password?: (string | null);
+    is_active?: (boolean | null);
+    full_name?: (string | null);
+    role?: (UserRole | null);
 };
 
 export type UserUpdateMe = {

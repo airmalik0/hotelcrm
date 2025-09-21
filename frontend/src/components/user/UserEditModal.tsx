@@ -31,7 +31,6 @@ export function UserEditModal({
     full_name: user.full_name || "",
     role: user.role || "host",
     is_active: user.is_active ?? true,
-    is_superuser: user.is_superuser ?? false,
     password: null,
   })
 
@@ -43,7 +42,6 @@ export function UserEditModal({
       full_name: user.full_name || "",
       role: user.role || "host",
       is_active: user.is_active ?? true,
-      is_superuser: user.is_superuser ?? false,
       password: null,
     })
     setChangePassword(false)
@@ -72,7 +70,6 @@ export function UserEditModal({
       full_name: user.full_name || "",
       role: user.role || "host",
       is_active: user.is_active ?? true,
-      is_superuser: user.is_superuser ?? false,
       password: null,
     })
     setErrors({})
@@ -287,8 +284,8 @@ export function UserEditModal({
                 )}
               </div>
 
-              {/* Status and Permissions */}
-              <div className="space-y-3">
+              {/* Status */}
+              <div>
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -311,25 +308,6 @@ export function UserEditModal({
                       Warning: Deactivating will prevent user from logging in
                     </p>
                   )}
-
-                {formData.role === "admin" && (
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="is_superuser"
-                      name="is_superuser"
-                      checked={formData.is_superuser}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label
-                      htmlFor="is_superuser"
-                      className="ml-3 text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                    >
-                      Superuser privileges
-                    </label>
-                  </div>
-                )}
               </div>
             </div>
 
