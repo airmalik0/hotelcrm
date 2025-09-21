@@ -246,32 +246,8 @@ export function HostDashboard() {
           </div>
         </div>
 
-        {/* Quick Actions & Stats */}
+        {/* Status Summary */}
         <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-              Quick Actions
-            </h3>
-
-            <div className="space-y-3">
-              <button className="w-full flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-600/40 transition-colors">
-                <LogIn className="w-5 h-5" />
-                <span className="font-medium">Quick Check-in</span>
-              </button>
-
-              <button className="w-full flex items-center gap-3 p-3 bg-success-50 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-lg hover:bg-success-100 dark:hover:bg-success-600/40 transition-colors">
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Quick Check-out</span>
-              </button>
-
-              <button className="w-full flex items-center gap-3 p-3 bg-warning-50 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400 rounded-lg hover:bg-warning-100 dark:hover:bg-warning-600/40 transition-colors">
-                <Calendar className="w-5 h-5" />
-                <span className="font-medium">New Booking</span>
-              </button>
-            </div>
-          </div>
-
           {/* Status Summary */}
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">

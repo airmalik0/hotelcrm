@@ -157,23 +157,6 @@ export function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
-          {/* System Health */}
-          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                System Health
-              </h3>
-              <Shield className="w-5 h-5 text-success-600" />
-            </div>
-
-            <div className="space-y-3">
-              <div className="text-center py-4">
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-                  System metrics will be available soon
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* Quick Stats */}
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">

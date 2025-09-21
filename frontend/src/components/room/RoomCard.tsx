@@ -1,8 +1,12 @@
+import { updateRoomStatus } from "@/api/rooms"
 import type { RoomPublic, RoomStatus } from "@/client/types.gen"
 import { useRole } from "@/hooks/useRole"
 import { formatCurrency } from "@/utils/formatters"
+import { showSuccess, showError } from "@/utils/error-handling"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Building2, Edit, Eye, Trash2 } from "lucide-react"
 import type React from "react"
+import { useState } from "react"
 
 interface RoomCardProps {
   room: RoomPublic
@@ -58,6 +62,28 @@ function getRoomTypeBadgeClasses(type: string): string {
 export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
   const { hasAnyRole } = useRole()
   const canEdit = hasAnyRole(["admin", "manager"])
+  const canUpdateStatus = hasAnyRole(["admin", "manager", "host"])
+  const queryClient = useQueryClient()
+  const [isChangingStatus, setIsChangingStatus] = useState(false)
+
+  const statusMutation = useMutation({
+    mutationFn: (newStatus: RoomStatus) => updateRoomStatus(room.id, newStatus),
+    onSuccess: () => {
+      showSuccess("Room status updated successfully")
+      queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      setIsChangingStatus(false)
+    },
+    onError: (error) => {
+      showError(error, "Failed to update room status")
+    },
+  })
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value as RoomStatus
+    if (newStatus !== room.status) {
+      statusMutation.mutate(newStatus)
+    }
+  }
 
   return (
     <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 h-full overflow-hidden hover:shadow-lg transition-shadow">
@@ -90,15 +116,36 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
 
       {/* Card Body */}
       <div className="px-6 py-5">
-        {/* Status Badge */}
+        {/* Status Badge or Selector */}
         <div className="mb-4">
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClasses(
-              room.status || "available",
-            )}`}
-          >
-            {getStatusText(room.status || "available")}
-          </span>
+          {canUpdateStatus ? (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-neutral-500 dark:text-neutral-400">
+                Status:
+              </label>
+              <select
+                value={room.status || "available"}
+                onChange={handleStatusChange}
+                disabled={statusMutation.isPending}
+                className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors ${
+                  statusMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <option value="available">Available</option>
+                <option value="occupied">Occupied</option>
+                <option value="cleaning">Cleaning</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+            </div>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClasses(
+                room.status || "available",
+              )}`}
+            >
+              {getStatusText(room.status || "available")}
+            </span>
+          )}
         </div>
 
         {/* Price */}
