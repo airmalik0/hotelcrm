@@ -1579,7 +1579,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       ${booking.total_amount}
                     </span>
                   </div>
-                  {booking.discount && booking.discount > 0 && (
+                  {booking.discount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400">
                         Discount:

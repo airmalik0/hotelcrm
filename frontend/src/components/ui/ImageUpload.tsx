@@ -1,7 +1,8 @@
 import { apiClient } from "@/lib/axios"
 import { showError, showSuccess } from "@/utils/error-handling"
+import { getFileUrl } from "@/utils/file-urls"
 import { Camera, X } from "lucide-react"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 interface ImageUploadProps {
   value?: string | null
@@ -21,9 +22,12 @@ export function ImageUpload({
   acceptedFormats = [".jpg", ".jpeg", ".png", ".webp"],
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    value ? `/api/v1/files/${value}` : null,
-  )
+  const [previewUrl, setPreviewUrl] = useState<string | null>(getFileUrl(value))
+
+  // Update preview URL when value prop changes
+  useEffect(() => {
+    setPreviewUrl(getFileUrl(value))
+  }, [value])
 
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
