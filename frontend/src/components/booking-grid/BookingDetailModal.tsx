@@ -342,9 +342,15 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     })
 
     if (confirmed) {
+      // For checked-in bookings, only send new_check_out
+      const modificationData =
+        booking.status === "checked_in"
+          ? { new_check_out: dateModification.new_check_out }
+          : dateModification
+
       modifyDatesMutation.mutate({
         id: booking.id,
-        data: dateModification,
+        data: modificationData,
       })
     }
   }
