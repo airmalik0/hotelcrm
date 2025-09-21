@@ -126,6 +126,7 @@ function BookingGridContent() {
       if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {
         // Use requestAnimationFrame to ensure DOM is ready
         requestAnimationFrame(() => {
+          // Double-check ref is still valid after async operation
           if (!gridContainerRef.current) return
 
           // Calculate pixel position of today's column
@@ -136,10 +137,16 @@ function BookingGridContent() {
           const containerWidth = gridContainerRef.current.clientWidth
           const scrollLeft = todayPixelPos - containerWidth / 2
 
-          gridContainerRef.current.scrollTo({
-            left: Math.max(0, scrollLeft),
-            behavior,
-          })
+          // Ensure smooth scrolling with error handling
+          try {
+            gridContainerRef.current.scrollTo({
+              left: Math.max(0, scrollLeft),
+              behavior,
+            })
+          } catch (error) {
+            // Fallback to direct scroll if scrollTo fails
+            gridContainerRef.current.scrollLeft = Math.max(0, scrollLeft)
+          }
         })
       }
     },
@@ -147,14 +154,18 @@ function BookingGridContent() {
   )
 
   // Auto-center on today when component mounts or view dates change
+  // NOT when zoom changes!
   useEffect(() => {
-    // Small delay to ensure DOM is fully ready and grid is rendered
+    // Simple delay to ensure DOM is ready
     const timer = setTimeout(() => {
       centerToToday("instant")
     }, 100)
 
     return () => clearTimeout(timer)
-  }, [centerToToday])
+    // IMPORTANT: Only depend on viewStart and viewMode, NOT on centerToToday or dayWidth
+    // This prevents re-centering when user zooms
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewStart, viewMode])
 
   // Fetch rooms
   const { data: roomsData, isLoading: roomsLoading } = useQuery({
@@ -325,42 +336,11 @@ function BookingGridContent() {
     setViewMode(mode)
     switchViewMode(mode)
 
-    // Calculate new view dates for the new mode
-    const { start: newViewStart } = getViewDateRange(currentDate, mode)
-
-    // Center on today when switching views with new view dates
-    requestAnimationFrame(() => {
-      if (!gridContainerRef.current) return
-
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      // Calculate days from NEW view start to today
-      const msPerDay = 24 * 60 * 60 * 1000
-      const daysSinceStart = Math.floor(
-        (today.getTime() - newViewStart.getTime()) / msPerDay,
-      )
-
-      // Only scroll if today is within the new view
-      const totalDaysInView = mode === "week" ? 7 : 30
-      if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {
-        requestAnimationFrame(() => {
-          if (!gridContainerRef.current) return
-
-          // Calculate pixel position of today's column
-          const todayPixelPos = 200 + daysSinceStart * dayWidth + dayWidth / 2
-
-          // Get container width and calculate center position
-          const containerWidth = gridContainerRef.current.clientWidth
-          const scrollLeft = todayPixelPos - containerWidth / 2
-
-          gridContainerRef.current.scrollTo({
-            left: Math.max(0, scrollLeft),
-            behavior: "instant",
-          })
-        })
-      }
-    })
+    // After view mode changes, center on today
+    // Use setTimeout to allow state updates to propagate
+    setTimeout(() => {
+      centerToToday("instant")
+    }, 0)
   }
 
   // Filter handlers
