@@ -149,6 +149,39 @@ export function CustomerProfile() {
                   </li>
                 )}
               </ul>
+
+              {/* Tags */}
+              {customer.tags && customer.tags.length > 0 && (
+                <div className="mt-4">
+                  <h6 className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
+                    Tags
+                  </h6>
+                  <div className="flex flex-wrap gap-2">
+                    {customer.tags.map((tag) => {
+                      const getTagStyle = () => {
+                        switch (tag.toLowerCase()) {
+                          case "loyal":
+                            return "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400"
+                          case "vip":
+                            return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400"
+                          case "problematic":
+                            return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400"
+                          default:
+                            return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
+                        }
+                      }
+                      return (
+                        <span
+                          key={tag}
+                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getTagStyle()}`}
+                        >
+                          {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Statistics */}
@@ -296,6 +329,38 @@ export function CustomerProfile() {
                         {customer.notes || "No notes available"}
                       </p>
                     </div>
+                    {/* Tags in details tab */}
+                    {customer.tags && customer.tags.length > 0 && (
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                          Tags
+                        </label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {customer.tags.map((tag) => {
+                            const getTagStyle = () => {
+                              switch (tag.toLowerCase()) {
+                                case "loyal":
+                                  return "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 border-success-200 dark:border-success-600"
+                                case "vip":
+                                  return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-600"
+                                case "problematic":
+                                  return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 border-danger-200 dark:border-danger-600"
+                                default:
+                                  return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600"
+                              }
+                            }
+                            return (
+                              <span
+                                key={tag}
+                                className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getTagStyle()}`}
+                              >
+                                {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">

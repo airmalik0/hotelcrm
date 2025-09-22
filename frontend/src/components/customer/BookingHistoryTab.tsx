@@ -1,8 +1,8 @@
 import { getBookings } from "@/api/bookings"
 import type { BookingPublic, BookingStatus } from "@/client/types.gen"
 import { safeParseDate } from "@/utils/date-helpers"
-import { differenceInDays } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
+import { differenceInDays } from "date-fns"
 import {
   ArrowDownUp,
   Calendar,

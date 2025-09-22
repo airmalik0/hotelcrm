@@ -151,7 +151,10 @@ export function getSearchSuggestions(
 }
 
 /**
- * Calculate filtered statistics
+ * Calculate filtered statistics with PAID occupancy rate
+ *
+ * Occupancy = Total Paid Nights / Available Room-Nights
+ * Can exceed 100% when there are overlapping bookings (overbooking)
  */
 export function calculateFilteredStats(
   allBookings: BookingPublic[],
@@ -162,12 +165,12 @@ export function calculateFilteredStats(
 ) {
   const totalBookings = filteredBookings.length
 
-  // Calculate occupancy rate using ALL bookings (not filtered by status)
-  // but only for filtered rooms (may be filtered by room type)
-  const totalRoomDays =
-    filteredRooms.length * Math.max(1, differenceInDays(viewEnd, viewStart))
+  // Calculate total available room-nights in the period
+  const periodDays = Math.max(1, differenceInDays(viewEnd, viewStart))
+  const totalAvailableNights = filteredRooms.length * periodDays
 
-  let occupiedRoomDays = 0
+  // Calculate total paid nights from bookings
+  let totalPaidNights = 0
 
   // Filter allBookings to only include bookings for filteredRooms
   const filteredRoomIds = new Set(filteredRooms.map((room) => room.id))
@@ -176,27 +179,45 @@ export function calculateFilteredStats(
   )
 
   relevantBookings.forEach((booking) => {
-    // Skip cancelled bookings in occupancy calculation
+    // Skip cancelled bookings - they don't generate revenue
     if (booking.status === "cancelled") {
       return
     }
 
-    const bookingStart = Math.max(
-      safeParseDate(booking.check_in).getTime(),
-      viewStart.getTime(),
-    )
-    const bookingEnd = Math.min(
-      safeParseDate(booking.check_out).getTime(),
-      viewEnd.getTime(),
-    )
-    // For occupancy calculation we need to handle partial days within the view
-    // Math.ceil is appropriate here as we count any partial day as occupied
-    const days = Math.ceil((bookingEnd - bookingStart) / (1000 * 60 * 60 * 24))
-    occupiedRoomDays += Math.max(0, days)
+    const bookingCheckIn = safeParseDate(booking.check_in)
+    const bookingCheckOut = safeParseDate(booking.check_out)
+
+    // Skip bookings completely outside the view period
+    if (bookingCheckOut <= viewStart || bookingCheckIn >= viewEnd) {
+      return
+    }
+
+    // Calculate total paid nights for the booking (minimum 1)
+    const totalBookingNights = Math.max(1, differenceInDays(bookingCheckOut, bookingCheckIn))
+
+    // Calculate intersection with view period
+    const effectiveStart =
+      bookingCheckIn < viewStart ? viewStart : bookingCheckIn
+    const effectiveEnd = bookingCheckOut > viewEnd ? viewEnd : bookingCheckOut
+
+    // Special case: if this is a same-day booking (totalBookingNights = 1)
+    // and it overlaps with our view period at all, count it as 1 night
+    if (totalBookingNights === 1 && effectiveStart < effectiveEnd) {
+      totalPaidNights += 1
+    } else {
+      // For multi-day bookings, count the actual days in the period
+      const daysInPeriod = differenceInDays(effectiveEnd, effectiveStart)
+      // But ensure we count at least 1 night if there's any overlap
+      const nightsInPeriod = daysInPeriod > 0 ? daysInPeriod : (effectiveStart < effectiveEnd ? 1 : 0)
+      totalPaidNights += nightsInPeriod
+    }
   })
 
+  // Calculate occupancy rate (can exceed 100% with overbooking)
   const occupancyRate =
-    totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0
+    totalAvailableNights > 0
+      ? Math.round((totalPaidNights / totalAvailableNights) * 100)
+      : 0
 
   return {
     totalBookings,

@@ -204,8 +204,7 @@ export function MobileBookingList({
                   {availableRooms.length > 0 && (
                     <button
                       onClick={() => {
-                        const firstRoom = availableRooms[0]
-                        onEmptyClick(firstRoom, date, date)
+                        onEmptyClick(null as any, date, date)
                       }}
                       className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm font-medium"
                     >

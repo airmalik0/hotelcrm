@@ -53,6 +53,20 @@ from .audit import (
     AuditLogPublic,
     AuditLogsPublic,
 )
+from .analytics import (
+    AnalyticsFilter,
+    AnalyticsResponse,
+    AnalyticsExportRequest,
+    DashboardMetrics,
+    RevenueMetrics,
+    OccupancyMetrics,
+    PaymentDistribution,
+    CustomerMetrics,
+    ComparisonMetrics,
+    GroupBy,
+    TimePeriod,
+    AgeGroup,
+)
 
 from sqlmodel import SQLModel  # re-export for Alembic
 

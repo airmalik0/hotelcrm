@@ -141,6 +141,7 @@ class CustomerPublic(CustomerBase):
     first_booking_date: datetime | None
     last_booking_date: datetime | None
     created_at: datetime
+    tags: list[str]
 
 
 class CustomersPublic(SQLModel):

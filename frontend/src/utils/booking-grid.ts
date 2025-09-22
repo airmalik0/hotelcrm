@@ -136,51 +136,6 @@ export function getAvailableRooms(
 }
 
 /**
- * Calculate room occupancy for a date range
- */
-export function calculateOccupancy(
-  rooms: RoomPublic[],
-  bookings: BookingPublic[],
-  startDate: Date,
-  endDate: Date,
-): number {
-  if (rooms.length === 0) return 0
-
-  const totalRoomDays =
-    rooms.length * Math.max(1, differenceInDays(endDate, startDate))
-
-  let occupiedRoomDays = 0
-
-  for (const booking of bookings) {
-    // Skip cancelled bookings in occupancy calculation
-    if (booking.status === "cancelled") {
-      continue
-    }
-
-    if (
-      isBookingInView(booking.check_in, booking.check_out, startDate, endDate)
-    ) {
-      const bookingStart = Math.max(
-        safeParseDate(booking.check_in).getTime(),
-        startDate.getTime(),
-      )
-      const bookingEnd = Math.min(
-        safeParseDate(booking.check_out).getTime(),
-        endDate.getTime(),
-      )
-      // For occupancy calculation we need to handle partial days within the view
-      // Math.ceil is appropriate here as we count any partial day as occupied
-      const days = Math.ceil(
-        (bookingEnd - bookingStart) / (1000 * 60 * 60 * 24),
-      )
-      occupiedRoomDays += days
-    }
-  }
-
-  return Math.round((occupiedRoomDays / totalRoomDays) * 100)
-}
-
-/**
  * Get guest initials from full name
  */
 export function getGuestInitials(fullName: string | undefined | null): string {

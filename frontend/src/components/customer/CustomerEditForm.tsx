@@ -5,6 +5,7 @@ import type {
   District,
 } from "@/client/types.gen"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
+import { TagsInput } from "@/components/ui/TagsInput"
 import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -28,6 +29,13 @@ const DISTRICT_OPTIONS: Array<{ value: District; label: string }> = [
   { value: "YANGIHAYOT", label: "Yangihayot" },
 ]
 
+// Available customer tags from backend enum
+const CUSTOMER_TAGS: Array<{ value: string; label: string }> = [
+  { value: "loyal", label: "Loyal" },
+  { value: "vip", label: "VIP" },
+  { value: "problematic", label: "Problematic" },
+]
+
 interface CustomerEditFormProps {
   customer: CustomerPublic
 }
@@ -45,6 +53,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
       : "",
     district: customer.district || undefined,
     notes: customer.notes || "",
+    tags: customer.tags || [],
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -120,6 +129,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         date_of_birth: formData.date_of_birth || undefined,
         district: formData.district as District | undefined,
         notes: formData.notes || undefined,
+        tags: formData.tags || undefined,
       }
       updateMutation.mutate(submitData)
     }
@@ -138,6 +148,13 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         return newErrors
       })
     }
+  }
+
+  const handleTagsChange = (tags: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags,
+    }))
   }
 
   const handleCancel = () => {
@@ -253,6 +270,18 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               options={DISTRICT_OPTIONS}
               placeholder="Select a district"
               error={errors.district}
+            />
+          </div>
+
+          {/* Tags */}
+          <div className="sm:col-span-2">
+            <TagsInput
+              label="Tags"
+              value={formData.tags || []}
+              onChange={handleTagsChange}
+              availableTags={CUSTOMER_TAGS}
+              placeholder="Select customer tags..."
+              disabled={updateMutation.isPending}
             />
           </div>
 

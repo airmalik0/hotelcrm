@@ -28,6 +28,7 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "apscheduler>=3.10.4",
     "slowapi>=0.1.9",
+    "psycopg2-binary>=2.9.10",
 ]
 
 [tool.uv]

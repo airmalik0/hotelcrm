@@ -14,9 +14,7 @@ export function getFileUrl(path: string | null | undefined): string | null {
 
   // In production, we need the full API URL
   // In development with Vite proxy, relative URLs work fine
-  return baseURL
-    ? `${baseURL}/api/v1/files/${path}`
-    : `/api/v1/files/${path}`
+  return baseURL ? `${baseURL}/api/v1/files/${path}` : `/api/v1/files/${path}`
 }
 
 /**
@@ -29,7 +27,7 @@ export function isValidFileUrl(url: string | null | undefined): boolean {
 
   try {
     const urlObj = new URL(url, window.location.origin)
-    return urlObj.pathname.includes('/api/v1/files/')
+    return urlObj.pathname.includes("/api/v1/files/")
   } catch {
     return false
   }

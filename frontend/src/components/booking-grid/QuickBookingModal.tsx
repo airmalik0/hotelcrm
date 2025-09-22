@@ -12,7 +12,13 @@ import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
-import { addDays, differenceInDays, format, setHours, setMinutes } from "date-fns"
+import {
+  addDays,
+  differenceInDays,
+  format,
+  setHours,
+  setMinutes,
+} from "date-fns"
 import {
   Bed,
   Calendar,

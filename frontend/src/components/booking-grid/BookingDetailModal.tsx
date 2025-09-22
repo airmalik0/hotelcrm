@@ -864,7 +864,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         // Calculate nights the same way as backend: difference in days only
                         const checkIn = safeParseDate(booking.check_in)
                         const checkOut = safeParseDate(booking.check_out)
-                        const nights = Math.max(1, differenceInDays(checkOut, checkIn))
+                        const nights = Math.max(
+                          1,
+                          differenceInDays(checkOut, checkIn),
+                        )
                         const priceDiff =
                           (newRoom.price_per_night -
                             (booking.room?.price_per_night || 0)) *
@@ -972,7 +975,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   </h3>
                 </div>
                 {((canModifyPlannedDates() && booking.status === "confirmed") ||
-                  (canPerformActualOperations && booking.status === "checked_in")) && (
+                  (canPerformActualOperations &&
+                    booking.status === "checked_in")) && (
                   <button
                     onClick={() => {
                       setShowDateModification(true)
@@ -995,7 +999,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
                   >
                     <Edit2 className="w-3 h-3" />
-                    {booking.status === "checked_in" ? "Modify Check-out" : "Modify Dates"}
+                    {booking.status === "checked_in"
+                      ? "Modify Check-out"
+                      : "Modify Dates"}
                   </button>
                 )}
               </div>
@@ -1199,14 +1205,20 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     }
 
                     // Calculate price difference
-                    const newNights = Math.max(1, differenceInDays(
-                      safeParseDate(dateModification.new_check_out),
-                      safeParseDate(dateModification.new_check_in)
-                    ))
-                    const oldNights = Math.max(1, differenceInDays(
-                      safeParseDate(booking.check_out),
-                      safeParseDate(booking.check_in)
-                    ))
+                    const newNights = Math.max(
+                      1,
+                      differenceInDays(
+                        safeParseDate(dateModification.new_check_out),
+                        safeParseDate(dateModification.new_check_in),
+                      ),
+                    )
+                    const oldNights = Math.max(
+                      1,
+                      differenceInDays(
+                        safeParseDate(booking.check_out),
+                        safeParseDate(booking.check_in),
+                      ),
+                    )
                     const nightsDiff = newNights - oldNights
                     const priceDiff =
                       nightsDiff * (booking.room?.price_per_night || 0)
@@ -1353,15 +1365,17 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     Payment Details
                   </h3>
                 </div>
-                {!isEditing && booking.status === "confirmed" && canUpdateDiscount && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    Edit
-                  </button>
-                )}
+                {!isEditing &&
+                  booking.status === "confirmed" &&
+                  canUpdateDiscount && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      Edit
+                    </button>
+                  )}
               </div>
 
               {isEditing ? (
@@ -1485,10 +1499,13 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           Nights:
                         </span>
                         <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {Math.max(1, differenceInDays(
-                            safeParseDate(booking.check_out),
-                            safeParseDate(booking.check_in)
-                          ))}
+                          {Math.max(
+                            1,
+                            differenceInDays(
+                              safeParseDate(booking.check_out),
+                              safeParseDate(booking.check_in),
+                            ),
+                          )}
                         </span>
                       </div>
                       <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">

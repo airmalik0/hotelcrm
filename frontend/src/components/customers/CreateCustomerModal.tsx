@@ -41,7 +41,10 @@ const DISTRICTS: District[] = [
 
 // Helper function to format district for display
 const formatDistrictDisplay = (district: string): string => {
-  return district.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())
+  return district
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase())
 }
 
 export const CreateCustomerModal = memo(function CreateCustomerModal({

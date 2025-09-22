@@ -6,10 +6,10 @@ import type {
 } from "@/client/types.gen"
 import { isRoomAvailable } from "@/utils/booking-grid"
 import { safeParseDate } from "@/utils/date-helpers"
-import { differenceInDays } from "date-fns"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { invalidateAfterBookingUpdate } from "@/utils/query-invalidation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { differenceInDays } from "date-fns"
 import { useCallback, useState } from "react"
 
 interface DragState {

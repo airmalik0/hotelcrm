@@ -131,7 +131,8 @@ function BookingGridContent() {
       const daysSinceStart = differenceInDays(today, currentViewStart)
 
       // Calculate total days in view
-      const totalDaysInView = differenceInDays(currentViewEnd, currentViewStart) + 1
+      const totalDaysInView =
+        differenceInDays(currentViewEnd, currentViewStart) + 1
 
       // Only scroll if today is within the current view
       if (daysSinceStart >= 0 && daysSinceStart < totalDaysInView) {

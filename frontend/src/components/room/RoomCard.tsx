@@ -1,8 +1,8 @@
 import { updateRoomStatus } from "@/api/rooms"
 import type { RoomPublic, RoomStatus } from "@/client/types.gen"
 import { useRole } from "@/hooks/useRole"
+import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
-import { showSuccess, showError } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Building2, Edit, Eye, Trash2 } from "lucide-react"
 import type React from "react"
@@ -135,7 +135,9 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                 onChange={handleStatusChange}
                 disabled={statusMutation.isPending}
                 className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors ${
-                  statusMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+                  statusMutation.isPending
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 <option value="available">Available</option>
@@ -158,7 +160,9 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                 onClick={handleMarkAvailable}
                 disabled={statusMutation.isPending}
                 className={`px-3 py-1 bg-success-50 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-lg text-xs font-medium hover:bg-success-100 dark:hover:bg-success-600/40 transition-colors ${
-                  statusMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+                  statusMutation.isPending
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 Mark as Available
