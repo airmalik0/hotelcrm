@@ -10,6 +10,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
+    Image,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -19,6 +20,7 @@ from reportlab.platypus import (
 )
 
 from app.models.analytics import DashboardMetrics
+from app.services.chart_generator import ChartGenerator
 
 
 class PDFReportService:
@@ -28,6 +30,7 @@ class PDFReportService:
         """Initialize PDF report service."""
         self.styles = getSampleStyleSheet()
         self._setup_custom_styles()
+        self.chart_generator = ChartGenerator()
 
     def _setup_custom_styles(self) -> None:
         """Setup custom styles for the report."""
@@ -116,6 +119,15 @@ class PDFReportService:
         elements.append(generated_text)
         elements.append(Spacer(1, 20))
 
+        # Key Metrics Chart
+        try:
+            key_metrics_chart = self.chart_generator.generate_key_metrics_chart(metrics)
+            elements.append(self._chart_to_image(key_metrics_chart, width=7*inch, height=3.5*inch))
+            elements.append(Spacer(1, 20))
+        except Exception:
+            # If chart generation fails, continue without it
+            pass
+
         # Revenue Section
         elements.append(Paragraph("Revenue Metrics", self.styles["SectionHeader"]))
         revenue_data = [
@@ -130,6 +142,15 @@ class PDFReportService:
         revenue_table = self._create_table(revenue_data)
         elements.append(revenue_table)
         elements.append(Spacer(1, 20))
+
+        # Revenue Trend Chart
+        if metrics.revenue_trend:
+            try:
+                revenue_chart = self.chart_generator.generate_revenue_trend_chart(metrics)
+                elements.append(self._chart_to_image(revenue_chart, width=6.5*inch, height=4*inch))
+                elements.append(Spacer(1, 20))
+            except Exception:
+                pass
 
         # Occupancy Section
         elements.append(Paragraph("Occupancy Metrics", self.styles["SectionHeader"]))
@@ -222,6 +243,22 @@ class PDFReportService:
         doc.build(elements)
         buffer.seek(0)
         return buffer
+
+    def _chart_to_image(self, chart_bytes: bytes, width: float = 6*inch, height: float = 4*inch) -> Image:
+        """
+        Convert chart bytes to ReportLab Image.
+
+        Args:
+            chart_bytes: PNG bytes from chart generator
+            width: Image width
+            height: Image height
+
+        Returns:
+            ReportLab Image object
+        """
+        img_buffer = BytesIO(chart_bytes)
+        img = Image(img_buffer, width=width, height=height)
+        return img
 
     def _create_table(
         self,

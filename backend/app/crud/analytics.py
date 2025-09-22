@@ -2,9 +2,10 @@
 CRUD operations for analytics.
 All SQL queries for analytics data retrieval.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from sqlalchemy import case
 from sqlmodel import Session, func, select
 
 from app.models import Booking, BookingStatus, Customer, Room
@@ -188,11 +189,10 @@ class CRUDAnalytics:
 
         check_outs = session.exec(checkout_query).first() or 0
 
-        # Count cancellations (by updated_at for cancelled bookings)
-        # Using updated_at as we don't have a dedicated cancelled_at field
+        # Count cancellations (by check_in date - shows cancelled bookings that were supposed to arrive in this period)
         cancellation_query = select(func.count(Booking.id)).where(
-            Booking.updated_at >= date_from,
-            Booking.updated_at <= date_to,
+            Booking.check_in >= date_from,
+            Booking.check_in <= date_to,
             Booking.status == BookingStatus.CANCELLED,
         )
         if room_id and room_id != "all":
@@ -568,6 +568,600 @@ class CRUDAnalytics:
             })
 
         return hourly_data
+
+    def get_seasonal_trends(
+        self,
+        session: Session,
+        years: int = 2,
+    ) -> dict[str, Any]:
+        """
+        Get seasonal trends analysis over multiple years.
+
+        Args:
+            years: Number of years to analyze (default: 2)
+
+        Returns:
+            Dictionary with monthly trends, quarterly trends, and year-over-year comparison
+        """
+        end_date = datetime.now(timezone.utc)
+        start_date = end_date - timedelta(days=years * 365)
+
+        # Monthly revenue and occupancy trends
+        # Use a column reference for GROUP BY to avoid PostgreSQL grouping error
+        month_col = func.date_trunc("month", Booking.check_in)
+        monthly_query = select(
+            month_col.label("month"),
+            func.sum(Booking.total_amount).label("revenue"),
+            func.count(Booking.id).label("bookings"),
+            func.sum(
+                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+            ).label("nights"),
+        ).where(
+            Booking.check_in >= start_date,
+            Booking.check_in <= end_date,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            month_col
+        ).order_by(
+            month_col
+        )
+
+        monthly_results = session.exec(monthly_query).all()
+
+        # Process monthly data
+        monthly_trends = []
+        for result in monthly_results:
+            if result.month:
+                monthly_trends.append({
+                    "month": result.month.strftime("%Y-%m"),
+                    "month_name": result.month.strftime("%B %Y"),
+                    "revenue": float(result.revenue or 0),
+                    "bookings": int(result.bookings or 0),
+                    "nights": int(result.nights or 0),
+                })
+
+        # Quarterly aggregation
+        # Use column references for GROUP BY to avoid PostgreSQL grouping error
+        year_col = func.extract("year", Booking.check_in)
+        quarter_col = func.extract("quarter", Booking.check_in)
+        quarterly_query = select(
+            year_col.label("year"),
+            quarter_col.label("quarter"),
+            func.sum(Booking.total_amount).label("revenue"),
+            func.count(Booking.id).label("bookings"),
+            func.avg(Booking.total_amount).label("avg_booking_value"),
+        ).where(
+            Booking.check_in >= start_date,
+            Booking.check_in <= end_date,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            year_col,
+            quarter_col
+        ).order_by(
+            year_col,
+            quarter_col
+        )
+
+        quarterly_results = session.exec(quarterly_query).all()
+
+        # Process quarterly data
+        quarterly_trends = []
+        for result in quarterly_results:
+            quarterly_trends.append({
+                "year": int(result.year),
+                "quarter": int(result.quarter),
+                "label": f"Q{int(result.quarter)} {int(result.year)}",
+                "revenue": float(result.revenue or 0),
+                "bookings": int(result.bookings or 0),
+                "avg_booking_value": float(result.avg_booking_value or 0),
+            })
+
+        # Year-over-year comparison by month
+        yoy_comparison = {}
+        for trend in monthly_trends:
+            month_date = datetime.strptime(trend["month"], "%Y-%m")
+            month_num = month_date.month
+            year = month_date.year
+
+            if month_num not in yoy_comparison:
+                yoy_comparison[month_num] = {}
+
+            yoy_comparison[month_num][year] = {
+                "revenue": trend["revenue"],
+                "bookings": trend["bookings"],
+            }
+
+        # Calculate YoY growth rates
+        yoy_growth = []
+        for month_num, years_data in yoy_comparison.items():
+            sorted_years = sorted(years_data.keys())
+            for i in range(1, len(sorted_years)):
+                prev_year = sorted_years[i - 1]
+                curr_year = sorted_years[i]
+
+                prev_revenue = years_data[prev_year]["revenue"]
+                curr_revenue = years_data[curr_year]["revenue"]
+
+                growth_rate = ((curr_revenue - prev_revenue) / prev_revenue * 100) if prev_revenue > 0 else 0
+
+                month_name = datetime(2000, month_num, 1).strftime("%B")
+                yoy_growth.append({
+                    "month": month_name,
+                    "month_number": month_num,
+                    "previous_year": prev_year,
+                    "current_year": curr_year,
+                    "revenue_growth": round(growth_rate, 2),
+                    "previous_revenue": prev_revenue,
+                    "current_revenue": curr_revenue,
+                })
+
+        # Calculate peak and low seasons
+        if monthly_trends:
+            avg_monthly_revenue = sum(m["revenue"] for m in monthly_trends) / len(monthly_trends)
+            peak_months = [m for m in monthly_trends if m["revenue"] > avg_monthly_revenue * 1.2]
+            low_months = [m for m in monthly_trends if m["revenue"] < avg_monthly_revenue * 0.8]
+        else:
+            peak_months = []
+            low_months = []
+
+        return {
+            "monthly_trends": monthly_trends,
+            "quarterly_trends": quarterly_trends,
+            "year_over_year_growth": sorted(yoy_growth, key=lambda x: x["month_number"]),
+            "peak_months": peak_months,
+            "low_months": low_months,
+            "analysis_period": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat(),
+                "years": years,
+            }
+        }
+
+    def get_customer_segments(
+        self,
+        session: Session,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        Segment customers into categories based on their booking behavior.
+
+        Categories:
+        - VIP: Top 10% by revenue
+        - Loyal: 5+ bookings or active for 6+ months
+        - Regular: 2-4 bookings
+        - New: First booking within last 30 days
+        - At Risk: No bookings in last 90 days but had bookings before
+        """
+        if not date_to:
+            date_to = datetime.now(timezone.utc)
+        if not date_from:
+            date_from = date_to - timedelta(days=365)
+
+        # Get all customers with booking stats in the period
+        customer_stats_query = select(
+            Customer.id,
+            Customer.first_name,
+            Customer.last_name,
+            Customer.phone,
+            Customer.district,
+            Customer.first_booking_date,
+            Customer.last_booking_date,
+            Customer.total_bookings,
+            Customer.total_spent,
+            func.count(Booking.id).label("period_bookings"),
+            func.sum(Booking.total_amount).label("period_revenue"),
+            func.max(Booking.check_in).label("last_booking"),
+        ).join(
+            Booking, Customer.id == Booking.customer_id, isouter=True
+        ).where(
+            Booking.booking_date >= date_from,
+            Booking.booking_date <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            Customer.id,
+            Customer.first_name,
+            Customer.last_name,
+            Customer.phone,
+            Customer.district,
+            Customer.first_booking_date,
+            Customer.last_booking_date,
+            Customer.total_bookings,
+            Customer.total_spent
+        )
+
+        results = session.exec(customer_stats_query).all()
+
+        # Calculate thresholds
+        revenues = [r.total_spent for r in results if r.total_spent]
+        revenues.sort(reverse=True)
+        vip_threshold = revenues[int(len(revenues) * 0.1)] if len(revenues) > 10 else (revenues[0] if revenues else 0)
+
+        # Categorize customers
+        segments = {
+            "vip": [],
+            "loyal": [],
+            "regular": [],
+            "new": [],
+            "at_risk": [],
+        }
+
+        now = datetime.now(timezone.utc)
+        thirty_days_ago = now - timedelta(days=30)
+        ninety_days_ago = now - timedelta(days=90)
+
+        for customer in results:
+            # Combine first and last name
+            full_name = f"{customer.first_name} {customer.last_name}" if customer.first_name and customer.last_name else customer.first_name or customer.last_name or ""
+
+            customer_data = {
+                "id": str(customer.id),
+                "name": full_name,
+                "phone": customer.phone,
+                "district": customer.district.value if customer.district else None,
+                "total_bookings": customer.total_bookings,
+                "total_revenue": float(customer.total_spent or 0),
+                "period_bookings": customer.period_bookings,
+                "period_revenue": float(customer.period_revenue or 0),
+            }
+
+            # VIP customers (top 10% by revenue)
+            if customer.total_spent and customer.total_spent >= vip_threshold:
+                segments["vip"].append(customer_data)
+            # New customers (first booking within last 30 days)
+            elif customer.first_booking_date and customer.first_booking_date >= thirty_days_ago:
+                segments["new"].append(customer_data)
+            # Loyal customers (5+ bookings or active for 6+ months)
+            elif customer.total_bookings >= 5:
+                segments["loyal"].append(customer_data)
+            # At risk (no recent bookings but had bookings before)
+            elif customer.last_booking_date and customer.last_booking_date < ninety_days_ago:
+                segments["at_risk"].append(customer_data)
+            # Regular customers (2-4 bookings)
+            elif customer.total_bookings >= 2:
+                segments["regular"].append(customer_data)
+            else:
+                # Default to new if only 1 booking
+                segments["new"].append(customer_data)
+
+        # Calculate segment statistics
+        segment_stats = {}
+        for segment_name, customers in segments.items():
+            if customers:
+                total_revenue = sum(c["total_revenue"] for c in customers)
+                avg_revenue = total_revenue / len(customers)
+                segment_stats[segment_name] = {
+                    "count": len(customers),
+                    "total_revenue": total_revenue,
+                    "average_revenue": round(avg_revenue, 2),
+                    "customers": customers[:10],  # Return top 10 for each segment
+                }
+            else:
+                segment_stats[segment_name] = {
+                    "count": 0,
+                    "total_revenue": 0,
+                    "average_revenue": 0,
+                    "customers": [],
+                }
+
+        return {
+            "segments": segment_stats,
+            "summary": {
+                "total_customers": len(results),
+                "vip_percentage": round(segment_stats["vip"]["count"] / len(results) * 100, 2) if results else 0,
+                "at_risk_count": segment_stats["at_risk"]["count"],
+            },
+            "analysis_period": {
+                "start": date_from.isoformat(),
+                "end": date_to.isoformat(),
+            }
+        }
+
+    def get_customer_lifetime_value(
+        self,
+        session: Session,
+        months_back: int = 12,
+    ) -> dict[str, Any]:
+        """
+        Calculate customer lifetime value (LTV) metrics.
+
+        Returns:
+        - Average LTV
+        - LTV by customer segment
+        - Top customers by LTV
+        - LTV trends over time
+        """
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=months_back * 30)
+
+        # Get all customers with their lifetime stats
+        ltv_query = select(
+            Customer.id,
+            Customer.first_name,
+            Customer.last_name,
+            Customer.first_booking_date,
+            Customer.total_spent,
+            Customer.total_bookings,
+            func.extract("day",
+                func.coalesce(Customer.last_booking_date, datetime.now(timezone.utc)) -
+                Customer.first_booking_date
+            ).label("customer_lifetime_days"),
+        ).where(
+            Customer.first_booking_date.isnot(None),
+            Customer.first_booking_date >= cutoff_date,
+        )
+
+        results = session.exec(ltv_query).all()
+
+        if not results:
+            return {
+                "average_ltv": 0,
+                "ltv_by_tenure": [],
+                "top_customers": [],
+                "metrics": {},
+            }
+
+        # Calculate LTV metrics
+        ltv_data = []
+        for customer in results:
+            lifetime_days = max(1, int(customer.customer_lifetime_days or 1))
+            lifetime_months = float(lifetime_days) / 30
+            revenue_per_month = float(customer.total_spent or 0) / max(1.0, lifetime_months)
+
+            # Combine first and last name
+            full_name = f"{customer.first_name} {customer.last_name}" if customer.first_name and customer.last_name else customer.first_name or customer.last_name or ""
+
+            ltv_data.append({
+                "id": str(customer.id),
+                "name": full_name,
+                "ltv": float(customer.total_spent or 0),
+                "bookings": customer.total_bookings,
+                "lifetime_days": int(lifetime_days),
+                "lifetime_months": round(lifetime_months, 1),
+                "revenue_per_month": round(revenue_per_month, 2),
+                "average_booking_value": round(float(customer.total_spent or 0) / max(1, customer.total_bookings), 2),
+            })
+
+        # Sort by LTV
+        ltv_data.sort(key=lambda x: x["ltv"], reverse=True)
+
+        # Calculate tenure-based LTV
+        tenure_groups = {
+            "0-3_months": [],
+            "3-6_months": [],
+            "6-12_months": [],
+            "12+_months": [],
+        }
+
+        for customer in ltv_data:
+            if customer["lifetime_months"] <= 3:
+                tenure_groups["0-3_months"].append(customer["ltv"])
+            elif customer["lifetime_months"] <= 6:
+                tenure_groups["3-6_months"].append(customer["ltv"])
+            elif customer["lifetime_months"] <= 12:
+                tenure_groups["6-12_months"].append(customer["ltv"])
+            else:
+                tenure_groups["12+_months"].append(customer["ltv"])
+
+        ltv_by_tenure = []
+        for tenure, values in tenure_groups.items():
+            if values:
+                ltv_by_tenure.append({
+                    "tenure": tenure,
+                    "average_ltv": round(sum(values) / len(values), 2),
+                    "customer_count": len(values),
+                })
+
+        # Calculate overall metrics
+        total_ltv = sum(c["ltv"] for c in ltv_data)
+        average_ltv = total_ltv / len(ltv_data) if ltv_data else 0
+
+        return {
+            "average_ltv": round(average_ltv, 2),
+            "total_ltv": round(total_ltv, 2),
+            "ltv_by_tenure": ltv_by_tenure,
+            "top_customers": ltv_data[:20],  # Top 20 customers
+            "metrics": {
+                "average_bookings_per_customer": round(sum(c["bookings"] for c in ltv_data) / len(ltv_data), 2),
+                "average_lifetime_months": round(sum(c["lifetime_months"] for c in ltv_data) / len(ltv_data), 1),
+                "average_revenue_per_month": round(sum(c["revenue_per_month"] for c in ltv_data) / len(ltv_data), 2),
+            },
+            "analysis_period": {
+                "months_analyzed": months_back,
+                "customers_analyzed": len(ltv_data),
+            }
+        }
+
+    def get_customer_behavior_patterns(
+        self,
+        session: Session,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        Analyze customer booking behavior patterns.
+
+        Returns:
+        - Booking frequency distribution
+        - Preferred room types by customer segment
+        - Booking lead time analysis
+        - Repeat booking patterns
+        - Day of week preferences
+        """
+        if not date_to:
+            date_to = datetime.now(timezone.utc)
+        if not date_from:
+            date_from = date_to - timedelta(days=180)  # Last 6 months
+
+        # Booking frequency distribution
+        frequency_query = select(
+            Customer.total_bookings,
+            func.count(Customer.id).label("customer_count"),
+        ).group_by(
+            Customer.total_bookings
+        ).order_by(
+            Customer.total_bookings
+        )
+
+        frequency_results = session.exec(frequency_query).all()
+
+        frequency_distribution = []
+        for result in frequency_results:
+            if result.total_bookings:
+                label = f"{result.total_bookings} booking{'s' if result.total_bookings > 1 else ''}"
+                frequency_distribution.append({
+                    "bookings": result.total_bookings,
+                    "label": label,
+                    "customer_count": result.customer_count,
+                })
+
+        # Room type preferences
+        room_pref_query = select(
+            Room.room_type,
+            func.count(Booking.id).label("booking_count"),
+            func.count(func.distinct(Booking.customer_id)).label("unique_customers"),
+        ).join(
+            Booking, Room.id == Booking.room_id
+        ).where(
+            Booking.booking_date >= date_from,
+            Booking.booking_date <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            Room.room_type
+        )
+
+        room_pref_results = session.exec(room_pref_query).all()
+
+        room_preferences = []
+        for result in room_pref_results:
+            room_preferences.append({
+                "room_type": result.room_type.value,
+                "booking_count": result.booking_count,
+                "unique_customers": result.unique_customers,
+                "bookings_per_customer": round(result.booking_count / max(1, result.unique_customers), 2),
+            })
+
+        # Booking lead time analysis (days between booking and check-in)
+        lead_time_query = select(
+            func.extract("day", Booking.check_in - Booking.booking_date).label("lead_days"),
+            func.count(Booking.id).label("count"),
+        ).where(
+            Booking.booking_date >= date_from,
+            Booking.booking_date <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            func.extract("day", Booking.check_in - Booking.booking_date)
+        )
+
+        lead_time_results = session.exec(lead_time_query).all()
+
+        # Categorize lead times
+        lead_time_categories = {
+            "same_day": 0,
+            "1-3_days": 0,
+            "4-7_days": 0,
+            "8-14_days": 0,
+            "15-30_days": 0,
+            "30+_days": 0,
+        }
+
+        for result in lead_time_results:
+            if result.lead_days is not None:
+                lead_days = int(result.lead_days)
+                count = result.count
+
+                if lead_days == 0:
+                    lead_time_categories["same_day"] += count
+                elif lead_days <= 3:
+                    lead_time_categories["1-3_days"] += count
+                elif lead_days <= 7:
+                    lead_time_categories["4-7_days"] += count
+                elif lead_days <= 14:
+                    lead_time_categories["8-14_days"] += count
+                elif lead_days <= 30:
+                    lead_time_categories["15-30_days"] += count
+                else:
+                    lead_time_categories["30+_days"] += count
+
+        # Day of week preferences
+        dow_query = select(
+            func.extract("dow", Booking.check_in).label("day_of_week"),
+            func.count(Booking.id).label("count"),
+        ).where(
+            Booking.check_in >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            func.extract("dow", Booking.check_in)
+        ).order_by(
+            func.extract("dow", Booking.check_in)
+        )
+
+        dow_results = session.exec(dow_query).all()
+
+        day_names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        day_of_week_preferences = []
+        for result in dow_results:
+            if result.day_of_week is not None:
+                dow_idx = int(result.day_of_week)
+                day_of_week_preferences.append({
+                    "day": day_names[dow_idx],
+                    "day_number": dow_idx,
+                    "bookings": result.count,
+                })
+
+        # Repeat booking rate (customers with multiple bookings)
+        repeat_query = select(
+            func.count(Customer.id).label("total_customers"),
+            func.sum(case((Customer.total_bookings > 1, 1), else_=0)).label("repeat_customers"),
+        ).where(
+            Customer.first_booking_date >= date_from,
+            Customer.first_booking_date <= date_to,
+        )
+
+        repeat_result = session.exec(repeat_query).first()
+
+        repeat_rate = 0
+        if repeat_result and repeat_result.total_customers:
+            repeat_rate = (repeat_result.repeat_customers or 0) / repeat_result.total_customers * 100
+
+        return {
+            "booking_frequency": frequency_distribution,
+            "room_preferences": room_preferences,
+            "lead_time_distribution": lead_time_categories,
+            "day_of_week_preferences": day_of_week_preferences,
+            "metrics": {
+                "repeat_customer_rate": round(repeat_rate, 2),
+                "total_customers_analyzed": repeat_result.total_customers if repeat_result else 0,
+            },
+            "analysis_period": {
+                "start": date_from.isoformat(),
+                "end": date_to.isoformat(),
+            }
+        }
 
 
 analytics = CRUDAnalytics()

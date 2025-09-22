@@ -20,6 +20,7 @@ from app.models.analytics import (
     GroupBy,
 )
 from app.services.analytics import AnalyticsService
+from app.services.excel_report import ExcelReportService
 from app.services.pdf_report import PDFReportService
 
 router = APIRouter()
@@ -332,6 +333,56 @@ def export_to_pdf(
     )
 
 
+@router.post("/export/excel")
+@limiter.limit(RateLimits.CREATE)
+def export_to_excel(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    export_request: AnalyticsExportRequest,
+    current_user: User = Depends(require_admin),
+) -> Any:
+    """
+    Export analytics data to Excel with multiple sheets.
+
+    Creates a comprehensive Excel workbook with:
+    - Summary sheet with key metrics
+    - Revenue analysis
+    - Occupancy analysis
+    - Customer demographics
+    - Payment method distribution
+    - Room type performance
+
+    Requires admin access.
+    """
+    # Get analytics data
+    service = AnalyticsService(session)
+    metrics = service.get_dashboard_metrics(export_request.filters)
+
+    # Generate Excel
+    excel_service = ExcelReportService()
+    excel_buffer = excel_service.generate_dashboard_report(metrics)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="exported",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="analytics_excel_report",
+        description=f"Exported analytics Excel report for period {export_request.filters.date_from} to {export_request.filters.date_to}",
+    )
+    session.commit()
+
+    # Return Excel as stream
+    filename = f"analytics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return StreamingResponse(
+        excel_buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @router.get("/quick-stats", response_model=AnalyticsResponse)
 @limiter.limit(RateLimits.READ_LIST)
 def get_quick_stats(
@@ -350,4 +401,251 @@ def get_quick_stats(
     return AnalyticsResponse(
         success=True,
         data=quick_stats,
+    )
+
+
+@router.get("/hourly-distribution", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_hourly_distribution(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    date_from: str = Query(description="Start date in ISO format"),
+    date_to: str = Query(description="End date in ISO format"),
+    metric: str = Query("check_ins", description="Metric to analyze (check_ins or check_outs)"),
+) -> Any:
+    """
+    Get hourly distribution of check-ins or check-outs.
+
+    Shows patterns of when guests arrive or depart throughout the day.
+    Useful for staffing optimization and understanding peak times.
+
+    Requires admin access.
+    """
+    # Parse dates
+    try:
+        parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+        parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+    except ValueError as e:
+        raise ValidationError(f"Invalid date format: {str(e)}")
+
+    # Validate metric
+    if metric not in ["check_ins", "check_outs"]:
+        raise ValidationError("Metric must be 'check_ins' or 'check_outs'")
+
+    service = AnalyticsService(session)
+    hourly_data = service.get_hourly_distribution(
+        parsed_date_from,
+        parsed_date_to,
+        metric,
+    )
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="hourly_distribution",
+        description=f"Viewed hourly {metric} distribution for period {date_from} to {date_to}",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data={
+            "metric": metric,
+            "hourly_data": hourly_data,
+            "period": f"{date_from} to {date_to}",
+        },
+    )
+
+
+@router.get("/seasonal-trends", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_seasonal_trends(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    years: int = Query(2, ge=1, le=5, description="Number of years to analyze (1-5)"),
+) -> Any:
+    """
+    Get seasonal trends analysis over multiple years.
+
+    Analyzes monthly and quarterly patterns, identifies peak/low seasons,
+    and provides year-over-year comparison for revenue and bookings.
+
+    Requires admin access.
+    """
+    service = AnalyticsService(session)
+    trends_data = service.get_seasonal_trends(years)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="seasonal_trends",
+        description=f"Viewed seasonal trends analysis for {years} years",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data=trends_data,
+    )
+
+
+@router.get("/customer-segments", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_customer_segments(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    date_from: str | None = Query(None, description="Start date in ISO format"),
+    date_to: str | None = Query(None, description="End date in ISO format"),
+) -> Any:
+    """
+    Segment customers into categories based on booking behavior.
+
+    Categories:
+    - VIP: Top 10% by revenue
+    - Loyal: 5+ bookings
+    - Regular: 2-4 bookings
+    - New: First booking within last 30 days
+    - At Risk: No bookings in last 90 days
+
+    Requires admin access.
+    """
+    # Parse dates if provided
+    parsed_date_from = None
+    parsed_date_to = None
+    if date_from:
+        try:
+            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValidationError(f"Invalid date_from format: {str(e)}")
+    if date_to:
+        try:
+            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValidationError(f"Invalid date_to format: {str(e)}")
+
+    service = AnalyticsService(session)
+    segments_data = service.get_customer_segments(parsed_date_from, parsed_date_to)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="customer_segments",
+        description="Viewed customer segmentation analysis",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data=segments_data,
+    )
+
+
+@router.get("/customer-lifetime", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_customer_lifetime_value(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    months_back: int = Query(12, ge=1, le=60, description="Number of months to analyze (1-60)"),
+) -> Any:
+    """
+    Calculate customer lifetime value (LTV) metrics.
+
+    Analyzes:
+    - Average LTV across all customers
+    - LTV by customer tenure
+    - Top customers by LTV
+    - Average booking value and frequency
+
+    Requires admin access.
+    """
+    service = AnalyticsService(session)
+    ltv_data = service.get_customer_lifetime_value(months_back)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="customer_lifetime_value",
+        description=f"Viewed customer LTV analysis for {months_back} months",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data=ltv_data,
+    )
+
+
+@router.get("/customer-behavior", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_customer_behavior_patterns(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    date_from: str | None = Query(None, description="Start date in ISO format"),
+    date_to: str | None = Query(None, description="End date in ISO format"),
+) -> Any:
+    """
+    Analyze customer booking behavior patterns.
+
+    Includes:
+    - Booking frequency distribution
+    - Room type preferences
+    - Booking lead time analysis
+    - Day of week preferences
+    - Repeat customer rate
+
+    Requires admin access.
+    """
+    # Parse dates if provided
+    parsed_date_from = None
+    parsed_date_to = None
+    if date_from:
+        try:
+            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValidationError(f"Invalid date_from format: {str(e)}")
+    if date_to:
+        try:
+            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValidationError(f"Invalid date_to format: {str(e)}")
+
+    service = AnalyticsService(session)
+    behavior_data = service.get_customer_behavior_patterns(parsed_date_from, parsed_date_to)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="customer_behavior",
+        description="Viewed customer behavior analysis",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data=behavior_data,
     )

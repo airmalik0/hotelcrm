@@ -273,30 +273,72 @@ class AnalyticsService:
             metric,
         )
 
-    def get_forecast(
-        self,
-        forecast_days: int = 30,
-        base_on_days: int = 365,
-    ) -> dict[str, Any]:
+    def get_seasonal_trends(self, years: int = 2) -> dict[str, Any]:
         """
-        Generate forecast based on historical data.
+        Get seasonal trends analysis over multiple years.
 
         Args:
-            forecast_days: Number of days to forecast
-            base_on_days: Number of historical days to base forecast on
+            years: Number of years to analyze (default: 2)
 
         Returns:
-            Forecast data (simplified for MVP)
+            Seasonal trends data including monthly, quarterly, and YoY comparisons
         """
-        # This is a placeholder for future implementation
-        # Would use statistical methods or ML for actual forecasting
-        return {
-            "forecast_period": forecast_days,
-            "based_on_days": base_on_days,
-            "predicted_revenue": 0.0,
-            "predicted_occupancy": 0.0,
-            "confidence_level": 0.0,
-        }
+        if years < 1 or years > 5:
+            raise ValidationError("Years must be between 1 and 5")
+
+        return self.crud.get_seasonal_trends(self.session, years)
+
+    def get_customer_segments(
+        self,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        Segment customers into categories based on booking behavior.
+
+        Args:
+            date_from: Start date for analysis
+            date_to: End date for analysis
+
+        Returns:
+            Customer segmentation data
+        """
+        return self.crud.get_customer_segments(self.session, date_from, date_to)
+
+    def get_customer_lifetime_value(self, months_back: int = 12) -> dict[str, Any]:
+        """
+        Calculate customer lifetime value metrics.
+
+        Args:
+            months_back: Number of months to analyze (default: 12)
+
+        Returns:
+            Customer LTV analysis
+        """
+        if months_back < 1 or months_back > 60:
+            raise ValidationError("Months back must be between 1 and 60")
+
+        return self.crud.get_customer_lifetime_value(self.session, months_back)
+
+    def get_customer_behavior_patterns(
+        self,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        Analyze customer booking behavior patterns.
+
+        Args:
+            date_from: Start date for analysis
+            date_to: End date for analysis
+
+        Returns:
+            Customer behavior analysis
+        """
+        if date_from and date_to:
+            self.validate_date_range(date_from, date_to)
+
+        return self.crud.get_customer_behavior_patterns(self.session, date_from, date_to)
 
     def get_revenue_details(self, filters: AnalyticsFilter, group_by: str = "day") -> dict[str, Any]:
         """Get detailed revenue analytics with time series data."""
