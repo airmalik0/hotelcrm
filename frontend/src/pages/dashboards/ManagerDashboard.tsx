@@ -1,8 +1,8 @@
-import { getBookings } from "@/api/bookings"
+import { getQuickStats } from "@/api/analytics"
 import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { KPICard } from "@/components/dashboard/KPICard"
-import { safeParseDate } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import {
   Building2,
@@ -15,7 +15,12 @@ import {
 import React from "react"
 
 export function ManagerDashboard() {
-  // Fetch all data using our API wrappers
+  // Fetch analytics data from unified API
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["analytics", "quick-stats"],
+    queryFn: getQuickStats,
+  })
+
   const { data: rooms, isLoading: roomsLoading } = useQuery({
     queryKey: ["rooms", "all"],
     queryFn: () => getRooms({ limit: 1000 }),
@@ -26,31 +31,16 @@ export function ManagerDashboard() {
     queryFn: () => getCustomers({ limit: 1000 }),
   })
 
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["bookings", "all"],
-    queryFn: () => getBookings({ limit: 1000 }),
-  })
+  // Use analytics API data instead of manual calculations
+  const todaysRevenue = analytics?.data?.today?.revenue || 0
+  const todaysBookings = analytics?.data?.today?.bookings || 0
+  const occupancyRate = analytics?.data?.today?.occupancy || 0
+  const monthRevenue = analytics?.data?.month?.revenue || 0
 
-  // Calculate metrics
-  const totalRevenue =
-    bookings?.data?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0
-  const occupiedRooms =
-    rooms?.data?.filter((room) => room.status === "occupied").length || 0
-  const availableRooms =
-    rooms?.data?.filter((room) => room.status === "available").length || 0
-
-  const todayBookings =
-    bookings?.data?.filter((booking) => {
-      const today = new Date().toDateString()
-      return (
-        safeParseDate(booking.check_in).toDateString() === today &&
-        booking.status !== "cancelled"
-      )
-    }) || []
-
-  const occupancyRate = rooms?.count
-    ? Math.round((occupiedRooms / rooms.count) * 100)
-    : 0
+  // Keep room counts from rooms API (for room status breakdown)
+  const totalRooms = rooms?.count || 0
+  const availableRooms = rooms?.data?.filter((room) => room.status === "available").length || 0
+  const occupiedRooms = rooms?.data?.filter((room) => room.status === "occupied").length || 0
 
   return (
     <div className="space-y-6">
@@ -77,27 +67,27 @@ export function ManagerDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Room Occupancy"
+          title="Today's Occupancy"
           value={`${occupancyRate}%`}
           icon={Building2}
           color="primary"
-          loading={roomsLoading}
+          loading={analyticsLoading}
         />
 
         <KPICard
           title="Today's Bookings"
-          value={todayBookings.length}
+          value={todaysBookings}
           icon={Calendar}
           color="success"
-          loading={bookingsLoading}
+          loading={analyticsLoading}
         />
 
         <KPICard
-          title="Total Revenue"
-          value={`$${totalRevenue.toLocaleString()}`}
+          title="Month Revenue"
+          value={formatCurrency(monthRevenue)}
           icon={DollarSign}
           color="warning"
-          loading={bookingsLoading}
+          loading={analyticsLoading}
         />
 
         <KPICard
@@ -173,41 +163,36 @@ export function ManagerDashboard() {
               </div>
             </div>
 
-            {/* Recent Bookings */}
+            {/* Analytics Summary */}
             <div className="border-t border-neutral-200 dark:border-neutral-600 pt-6">
               <h4 className="font-medium text-neutral-900 dark:text-white mb-4">
-                Recent Bookings
+                Today's Performance
               </h4>
               <div className="space-y-3">
-                {bookings?.data?.slice(0, 3).map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-600/30 rounded-full flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {booking.customer?.first_name}{" "}
-                          {booking.customer?.last_name}
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Room {booking.room?.room_number}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                        ${booking.total_amount}
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {safeParseDate(booking.check_in).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Revenue
+                  </span>
+                  <span className="text-sm font-medium text-neutral-900 dark:text-white">
+                    {formatCurrency(todaysRevenue)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Bookings
+                  </span>
+                  <span className="text-sm font-medium text-neutral-900 dark:text-white">
+                    {todaysBookings}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Occupancy Rate
+                  </span>
+                  <span className="text-sm font-medium text-neutral-900 dark:text-white">
+                    {occupancyRate}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -227,23 +212,18 @@ export function ManagerDashboard() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Check-ins
+                  Today's Bookings
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                  {todayBookings.length}
+                  {todaysBookings}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Check-outs
+                  Available Rooms
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                  {bookings?.data?.filter((booking) => {
-                    const today = new Date().toDateString()
-                    return (
-                      safeParseDate(booking.check_out).toDateString() === today
-                    )
-                  }).length || 0}
+                  {availableRooms}
                 </span>
               </div>
               <div className="flex items-center justify-between">

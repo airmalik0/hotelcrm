@@ -1,9 +1,9 @@
-import { getBookings } from "@/api/bookings"
+import { getQuickStats } from "@/api/analytics"
 import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
-import { safeParseDate } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
@@ -18,7 +18,12 @@ import {
 import React from "react"
 
 export function AdminDashboard() {
-  // Fetch all data using our API wrappers
+  // Fetch analytics data from unified API
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["analytics", "quick-stats"],
+    queryFn: getQuickStats,
+  })
+
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
     queryFn: () => getUsers({ limit: 1000 }),
@@ -34,29 +39,16 @@ export function AdminDashboard() {
     queryFn: () => getCustomers({ limit: 1000 }),
   })
 
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
-    queryKey: ["bookings", "all"],
-    queryFn: () => getBookings({ limit: 1000 }),
-  })
+  // Use analytics API data instead of manual calculations
+  const totalRevenue = analytics?.data?.month?.revenue || 0
+  const todayBookings = analytics?.data?.today?.bookings || 0
+  const occupancyRate = analytics?.data?.today?.occupancy || 0
 
-  // Calculate metrics
-  const totalRevenue =
-    bookings?.data?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0
-
-  // Separate available and occupied rooms for proper calculation
+  // Keep room status from rooms API (for room management, not analytics)
   const availableRooms =
     rooms?.data?.filter((room) => room.status === "available").length || 0
   const occupiedRooms =
     rooms?.data?.filter((room) => room.status === "occupied").length || 0
-
-  const todayBookings =
-    bookings?.data?.filter((booking) => {
-      const today = new Date().toDateString()
-      return (
-        safeParseDate(booking.check_in).toDateString() === today &&
-        booking.status !== "cancelled"
-      )
-    }).length || 0
 
   return (
     <div className="space-y-6">
@@ -99,11 +91,11 @@ export function AdminDashboard() {
         />
 
         <KPICard
-          title="Total Revenue"
-          value={`$${totalRevenue.toLocaleString()}`}
+          title="Month Revenue"
+          value={formatCurrency(totalRevenue)}
           icon={DollarSign}
           color="purple"
-          loading={bookingsLoading}
+          loading={analyticsLoading}
         />
       </div>
 
@@ -194,10 +186,7 @@ export function AdminDashboard() {
                   Occupancy Rate
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                  {rooms?.count
-                    ? Math.round((occupiedRooms / rooms.count) * 100)
-                    : 0}
-                  %
+                  {occupancyRate}%
                 </span>
               </div>
             </div>
