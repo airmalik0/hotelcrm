@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from sqlmodel import SQLModel
 
 
@@ -53,45 +53,61 @@ class AnalyticsFilter(SQLModel):
     group_by: GroupBy | None = None
     include_cancelled: bool = Field(default=False, description="Include cancelled bookings in metrics")
 
+    @field_validator('date_from', 'date_to')
+    @classmethod
+    def validate_dates(cls, v: datetime) -> datetime:
+        """Ensure dates are timezone-aware."""
+        if v.tzinfo is None:
+            raise ValueError("Dates must be timezone-aware")
+        return v
+
+    @field_validator('room_type')
+    @classmethod
+    def validate_room_type(cls, v: str | None) -> str | None:
+        """Validate room type values."""
+        if v is not None and v not in ["standard", "vip", "all"]:
+            raise ValueError("room_type must be 'standard', 'vip', or 'all'")
+        return v
+
 
 class RevenueMetrics(SQLModel):
     """Revenue-related metrics."""
-    total_revenue: float = Field(description="Total revenue for the period")
-    average_daily_rate: float = Field(description="ADR - Average price per night")
-    revenue_per_available_room: float = Field(description="RevPAR")
-    total_bookings: int = Field(description="Number of bookings")
-    total_nights: int = Field(description="Total nights booked")
-    discount_amount: float = Field(description="Total discounts given")
-    refund_amount: float = Field(description="Total refunds")
+    total_revenue: float = Field(ge=0, description="Total revenue for the period")
+    average_daily_rate: float = Field(ge=0, description="ADR - Average price per night")
+    revenue_per_available_room: float = Field(ge=0, description="RevPAR")
+    total_bookings: int = Field(ge=0, description="Number of bookings")
+    total_nights: int = Field(ge=0, description="Total nights booked")
+    discount_amount: float = Field(ge=0, description="Total discounts given")
+    refund_amount: float = Field(ge=0, description="Total refunds")
 
 
 class OccupancyMetrics(SQLModel):
     """Occupancy and utilization metrics."""
-    occupancy_rate: float = Field(description="Percentage of rooms occupied")
-    average_length_of_stay: float = Field(description="Average nights per booking")
-    total_available_room_nights: int = Field(description="Total room nights available")
-    total_occupied_room_nights: int = Field(description="Total room nights occupied")
-    check_ins: int = Field(description="Number of check-ins")
-    check_outs: int = Field(description="Number of check-outs")
-    cancellations: int = Field(description="Number of cancellations")
+    occupancy_rate: float = Field(ge=0, le=100, description="Percentage of rooms occupied")
+    average_length_of_stay: float = Field(ge=0, description="Average nights per booking")
+    total_available_room_nights: int = Field(ge=0, description="Total room nights available")
+    total_occupied_room_nights: int = Field(ge=0, description="Total room nights occupied")
+    check_ins: int = Field(ge=0, description="Number of check-ins")
+    check_outs: int = Field(ge=0, description="Number of check-outs")
+    cancellations: int = Field(ge=0, description="Number of cancellations")
 
 
 class PaymentDistribution(SQLModel):
     """Payment method distribution."""
-    cash_percentage: float = Field(description="Percentage of cash payments")
-    transfer_percentage: float = Field(description="Percentage of transfer payments")
-    terminal_percentage: float = Field(description="Percentage of terminal payments")
-    cash_amount: float = Field(description="Total cash revenue")
-    transfer_amount: float = Field(description="Total transfer revenue")
-    terminal_amount: float = Field(description="Total terminal revenue")
+    cash_percentage: float = Field(ge=0, le=100, description="Percentage of cash payments")
+    transfer_percentage: float = Field(ge=0, le=100, description="Percentage of transfer payments")
+    terminal_percentage: float = Field(ge=0, le=100, description="Percentage of terminal payments")
+    cash_amount: float = Field(ge=0, description="Total cash revenue")
+    transfer_amount: float = Field(ge=0, description="Total transfer revenue")
+    terminal_amount: float = Field(ge=0, description="Total terminal revenue")
 
 
 class CustomerMetrics(SQLModel):
     """Customer-related metrics."""
-    total_customers: int = Field(description="Total unique customers")
-    new_customers: int = Field(description="New customers in period")
-    returning_customers: int = Field(description="Returning customers")
-    average_age: float | None = Field(description="Average customer age")
+    total_customers: int = Field(ge=0, description="Total unique customers")
+    new_customers: int = Field(ge=0, description="New customers in period")
+    returning_customers: int = Field(ge=0, description="Returning customers")
+    average_age: float | None = Field(ge=0, le=150, description="Average customer age")
     district_distribution: dict[str, int] = Field(default_factory=dict, description="Customers by district")
     age_distribution: dict[str, int] = Field(default_factory=dict, description="Customers by age group")
 
@@ -99,10 +115,10 @@ class CustomerMetrics(SQLModel):
 class RoomTypeMetrics(SQLModel):
     """Metrics broken down by room type."""
     room_type: str
-    revenue: float
-    bookings: int
-    occupancy_rate: float
-    average_rate: float
+    revenue: float = Field(ge=0, description="Revenue for this room type")
+    bookings: int = Field(ge=0, description="Number of bookings for this room type")
+    occupancy_rate: float = Field(ge=0, le=100, description="Occupancy rate for this room type")
+    average_rate: float = Field(ge=0, description="Average rate for this room type")
 
 
 class TimeSeriesDataPoint(SQLModel):

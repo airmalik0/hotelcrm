@@ -1,7 +1,7 @@
 """
 Analytics API routes.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -107,23 +107,16 @@ def get_revenue_details(
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
-    # Get revenue trend
-    from app.crud.analytics import analytics as crud_analytics
-    revenue_trend = crud_analytics.get_revenue_trend(
-        session,
-        parsed_date_from,
-        parsed_date_to,
-        group_by.value,
+    # Create filters and get revenue details through service
+    filters = AnalyticsFilter(
+        date_from=parsed_date_from,
+        date_to=parsed_date_to,
+        room_id=room_id,
+        room_type=room_type,
     )
 
-    # Get revenue metrics
-    revenue_data = crud_analytics.get_revenue_by_period(
-        session,
-        parsed_date_from,
-        parsed_date_to,
-        room_id,
-        room_type,
-    )
+    service = AnalyticsService(session)
+    revenue_details = service.get_revenue_details(filters, group_by.value)
 
     # Log audit
     log_audit(
@@ -139,11 +132,8 @@ def get_revenue_details(
 
     return AnalyticsResponse(
         success=True,
-        data={
-            "metrics": revenue_data,
-            "trend": revenue_trend,
-            "group_by": group_by.value,
-        },
+        data=revenue_details,
+        filters_applied=filters,
     )
 
 
@@ -170,15 +160,16 @@ def get_occupancy_details(
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
-    # Get occupancy metrics
-    from app.crud.analytics import analytics as crud_analytics
-    occupancy_data = crud_analytics.get_occupancy_metrics(
-        session,
-        parsed_date_from,
-        parsed_date_to,
-        room_id,
-        room_type,
+    # Create filters and get occupancy details through service
+    filters = AnalyticsFilter(
+        date_from=parsed_date_from,
+        date_to=parsed_date_to,
+        room_id=room_id,
+        room_type=room_type,
     )
+
+    service = AnalyticsService(session)
+    occupancy_data = service.get_occupancy_details(filters)
 
     # Log audit
     log_audit(
@@ -195,6 +186,7 @@ def get_occupancy_details(
     return AnalyticsResponse(
         success=True,
         data=occupancy_data,
+        filters_applied=filters,
     )
 
 
@@ -220,14 +212,15 @@ def get_customer_analytics(
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
-    # Get customer metrics
-    from app.crud.analytics import analytics as crud_analytics
-    customer_data = crud_analytics.get_customer_metrics(
-        session,
-        parsed_date_from,
-        parsed_date_to,
-        district,
+    # Create filters and get customer details through service
+    filters = AnalyticsFilter(
+        date_from=parsed_date_from,
+        date_to=parsed_date_to,
+        district=district,
     )
+
+    service = AnalyticsService(session)
+    customer_data = service.get_customer_details(filters)
 
     # Log audit
     log_audit(
@@ -244,6 +237,7 @@ def get_customer_analytics(
     return AnalyticsResponse(
         success=True,
         data=customer_data,
+        filters_applied=filters,
     )
 
 
@@ -350,43 +344,10 @@ def get_quick_stats(
 
     Requires admin access.
     """
-    now = datetime.now()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_start = today_start - timedelta(days=today_start.weekday())
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    from app.crud.analytics import analytics as crud_analytics
-
-    # Get metrics for different periods
-    today_revenue = crud_analytics.get_revenue_by_period(
-        session, today_start, now
-    )
-    week_revenue = crud_analytics.get_revenue_by_period(
-        session, week_start, now
-    )
-    month_revenue = crud_analytics.get_revenue_by_period(
-        session, month_start, now
-    )
-
-    today_occupancy = crud_analytics.get_occupancy_metrics(
-        session, today_start, now
-    )
+    service = AnalyticsService(session)
+    quick_stats = service.get_quick_stats()
 
     return AnalyticsResponse(
         success=True,
-        data={
-            "today": {
-                "revenue": today_revenue["total_revenue"],
-                "bookings": today_revenue["booking_count"],
-                "occupancy": today_occupancy["occupancy_rate"],
-            },
-            "week": {
-                "revenue": week_revenue["total_revenue"],
-                "bookings": week_revenue["booking_count"],
-            },
-            "month": {
-                "revenue": month_revenue["total_revenue"],
-                "bookings": month_revenue["booking_count"],
-            },
-        },
+        data=quick_stats,
     )

@@ -91,7 +91,7 @@ class AnalyticsService:
             total_bookings=revenue_data["booking_count"],
             total_nights=revenue_data["total_nights"],
             discount_amount=revenue_data["discount_amount"],
-            refund_amount=0.0,  # TODO: Calculate from payment adjustments
+            refund_amount=revenue_data["refund_amount"],
         )
 
         occupancy_metrics = OccupancyMetrics(
@@ -264,18 +264,14 @@ class AnalyticsService:
         Returns:
             List of hourly counts
         """
-        # This is a simplified implementation
-        # In a full implementation, you would track actual check-in/out times
-        hourly_data = []
-        for hour in range(24):
-            # Mock data for now - replace with actual query
-            hourly_data.append({
-                "hour": hour,
-                "count": 0,  # Would be populated from actual data
-                "label": f"{hour:02d}:00",
-            })
+        self.validate_date_range(date_from, date_to)
 
-        return hourly_data
+        return self.crud.get_hourly_distribution(
+            self.session,
+            date_from,
+            date_to,
+            metric,
+        )
 
     def get_forecast(
         self,
@@ -300,4 +296,99 @@ class AnalyticsService:
             "predicted_revenue": 0.0,
             "predicted_occupancy": 0.0,
             "confidence_level": 0.0,
+        }
+
+    def get_revenue_details(self, filters: AnalyticsFilter, group_by: str = "day") -> dict[str, Any]:
+        """Get detailed revenue analytics with time series data."""
+        self.validate_date_range(filters.date_from, filters.date_to)
+
+        # Get revenue trend
+        revenue_trend = self.crud.get_revenue_trend(
+            self.session,
+            filters.date_from,
+            filters.date_to,
+            group_by,
+        )
+
+        # Get revenue metrics
+        revenue_data = self.crud.get_revenue_by_period(
+            self.session,
+            filters.date_from,
+            filters.date_to,
+            filters.room_id,
+            filters.room_type,
+            filters.include_cancelled,
+        )
+
+        return {
+            "metrics": revenue_data,
+            "trend": revenue_trend,
+            "group_by": group_by,
+        }
+
+    def get_occupancy_details(self, filters: AnalyticsFilter) -> dict[str, Any]:
+        """Get detailed occupancy analytics."""
+        self.validate_date_range(filters.date_from, filters.date_to)
+
+        occupancy_data = self.crud.get_occupancy_metrics(
+            self.session,
+            filters.date_from,
+            filters.date_to,
+            filters.room_id,
+            filters.room_type,
+        )
+
+        return occupancy_data
+
+    def get_customer_details(self, filters: AnalyticsFilter) -> dict[str, Any]:
+        """Get customer analytics including demographics and behavior."""
+        self.validate_date_range(filters.date_from, filters.date_to)
+
+        customer_data = self.crud.get_customer_metrics(
+            self.session,
+            filters.date_from,
+            filters.date_to,
+            filters.district,
+        )
+
+        return customer_data
+
+    def get_quick_stats(self) -> dict[str, Any]:
+        """Get quick statistics for today, this week, and this month."""
+        from datetime import datetime, timedelta
+
+        now = datetime.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=today_start.weekday())
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Get metrics for different periods
+        today_revenue = self.crud.get_revenue_by_period(
+            self.session, today_start, now
+        )
+        week_revenue = self.crud.get_revenue_by_period(
+            self.session, week_start, now
+        )
+        month_revenue = self.crud.get_revenue_by_period(
+            self.session, month_start, now
+        )
+
+        today_occupancy = self.crud.get_occupancy_metrics(
+            self.session, today_start, now
+        )
+
+        return {
+            "today": {
+                "revenue": today_revenue["total_revenue"],
+                "bookings": today_revenue["booking_count"],
+                "occupancy": today_occupancy["occupancy_rate"],
+            },
+            "week": {
+                "revenue": week_revenue["total_revenue"],
+                "bookings": week_revenue["booking_count"],
+            },
+            "month": {
+                "revenue": month_revenue["total_revenue"],
+                "bookings": month_revenue["booking_count"],
+            },
         }

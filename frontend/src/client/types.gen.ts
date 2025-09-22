@@ -434,9 +434,21 @@ export type RoomType = 'standard' | 'vip';
  */
 export type RoomTypeMetrics = {
     room_type: string;
+    /**
+     * Revenue for this room type
+     */
     revenue: number;
+    /**
+     * Number of bookings for this room type
+     */
     bookings: number;
+    /**
+     * Occupancy rate for this room type
+     */
     occupancy_rate: number;
+    /**
+     * Average rate for this room type
+     */
     average_rate: number;
 };
 

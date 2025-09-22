@@ -27,7 +27,7 @@ class CRUDAnalytics:
         Get revenue metrics for a period.
 
         Returns:
-            Dictionary with total_revenue, booking_count, total_nights, discount_amount
+            Dictionary with total_revenue, booking_count, total_nights, discount_amount, refund_amount
         """
         query = select(
             func.sum(Booking.total_amount).label("total_revenue"),
@@ -61,11 +61,43 @@ class CRUDAnalytics:
 
         result = session.exec(query).first()
 
+        # Calculate refunds from payment_adjustments - get bookings with adjustments
+        refund_query = select(Booking.payment_adjustments).where(
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
+        )
+
+        # Apply same filters as main query
+        if not include_cancelled:
+            refund_query = refund_query.where(Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]))
+
+        if room_id and room_id != "all":
+            refund_query = refund_query.where(Booking.room_id == room_id)
+
+        if room_type and room_type != "all":
+            refund_query = refund_query.join(Room).where(Room.room_type == room_type)
+
+        refund_results = session.exec(refund_query).all()
+
+        # Calculate total refunds from payment adjustments
+        total_refunds = 0.0
+        for payment_adjustments in refund_results:
+            if payment_adjustments:
+                for adjustment in payment_adjustments:
+                    amount = adjustment.get("amount", 0)
+                    if amount < 0:  # Negative amounts are refunds
+                        total_refunds += abs(amount)
+
         return {
             "total_revenue": float(result.total_revenue or 0),
             "booking_count": int(result.booking_count or 0),
             "total_nights": int(result.total_nights or 0),
             "discount_amount": float(result.discount_amount or 0),
+            "refund_amount": total_refunds,
         }
 
     def get_occupancy_metrics(
@@ -93,12 +125,19 @@ class CRUDAnalytics:
 
         # Calculate total available room nights
         days_in_period = (date_to - date_from).days
+        if days_in_period <= 0:
+            # Handle same-day or invalid date ranges
+            days_in_period = 1
         total_available_nights = total_rooms * days_in_period
 
-        # Get occupied nights - each booking counts as minimum 1 day
+        # Get occupied nights - calculate intersection with analysis period
+        # For bookings that span the period boundaries, count only the days within the period
         occupied_query = select(
             func.sum(
-                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+                func.greatest(1, func.extract("day",
+                    func.least(Booking.check_out, date_to) -
+                    func.greatest(Booking.check_in, date_from)
+                ))
             ).label("occupied_nights"),
             func.avg(
                 func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
@@ -206,7 +245,9 @@ class CRUDAnalytics:
         query = query.group_by(Booking.payment_method)
         results = session.exec(query).all()
 
-        total_bookings = sum(r.count for r in results) or 1
+        total_bookings = sum(r.count for r in results)
+        if total_bookings == 0:
+            total_bookings = 1  # Prevent division by zero
 
         distribution = {
             "cash_percentage": 0.0,
@@ -380,12 +421,17 @@ class CRUDAnalytics:
             ).first()
 
             days_in_period = (date_to - date_from).days
+            if days_in_period <= 0:
+                days_in_period = 1
             available_nights = room_count * days_in_period if room_count else 1
 
-            # Get occupied nights for this room type - each booking counts as minimum 1 day
+            # Get occupied nights for this room type - calculate intersection with analysis period
             occupied_nights = session.exec(
                 select(
-                    func.sum(func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in)))
+                    func.sum(func.greatest(1, func.extract("day",
+                        func.least(Booking.check_out, date_to) -
+                        func.greatest(Booking.check_in, date_from)
+                    )))
                 ).join(
                     Room, Room.id == Booking.room_id
                 ).where(
@@ -429,19 +475,20 @@ class CRUDAnalytics:
             List of dictionaries with date and revenue value
         """
         # Determine date truncation based on group_by
+        # Use check_in date for consistency with revenue filtering
         if group_by == "month":
-            date_trunc = func.date_trunc("month", Booking.booking_date)
+            date_trunc = func.date_trunc("month", Booking.check_in)
         elif group_by == "week":
-            date_trunc = func.date_trunc("week", Booking.booking_date)
+            date_trunc = func.date_trunc("week", Booking.check_in)
         else:  # day
-            date_trunc = func.date_trunc("day", Booking.booking_date)
+            date_trunc = func.date_trunc("day", Booking.check_in)
 
         query = select(
             date_trunc.label("period"),
             func.sum(Booking.total_amount).label("revenue"),
         ).where(
-            Booking.booking_date >= date_from,
-            Booking.booking_date <= date_to,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -463,6 +510,62 @@ class CRUDAnalytics:
             })
 
         return trend
+
+    def get_hourly_distribution(
+        self,
+        session: Session,
+        date_from: datetime,
+        date_to: datetime,
+        metric: str = "check_ins",
+    ) -> list[dict[str, Any]]:
+        """
+        Get hourly distribution of check-ins or check-outs.
+
+        Args:
+            metric: 'check_ins' or 'check_outs'
+
+        Returns:
+            List of dictionaries with hour and count
+        """
+        # Determine which field to use based on metric
+        if metric == "check_outs":
+            time_field = Booking.actual_check_out
+        else:  # default to check_ins
+            time_field = Booking.actual_check_in
+
+        # Query to get hour distribution
+        query = select(
+            func.extract("hour", time_field).label("hour"),
+            func.count(Booking.id).label("count"),
+        ).where(
+            time_field.isnot(None),  # Only include bookings with actual times
+            time_field >= date_from,
+            time_field <= date_to,
+            Booking.status.in_([
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            func.extract("hour", time_field)
+        ).order_by(
+            func.extract("hour", time_field)
+        )
+
+        results = session.exec(query).all()
+
+        # Create a dictionary for quick lookup
+        hour_counts = {int(result.hour): int(result.count) for result in results}
+
+        # Build the full 24-hour distribution
+        hourly_data = []
+        for hour in range(24):
+            hourly_data.append({
+                "hour": hour,
+                "count": hour_counts.get(hour, 0),
+                "label": f"{hour:02d}:00",
+            })
+
+        return hourly_data
 
 
 analytics = CRUDAnalytics()

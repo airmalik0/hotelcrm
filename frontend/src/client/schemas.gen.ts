@@ -804,23 +804,28 @@ export const CustomerMetricsSchema = {
     properties: {
         total_customers: {
             type: 'integer',
+            minimum: 0,
             title: 'Total Customers',
             description: 'Total unique customers'
         },
         new_customers: {
             type: 'integer',
+            minimum: 0,
             title: 'New Customers',
             description: 'New customers in period'
         },
         returning_customers: {
             type: 'integer',
+            minimum: 0,
             title: 'Returning Customers',
             description: 'Returning customers'
         },
         average_age: {
             anyOf: [
                 {
-                    type: 'number'
+                    type: 'number',
+                    maximum: 150,
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -1239,36 +1244,44 @@ export const OccupancyMetricsSchema = {
     properties: {
         occupancy_rate: {
             type: 'number',
+            maximum: 100,
+            minimum: 0,
             title: 'Occupancy Rate',
             description: 'Percentage of rooms occupied'
         },
         average_length_of_stay: {
             type: 'number',
+            minimum: 0,
             title: 'Average Length Of Stay',
             description: 'Average nights per booking'
         },
         total_available_room_nights: {
             type: 'integer',
+            minimum: 0,
             title: 'Total Available Room Nights',
             description: 'Total room nights available'
         },
         total_occupied_room_nights: {
             type: 'integer',
+            minimum: 0,
             title: 'Total Occupied Room Nights',
             description: 'Total room nights occupied'
         },
         check_ins: {
             type: 'integer',
+            minimum: 0,
             title: 'Check Ins',
             description: 'Number of check-ins'
         },
         check_outs: {
             type: 'integer',
+            minimum: 0,
             title: 'Check Outs',
             description: 'Number of check-outs'
         },
         cancellations: {
             type: 'integer',
+            minimum: 0,
             title: 'Cancellations',
             description: 'Number of cancellations'
         }
@@ -1299,31 +1312,40 @@ export const PaymentDistributionSchema = {
     properties: {
         cash_percentage: {
             type: 'number',
+            maximum: 100,
+            minimum: 0,
             title: 'Cash Percentage',
             description: 'Percentage of cash payments'
         },
         transfer_percentage: {
             type: 'number',
+            maximum: 100,
+            minimum: 0,
             title: 'Transfer Percentage',
             description: 'Percentage of transfer payments'
         },
         terminal_percentage: {
             type: 'number',
+            maximum: 100,
+            minimum: 0,
             title: 'Terminal Percentage',
             description: 'Percentage of terminal payments'
         },
         cash_amount: {
             type: 'number',
+            minimum: 0,
             title: 'Cash Amount',
             description: 'Total cash revenue'
         },
         transfer_amount: {
             type: 'number',
+            minimum: 0,
             title: 'Transfer Amount',
             description: 'Total transfer revenue'
         },
         terminal_amount: {
             type: 'number',
+            minimum: 0,
             title: 'Terminal Amount',
             description: 'Total terminal revenue'
         }
@@ -1344,36 +1366,43 @@ export const RevenueMetricsSchema = {
     properties: {
         total_revenue: {
             type: 'number',
+            minimum: 0,
             title: 'Total Revenue',
             description: 'Total revenue for the period'
         },
         average_daily_rate: {
             type: 'number',
+            minimum: 0,
             title: 'Average Daily Rate',
             description: 'ADR - Average price per night'
         },
         revenue_per_available_room: {
             type: 'number',
+            minimum: 0,
             title: 'Revenue Per Available Room',
             description: 'RevPAR'
         },
         total_bookings: {
             type: 'integer',
+            minimum: 0,
             title: 'Total Bookings',
             description: 'Number of bookings'
         },
         total_nights: {
             type: 'integer',
+            minimum: 0,
             title: 'Total Nights',
             description: 'Total nights booked'
         },
         discount_amount: {
             type: 'number',
+            minimum: 0,
             title: 'Discount Amount',
             description: 'Total discounts given'
         },
         refund_amount: {
             type: 'number',
+            minimum: 0,
             title: 'Refund Amount',
             description: 'Total refunds'
         }
@@ -1532,19 +1561,28 @@ export const RoomTypeMetricsSchema = {
         },
         revenue: {
             type: 'number',
-            title: 'Revenue'
+            minimum: 0,
+            title: 'Revenue',
+            description: 'Revenue for this room type'
         },
         bookings: {
             type: 'integer',
-            title: 'Bookings'
+            minimum: 0,
+            title: 'Bookings',
+            description: 'Number of bookings for this room type'
         },
         occupancy_rate: {
             type: 'number',
-            title: 'Occupancy Rate'
+            maximum: 100,
+            minimum: 0,
+            title: 'Occupancy Rate',
+            description: 'Occupancy rate for this room type'
         },
         average_rate: {
             type: 'number',
-            title: 'Average Rate'
+            minimum: 0,
+            title: 'Average Rate',
+            description: 'Average rate for this room type'
         }
     },
     type: 'object',
