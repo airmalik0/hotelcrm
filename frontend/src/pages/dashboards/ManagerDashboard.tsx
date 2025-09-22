@@ -257,43 +257,6 @@ export function ManagerDashboard() {
               </div>
             </div>
           </div>
-
-          {/* Performance Metrics */}
-          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Performance
-              </h3>
-              <TrendingUp className="w-5 h-5 text-success-600" />
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Revenue Growth
-                </span>
-                <span className="text-sm font-medium text-success-600 dark:text-success-400">
-                  +12%
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Customer Satisfaction
-                </span>
-                <span className="text-sm font-medium text-success-600 dark:text-success-400">
-                  4.8/5
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Avg. Stay Duration
-                </span>
-                <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                  2.3 days
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
