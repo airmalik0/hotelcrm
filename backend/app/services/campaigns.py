@@ -28,11 +28,10 @@ from app.models import (
     CampaignType,
     CampaignUpdate,
     Customer,
-    District,
-    RoomType,
     SMSHistory,
     SMSStatus,
 )
+from app.models.common import District, RoomType
 
 
 class CampaignService:
@@ -331,9 +330,11 @@ class CampaignService:
             raise BusinessRuleViolation("Cannot delete active trigger campaigns. Archive first.")
 
         # Delete associated SMS history first (cascade)
-        self.session.exec(
+        sms_records = self.session.exec(
             select(SMSHistory).where(SMSHistory.campaign_id == campaign.id)
-        ).delete()
+        ).all()
+        for record in sms_records:
+            self.session.delete(record)
 
         # Delete campaign
         self.session.delete(campaign)
@@ -400,11 +401,11 @@ class CampaignService:
 
             if "min_age" in criteria:
                 min_birth_date = current_date - timedelta(days=criteria["min_age"] * 365.25)
-                filters.append(Customer.date_of_birth <= min_birth_date)
+                filters.append(Customer.date_of_birth <= min_birth_date)  # type: ignore
 
             if "max_age" in criteria:
                 max_birth_date = current_date - timedelta(days=criteria["max_age"] * 365.25)
-                filters.append(Customer.date_of_birth >= max_birth_date)
+                filters.append(Customer.date_of_birth >= max_birth_date)  # type: ignore
 
         # District filtering
         if "districts" in criteria and criteria["districts"]:
@@ -418,13 +419,13 @@ class CampaignService:
         # Last visit filtering
         if "days_since_last_visit" in criteria:
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=criteria["days_since_last_visit"])
-            filters.append(Customer.last_booking_date <= cutoff_date)
+            filters.append(Customer.last_booking_date <= cutoff_date)  # type: ignore
 
         # Apply all filters
         if filters:
-            query = query.where(and_(*filters))
+            query = query.where(and_(*filters))  # type: ignore
 
-        customers = self.session.exec(query).all()
+        customers = list(self.session.exec(query).all())
 
         # Room type filtering (requires join with bookings - more complex)
         if "visited_room_types" in criteria and criteria["visited_room_types"]:

@@ -345,6 +345,448 @@ export function CustomerDemographicsChart({ metrics }: ChartProps) {
   )
 }
 
+// Seasonal trends chart for multi-year analysis
+export function SeasonalTrendsChart({ data }: { data: any }) {
+  if (!data || !data.monthly_data || data.monthly_data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No seasonal trends data available
+      </div>
+    )
+  }
+
+  // Transform data for chart
+  const chartData = data.monthly_data.map((point: any) => ({
+    month: point.month,
+    revenue: point.revenue,
+    bookings: point.bookings,
+    occupancy: point.occupancy_rate,
+  }))
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <XAxis
+            dataKey="month"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            yAxisId="left"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+            tickFormatter={(value) => `${value}%`}
+          />
+          <Tooltip content={<CurrencyTooltip />} />
+          <Legend />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="revenue"
+            stroke={COLORS.primary}
+            strokeWidth={2}
+            name="Revenue"
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="occupancy"
+            stroke={COLORS.secondary}
+            strokeWidth={2}
+            name="Occupancy %"
+          />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="bookings"
+            stroke={COLORS.accent}
+            strokeWidth={2}
+            name="Bookings"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Customer segments chart
+export function CustomerSegmentsChart({ data }: { data: any }) {
+  if (!data || !data.segments || Object.keys(data.segments).length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No customer segments data available
+      </div>
+    )
+  }
+
+  // Transform segments data for pie chart
+  const segmentData = Object.entries(data.segments).map(([segment, info]: [string, any]) => ({
+    name: segment.charAt(0).toUpperCase() + segment.slice(1),
+    value: info.count,
+    revenue: info.total_revenue,
+    percentage: info.percentage,
+  }))
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={segmentData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={({ name, percentage }) => `${name} ${percentage?.toFixed(1)}%`}
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {segmentData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value, name, props) => [
+              `${value} customers`,
+              props.payload.name
+            ]}
+          />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Customer LTV distribution chart
+export function CustomerLtvChart({ data }: { data: any }) {
+  if (!data || !data.ltv_distribution || data.ltv_distribution.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No LTV distribution data available
+      </div>
+    )
+  }
+
+  // Transform LTV data for bar chart
+  const chartData = data.ltv_distribution.map((bucket: any) => ({
+    range: bucket.range,
+    count: bucket.customer_count,
+    totalValue: bucket.total_ltv,
+    averageValue: bucket.average_ltv,
+  }))
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <XAxis
+            dataKey="range"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <Tooltip
+            formatter={(value, name) => [
+              name === 'count' ? `${value} customers` : `$${value?.toLocaleString()}`,
+              name === 'count' ? 'Customer Count' : name === 'totalValue' ? 'Total LTV' : 'Average LTV'
+            ]}
+          />
+          <Legend />
+          <Bar dataKey="count" fill={COLORS.primary} name="Customer Count" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// LTV trend over time chart
+export function LtvTrendChart({ data }: { data: any }) {
+  if (!data || !data.ltv_trend || data.ltv_trend.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No LTV trend data available
+      </div>
+    )
+  }
+
+  const chartData = data.ltv_trend.map((point: any) => ({
+    period: point.period,
+    avgLtv: point.average_ltv,
+    customerCount: point.customer_count,
+  }))
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <XAxis
+            dataKey="period"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            yAxisId="left"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <Tooltip content={<CurrencyTooltip />} />
+          <Legend />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="avgLtv"
+            stroke={COLORS.primary}
+            strokeWidth={2}
+            name="Average LTV"
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="customerCount"
+            stroke={COLORS.secondary}
+            strokeWidth={2}
+            name="Customer Count"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Booking frequency patterns chart
+export function BookingFrequencyChart({ data }: { data: any }) {
+  if (!data || !data.frequency_distribution || data.frequency_distribution.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No booking frequency data available
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data.frequency_distribution} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <XAxis
+            dataKey="frequency_range"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="customer_count" fill={COLORS.primary} name="Customer Count" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Room preference patterns chart
+export function RoomPreferenceChart({ data }: { data: any }) {
+  if (!data || !data.room_preferences || Object.keys(data.room_preferences).length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No room preference data available
+      </div>
+    )
+  }
+
+  const chartData = Object.entries(data.room_preferences).map(([roomType, count]) => ({
+    name: roomType.charAt(0).toUpperCase() + roomType.slice(1),
+    value: count as number,
+  }))
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Booking timing patterns chart
+export function BookingTimingChart({ data }: { data: any }) {
+  if (!data || !data.booking_timing || data.booking_timing.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No booking timing data available
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data.booking_timing} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <XAxis
+            dataKey="days_in_advance"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <Tooltip />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="booking_count"
+            stroke={COLORS.secondary}
+            strokeWidth={2}
+            name="Bookings"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Period comparison chart
+export function PeriodComparisonChart({ data }: { data: any }) {
+  if (!data || (!data.period1_data && !data.period2_data)) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No comparison data available
+      </div>
+    )
+  }
+
+  // Combine data from both periods for comparison
+  const chartData = []
+  const maxLength = Math.max(
+    data.period1_data?.length || 0,
+    data.period2_data?.length || 0
+  )
+
+  for (let i = 0; i < maxLength; i++) {
+    const item: any = {
+      date: data.period1_data?.[i]?.date || data.period2_data?.[i]?.date || `Day ${i + 1}`,
+    }
+
+    if (data.period1_data?.[i]) {
+      item.period1_revenue = data.period1_data[i].revenue
+      item.period1_bookings = data.period1_data[i].bookings
+    }
+
+    if (data.period2_data?.[i]) {
+      item.period2_revenue = data.period2_data[i].revenue
+      item.period2_bookings = data.period2_data[i].bookings
+    }
+
+    chartData.push(item)
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <XAxis
+            dataKey="date"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <YAxis
+            yAxisId="left"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+          />
+          <Tooltip content={<CurrencyTooltip />} />
+          <Legend />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="period1_revenue"
+            stroke={COLORS.primary}
+            strokeWidth={2}
+            name="Period 1 Revenue"
+          />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="period2_revenue"
+            stroke={COLORS.secondary}
+            strokeWidth={2}
+            name="Period 2 Revenue"
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="period1_bookings"
+            stroke={COLORS.accent}
+            strokeWidth={2}
+            name="Period 1 Bookings"
+            strokeDasharray="5 5"
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="period2_bookings"
+            stroke={COLORS.purple}
+            strokeWidth={2}
+            name="Period 2 Bookings"
+            strokeDasharray="5 5"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 // Mini chart for metrics cards
 export function SparklineChart({ data, color = COLORS.primary }: { data: number[]; color?: string }) {
   const chartData = data.map((value, index) => ({

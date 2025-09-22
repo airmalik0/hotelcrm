@@ -18,6 +18,7 @@ from app.models import (
     CampaignUpdate,
     CustomerPreviewResponse,
     Message,
+    SMSHistoryList,
     TriggerCheckResponse,
 )
 from app.services.campaigns import CampaignService
@@ -235,15 +236,15 @@ def preview_campaign_recipients(
     return CustomerPreviewResponse(**preview_data)
 
 
-@router.post("/check-triggers", response_model=TriggerCheckResponse)
+@router.post("/check-triggers", response_model=TriggerCheckResponse, dependencies=[Depends(require_admin_or_manager)])
 def check_triggers(
     session: SessionDep,
-    # No current_user - this is called by external cron job
+    current_user: CurrentUser,  # noqa: ARG001
 ) -> Any:
     """
     Check all active trigger campaigns and execute for new matching customers.
-    This endpoint is called by external cron job every 30 minutes.
-    No authentication required for cron access.
+    This endpoint requires admin or manager authentication.
+    Can be called manually or by authenticated cron job.
     """
     service = CampaignService(session)
     result = service.check_trigger_campaigns()
@@ -255,7 +256,7 @@ def check_triggers(
 
 # SMS History endpoints (following audit pattern)
 
-@router.get("/{campaign_id}/sms-history", response_model=Any)  # TODO: Create SMSHistoryList model response
+@router.get("/{campaign_id}/sms-history", response_model=SMSHistoryList)
 def get_campaign_sms_history(
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001

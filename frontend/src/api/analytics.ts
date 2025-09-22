@@ -77,3 +77,64 @@ export async function exportToPdf(request: AnalyticsExportRequest) {
   link.remove()
   window.URL.revokeObjectURL(url)
 }
+
+export async function exportToExcel(request: AnalyticsExportRequest) {
+  const response = await apiClient.post("/api/v1/analytics/export/excel", request, {
+    responseType: "blob",
+  })
+
+  // Create download link
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement("a")
+  link.href = url
+  link.setAttribute("download", `analytics_report_${new Date().toISOString().split("T")[0]}.xlsx`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+export async function getHourlyDistribution(params: {
+  date_from: string
+  date_to: string
+  metric: "check_ins" | "check_outs"
+}) {
+  const { data } = await apiClient.get<AnalyticsResponse>("/api/v1/analytics/hourly-distribution", {
+    params,
+  })
+  return data
+}
+
+export async function getSeasonalTrends(years: number = 2) {
+  const { data } = await apiClient.get<AnalyticsResponse>("/api/v1/analytics/seasonal-trends", {
+    params: { years },
+  })
+  return data
+}
+
+export async function getCustomerSegments(params?: {
+  date_from?: string
+  date_to?: string
+}) {
+  const { data } = await apiClient.get<AnalyticsResponse>("/api/v1/analytics/customer-segments", {
+    params,
+  })
+  return data
+}
+
+export async function getCustomerLifetimeValue(months_back: number = 12) {
+  const { data } = await apiClient.get<AnalyticsResponse>("/api/v1/analytics/customer-lifetime", {
+    params: { months_back },
+  })
+  return data
+}
+
+export async function getCustomerBehaviorPatterns(params?: {
+  date_from?: string
+  date_to?: string
+}) {
+  const { data } = await apiClient.get<AnalyticsResponse>("/api/v1/analytics/customer-behavior", {
+    params,
+  })
+  return data
+}

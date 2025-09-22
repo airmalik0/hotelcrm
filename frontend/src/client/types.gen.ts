@@ -1087,12 +1087,125 @@ export type AnalyticsComparePeriodsError = (HTTPValidationError);
 
 export type AnalyticsExportToPdfData = {
     body: AnalyticsExportRequest;
+    query?: {
+        /**
+         * Generate comprehensive report with all analytics data
+         */
+        comprehensive?: boolean;
+        /**
+         * Hotel name for report header
+         */
+        hotel_name?: string;
+        /**
+         * Include visualization charts
+         */
+        include_charts?: boolean;
+    };
 };
 
 export type AnalyticsExportToPdfResponse = (unknown);
 
 export type AnalyticsExportToPdfError = (HTTPValidationError);
 
+export type AnalyticsExportToExcelData = {
+    body: AnalyticsExportRequest;
+    query?: {
+        /**
+         * Generate comprehensive report with all analytics data
+         */
+        comprehensive?: boolean;
+        /**
+         * Include charts in Excel sheets
+         */
+        include_charts?: boolean;
+    };
+};
+
+export type AnalyticsExportToExcelResponse = (unknown);
+
+export type AnalyticsExportToExcelError = (HTTPValidationError);
+
 export type AnalyticsGetQuickStatsResponse = (AnalyticsResponse);
 
 export type AnalyticsGetQuickStatsError = unknown;
+
+export type AnalyticsGetHourlyDistributionData = {
+    query: {
+        /**
+         * Start date in ISO format
+         */
+        date_from: string;
+        /**
+         * End date in ISO format
+         */
+        date_to: string;
+        /**
+         * Metric to analyze (check_ins or check_outs)
+         */
+        metric?: string;
+    };
+};
+
+export type AnalyticsGetHourlyDistributionResponse = (AnalyticsResponse);
+
+export type AnalyticsGetHourlyDistributionError = (HTTPValidationError);
+
+export type AnalyticsGetSeasonalTrendsData = {
+    query?: {
+        /**
+         * Number of years to analyze (1-5)
+         */
+        years?: number;
+    };
+};
+
+export type AnalyticsGetSeasonalTrendsResponse = (AnalyticsResponse);
+
+export type AnalyticsGetSeasonalTrendsError = (HTTPValidationError);
+
+export type AnalyticsGetCustomerSegmentsData = {
+    query?: {
+        /**
+         * Start date in ISO format
+         */
+        date_from?: (string | null);
+        /**
+         * End date in ISO format
+         */
+        date_to?: (string | null);
+    };
+};
+
+export type AnalyticsGetCustomerSegmentsResponse = (AnalyticsResponse);
+
+export type AnalyticsGetCustomerSegmentsError = (HTTPValidationError);
+
+export type AnalyticsGetCustomerLifetimeValueData = {
+    query?: {
+        /**
+         * Number of months to analyze (1-60)
+         */
+        months_back?: number;
+    };
+};
+
+export type AnalyticsGetCustomerLifetimeValueResponse = (AnalyticsResponse);
+
+export type AnalyticsGetCustomerLifetimeValueError = (HTTPValidationError);
+
+export type AnalyticsGetCustomerBehaviorPatternsData = {
+    query?: {
+        /**
+         * Start date in ISO format
+         */
+        date_from?: (string | null);
+        /**
+         * End date in ISO format
+         */
+        date_to?: (string | null);
+    };
+};
+
+export type AnalyticsGetCustomerBehaviorPatternsResponse = (AnalyticsResponse);
+
+export type AnalyticsGetCustomerBehaviorPatternsError = (HTTPValidationError);
