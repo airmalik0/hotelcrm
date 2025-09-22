@@ -1,9 +1,11 @@
 import { getQuickStats } from "@/api/analytics"
+import { getBookings } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { formatCurrency } from "@/utils/formatters"
+import { safeParseDate } from "@/utils/date-helpers"
 import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
@@ -37,6 +39,11 @@ export function AdminDashboard() {
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", "all"],
     queryFn: () => getCustomers({ limit: 1000 }),
+  })
+
+  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ["bookings", "recent"],
+    queryFn: () => getBookings({ limit: 50 }),
   })
 
   // Use analytics API data instead of manual calculations
