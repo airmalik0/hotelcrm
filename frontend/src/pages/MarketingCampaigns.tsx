@@ -33,7 +33,7 @@ import { useState } from "react"
 type StatusFilter = "all" | CampaignStatus
 type TypeFilter = "all" | CampaignType
 
-export default function MarketingCampaigns() {
+export function MarketingCampaigns() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")

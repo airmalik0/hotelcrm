@@ -729,6 +729,38 @@ class CRUDAnalytics:
             # Estimate occupancy based on bookings
             month_data["occupancy_rate"] = min(100, month_data["bookings"] * 3)  # Rough estimate
 
+        # Find peak season, highest revenue month, and best occupancy month
+        peak_season = None
+        highest_revenue_month = None
+        highest_occupancy_month = None
+
+        if monthly_trends:
+            # Find highest revenue month
+            max_revenue_month = max(monthly_trends, key=lambda x: x["revenue"])
+            if max_revenue_month and max_revenue_month["revenue"] > 0:
+                highest_revenue_month = max_revenue_month.get("month_name", "N/A")
+
+            # Find highest occupancy month
+            max_occupancy_month = max(monthly_trends, key=lambda x: x.get("occupancy_rate", 0))
+            if max_occupancy_month and max_occupancy_month.get("occupancy_rate", 0) > 0:
+                highest_occupancy_month = max_occupancy_month.get("month_name", "N/A")
+
+            # Determine peak season based on highest revenue
+            if max_revenue_month:
+                # Extract month from month_name (e.g., "January 2024" -> "January")
+                month_name = max_revenue_month.get("month_name", "")
+                if month_name:
+                    month = month_name.split()[0] if " " in month_name else month_name
+                    # Map to season
+                    if month in ["December", "January", "February"]:
+                        peak_season = "Winter"
+                    elif month in ["March", "April", "May"]:
+                        peak_season = "Spring"
+                    elif month in ["June", "July", "August"]:
+                        peak_season = "Summer"
+                    elif month in ["September", "October", "November"]:
+                        peak_season = "Autumn"
+
         return {
             "monthly_data": monthly_trends,  # Frontend expects "monthly_data"
             "monthly_trends": monthly_trends,  # Keep for backward compatibility
@@ -736,6 +768,9 @@ class CRUDAnalytics:
             "year_over_year_growth": sorted(yoy_growth, key=lambda x: x["month_number"]),
             "peak_months": peak_months,
             "low_months": low_months,
+            "peak_season": peak_season,
+            "highest_revenue_month": highest_revenue_month,
+            "highest_occupancy_month": highest_occupancy_month,
             "analysis_period": {
                 "start": start_date.isoformat(),
                 "end": end_date.isoformat(),
@@ -865,6 +900,7 @@ class CRUDAnalytics:
                     "count": len(customers),
                     "total_revenue": total_revenue,
                     "average_revenue": round(avg_revenue, 2),
+                    "avg_revenue_per_customer": round(avg_revenue, 2),  # Add field with expected name
                     "percentage": round(len(customers) / total_customers * 100, 1),
                     "customers": customers[:10],  # Return top 10 for each segment
                 }
@@ -873,6 +909,7 @@ class CRUDAnalytics:
                     "count": 0,
                     "total_revenue": 0,
                     "average_revenue": 0,
+                    "avg_revenue_per_customer": 0,  # Add field with expected name
                     "percentage": 0,
                     "customers": [],
                 }
@@ -973,7 +1010,16 @@ class CRUDAnalytics:
                 })
 
         # Create LTV trend (monthly averages)
-        ltv_trend = []  # TODO: Add monthly LTV trend calculation
+        ltv_trend = []
+        if ltv_data:
+            # Create monthly LTV trend for visualization
+            # Simplified: use last 6 data points for trend
+            for i in range(min(6, len(ltv_data))):
+                ltv_trend.append({
+                    "period": f"Month {i+1}",
+                    "average_ltv": ltv_data[i]["ltv"],
+                    "customer_count": 1,
+                })
 
         # Calculate tenure-based LTV
         tenure_groups = {
@@ -1191,12 +1237,50 @@ class CRUDAnalytics:
 
         # Create booking timing pattern for chart
         booking_timing = []
+        total_lead_days = 0
+        total_lead_bookings = 0
         for result in lead_time_results:
             if result.lead_days is not None:
                 booking_timing.append({
                     "days_in_advance": int(result.lead_days),
                     "booking_count": result.count,
                 })
+                total_lead_days += int(result.lead_days) * result.count
+                total_lead_bookings += result.count
+
+        # Calculate average days in advance
+        avg_days_in_advance = total_lead_days / total_lead_bookings if total_lead_bookings > 0 else 0
+
+        # Calculate average booking frequency
+        avg_booking_frequency = 0
+        if frequency_results:
+            total_customers = sum(r.customer_count for r in frequency_results if r.total_bookings)
+            total_bookings = sum(r.total_bookings * r.customer_count for r in frequency_results if r.total_bookings)
+            avg_booking_frequency = total_bookings / total_customers if total_customers > 0 else 0
+
+        # Find most preferred room type
+        most_preferred_room_type = None
+        if room_preferences:
+            # room_preferences is a dict, find the key with max value
+            most_preferred_room_type = max(room_preferences, key=room_preferences.get) if room_preferences else None
+
+        # Calculate average stay duration (need to query for this)
+        avg_stay_query = select(
+            func.avg(
+                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+            ).label("avg_stay")
+        ).where(
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        )
+
+        avg_stay_result = session.exec(avg_stay_query).first()
+        avg_stay_duration = float(avg_stay_result.avg_stay) if avg_stay_result and avg_stay_result.avg_stay else 0
 
         return {
             "frequency_distribution": frequency_distribution,
@@ -1204,6 +1288,10 @@ class CRUDAnalytics:
             "booking_timing": booking_timing,
             "lead_time_distribution": lead_time_categories,
             "day_of_week_preferences": day_of_week_preferences,
+            "avg_booking_frequency": round(avg_booking_frequency, 1),
+            "avg_days_in_advance": round(avg_days_in_advance, 0),
+            "most_preferred_room_type": most_preferred_room_type,
+            "avg_stay_duration": round(avg_stay_duration, 1),
             "metrics": {
                 "repeat_customer_rate": round(repeat_rate, 2),
                 "total_customers_analyzed": repeat_result.total_customers if repeat_result else 0,
