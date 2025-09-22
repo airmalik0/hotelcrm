@@ -12,6 +12,13 @@ from app.models import Booking, BookingStatus, Customer, Room
 from app.models.analytics import AgeGroup
 
 
+def _ensure_timezone_aware(dt: datetime) -> datetime:
+    """Ensure datetime is timezone-aware, converting naive to UTC if needed."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 class CRUDAnalytics:
     """CRUD operations for analytics data."""
 
@@ -247,8 +254,6 @@ class CRUDAnalytics:
         results = session.exec(query).all()
 
         total_bookings = sum(r.count for r in results)
-        if total_bookings == 0:
-            total_bookings = 1  # Prevent division by zero
 
         distribution = {
             "cash_percentage": 0.0,
@@ -281,12 +286,13 @@ class CRUDAnalytics:
             Dictionary with customer counts, age distribution, district distribution
         """
         # Get unique customer IDs who made bookings in the period
+        # Use same date filtering logic as revenue metrics for consistency
         customer_ids_query = (
             select(Customer.id)
             .join(Booking, Customer.id == Booking.customer_id)
             .where(
-                Booking.booking_date >= date_from,
-                Booking.booking_date <= date_to,
+                Booking.check_out >= date_from,
+                Booking.check_in <= date_to,
                 Booking.status.in_([
                     BookingStatus.CONFIRMED,
                     BookingStatus.CHECKED_IN,
@@ -315,15 +321,8 @@ class CRUDAnalytics:
         for customer in customers:
             if customer.first_booking_date:
                 # Ensure timezone compatibility for comparison
-                first_booking = customer.first_booking_date
-                if first_booking.tzinfo is None:
-                    # If first_booking_date is naive, assume UTC (consistent with project pattern)
-                    first_booking = first_booking.replace(tzinfo=timezone.utc)
-
-                # Ensure date_from is also timezone-aware
-                comparison_date = date_from
-                if comparison_date.tzinfo is None:
-                    comparison_date = comparison_date.replace(tzinfo=timezone.utc)
+                first_booking = _ensure_timezone_aware(customer.first_booking_date)
+                comparison_date = _ensure_timezone_aware(date_from)
 
                 if first_booking >= comparison_date:
                     new_customers += 1
@@ -345,7 +344,9 @@ class CRUDAnalytics:
 
         for customer in customers:
             if customer.date_of_birth:
-                age = (datetime.now() - customer.date_of_birth).days // 365
+                # Ensure date_of_birth is timezone-aware
+                dob = _ensure_timezone_aware(customer.date_of_birth)
+                age = (datetime.now(timezone.utc) - dob).days // 365
                 total_age += age
                 customers_with_age += 1
 
@@ -763,8 +764,8 @@ class CRUDAnalytics:
         ).join(
             Booking, Customer.id == Booking.customer_id, isouter=True
         ).where(
-            Booking.booking_date >= date_from,
-            Booking.booking_date <= date_to,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -1034,8 +1035,8 @@ class CRUDAnalytics:
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(
-            Booking.booking_date >= date_from,
-            Booking.booking_date <= date_to,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -1061,8 +1062,8 @@ class CRUDAnalytics:
             func.extract("day", Booking.check_in - Booking.booking_date).label("lead_days"),
             func.count(Booking.id).label("count"),
         ).where(
-            Booking.booking_date >= date_from,
-            Booking.booking_date <= date_to,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,

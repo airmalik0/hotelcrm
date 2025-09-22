@@ -5,6 +5,9 @@ from .common import (
     BookingStatus,
     PaymentMethod,
     CustomerTag,
+    CampaignType,
+    CampaignStatus,
+    SMSStatus,
     Message,
     Token,
     TokenPayload,
@@ -66,6 +69,21 @@ from .analytics import (
     GroupBy,
     TimePeriod,
     AgeGroup,
+)
+from .campaigns import (
+    CampaignBase,
+    Campaign,
+    CampaignCreate,
+    CampaignUpdate,
+    CampaignPublic,
+    CampaignsPublic,
+    SMSHistory,
+    SMSHistoryPublic,
+    SMSHistoryList,
+    CampaignExecutionRequest,
+    CampaignExecutionResponse,
+    CustomerPreviewResponse,
+    TriggerCheckResponse,
 )
 
 from sqlmodel import SQLModel  # re-export for Alembic

@@ -1,7 +1,7 @@
 """
 PDF report generation service for analytics.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any
 
@@ -18,9 +18,11 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from sqlmodel import Session
 
-from app.models.analytics import DashboardMetrics
-from app.services.chart_generator import ChartGenerator
+from app.models.analytics import AnalyticsFilter, DashboardMetrics
+from app.services.analytics import AnalyticsService
+from app.services.chart_service import ChartService
 
 
 class PDFReportService:
@@ -29,8 +31,8 @@ class PDFReportService:
     def __init__(self) -> None:
         """Initialize PDF report service."""
         self.styles = getSampleStyleSheet()
+        self.chart_service = ChartService()
         self._setup_custom_styles()
-        self.chart_generator = ChartGenerator()
 
     def _setup_custom_styles(self) -> None:
         """Setup custom styles for the report."""
@@ -113,20 +115,13 @@ class PDFReportService:
 
         # Generated timestamp
         generated_text = Paragraph(
-            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}",
             self.styles["Normal"]
         )
         elements.append(generated_text)
         elements.append(Spacer(1, 20))
 
-        # Key Metrics Chart
-        try:
-            key_metrics_chart = self.chart_generator.generate_key_metrics_chart(metrics)
-            elements.append(self._chart_to_image(key_metrics_chart, width=7*inch, height=3.5*inch))
-            elements.append(Spacer(1, 20))
-        except Exception:
-            # If chart generation fails, continue without it
-            pass
+        # Key Metrics Chart - removed (ChartGenerator not implemented)
 
         # Revenue Section
         elements.append(Paragraph("Revenue Metrics", self.styles["SectionHeader"]))
@@ -143,14 +138,7 @@ class PDFReportService:
         elements.append(revenue_table)
         elements.append(Spacer(1, 20))
 
-        # Revenue Trend Chart
-        if metrics.revenue_trend:
-            try:
-                revenue_chart = self.chart_generator.generate_revenue_trend_chart(metrics)
-                elements.append(self._chart_to_image(revenue_chart, width=6.5*inch, height=4*inch))
-                elements.append(Spacer(1, 20))
-            except Exception:
-                pass
+        # Revenue Trend Chart - removed (ChartGenerator not implemented)
 
         # Occupancy Section
         elements.append(Paragraph("Occupancy Metrics", self.styles["SectionHeader"]))
@@ -244,21 +232,444 @@ class PDFReportService:
         buffer.seek(0)
         return buffer
 
-    def _chart_to_image(self, chart_bytes: bytes, width: float = 6*inch, height: float = 4*inch) -> Image:
+    def generate_comprehensive_report(
+        self,
+        session: Session,
+        filters: AnalyticsFilter,
+        hotel_name: str = "Hotel CRM",
+        include_charts: bool = True,
+    ) -> BytesIO:
         """
-        Convert chart bytes to ReportLab Image.
+        Generate a comprehensive PDF report using all analytics endpoints.
 
         Args:
-            chart_bytes: PNG bytes from chart generator
-            width: Image width
-            height: Image height
+            session: Database session
+            filters: Analytics filters
+            hotel_name: Name of the hotel for the report header
+            include_charts: Whether to include visualizations
 
         Returns:
-            ReportLab Image object
+            BytesIO object containing the comprehensive PDF
         """
-        img_buffer = BytesIO(chart_bytes)
-        img = Image(img_buffer, width=width, height=height)
-        return img
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=18,
+        )
+
+        # Initialize analytics service
+        analytics_service = AnalyticsService(session)
+
+        # Container for the 'Flowable' objects
+        elements = []
+
+        # Title
+        title = Paragraph(
+            f"{hotel_name} - Comprehensive Analytics Report",
+            self.styles["CustomTitle"]
+        )
+        elements.append(title)
+
+        # Period
+        period_text = Paragraph(
+            f"Period: {filters.date_from.strftime('%Y-%m-%d')} to {filters.date_to.strftime('%Y-%m-%d')}",
+            self.styles["Normal"]
+        )
+        elements.append(period_text)
+
+        # Generated timestamp
+        generated_text = Paragraph(
+            f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC",
+            self.styles["Normal"]
+        )
+        elements.append(generated_text)
+        elements.append(Spacer(1, 20))
+
+        # Get all analytics data
+        try:
+            # 1. Quick Stats
+            quick_stats = analytics_service.get_quick_stats()
+            self._add_quick_stats_section(elements, quick_stats)
+
+            # 2. Dashboard Metrics
+            dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
+            self._add_dashboard_section(elements, dashboard_metrics, include_charts)
+
+            # 3. Revenue Details
+            revenue_details = analytics_service.get_revenue_details(filters, "day")
+            self._add_revenue_details_section(elements, revenue_details, include_charts)
+
+            # 4. Occupancy Details
+            occupancy_details = analytics_service.get_occupancy_details(filters)
+            self._add_occupancy_details_section(elements, occupancy_details)
+
+            # 5. Customer Details
+            customer_details = analytics_service.get_customer_details(filters)
+            self._add_customer_details_section(elements, customer_details, include_charts)
+
+            # 6. Hourly Distribution
+            hourly_checkins = analytics_service.get_hourly_distribution(
+                filters.date_from, filters.date_to, "check_ins"
+            )
+            hourly_checkouts = analytics_service.get_hourly_distribution(
+                filters.date_from, filters.date_to, "check_outs"
+            )
+            self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts)
+
+            # 7. Seasonal Trends
+            seasonal_trends = analytics_service.get_seasonal_trends(2)
+            self._add_seasonal_trends_section(elements, seasonal_trends, include_charts)
+
+            # 8. Customer Segments
+            customer_segments = analytics_service.get_customer_segments(filters.date_from, filters.date_to)
+            self._add_customer_segments_section(elements, customer_segments, include_charts)
+
+            # 9. Customer Lifetime Value
+            customer_ltv = analytics_service.get_customer_lifetime_value(12)
+            self._add_customer_ltv_section(elements, customer_ltv, include_charts)
+
+            # 10. Customer Behavior Patterns
+            behavior_patterns = analytics_service.get_customer_behavior_patterns(filters.date_from, filters.date_to)
+            self._add_behavior_patterns_section(elements, behavior_patterns)
+
+        except Exception as e:
+            # Fallback to basic dashboard if comprehensive fails
+            elements.append(Paragraph(f"Note: Using basic report due to data limitation: {str(e)}", self.styles["Normal"]))
+            dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
+            self._add_dashboard_section(elements, dashboard_metrics, include_charts)
+
+        # Build PDF
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
+    def _add_quick_stats_section(self, elements: list[Any], quick_stats: dict[str, Any]) -> None:
+        """Add quick stats section to the report."""
+        elements.append(Paragraph("Quick Statistics", self.styles["SectionHeader"]))
+
+        quick_data = [
+            ["Period", "Revenue", "Bookings", "Occupancy"],
+            ["Today", f"${quick_stats['today']['revenue']:,.2f}",
+             f"{quick_stats['today']['bookings']}", f"{quick_stats['today']['occupancy']:.1f}%"],
+            ["This Week", f"${quick_stats['week']['revenue']:,.2f}",
+             f"{quick_stats['week']['bookings']}", "N/A"],
+            ["This Month", f"${quick_stats['month']['revenue']:,.2f}",
+             f"{quick_stats['month']['bookings']}", "N/A"],
+        ]
+        quick_table = self._create_table(quick_data, col_widths=[1.5*inch, 1.5*inch, 1*inch, 1*inch])
+        elements.append(quick_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_dashboard_section(self, elements: list[Any], metrics: DashboardMetrics, include_charts: bool) -> None:
+        """Add dashboard metrics section."""
+        elements.append(Paragraph("Dashboard Overview", self.styles["SectionHeader"]))
+
+        # Revenue Chart
+        if include_charts and metrics.revenue_trend:
+            try:
+                revenue_chart_buffer = self.chart_service.generate_revenue_trend_chart(
+                    [{"date": point.date, "value": point.value} for point in metrics.revenue_trend]
+                )
+                revenue_chart = Image(revenue_chart_buffer, width=6*inch, height=3.6*inch)
+                elements.append(revenue_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass  # Skip chart if generation fails
+
+        # Revenue metrics table
+        revenue_data = [
+            ["Revenue Metric", "Value"],
+            ["Total Revenue", f"${metrics.revenue.total_revenue:,.2f}"],
+            ["Average Daily Rate", f"${metrics.revenue.average_daily_rate:,.2f}"],
+            ["RevPAR", f"${metrics.revenue.revenue_per_available_room:,.2f}"],
+            ["Total Bookings", f"{metrics.revenue.total_bookings:,}"],
+            ["Total Nights", f"{metrics.revenue.total_nights:,}"],
+        ]
+        revenue_table = self._create_table(revenue_data)
+        elements.append(revenue_table)
+        elements.append(Spacer(1, 15))
+
+        # Payment Distribution Chart
+        if include_charts:
+            try:
+                payment_chart_buffer = self.chart_service.generate_payment_distribution_chart({
+                    "cash_percentage": metrics.payment_distribution.cash_percentage,
+                    "transfer_percentage": metrics.payment_distribution.transfer_percentage,
+                    "terminal_percentage": metrics.payment_distribution.terminal_percentage,
+                })
+                payment_chart = Image(payment_chart_buffer, width=4*inch, height=4*inch)
+                elements.append(payment_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        # Occupancy metrics
+        occupancy_data = [
+            ["Occupancy Metric", "Value"],
+            ["Occupancy Rate", f"{metrics.occupancy.occupancy_rate}%"],
+            ["Avg Length of Stay", f"{metrics.occupancy.average_length_of_stay:.1f} nights"],
+            ["Check-ins", f"{metrics.occupancy.check_ins:,}"],
+            ["Check-outs", f"{metrics.occupancy.check_outs:,}"],
+            ["Cancellations", f"{metrics.occupancy.cancellations:,}"],
+        ]
+        occupancy_table = self._create_table(occupancy_data)
+        elements.append(occupancy_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_revenue_details_section(self, elements: list[Any], revenue_details: dict[str, Any], include_charts: bool) -> None:
+        """Add revenue details section."""
+        elements.append(Paragraph("Revenue Analysis", self.styles["SectionHeader"]))
+
+        metrics = revenue_details["metrics"]
+        trend = revenue_details["trend"]
+
+        # Revenue trend chart
+        if include_charts and trend:
+            try:
+                trend_chart_buffer = self.chart_service.generate_revenue_trend_chart(trend)
+                trend_chart = Image(trend_chart_buffer, width=7*inch, height=4.2*inch)
+                elements.append(trend_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        # Detailed revenue metrics
+        detailed_data = [
+            ["Metric", "Value"],
+            ["Total Revenue", f"${metrics['total_revenue']:,.2f}"],
+            ["Total Bookings", f"{metrics['booking_count']:,}"],
+            ["Total Nights", f"{metrics['total_nights']:,}"],
+            ["Discount Amount", f"${metrics['discount_amount']:,.2f}"],
+            ["Refund Amount", f"${metrics['refund_amount']:,.2f}"],
+        ]
+        detailed_table = self._create_table(detailed_data)
+        elements.append(detailed_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_occupancy_details_section(self, elements: list[Any], occupancy_details: dict[str, Any]) -> None:
+        """Add occupancy details section."""
+        elements.append(Paragraph("Occupancy Analysis", self.styles["SectionHeader"]))
+
+        occupancy_data = [
+            ["Metric", "Value"],
+            ["Occupancy Rate", f"{occupancy_details['occupancy_rate']}%"],
+            ["Avg Length of Stay", f"{occupancy_details['average_length_of_stay']:.1f} nights"],
+            ["Available Room Nights", f"{occupancy_details['total_available_room_nights']:,}"],
+            ["Occupied Room Nights", f"{occupancy_details['total_occupied_room_nights']:,}"],
+            ["Check-ins", f"{occupancy_details['check_ins']:,}"],
+            ["Check-outs", f"{occupancy_details['check_outs']:,}"],
+            ["Cancellations", f"{occupancy_details['cancellations']:,}"],
+        ]
+        occupancy_table = self._create_table(occupancy_data)
+        elements.append(occupancy_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_customer_details_section(self, elements: list[Any], customer_details: dict[str, Any], include_charts: bool) -> None:
+        """Add customer details section."""
+        elements.append(Paragraph("Customer Analytics", self.styles["SectionHeader"]))
+
+        # Customer demographics chart
+        if include_charts:
+            try:
+                demographics_chart_buffer = self.chart_service.generate_customer_demographics_chart(
+                    customer_details.get("age_distribution", {}),
+                    customer_details.get("district_distribution", {})
+                )
+                demographics_chart = Image(demographics_chart_buffer, width=8*inch, height=4.8*inch)
+                elements.append(demographics_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        # Customer metrics
+        customer_data = [
+            ["Metric", "Value"],
+            ["Total Customers", f"{customer_details['total_customers']:,}"],
+            ["New Customers", f"{customer_details['new_customers']:,}"],
+            ["Returning Customers", f"{customer_details['returning_customers']:,}"],
+            ["Average Age", f"{customer_details['average_age']:.1f} years" if customer_details.get('average_age') else "N/A"],
+        ]
+        customer_table = self._create_table(customer_data)
+        elements.append(customer_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_hourly_patterns_section(self, elements: list[Any], checkins: list, checkouts: list, include_charts: bool) -> None:
+        """Add hourly patterns section."""
+        elements.append(PageBreak())
+        elements.append(Paragraph("Operational Patterns", self.styles["SectionHeader"]))
+
+        if include_charts:
+            # Check-ins hourly chart
+            try:
+                checkins_chart_buffer = self.chart_service.generate_hourly_distribution_chart(checkins, "check_ins")
+                checkins_chart = Image(checkins_chart_buffer, width=7*inch, height=3*inch)
+                elements.append(checkins_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+            # Check-outs hourly chart
+            try:
+                checkouts_chart_buffer = self.chart_service.generate_hourly_distribution_chart(checkouts, "check_outs")
+                checkouts_chart = Image(checkouts_chart_buffer, width=7*inch, height=3*inch)
+                elements.append(checkouts_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        # Summary stats
+        total_checkins = sum(item['count'] for item in checkins)
+        total_checkouts = sum(item['count'] for item in checkouts)
+
+        pattern_data = [
+            ["Metric", "Value"],
+            ["Total Check-ins", f"{total_checkins:,}"],
+            ["Total Check-outs", f"{total_checkouts:,}"],
+            ["Peak Check-in Hour", self._find_peak_hour(checkins)],
+            ["Peak Check-out Hour", self._find_peak_hour(checkouts)],
+        ]
+        pattern_table = self._create_table(pattern_data)
+        elements.append(pattern_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_seasonal_trends_section(self, elements: list, seasonal_data: dict[str, Any], include_charts: bool) -> None:
+        """Add seasonal trends section."""
+        elements.append(Paragraph("Seasonal Trends", self.styles["SectionHeader"]))
+
+        monthly_trends = seasonal_data.get("monthly_trends", [])
+
+        if include_charts and monthly_trends:
+            try:
+                seasonal_chart_buffer = self.chart_service.generate_seasonal_trends_chart(monthly_trends)
+                seasonal_chart = Image(seasonal_chart_buffer, width=7*inch, height=4.8*inch)
+                elements.append(seasonal_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        # Peak and low seasons
+        peak_months = seasonal_data.get("peak_months", [])
+
+        if peak_months:
+            elements.append(Paragraph("Peak Seasons", self.styles["Normal"]))
+            peak_data = [["Month", "Revenue", "Bookings"]]
+            for month in peak_months[:5]:  # Top 5
+                peak_data.append([
+                    month["month_name"],
+                    f"${month['revenue']:,.2f}",
+                    f"{month['bookings']:,}"
+                ])
+            peak_table = self._create_table(peak_data)
+            elements.append(peak_table)
+            elements.append(Spacer(1, 20))
+
+    def _add_customer_segments_section(self, elements: list, segments_data: dict[str, Any], include_charts: bool) -> None:
+        """Add customer segmentation section."""
+        elements.append(Paragraph("Customer Segmentation", self.styles["SectionHeader"]))
+
+        if include_charts:
+            try:
+                segments_chart_buffer = self.chart_service.generate_customer_segments_chart(segments_data)
+                segments_chart = Image(segments_chart_buffer, width=6*inch, height=4.8*inch)
+                elements.append(segments_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        segments = segments_data.get("segments", {})
+        segment_data = [["Segment", "Count", "Total Revenue", "Avg Revenue"]]
+
+        for segment_name, segment_info in segments.items():
+            if segment_info.get("count", 0) > 0:
+                segment_data.append([
+                    segment_name.replace("_", " ").title(),
+                    f"{segment_info['count']:,}",
+                    f"${segment_info['total_revenue']:,.2f}",
+                    f"${segment_info['average_revenue']:,.2f}"
+                ])
+
+        if len(segment_data) > 1:
+            segment_table = self._create_table(segment_data, col_widths=[1.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+            elements.append(segment_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_customer_ltv_section(self, elements: list, ltv_data: dict[str, Any], include_charts: bool) -> None:
+        """Add customer LTV section."""
+        elements.append(Paragraph("Customer Lifetime Value", self.styles["SectionHeader"]))
+
+        ltv_by_tenure = ltv_data.get("ltv_by_tenure", [])
+
+        if include_charts and ltv_by_tenure:
+            try:
+                ltv_chart_buffer = self.chart_service.generate_ltv_distribution_chart(ltv_by_tenure)
+                ltv_chart = Image(ltv_chart_buffer, width=6*inch, height=3.6*inch)
+                elements.append(ltv_chart)
+                elements.append(Spacer(1, 10))
+            except Exception:
+                pass
+
+        # LTV summary
+        ltv_summary_data = [
+            ["Metric", "Value"],
+            ["Average LTV", f"${ltv_data.get('average_ltv', 0):,.2f}"],
+            ["Total LTV", f"${ltv_data.get('total_ltv', 0):,.2f}"],
+            ["Customers Analyzed", f"{ltv_data.get('analysis_period', {}).get('customers_analyzed', 0):,}"],
+        ]
+        ltv_summary_table = self._create_table(ltv_summary_data)
+        elements.append(ltv_summary_table)
+        elements.append(Spacer(1, 20))
+
+    def _add_behavior_patterns_section(self, elements: list, behavior_data: dict[str, Any]) -> None:
+        """Add customer behavior patterns section."""
+        elements.append(PageBreak())
+        elements.append(Paragraph("Customer Behavior Patterns", self.styles["SectionHeader"]))
+
+        # Booking frequency
+        frequency_dist = behavior_data.get("booking_frequency", [])
+        if frequency_dist:
+            freq_data = [["Booking Count", "Customers"]]
+            for freq in frequency_dist[:10]:  # Top 10
+                freq_data.append([freq["label"], f"{freq['customer_count']:,}"])
+
+            freq_table = self._create_table(freq_data)
+            elements.append(freq_table)
+            elements.append(Spacer(1, 15))
+
+        # Lead time distribution
+        lead_time = behavior_data.get("lead_time_distribution", {})
+        if lead_time:
+            elements.append(Paragraph("Booking Lead Time Distribution", self.styles["Normal"]))
+            lead_data = [["Lead Time", "Bookings"]]
+            for period, count in lead_time.items():
+                if count > 0:
+                    lead_data.append([period.replace("_", " ").title(), f"{count:,}"])
+
+            lead_table = self._create_table(lead_data)
+            elements.append(lead_table)
+            elements.append(Spacer(1, 15))
+
+        # Metrics summary
+        metrics = behavior_data.get("metrics", {})
+        behavior_summary_data = [
+            ["Behavior Metric", "Value"],
+            ["Repeat Customer Rate", f"{metrics.get('repeat_customer_rate', 0):.1f}%"],
+            ["Total Customers Analyzed", f"{metrics.get('total_customers_analyzed', 0):,}"],
+        ]
+        behavior_summary_table = self._create_table(behavior_summary_data)
+        elements.append(behavior_summary_table)
+
+    def _find_peak_hour(self, hourly_data: list[dict[str, Any]]) -> str:
+        """Find the peak hour from hourly data."""
+        if not hourly_data:
+            return "N/A"
+
+        max_hour = max(hourly_data, key=lambda x: x['count'])
+        return f"{max_hour['hour']:02d}:00 ({max_hour['count']} events)"
+
 
     def _create_table(
         self,

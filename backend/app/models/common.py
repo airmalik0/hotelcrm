@@ -80,3 +80,27 @@ class Token(SQLModel):
 
 class TokenPayload(SQLModel):
     sub: str | None = None
+
+
+class CampaignType(str, Enum):
+    """Campaign execution types"""
+    ONETIME = "onetime"      # Execute once immediately
+    TRIGGER = "trigger"      # Scheduled via external cron
+
+
+class CampaignStatus(str, Enum):
+    """Campaign lifecycle status"""
+    DRAFT = "draft"          # Created but not yet active
+    ACTIVE = "active"        # Running (for triggers) or ready to execute (for onetime)
+    PAUSED = "paused"        # Temporarily stopped
+    COMPLETED = "completed"  # Finished execution
+    ARCHIVED = "archived"    # Archived for historical purposes
+
+
+class SMSStatus(str, Enum):
+    """SMS delivery status"""
+    PENDING = "pending"      # Queued for sending
+    SENT = "sent"           # Successfully sent
+    DELIVERED = "delivered"  # Delivered to recipient
+    FAILED = "failed"       # Failed to send
+    MOCK = "mock"           # Mock SMS for testing

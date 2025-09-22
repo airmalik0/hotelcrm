@@ -1,7 +1,7 @@
 """
 Analytics API routes.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -22,6 +22,7 @@ from app.models.analytics import (
 from app.services.analytics import AnalyticsService
 from app.services.excel_report import ExcelReportService
 from app.services.pdf_report import PDFReportService
+from app.utils import parse_isoformat_date
 
 router = APIRouter()
 
@@ -46,8 +47,8 @@ def get_dashboard_metrics(
     """
     # Parse dates
     try:
-        parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
-        parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
     except ValueError as e:
         raise ValidationError(f"Invalid date format. Use ISO format: {str(e)}")
 
@@ -103,8 +104,8 @@ def get_revenue_details(
     """
     # Parse dates
     try:
-        parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
-        parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
@@ -156,8 +157,8 @@ def get_occupancy_details(
     """
     # Parse dates
     try:
-        parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
-        parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
@@ -208,8 +209,8 @@ def get_customer_analytics(
     """
     # Parse dates
     try:
-        parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
-        parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
@@ -262,10 +263,10 @@ def compare_periods(
     """
     # Parse dates
     try:
-        p1_from = datetime.fromisoformat(period1_from.replace("Z", "+00:00"))
-        p1_to = datetime.fromisoformat(period1_to.replace("Z", "+00:00"))
-        p2_from = datetime.fromisoformat(period2_from.replace("Z", "+00:00"))
-        p2_to = datetime.fromisoformat(period2_to.replace("Z", "+00:00"))
+        p1_from = parse_isoformat_date(period1_from)
+        p1_to = parse_isoformat_date(period1_to)
+        p2_from = parse_isoformat_date(period2_from)
+        p2_to = parse_isoformat_date(period2_to)
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
@@ -298,34 +299,53 @@ def export_to_pdf(
     session: SessionDep,
     export_request: AnalyticsExportRequest,
     current_user: User = Depends(require_admin),
+    hotel_name: str = Query("Hotel Analytics", description="Hotel name for report header"),
+    include_charts: bool = Query(True, description="Include visualization charts"),
+    comprehensive: bool = Query(True, description="Generate comprehensive report with all analytics data"),
 ) -> Any:
     """
     Export analytics data to PDF.
 
+    Options:
+    - comprehensive=True: Uses all 10 analytics endpoints with charts and detailed analysis
+    - comprehensive=False: Basic dashboard report (legacy format)
+    - include_charts: Add visualization charts to the report
+    - hotel_name: Custom hotel name for report header
+
     Requires admin access.
     """
-    # Get analytics data
-    service = AnalyticsService(session)
-    metrics = service.get_dashboard_metrics(export_request.filters)
-
     # Generate PDF
     pdf_service = PDFReportService()
-    pdf_buffer = pdf_service.generate_dashboard_report(metrics)
+
+    if comprehensive:
+        # Use comprehensive report with all analytics endpoints
+        pdf_buffer = pdf_service.generate_comprehensive_report(
+            session=session,
+            filters=export_request.filters,
+            hotel_name=hotel_name,
+            include_charts=include_charts,
+        )
+    else:
+        # Use legacy dashboard report
+        service = AnalyticsService(session)
+        metrics = service.get_dashboard_metrics(export_request.filters)
+        pdf_buffer = pdf_service.generate_dashboard_report(metrics)
 
     # Log audit
+    report_type = "comprehensive" if comprehensive else "basic"
     log_audit(
         session=session,
         user=current_user,
         action="exported",
         entity_type="analytics",
         entity_id=current_user.id,
-        entity_name="analytics_report",
-        description=f"Exported analytics report for period {export_request.filters.date_from} to {export_request.filters.date_to}",
+        entity_name="analytics_pdf_report",
+        description=f"Exported {report_type} analytics PDF report for period {export_request.filters.date_from} to {export_request.filters.date_to} (charts: {include_charts})",
     )
     session.commit()
 
     # Return PDF as stream
-    filename = f"analytics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filename = f"analytics_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.pdf"
     return StreamingResponse(
         pdf_buffer,
         media_type="application/pdf",
@@ -340,29 +360,48 @@ def export_to_excel(
     session: SessionDep,
     export_request: AnalyticsExportRequest,
     current_user: User = Depends(require_admin),
+    include_charts: bool = Query(True, description="Include charts in Excel sheets"),
+    comprehensive: bool = Query(True, description="Generate comprehensive report with all analytics data"),
 ) -> Any:
     """
     Export analytics data to Excel with multiple sheets.
 
-    Creates a comprehensive Excel workbook with:
-    - Summary sheet with key metrics
-    - Revenue analysis
-    - Occupancy analysis
-    - Customer demographics
-    - Payment method distribution
-    - Room type performance
+    Options:
+    - comprehensive=True: Uses all 10 analytics endpoints with 10+ detailed sheets:
+      * Executive Summary
+      * Revenue Analysis (detailed trends)
+      * Occupancy Analysis (detailed patterns)
+      * Customer Analytics (demographics & acquisition)
+      * Payment Analysis
+      * Room Performance
+      * Hourly Patterns (check-in/out distributions)
+      * Seasonal Trends (multi-year analysis)
+      * Customer Segments (VIP, Loyal, Regular, etc.)
+      * Customer LTV (lifetime value analysis)
+      * Behavior Patterns (booking preferences)
+    - comprehensive=False: Basic dashboard report with 6 sheets (legacy format)
+    - include_charts: Add charts to relevant sheets
 
     Requires admin access.
     """
-    # Get analytics data
-    service = AnalyticsService(session)
-    metrics = service.get_dashboard_metrics(export_request.filters)
-
     # Generate Excel
     excel_service = ExcelReportService()
-    excel_buffer = excel_service.generate_dashboard_report(metrics)
+
+    if comprehensive:
+        # Use comprehensive report with all analytics endpoints
+        excel_buffer = excel_service.generate_comprehensive_report(
+            session=session,
+            filters=export_request.filters,
+            include_charts=include_charts,
+        )
+    else:
+        # Use legacy dashboard report
+        service = AnalyticsService(session)
+        metrics = service.get_dashboard_metrics(export_request.filters)
+        excel_buffer = excel_service.generate_dashboard_report(metrics)
 
     # Log audit
+    report_type = "comprehensive" if comprehensive else "basic"
     log_audit(
         session=session,
         user=current_user,
@@ -370,12 +409,12 @@ def export_to_excel(
         entity_type="analytics",
         entity_id=current_user.id,
         entity_name="analytics_excel_report",
-        description=f"Exported analytics Excel report for period {export_request.filters.date_from} to {export_request.filters.date_to}",
+        description=f"Exported {report_type} analytics Excel report for period {export_request.filters.date_from} to {export_request.filters.date_to} (charts: {include_charts})",
     )
     session.commit()
 
     # Return Excel as stream
-    filename = f"analytics_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"analytics_report_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.xlsx"
     return StreamingResponse(
         excel_buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -424,8 +463,8 @@ def get_hourly_distribution(
     """
     # Parse dates
     try:
-        parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
-        parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
     except ValueError as e:
         raise ValidationError(f"Invalid date format: {str(e)}")
 
@@ -525,12 +564,12 @@ def get_customer_segments(
     parsed_date_to = None
     if date_from:
         try:
-            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+            parsed_date_from = parse_isoformat_date(date_from)
         except ValueError as e:
             raise ValidationError(f"Invalid date_from format: {str(e)}")
     if date_to:
         try:
-            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+            parsed_date_to = parse_isoformat_date(date_to)
         except ValueError as e:
             raise ValidationError(f"Invalid date_to format: {str(e)}")
 
@@ -621,12 +660,12 @@ def get_customer_behavior_patterns(
     parsed_date_to = None
     if date_from:
         try:
-            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+            parsed_date_from = parse_isoformat_date(date_from)
         except ValueError as e:
             raise ValidationError(f"Invalid date_from format: {str(e)}")
     if date_to:
         try:
-            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+            parsed_date_to = parse_isoformat_date(date_to)
         except ValueError as e:
             raise ValidationError(f"Invalid date_to format: {str(e)}")
 

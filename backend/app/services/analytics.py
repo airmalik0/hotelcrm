@@ -397,9 +397,9 @@ class AnalyticsService:
 
     def get_quick_stats(self) -> dict[str, Any]:
         """Get quick statistics for today, this week, and this month."""
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=today_start.weekday())
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)

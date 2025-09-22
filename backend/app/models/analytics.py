@@ -2,7 +2,7 @@
 Analytics models for metrics and reporting.
 These are Pydantic models for API request/response, not database tables.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
@@ -167,5 +167,5 @@ class AnalyticsResponse(SQLModel):
     """Standard response wrapper for analytics endpoints."""
     success: bool = True
     data: Any
-    generated_at: datetime = Field(default_factory=lambda: datetime.now())
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     filters_applied: AnalyticsFilter | None = None

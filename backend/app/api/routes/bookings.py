@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
@@ -22,6 +21,7 @@ from app.models import (
     RoomChangeRequest,
 )
 from app.services.booking import BookingService
+from app.utils import parse_isoformat_date
 
 router = APIRouter()
 
@@ -49,9 +49,9 @@ def read_bookings(
 
     try:
         if date_from:
-            parsed_date_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+            parsed_date_from = parse_isoformat_date(date_from)
         if date_to:
-            parsed_date_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+            parsed_date_to = parse_isoformat_date(date_to)
     except ValueError as e:
         raise ValidationError(
             f"Invalid date format. Expected ISO format (YYYY-MM-DDTHH:MM:SS): {str(e)}"
