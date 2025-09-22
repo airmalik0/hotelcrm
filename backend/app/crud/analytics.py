@@ -2,7 +2,7 @@
 CRUD operations for analytics.
 All SQL queries for analytics data retrieval.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlmodel import Session, func, select
@@ -33,19 +33,23 @@ class CRUDAnalytics:
             func.sum(Booking.total_amount).label("total_revenue"),
             func.count(Booking.id).label("booking_count"),
             func.sum(
-                func.extract("day", Booking.check_out - Booking.check_in)
+                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
             ).label("total_nights"),
             func.sum(
                 Booking.total_amount * Booking.discount / 100
             ).label("discount_amount"),
         ).where(
-            Booking.check_in >= date_from,
-            Booking.check_out <= date_to,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
         )
 
-        # Status filter
+        # Status filter - include CONFIRMED, CHECKED_IN, CHECKED_OUT
         if not include_cancelled:
-            query = query.where(Booking.status != BookingStatus.CANCELLED)
+            query = query.where(Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]))
 
         # Room filter
         if room_id and room_id != "all":
@@ -91,22 +95,22 @@ class CRUDAnalytics:
         days_in_period = (date_to - date_from).days
         total_available_nights = total_rooms * days_in_period
 
-        # Get occupied nights (excluding cancelled)
+        # Get occupied nights - each booking counts as minimum 1 day
         occupied_query = select(
             func.sum(
-                func.greatest(0,
-                    func.least(
-                        func.extract("day", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from))
-                    )
-                )
+                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
             ).label("occupied_nights"),
             func.avg(
-                func.extract("day", Booking.check_out - Booking.check_in)
+                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
             ).label("avg_stay"),
         ).where(
             Booking.check_in < date_to,
             Booking.check_out > date_from,
-            Booking.status != BookingStatus.CANCELLED,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
         )
 
         if room_id and room_id != "all":
@@ -118,24 +122,45 @@ class CRUDAnalytics:
         occupied_nights = int(occupied_result.occupied_nights or 0)
         avg_stay = float(occupied_result.avg_stay or 0)
 
-        # Count check-ins, check-outs, cancellations
-        status_query = select(
-            Booking.status,
-            func.count(Booking.id).label("count"),
-        ).where(
+        # Count actual check-ins (by check_in date)
+        checkin_query = select(func.count(Booking.id)).where(
+            Booking.check_in >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status == BookingStatus.CHECKED_IN,
+        )
+        if room_id and room_id != "all":
+            checkin_query = checkin_query.where(Booking.room_id == room_id)
+        if room_type and room_type != "all":
+            checkin_query = checkin_query.join(Room).where(Room.room_type == room_type)
+
+        check_ins = session.exec(checkin_query).first() or 0
+
+        # Count actual check-outs (by check_out date)
+        checkout_query = select(func.count(Booking.id)).where(
+            Booking.check_out >= date_from,
+            Booking.check_out <= date_to,
+            Booking.status == BookingStatus.CHECKED_OUT,
+        )
+        if room_id and room_id != "all":
+            checkout_query = checkout_query.where(Booking.room_id == room_id)
+        if room_type and room_type != "all":
+            checkout_query = checkout_query.join(Room).where(Room.room_type == room_type)
+
+        check_outs = session.exec(checkout_query).first() or 0
+
+        # Count cancellations (by booking_date for now, as we don't have cancelled_at field)
+        # TODO: Add cancelled_at field to track actual cancellation date
+        cancellation_query = select(func.count(Booking.id)).where(
             Booking.booking_date >= date_from,
             Booking.booking_date <= date_to,
+            Booking.status == BookingStatus.CANCELLED,
         )
-
         if room_id and room_id != "all":
-            status_query = status_query.where(Booking.room_id == room_id)
+            cancellation_query = cancellation_query.where(Booking.room_id == room_id)
         if room_type and room_type != "all":
-            status_query = status_query.join(Room).where(Room.room_type == room_type)
+            cancellation_query = cancellation_query.join(Room).where(Room.room_type == room_type)
 
-        status_query = status_query.group_by(Booking.status)
-        status_results = session.exec(status_query).all()
-
-        status_counts = {str(status): count for status, count in status_results}
+        cancellations = session.exec(cancellation_query).first() or 0
 
         occupancy_rate = (occupied_nights / total_available_nights * 100) if total_available_nights > 0 else 0
 
@@ -144,9 +169,9 @@ class CRUDAnalytics:
             "average_length_of_stay": round(avg_stay, 1),
             "total_available_room_nights": total_available_nights,
             "total_occupied_room_nights": occupied_nights,
-            "check_ins": status_counts.get(BookingStatus.CHECKED_IN.value, 0),
-            "check_outs": status_counts.get(BookingStatus.CHECKED_OUT.value, 0),
-            "cancellations": status_counts.get(BookingStatus.CANCELLED.value, 0),
+            "check_ins": int(check_ins),
+            "check_outs": int(check_outs),
+            "cancellations": int(cancellations),
         }
 
     def get_payment_method_distribution(
@@ -167,12 +192,16 @@ class CRUDAnalytics:
             func.count(Booking.id).label("count"),
             func.sum(Booking.total_amount).label("amount"),
         ).where(
-            Booking.check_in >= date_from,
-            Booking.check_out <= date_to,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
         )
 
         if not include_cancelled:
-            query = query.where(Booking.status != BookingStatus.CANCELLED)
+            query = query.where(Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]))
 
         query = query.group_by(Booking.payment_method)
         results = session.exec(query).all()
@@ -216,7 +245,11 @@ class CRUDAnalytics:
             .where(
                 Booking.booking_date >= date_from,
                 Booking.booking_date <= date_to,
-                Booking.status != BookingStatus.CANCELLED,
+                Booking.status.in_([
+                    BookingStatus.CONFIRMED,
+                    BookingStatus.CHECKED_IN,
+                    BookingStatus.CHECKED_OUT
+                ]),
             )
             .distinct()
         )
@@ -238,8 +271,20 @@ class CRUDAnalytics:
         # Determine new vs returning (simplified: new if first booking is in period)
         new_customers = 0
         for customer in customers:
-            if customer.first_booking_date and customer.first_booking_date >= date_from:
-                new_customers += 1
+            if customer.first_booking_date:
+                # Ensure timezone compatibility for comparison
+                first_booking = customer.first_booking_date
+                if first_booking.tzinfo is None:
+                    # If first_booking_date is naive, assume UTC (consistent with project pattern)
+                    first_booking = first_booking.replace(tzinfo=timezone.utc)
+
+                # Ensure date_from is also timezone-aware
+                comparison_date = date_from
+                if comparison_date.tzinfo is None:
+                    comparison_date = comparison_date.replace(tzinfo=timezone.utc)
+
+                if first_booking >= comparison_date:
+                    new_customers += 1
 
         returning_customers = total_customers - new_customers
 
@@ -305,17 +350,24 @@ class CRUDAnalytics:
         Returns:
             List of dictionaries with metrics for each room type
         """
+        # Use GREATEST to ensure at least 1 day to avoid division by zero
+        nights_expr = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         query = select(
             Room.room_type,
             func.count(Booking.id).label("bookings"),
             func.sum(Booking.total_amount).label("revenue"),
-            func.avg(Booking.total_amount / func.extract("day", Booking.check_out - Booking.check_in)).label("avg_rate"),
+            func.avg(Booking.total_amount / nights_expr).label("avg_rate"),
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(
-            Booking.check_in >= date_from,
-            Booking.check_out <= date_to,
-            Booking.status != BookingStatus.CANCELLED,
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
         ).group_by(Room.room_type)
 
         results = session.exec(query).all()
@@ -330,16 +382,20 @@ class CRUDAnalytics:
             days_in_period = (date_to - date_from).days
             available_nights = room_count * days_in_period if room_count else 1
 
-            # Get occupied nights for this room type
+            # Get occupied nights for this room type - each booking counts as minimum 1 day
             occupied_nights = session.exec(
                 select(
-                    func.sum(func.extract("day", Booking.check_out - Booking.check_in))
+                    func.sum(func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in)))
                 ).join(
                     Room, Room.id == Booking.room_id
                 ).where(
                     Booking.check_in < date_to,
                     Booking.check_out > date_from,
-                    Booking.status != BookingStatus.CANCELLED,
+                    Booking.status.in_([
+                        BookingStatus.CONFIRMED,
+                        BookingStatus.CHECKED_IN,
+                        BookingStatus.CHECKED_OUT
+                    ]),
                     Room.room_type == result.room_type,
                 )
             ).first() or 0
@@ -386,7 +442,11 @@ class CRUDAnalytics:
         ).where(
             Booking.booking_date >= date_from,
             Booking.booking_date <= date_to,
-            Booking.status != BookingStatus.CANCELLED,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
         ).group_by(
             date_trunc
         ).order_by(
