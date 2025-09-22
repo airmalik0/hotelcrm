@@ -56,9 +56,11 @@ class AnalyticsFilter(SQLModel):
     @field_validator('date_from', 'date_to')
     @classmethod
     def validate_dates(cls, v: datetime) -> datetime:
-        """Ensure dates are timezone-aware."""
+        """Ensure dates are timezone-aware (auto-convert naive to UTC)."""
         if v.tzinfo is None:
-            raise ValueError("Dates must be timezone-aware")
+            # Auto-convert naive datetime to UTC for API compatibility
+            from datetime import timezone
+            return v.replace(tzinfo=timezone.utc)
         return v
 
     @field_validator('room_type')

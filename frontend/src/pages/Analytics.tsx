@@ -1,13 +1,11 @@
 import {
   exportToPdf,
   getDashboardMetrics,
-  getQuickStats,
 } from "@/api/analytics"
 import type {
   AnalyticsExportRequest,
   DashboardMetrics,
 } from "@/client/types.gen"
-import { KPICard } from "@/components/dashboard/KPICard"
 import { useAuth } from "@/contexts/AuthContext"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
@@ -15,11 +13,15 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { endOfMonth, format, startOfMonth, subMonths } from "date-fns"
 import {
   BarChart3,
+  Bed,
   Calendar,
   CreditCard,
   Download,
+  DollarSign,
   TrendingUp,
+  UserCheck,
   Users,
+  XCircle,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -48,11 +50,6 @@ export function Analytics() {
     )
   }
 
-  // Fetch quick stats
-  const { data: quickStats, isLoading: quickStatsLoading } = useQuery({
-    queryKey: ["analytics", "quick-stats"],
-    queryFn: getQuickStats,
-  })
 
   // Fetch dashboard metrics with date range
   const {
@@ -97,10 +94,32 @@ export function Analytics() {
     }))
   }
 
-  const setQuickDateRange = (months: number) => {
+  const setQuickDateRange = (type: 'today' | 'week' | 'month' | 'quarter' | 'year') => {
     const now = new Date()
-    const from = startOfMonth(subMonths(now, months - 1))
-    const to = endOfMonth(now)
+    let from: Date
+    let to: Date = now
+
+    switch(type) {
+      case 'today':
+        from = now
+        to = now
+        break
+      case 'week':
+        from = subMonths(now, 0)
+        from.setDate(from.getDate() - 7)
+        break
+      case 'month':
+        from = startOfMonth(now)
+        break
+      case 'quarter':
+        from = startOfMonth(subMonths(now, 2))
+        break
+      case 'year':
+        from = startOfMonth(subMonths(now, 11))
+        to = endOfMonth(now)
+        break
+    }
+
     setDateRange({
       from: format(from, "yyyy-MM-dd"),
       to: format(to, "yyyy-MM-dd"),
@@ -108,7 +127,6 @@ export function Analytics() {
   }
 
   const metrics = dashboardData?.data as DashboardMetrics | undefined
-  const today = quickStats?.data as any
 
   return (
     <div className="space-y-6">
@@ -159,157 +177,214 @@ export function Analytics() {
               className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setQuickDateRange(1)}
+              onClick={() => setQuickDateRange('today')}
+              className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setQuickDateRange('week')}
+              className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => setQuickDateRange('month')}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               This Month
             </button>
             <button
-              onClick={() => setQuickDateRange(3)}
+              onClick={() => setQuickDateRange('quarter')}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               Last 3 Months
             </button>
             <button
-              onClick={() => setQuickDateRange(12)}
+              onClick={() => setQuickDateRange('year')}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
-              Last Year
+              Last 12 Months
             </button>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      {today && (
+      {/* Main KPI Cards for Selected Period */}
+      {metrics && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KPICard
-            title="Today's Revenue"
-            value={formatCurrency(today.today?.revenue || 0)}
-            icon={TrendingUp}
-            color="primary"
-            loading={quickStatsLoading}
-          />
-          <KPICard
-            title="Today's Bookings"
-            value={today.today?.bookings || 0}
-            icon={Calendar}
-            color="success"
-            loading={quickStatsLoading}
-          />
-          <KPICard
-            title="This Month Revenue"
-            value={formatCurrency(today.month?.revenue || 0)}
-            icon={BarChart3}
-            color="warning"
-            loading={quickStatsLoading}
-          />
-          <KPICard
-            title="Today's Occupancy"
-            value={`${today.today?.occupancy || 0}%`}
-            icon={Users}
-            color="purple"
-            loading={quickStatsLoading}
-          />
+          {/* Total Revenue Card */}
+          <div className="bg-gradient-to-br from-primary-600/10 to-white dark:from-primary-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                  Total Revenue
+                </p>
+                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  {formatCurrency(metrics.revenue.total_revenue)}
+                </h4>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {metrics.revenue.total_bookings} bookings
+            </p>
+          </div>
+
+          {/* Occupancy Rate Card */}
+          <div className="bg-gradient-to-br from-success-600/10 to-white dark:from-success-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-success-600 text-white rounded-full flex items-center justify-center">
+                <Bed className="w-6 h-6" />
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                  Occupancy Rate
+                </p>
+                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  {metrics.occupancy.occupancy_rate}%
+                </h4>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {metrics.occupancy.average_length_of_stay.toFixed(1)} nights avg stay
+            </p>
+          </div>
+
+          {/* Check-ins Card */}
+          <div className="bg-gradient-to-br from-purple-600/10 to-white dark:from-purple-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center">
+                <UserCheck className="w-6 h-6" />
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                  Check-ins
+                </p>
+                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  {metrics.occupancy.check_ins}
+                </h4>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {metrics.customer_metrics.total_customers} total guests
+            </p>
+          </div>
+
+          {/* Cancellations Card */}
+          <div className="bg-gradient-to-br from-danger-600/10 to-white dark:from-danger-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-danger-600 text-white rounded-full flex items-center justify-center">
+                <XCircle className="w-6 h-6" />
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                  Cancellations
+                </p>
+                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  {metrics.occupancy.cancellations}
+                </h4>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {metrics.occupancy.cancellations > 0
+                ? `${((metrics.occupancy.cancellations / metrics.revenue.total_bookings) * 100).toFixed(1)}% rate`
+                : 'No cancellations'
+              }
+            </p>
+          </div>
         </div>
       )}
 
       {/* Main Metrics */}
       {metrics && (
         <>
-          {/* Revenue Metrics */}
-          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
-            <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Revenue Metrics
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Total Revenue
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {formatCurrency(metrics.revenue.total_revenue)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Average Daily Rate
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+          {/* Key Performance Metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Revenue Metrics */}
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
+              <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Revenue Performance
+                </h3>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-400">Average Daily Rate</span>
+                  <span className="text-lg font-semibold text-neutral-900 dark:text-white">
                     {formatCurrency(metrics.revenue.average_daily_rate)}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    RevPAR
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-400">RevPAR</span>
+                  <span className="text-lg font-semibold text-neutral-900 dark:text-white">
                     {formatCurrency(metrics.revenue.revenue_per_available_room)}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Total Bookings
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {metrics.revenue.total_bookings}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Occupancy Metrics */}
-          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
-            <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Occupancy Metrics
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Occupancy Rate
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {metrics.occupancy.occupancy_rate}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Avg Length of Stay
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-400">Avg Length of Stay</span>
+                  <span className="text-lg font-semibold text-neutral-900 dark:text-white">
                     {metrics.occupancy.average_length_of_stay.toFixed(1)} nights
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Check-ins
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {metrics.occupancy.check_ins}
-                  </p>
+                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-600">
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-700 dark:text-neutral-300 font-medium">Period Total</span>
+                    <span className="text-xl font-bold text-primary-600">
+                      {formatCurrency(metrics.revenue.total_revenue)}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Cancellations
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {metrics.occupancy.cancellations}
-                  </p>
+              </div>
+            </div>
+
+            {/* Customer Metrics */}
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
+              <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Customer Analytics
+                </h3>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-400">Total Customers</span>
+                  <span className="text-lg font-semibold text-neutral-900 dark:text-white">
+                    {metrics.customer_metrics.total_customers}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-400">New Customers</span>
+                  <span className="text-lg font-semibold text-success-600">
+                    {metrics.customer_metrics.new_customers}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-400">Returning Customers</span>
+                  <span className="text-lg font-semibold text-neutral-900 dark:text-white">
+                    {metrics.customer_metrics.returning_customers}
+                  </span>
+                </div>
+                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-600">
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-700 dark:text-neutral-300 font-medium">Average Age</span>
+                    <span className="text-xl font-bold text-purple-600">
+                      {metrics.customer_metrics.average_age
+                        ? `${metrics.customer_metrics.average_age.toFixed(1)} years`
+                        : "N/A"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Payment Distribution */}
+          {/* Payment & Occupancy Insights */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
               <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
@@ -357,40 +432,40 @@ export function Analytics() {
               </div>
             </div>
 
-            {/* Customer Metrics */}
+            {/* Occupancy Insights */}
             <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
               <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Customer Insights
+                  <BarChart3 className="w-5 h-5" />
+                  Occupancy Summary
                 </h3>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
+                  <div className="text-center mb-4">
+                    <h4 className="text-3xl font-bold text-neutral-900 dark:text-white">
+                      {metrics.occupancy.occupancy_rate}%
+                    </h4>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                      Average Occupancy
+                    </p>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-neutral-600 dark:text-neutral-400">Total Customers</span>
+                    <span className="text-neutral-600 dark:text-neutral-400">Total Check-ins</span>
                     <span className="text-neutral-900 dark:text-white font-medium">
-                      {metrics.customer_metrics.total_customers}
+                      {metrics.occupancy.check_ins}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-neutral-600 dark:text-neutral-400">New Customers</span>
-                    <span className="text-neutral-900 dark:text-white font-medium">
-                      {metrics.customer_metrics.new_customers}
+                    <span className="text-neutral-600 dark:text-neutral-400">Cancellations</span>
+                    <span className="text-danger-600 font-medium">
+                      {metrics.occupancy.cancellations}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-neutral-600 dark:text-neutral-400">Returning</span>
+                    <span className="text-neutral-600 dark:text-neutral-400">Avg Stay Duration</span>
                     <span className="text-neutral-900 dark:text-white font-medium">
-                      {metrics.customer_metrics.returning_customers}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-600 dark:text-neutral-400">Average Age</span>
-                    <span className="text-neutral-900 dark:text-white font-medium">
-                      {metrics.customer_metrics.average_age
-                        ? `${metrics.customer_metrics.average_age.toFixed(1)} years`
-                        : "N/A"}
+                      {metrics.occupancy.average_length_of_stay.toFixed(1)} nights
                     </span>
                   </div>
                 </div>

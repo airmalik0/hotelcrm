@@ -162,10 +162,11 @@ class CRUDAnalytics:
         avg_stay = float(occupied_result.avg_stay or 0)
 
         # Count actual check-ins (by check_in date)
+        # Include both CHECKED_IN and CHECKED_OUT statuses to count all arrivals
         checkin_query = select(func.count(Booking.id)).where(
             Booking.check_in >= date_from,
             Booking.check_in <= date_to,
-            Booking.status == BookingStatus.CHECKED_IN,
+            Booking.status.in_([BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT]),
         )
         if room_id and room_id != "all":
             checkin_query = checkin_query.where(Booking.room_id == room_id)
@@ -187,11 +188,11 @@ class CRUDAnalytics:
 
         check_outs = session.exec(checkout_query).first() or 0
 
-        # Count cancellations (by booking_date for now, as we don't have cancelled_at field)
-        # TODO: Add cancelled_at field to track actual cancellation date
+        # Count cancellations (by updated_at for cancelled bookings)
+        # Using updated_at as we don't have a dedicated cancelled_at field
         cancellation_query = select(func.count(Booking.id)).where(
-            Booking.booking_date >= date_from,
-            Booking.booking_date <= date_to,
+            Booking.updated_at >= date_from,
+            Booking.updated_at <= date_to,
             Booking.status == BookingStatus.CANCELLED,
         )
         if room_id and room_id != "all":
@@ -528,20 +529,21 @@ class CRUDAnalytics:
             List of dictionaries with hour and count
         """
         # Determine which field to use based on metric
+        # Fall back to scheduled times if actual times are not available
         if metric == "check_outs":
-            time_field = Booking.actual_check_out
+            time_field = func.coalesce(Booking.actual_check_out, Booking.check_out)
         else:  # default to check_ins
-            time_field = Booking.actual_check_in
+            time_field = func.coalesce(Booking.actual_check_in, Booking.check_in)
 
         # Query to get hour distribution
         query = select(
             func.extract("hour", time_field).label("hour"),
             func.count(Booking.id).label("count"),
         ).where(
-            time_field.isnot(None),  # Only include bookings with actual times
             time_field >= date_from,
             time_field <= date_to,
             Booking.status.in_([
+                BookingStatus.CONFIRMED,  # Include CONFIRMED for scheduled times
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
