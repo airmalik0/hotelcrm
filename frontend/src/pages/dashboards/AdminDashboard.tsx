@@ -42,14 +42,20 @@ export function AdminDashboard() {
   // Calculate metrics
   const totalRevenue =
     bookings?.data?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0
-  const activeRooms =
-    rooms?.data?.filter(
-      (room) => room.status === "available" || room.status === "occupied",
-    ).length || 0
+
+  // Separate available and occupied rooms for proper calculation
+  const availableRooms =
+    rooms?.data?.filter((room) => room.status === "available").length || 0
+  const occupiedRooms =
+    rooms?.data?.filter((room) => room.status === "occupied").length || 0
+
   const todayBookings =
     bookings?.data?.filter((booking) => {
       const today = new Date().toDateString()
-      return safeParseDate(booking.check_in).toDateString() === today
+      return (
+        safeParseDate(booking.check_in).toDateString() === today &&
+        booking.status !== "cancelled"
+      )
     }).length || 0
 
   return (
@@ -157,7 +163,6 @@ export function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
-
           {/* Quick Stats */}
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -181,7 +186,7 @@ export function AdminDashboard() {
                   Available Rooms
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                  {activeRooms}
+                  {availableRooms}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -190,7 +195,7 @@ export function AdminDashboard() {
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
                   {rooms?.count
-                    ? Math.round((activeRooms / rooms.count) * 100)
+                    ? Math.round((occupiedRooms / rooms.count) * 100)
                     : 0}
                   %
                 </span>

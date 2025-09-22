@@ -42,7 +42,10 @@ export function ManagerDashboard() {
   const todayBookings =
     bookings?.data?.filter((booking) => {
       const today = new Date().toDateString()
-      return safeParseDate(booking.check_in).toDateString() === today
+      return (
+        safeParseDate(booking.check_in).toDateString() === today &&
+        booking.status !== "cancelled"
+      )
     }) || []
 
   const occupancyRate = rooms?.count

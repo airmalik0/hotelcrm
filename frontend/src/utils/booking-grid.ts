@@ -1,6 +1,6 @@
 import type { BookingPublic, RoomPublic } from "@/client/types.gen"
-import { bookingsOverlap, isBookingInView, safeParseDate } from "./date-helpers"
 import { differenceInDays } from "date-fns"
+import { bookingsOverlap, isBookingInView, safeParseDate } from "./date-helpers"
 
 export interface BookingWithLane extends BookingPublic {
   lane: number
@@ -152,6 +152,11 @@ export function calculateOccupancy(
   let occupiedRoomDays = 0
 
   for (const booking of bookings) {
+    // Skip cancelled bookings in occupancy calculation
+    if (booking.status === "cancelled") {
+      continue
+    }
+
     if (
       isBookingInView(booking.check_in, booking.check_out, startDate, endDate)
     ) {

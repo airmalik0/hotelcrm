@@ -3,8 +3,8 @@ import type {
   BookingStatus,
   RoomPublic,
 } from "@/client/types.gen"
-import { safeParseDate } from "./date-helpers"
 import { differenceInDays } from "date-fns"
+import { safeParseDate } from "./date-helpers"
 
 export interface BookingFilters {
   searchTerm: string
@@ -39,7 +39,15 @@ export function filterBookings(
     }
 
     // Status filter
-    if (filters.statusFilters.length > 0) {
+    // If no status filters selected - hide cancelled bookings by default
+    // If status filters selected - show only selected statuses
+    if (filters.statusFilters.length === 0) {
+      // No filters selected - hide cancelled bookings
+      if (booking.status === "cancelled") {
+        return false
+      }
+    } else {
+      // Status filters selected - show only selected statuses
       if (!filters.statusFilters.includes(booking.status || "confirmed")) {
         return false
       }
@@ -168,6 +176,11 @@ export function calculateFilteredStats(
   )
 
   relevantBookings.forEach((booking) => {
+    // Skip cancelled bookings in occupancy calculation
+    if (booking.status === "cancelled") {
+      return
+    }
+
     const bookingStart = Math.max(
       safeParseDate(booking.check_in).getTime(),
       viewStart.getTime(),

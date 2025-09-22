@@ -30,12 +30,16 @@ export function HostDashboard() {
 
   const todayCheckIns =
     bookings?.data?.filter(
-      (booking) => safeParseDate(booking.check_in).toDateString() === today,
+      (booking) =>
+        safeParseDate(booking.check_in).toDateString() === today &&
+        booking.status !== "cancelled",
     ) || []
 
   const todayCheckOuts =
     bookings?.data?.filter(
-      (booking) => safeParseDate(booking.check_out).toDateString() === today,
+      (booking) =>
+        safeParseDate(booking.check_out).toDateString() === today &&
+        booking.status !== "cancelled",
     ) || []
 
   const pendingCheckIns = todayCheckIns.filter(
