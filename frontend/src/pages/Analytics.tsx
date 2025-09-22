@@ -6,6 +6,12 @@ import type {
   AnalyticsExportRequest,
   DashboardMetrics,
 } from "@/client/types.gen"
+import {
+  CustomerDemographicsChart,
+  PaymentDistributionChart,
+  RevenueTrendChart,
+  RoomPerformanceChart,
+} from "@/components/analytics/AnalyticsCharts"
 import { useAuth } from "@/contexts/AuthContext"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
@@ -530,6 +536,57 @@ export function Analytics() {
               </div>
             </div>
           )}
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {/* Revenue Trend Chart */}
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 lg:col-span-2">
+              <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Revenue Trend
+                </h3>
+              </div>
+              <div className="p-6">
+                <RevenueTrendChart metrics={metrics} />
+              </div>
+            </div>
+
+            {/* Room Performance Chart */}
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
+              <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Room Performance
+                </h3>
+              </div>
+              <div className="p-6">
+                <RoomPerformanceChart metrics={metrics} />
+              </div>
+            </div>
+
+            {/* Payment Distribution Chart */}
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
+              <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Payment Methods Distribution
+                </h3>
+              </div>
+              <div className="p-6">
+                <PaymentDistributionChart metrics={metrics} />
+              </div>
+            </div>
+
+            {/* Customer Demographics */}
+            <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 lg:col-span-2">
+              <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Customer Demographics
+                </h3>
+              </div>
+              <div className="p-6">
+                <CustomerDemographicsChart metrics={metrics} />
+              </div>
+            </div>
+          </div>
         </>
       )}
 
