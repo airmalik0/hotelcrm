@@ -118,7 +118,6 @@ export function TagsInput({
                 placeholder="Search tags..."
                 className="w-full px-3 py-2 border-b border-neutral-200 dark:border-neutral-600 bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none"
                 onClick={(e) => e.stopPropagation()}
-                autoFocus
               />
               <div className="max-h-48 overflow-y-auto">
                 {filteredTags.length > 0 ? (

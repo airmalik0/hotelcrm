@@ -193,7 +193,10 @@ export function calculateFilteredStats(
     }
 
     // Calculate total paid nights for the booking (minimum 1)
-    const totalBookingNights = Math.max(1, differenceInDays(bookingCheckOut, bookingCheckIn))
+    const totalBookingNights = Math.max(
+      1,
+      differenceInDays(bookingCheckOut, bookingCheckIn),
+    )
 
     // Calculate intersection with view period
     const effectiveStart =
@@ -208,7 +211,8 @@ export function calculateFilteredStats(
       // For multi-day bookings, count the actual days in the period
       const daysInPeriod = differenceInDays(effectiveEnd, effectiveStart)
       // But ensure we count at least 1 night if there's any overlap
-      const nightsInPeriod = daysInPeriod > 0 ? daysInPeriod : (effectiveStart < effectiveEnd ? 1 : 0)
+      const nightsInPeriod =
+        daysInPeriod > 0 ? daysInPeriod : effectiveStart < effectiveEnd ? 1 : 0
       totalPaidNights += nightsInPeriod
     }
   })

@@ -392,6 +392,8 @@ class CampaignService:
         Evaluate criteria and return matching customers.
         All criteria are combined with AND logic.
         """
+        from sqlalchemy.orm import joinedload
+
         query = select(Customer)
         filters = []
 
@@ -425,9 +427,14 @@ class CampaignService:
         if filters:
             query = query.where(and_(*filters))  # type: ignore
 
+        # If room type filtering is needed, eager load bookings and rooms
+        if "visited_room_types" in criteria and criteria["visited_room_types"]:
+            # Eager load bookings and their rooms to avoid N+1 queries
+            query = query.options(joinedload(Customer.bookings).joinedload("room"))  # type: ignore
+
         customers = list(self.session.exec(query).all())
 
-        # Room type filtering (requires join with bookings - more complex)
+        # Room type filtering (with eager loaded data)
         if "visited_room_types" in criteria and criteria["visited_room_types"]:
             customers = self._filter_by_visited_room_types(customers, criteria["visited_room_types"])
 

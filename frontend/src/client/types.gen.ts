@@ -141,6 +141,110 @@ export type BookingUpdate = {
 };
 
 /**
+ * Schema for creating new campaigns
+ */
+export type CampaignCreate = {
+    name: string;
+    type: CampaignType;
+    status?: CampaignStatus;
+    message_template: string;
+    /**
+     * JSON criteria for customer selection
+     */
+    criteria?: {
+        [key: string]: unknown;
+    };
+    /**
+     * For trigger campaigns: check frequency in minutes
+     */
+    trigger_frequency_minutes?: (number | null);
+};
+
+/**
+ * Request model for executing one-time campaigns
+ */
+export type CampaignExecutionRequest = {
+    /**
+     * Execute in test mode (mock SMS)
+     */
+    test_mode?: boolean;
+};
+
+/**
+ * Response model for campaign execution
+ */
+export type CampaignExecutionResponse = {
+    campaign_id: string;
+    execution_type: string;
+    customers_matched: number;
+    sms_sent: number;
+    sms_failed: number;
+    test_mode?: boolean;
+    execution_summary?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * Public campaign schema for API responses
+ */
+export type CampaignPublic = {
+    name: string;
+    type: CampaignType;
+    status?: CampaignStatus;
+    message_template: string;
+    /**
+     * JSON criteria for customer selection
+     */
+    criteria?: {
+        [key: string]: unknown;
+    };
+    /**
+     * For trigger campaigns: check frequency in minutes
+     */
+    trigger_frequency_minutes?: (number | null);
+    id: string;
+    created_at: string;
+    updated_at: string;
+    last_executed_at?: (string | null);
+    total_sent?: number;
+    total_delivered?: number;
+    total_failed?: number;
+};
+
+/**
+ * Collection wrapper for campaigns list API
+ */
+export type CampaignsPublic = {
+    data: Array<CampaignPublic>;
+    count: number;
+};
+
+/**
+ * Campaign lifecycle status
+ */
+export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'archived';
+
+/**
+ * Campaign execution types
+ */
+export type CampaignType = 'onetime' | 'trigger';
+
+/**
+ * Schema for updating campaigns - all fields optional
+ */
+export type CampaignUpdate = {
+    name?: (string | null);
+    type?: (CampaignType | null);
+    status?: (CampaignStatus | null);
+    message_template?: (string | null);
+    criteria?: ({
+    [key: string]: unknown;
+} | null);
+    trigger_frequency_minutes?: (number | null);
+};
+
+/**
  * Comparison between two periods.
  */
 export type ComparisonMetrics = {
@@ -194,6 +298,20 @@ export type CustomerMetrics = {
      */
     age_distribution?: {
         [key: string]: (number);
+    };
+};
+
+/**
+ * Response model for campaign recipient preview
+ */
+export type CustomerPreviewResponse = {
+    campaign_id: string;
+    total_matching_customers: number;
+    preview_customers: Array<{
+        [key: string]: unknown;
+    }>;
+    criteria_applied: {
+        [key: string]: unknown;
     };
 };
 
@@ -463,6 +581,35 @@ export type RoomUpdate = {
 };
 
 /**
+ * Collection wrapper for SMS history
+ */
+export type SMSHistoryList = {
+    data: Array<SMSHistoryPublic>;
+    count: number;
+};
+
+/**
+ * Public SMS history schema
+ */
+export type SMSHistoryPublic = {
+    id: string;
+    campaign_id: string;
+    customer_id: string;
+    message: string;
+    status: SMSStatus;
+    sent_at: string;
+    delivered_at?: (string | null);
+    customer_phone?: (string | null);
+    customer_name?: (string | null);
+    error_message?: (string | null);
+};
+
+/**
+ * SMS delivery status
+ */
+export type SMSStatus = 'pending' | 'sent' | 'delivered' | 'failed' | 'mock';
+
+/**
  * Single data point in a time series.
  */
 export type TimeSeriesDataPoint = {
@@ -474,6 +621,18 @@ export type TimeSeriesDataPoint = {
 export type Token = {
     access_token: string;
     token_type?: string;
+};
+
+/**
+ * Response model for trigger campaign checks
+ */
+export type TriggerCheckResponse = {
+    campaigns_checked: number;
+    campaigns_executed: number;
+    total_sms_sent: number;
+    execution_details?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type UpdatePassword = {
@@ -884,6 +1043,98 @@ export type BookingsActualCheckOutData = {
 export type BookingsActualCheckOutResponse = (BookingPublic);
 
 export type BookingsActualCheckOutError = (HTTPValidationError);
+
+export type CampaignsReadCampaignsData = {
+    query?: {
+        campaign_type?: (CampaignType | null);
+        limit?: number;
+        search?: (string | null);
+        skip?: number;
+        status?: (CampaignStatus | null);
+    };
+};
+
+export type CampaignsReadCampaignsResponse = (CampaignsPublic);
+
+export type CampaignsReadCampaignsError = (HTTPValidationError);
+
+export type CampaignsCreateCampaignData = {
+    body: CampaignCreate;
+};
+
+export type CampaignsCreateCampaignResponse = (CampaignPublic);
+
+export type CampaignsCreateCampaignError = (HTTPValidationError);
+
+export type CampaignsReadCampaignData = {
+    path: {
+        campaign_id: string;
+    };
+};
+
+export type CampaignsReadCampaignResponse = (CampaignPublic);
+
+export type CampaignsReadCampaignError = (HTTPValidationError);
+
+export type CampaignsUpdateCampaignData = {
+    body: CampaignUpdate;
+    path: {
+        campaign_id: string;
+    };
+};
+
+export type CampaignsUpdateCampaignResponse = (CampaignPublic);
+
+export type CampaignsUpdateCampaignError = (HTTPValidationError);
+
+export type CampaignsDeleteCampaignData = {
+    path: {
+        campaign_id: string;
+    };
+};
+
+export type CampaignsDeleteCampaignResponse = (Message);
+
+export type CampaignsDeleteCampaignError = (HTTPValidationError);
+
+export type CampaignsExecuteCampaignData = {
+    body: CampaignExecutionRequest;
+    path: {
+        campaign_id: string;
+    };
+};
+
+export type CampaignsExecuteCampaignResponse = (CampaignExecutionResponse);
+
+export type CampaignsExecuteCampaignError = (HTTPValidationError);
+
+export type CampaignsPreviewCampaignRecipientsData = {
+    path: {
+        campaign_id: string;
+    };
+};
+
+export type CampaignsPreviewCampaignRecipientsResponse = (CustomerPreviewResponse);
+
+export type CampaignsPreviewCampaignRecipientsError = (HTTPValidationError);
+
+export type CampaignsCheckTriggersResponse = (TriggerCheckResponse);
+
+export type CampaignsCheckTriggersError = unknown;
+
+export type CampaignsGetCampaignSmsHistoryData = {
+    path: {
+        campaign_id: string;
+    };
+    query?: {
+        limit?: number;
+        skip?: number;
+    };
+};
+
+export type CampaignsGetCampaignSmsHistoryResponse = (SMSHistoryList);
+
+export type CampaignsGetCampaignSmsHistoryError = (HTTPValidationError);
 
 export type AuditReadAuditLogsData = {
     query?: {

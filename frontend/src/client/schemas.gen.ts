@@ -687,6 +687,301 @@ export const BookingsPublicSchema = {
     title: 'BookingsPublic'
 } as const;
 
+export const CampaignCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        type: {
+            '$ref': '#/components/schemas/CampaignType'
+        },
+        status: {
+            '$ref': '#/components/schemas/CampaignStatus',
+            default: 'draft'
+        },
+        message_template: {
+            type: 'string',
+            maxLength: 1000,
+            title: 'Message Template'
+        },
+        criteria: {
+            type: 'object',
+            title: 'Criteria',
+            description: 'JSON criteria for customer selection'
+        },
+        trigger_frequency_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 1440,
+                    minimum: 5
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Trigger Frequency Minutes',
+            description: 'For trigger campaigns: check frequency in minutes'
+        }
+    },
+    type: 'object',
+    required: ['name', 'type', 'message_template'],
+    title: 'CampaignCreate',
+    description: 'Schema for creating new campaigns'
+} as const;
+
+export const CampaignExecutionRequestSchema = {
+    properties: {
+        test_mode: {
+            type: 'boolean',
+            title: 'Test Mode',
+            description: 'Execute in test mode (mock SMS)',
+            default: false
+        }
+    },
+    type: 'object',
+    title: 'CampaignExecutionRequest',
+    description: 'Request model for executing one-time campaigns'
+} as const;
+
+export const CampaignExecutionResponseSchema = {
+    properties: {
+        campaign_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Campaign Id'
+        },
+        execution_type: {
+            type: 'string',
+            title: 'Execution Type'
+        },
+        customers_matched: {
+            type: 'integer',
+            title: 'Customers Matched'
+        },
+        sms_sent: {
+            type: 'integer',
+            title: 'Sms Sent'
+        },
+        sms_failed: {
+            type: 'integer',
+            title: 'Sms Failed'
+        },
+        test_mode: {
+            type: 'boolean',
+            title: 'Test Mode',
+            default: false
+        },
+        execution_summary: {
+            type: 'object',
+            title: 'Execution Summary'
+        }
+    },
+    type: 'object',
+    required: ['campaign_id', 'execution_type', 'customers_matched', 'sms_sent', 'sms_failed'],
+    title: 'CampaignExecutionResponse',
+    description: 'Response model for campaign execution'
+} as const;
+
+export const CampaignPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        type: {
+            '$ref': '#/components/schemas/CampaignType'
+        },
+        status: {
+            '$ref': '#/components/schemas/CampaignStatus',
+            default: 'draft'
+        },
+        message_template: {
+            type: 'string',
+            maxLength: 1000,
+            title: 'Message Template'
+        },
+        criteria: {
+            type: 'object',
+            title: 'Criteria',
+            description: 'JSON criteria for customer selection'
+        },
+        trigger_frequency_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 1440,
+                    minimum: 5
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Trigger Frequency Minutes',
+            description: 'For trigger campaigns: check frequency in minutes'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        },
+        last_executed_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Executed At'
+        },
+        total_sent: {
+            type: 'integer',
+            title: 'Total Sent',
+            default: 0
+        },
+        total_delivered: {
+            type: 'integer',
+            title: 'Total Delivered',
+            default: 0
+        },
+        total_failed: {
+            type: 'integer',
+            title: 'Total Failed',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['name', 'type', 'message_template', 'id', 'created_at', 'updated_at'],
+    title: 'CampaignPublic',
+    description: 'Public campaign schema for API responses'
+} as const;
+
+export const CampaignStatusSchema = {
+    type: 'string',
+    enum: ['draft', 'active', 'paused', 'completed', 'archived'],
+    title: 'CampaignStatus',
+    description: 'Campaign lifecycle status'
+} as const;
+
+export const CampaignTypeSchema = {
+    type: 'string',
+    enum: ['onetime', 'trigger'],
+    title: 'CampaignType',
+    description: 'Campaign execution types'
+} as const;
+
+export const CampaignUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        type: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CampaignType'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        status: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CampaignStatus'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        message_template: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Message Template'
+        },
+        criteria: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Criteria'
+        },
+        trigger_frequency_minutes: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 1440,
+                    minimum: 5
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Trigger Frequency Minutes'
+        }
+    },
+    type: 'object',
+    title: 'CampaignUpdate',
+    description: 'Schema for updating campaigns - all fields optional'
+} as const;
+
+export const CampaignsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/CampaignPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'CampaignsPublic',
+    description: 'Collection wrapper for campaigns list API'
+} as const;
+
 export const ComparisonMetricsSchema = {
     properties: {
         period1_label: {
@@ -855,6 +1150,35 @@ export const CustomerMetricsSchema = {
     required: ['total_customers', 'new_customers', 'returning_customers', 'average_age'],
     title: 'CustomerMetrics',
     description: 'Customer-related metrics.'
+} as const;
+
+export const CustomerPreviewResponseSchema = {
+    properties: {
+        campaign_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Campaign Id'
+        },
+        total_matching_customers: {
+            type: 'integer',
+            title: 'Total Matching Customers'
+        },
+        preview_customers: {
+            items: {
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Preview Customers'
+        },
+        criteria_applied: {
+            type: 'object',
+            title: 'Criteria Applied'
+        }
+    },
+    type: 'object',
+    required: ['campaign_id', 'total_matching_customers', 'preview_customers', 'criteria_applied'],
+    title: 'CustomerPreviewResponse',
+    description: 'Response model for campaign recipient preview'
 } as const;
 
 export const CustomerPublicSchema = {
@@ -1695,6 +2019,114 @@ export const RoomsPublicSchema = {
     title: 'RoomsPublic'
 } as const;
 
+export const SMSHistoryListSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/SMSHistoryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'SMSHistoryList',
+    description: 'Collection wrapper for SMS history'
+} as const;
+
+export const SMSHistoryPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        campaign_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Campaign Id'
+        },
+        customer_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Customer Id'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        },
+        status: {
+            '$ref': '#/components/schemas/SMSStatus'
+        },
+        sent_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Sent At'
+        },
+        delivered_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Delivered At'
+        },
+        customer_phone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Phone'
+        },
+        customer_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Name'
+        },
+        error_message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error Message'
+        }
+    },
+    type: 'object',
+    required: ['id', 'campaign_id', 'customer_id', 'message', 'status', 'sent_at'],
+    title: 'SMSHistoryPublic',
+    description: 'Public SMS history schema'
+} as const;
+
+export const SMSStatusSchema = {
+    type: 'string',
+    enum: ['pending', 'sent', 'delivered', 'failed', 'mock'],
+    title: 'SMSStatus',
+    description: 'SMS delivery status'
+} as const;
+
 export const TimeSeriesDataPointSchema = {
     properties: {
         date: {
@@ -1738,6 +2170,34 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
+} as const;
+
+export const TriggerCheckResponseSchema = {
+    properties: {
+        campaigns_checked: {
+            type: 'integer',
+            title: 'Campaigns Checked'
+        },
+        campaigns_executed: {
+            type: 'integer',
+            title: 'Campaigns Executed'
+        },
+        total_sms_sent: {
+            type: 'integer',
+            title: 'Total Sms Sent'
+        },
+        execution_details: {
+            items: {
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Execution Details'
+        }
+    },
+    type: 'object',
+    required: ['campaigns_checked', 'campaigns_executed', 'total_sms_sent'],
+    title: 'TriggerCheckResponse',
+    description: 'Response model for trigger campaign checks'
 } as const;
 
 export const UpdatePasswordSchema = {

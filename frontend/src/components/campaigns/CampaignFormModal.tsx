@@ -99,9 +99,10 @@ export function CampaignFormModal({
         type: campaign.type,
         status: campaign.status,
         message_template: campaign.message_template,
-        trigger_frequency_minutes: campaign.trigger_frequency_minutes || undefined,
+        trigger_frequency_minutes:
+          campaign.trigger_frequency_minutes || undefined,
       })
-      setCriteria(campaign.criteria as any || {})
+      setCriteria((campaign.criteria as any) || {})
       setShowCriteriaEditor(Object.keys(campaign.criteria || {}).length > 0)
     } else {
       // Reset for create mode
@@ -130,7 +131,7 @@ export function CampaignFormModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create campaign"
+        "Failed to create campaign",
       )
     },
   })
@@ -149,7 +150,7 @@ export function CampaignFormModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to update campaign"
+        "Failed to update campaign",
       )
     },
   })
@@ -170,14 +171,20 @@ export function CampaignFormModal({
     }
 
     if (formData.message_template.trim().length < 10) {
-      newErrors.message_template = "Message template must be at least 10 characters"
+      newErrors.message_template =
+        "Message template must be at least 10 characters"
     }
 
     if (formData.type === "trigger" && !formData.trigger_frequency_minutes) {
-      newErrors.trigger_frequency_minutes = "Frequency is required for trigger campaigns"
+      newErrors.trigger_frequency_minutes =
+        "Frequency is required for trigger campaigns"
     }
 
-    if (criteria.min_age && criteria.max_age && criteria.min_age > criteria.max_age) {
+    if (
+      criteria.min_age &&
+      criteria.max_age &&
+      criteria.min_age > criteria.max_age
+    ) {
       newErrors.age = "Minimum age cannot be greater than maximum age"
     }
 
@@ -187,26 +194,34 @@ export function CampaignFormModal({
     }
 
     // Clean up empty criteria values
-    const cleanedCriteria = Object.entries(criteria).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && value !== "" &&
-          (!Array.isArray(value) || value.length > 0)) {
-        acc[key] = value
-      }
-      return acc
-    }, {} as any)
+    const cleanedCriteria = Object.entries(criteria).reduce(
+      (acc, [key, value]) => {
+        if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          (!Array.isArray(value) || value.length > 0)
+        ) {
+          acc[key] = value
+        }
+        return acc
+      },
+      {} as any,
+    )
 
     const payload = {
       ...formData,
       criteria: cleanedCriteria,
-      trigger_frequency_minutes: formData.type === "trigger"
-        ? formData.trigger_frequency_minutes
-        : undefined,
+      trigger_frequency_minutes:
+        formData.type === "trigger"
+          ? formData.trigger_frequency_minutes
+          : undefined,
     }
 
     if (isEditMode && campaign) {
       updateMutation.mutate({
         id: campaign.id,
-        data: payload as CampaignUpdate
+        data: payload as CampaignUpdate,
       })
     } else {
       createMutation.mutate(payload as CampaignCreate)
@@ -214,9 +229,13 @@ export function CampaignFormModal({
   }
 
   const handleCriteriaChange = (field: string, value: any) => {
-    setCriteria(prev => {
-      if (value === undefined || value === null || value === "" ||
-          (Array.isArray(value) && value.length === 0)) {
+    setCriteria((prev) => {
+      if (
+        value === undefined ||
+        value === null ||
+        value === "" ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
         const { [field]: _, ...rest } = prev
         return rest
       }
@@ -225,10 +244,10 @@ export function CampaignFormModal({
   }
 
   const handleDistrictToggle = (district: District) => {
-    setCriteria(prev => {
+    setCriteria((prev) => {
       const currentDistricts = prev.districts || []
       const newDistricts = currentDistricts.includes(district)
-        ? currentDistricts.filter(d => d !== district)
+        ? currentDistricts.filter((d) => d !== district)
         : [...currentDistricts, district]
 
       return newDistricts.length > 0
@@ -238,10 +257,10 @@ export function CampaignFormModal({
   }
 
   const handleRoomTypeToggle = (roomType: string) => {
-    setCriteria(prev => {
+    setCriteria((prev) => {
       const currentTypes = prev.visited_room_types || []
       const newTypes = currentTypes.includes(roomType)
-        ? currentTypes.filter(t => t !== roomType)
+        ? currentTypes.filter((t) => t !== roomType)
         : [...currentTypes, roomType]
 
       return newTypes.length > 0
@@ -289,7 +308,9 @@ export function CampaignFormModal({
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="e.g., Summer Sale Campaign"
               />
@@ -307,11 +328,14 @@ export function CampaignFormModal({
                 </label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    type: e.target.value as CampaignType,
-                    trigger_frequency_minutes: e.target.value === "trigger" ? 30 : undefined
-                  }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      type: e.target.value as CampaignType,
+                      trigger_frequency_minutes:
+                        e.target.value === "trigger" ? 30 : undefined,
+                    }))
+                  }
                   className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                   disabled={isEditMode}
                 >
@@ -327,7 +351,12 @@ export function CampaignFormModal({
                 </label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as CampaignStatus }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      status: e.target.value as CampaignStatus,
+                    }))
+                  }
                   className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="draft">Draft</option>
@@ -354,22 +383,31 @@ export function CampaignFormModal({
                   <input
                     type="number"
                     value={formData.trigger_frequency_minutes || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      trigger_frequency_minutes: e.target.value ? parseInt(e.target.value) : undefined
-                    }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        trigger_frequency_minutes: e.target.value
+                          ? Number.parseInt(e.target.value)
+                          : undefined,
+                      }))
+                    }
                     min={5}
                     max={1440}
                     className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="30"
                   />
-                  <span className="text-sm text-neutral-500">min: 5, max: 1440 (24h)</span>
+                  <span className="text-sm text-neutral-500">
+                    min: 5, max: 1440 (24h)
+                  </span>
                 </div>
                 {errors.trigger_frequency_minutes && (
-                  <p className="text-red-500 text-sm mt-1">{errors.trigger_frequency_minutes}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.trigger_frequency_minutes}
+                  </p>
                 )}
                 <p className="text-sm text-neutral-500 mt-1">
-                  Campaign will check for new matching customers every {formData.trigger_frequency_minutes || 30} minutes
+                  Campaign will check for new matching customers every{" "}
+                  {formData.trigger_frequency_minutes || 30} minutes
                 </p>
               </div>
             )}
@@ -381,7 +419,12 @@ export function CampaignFormModal({
               </label>
               <textarea
                 value={formData.message_template}
-                onChange={(e) => setFormData(prev => ({ ...prev, message_template: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    message_template: e.target.value,
+                  }))
+                }
                 className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="Hello {first_name}! We have a special offer for you..."
                 rows={4}
@@ -389,14 +432,17 @@ export function CampaignFormModal({
               />
               <div className="flex justify-between mt-1">
                 <p className="text-xs text-neutral-500">
-                  Available variables: {"{first_name}"}, {"{last_name}"}, {"{full_name}"}
+                  Available variables: {"{first_name}"}, {"{last_name}"},{" "}
+                  {"{full_name}"}
                 </p>
                 <p className="text-xs text-neutral-500">
                   {formData.message_template.length}/1000
                 </p>
               </div>
               {errors.message_template && (
-                <p className="text-red-500 text-sm mt-1">{errors.message_template}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.message_template}
+                </p>
               )}
             </div>
           </div>
@@ -429,7 +475,14 @@ export function CampaignFormModal({
                       <input
                         type="number"
                         value={criteria.min_age || ""}
-                        onChange={(e) => handleCriteriaChange("min_age", e.target.value ? parseInt(e.target.value) : undefined)}
+                        onChange={(e) =>
+                          handleCriteriaChange(
+                            "min_age",
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : undefined,
+                          )
+                        }
                         min={0}
                         max={120}
                         className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-sm"
@@ -440,7 +493,14 @@ export function CampaignFormModal({
                       <input
                         type="number"
                         value={criteria.max_age || ""}
-                        onChange={(e) => handleCriteriaChange("max_age", e.target.value ? parseInt(e.target.value) : undefined)}
+                        onChange={(e) =>
+                          handleCriteriaChange(
+                            "max_age",
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : undefined,
+                          )
+                        }
                         min={0}
                         max={120}
                         className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-sm"
@@ -466,7 +526,9 @@ export function CampaignFormModal({
                       >
                         <input
                           type="checkbox"
-                          checked={criteria.districts?.includes(district) || false}
+                          checked={
+                            criteria.districts?.includes(district) || false
+                          }
                           onChange={() => handleDistrictToggle(district)}
                           className="rounded border-neutral-300 dark:border-neutral-500"
                         />
@@ -487,7 +549,14 @@ export function CampaignFormModal({
                     <input
                       type="number"
                       value={criteria.min_total_spent || ""}
-                      onChange={(e) => handleCriteriaChange("min_total_spent", e.target.value ? parseFloat(e.target.value) : undefined)}
+                      onChange={(e) =>
+                        handleCriteriaChange(
+                          "min_total_spent",
+                          e.target.value
+                            ? Number.parseFloat(e.target.value)
+                            : undefined,
+                        )
+                      }
                       min={0}
                       className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-sm"
                       placeholder="e.g., 500000"
@@ -500,7 +569,14 @@ export function CampaignFormModal({
                     <input
                       type="number"
                       value={criteria.days_since_last_visit || ""}
-                      onChange={(e) => handleCriteriaChange("days_since_last_visit", e.target.value ? parseInt(e.target.value) : undefined)}
+                      onChange={(e) =>
+                        handleCriteriaChange(
+                          "days_since_last_visit",
+                          e.target.value
+                            ? Number.parseInt(e.target.value)
+                            : undefined,
+                        )
+                      }
                       min={0}
                       className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-sm"
                       placeholder="e.g., 30"
@@ -521,7 +597,10 @@ export function CampaignFormModal({
                       >
                         <input
                           type="checkbox"
-                          checked={criteria.visited_room_types?.includes(roomType) || false}
+                          checked={
+                            criteria.visited_room_types?.includes(roomType) ||
+                            false
+                          }
                           onChange={() => handleRoomTypeToggle(roomType)}
                           className="rounded border-neutral-300 dark:border-neutral-500"
                         />
@@ -543,16 +622,40 @@ export function CampaignFormModal({
                           Active Filters
                         </p>
                         <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-0.5">
-                          {criteria.min_age && <li>• Minimum age: {criteria.min_age}</li>}
-                          {criteria.max_age && <li>• Maximum age: {criteria.max_age}</li>}
-                          {criteria.districts && criteria.districts.length > 0 && (
-                            <li>• Districts: {criteria.districts.map(d => formatDistrictDisplay(d)).join(", ")}</li>
+                          {criteria.min_age && (
+                            <li>• Minimum age: {criteria.min_age}</li>
                           )}
-                          {criteria.min_total_spent && <li>• Minimum spent: {criteria.min_total_spent.toLocaleString()}</li>}
-                          {criteria.days_since_last_visit && <li>• Not visited for: {criteria.days_since_last_visit} days</li>}
-                          {criteria.visited_room_types && criteria.visited_room_types.length > 0 && (
-                            <li>• Room types: {criteria.visited_room_types.join(", ")}</li>
+                          {criteria.max_age && (
+                            <li>• Maximum age: {criteria.max_age}</li>
                           )}
+                          {criteria.districts &&
+                            criteria.districts.length > 0 && (
+                              <li>
+                                • Districts:{" "}
+                                {criteria.districts
+                                  .map((d) => formatDistrictDisplay(d))
+                                  .join(", ")}
+                              </li>
+                            )}
+                          {criteria.min_total_spent && (
+                            <li>
+                              • Minimum spent:{" "}
+                              {criteria.min_total_spent.toLocaleString()}
+                            </li>
+                          )}
+                          {criteria.days_since_last_visit && (
+                            <li>
+                              • Not visited for:{" "}
+                              {criteria.days_since_last_visit} days
+                            </li>
+                          )}
+                          {criteria.visited_room_types &&
+                            criteria.visited_room_types.length > 0 && (
+                              <li>
+                                • Room types:{" "}
+                                {criteria.visited_room_types.join(", ")}
+                              </li>
+                            )}
                         </ul>
                       </div>
                     </div>

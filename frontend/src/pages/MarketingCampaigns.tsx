@@ -1,11 +1,22 @@
-import { deleteCampaign, getCampaigns, executeCampaign, previewCampaignRecipients } from "@/api/campaigns"
-import type { CampaignPublic, CampaignStatus, CampaignType } from "@/client/types.gen"
+import {
+  deleteCampaign,
+  executeCampaign,
+  getCampaigns,
+  previewCampaignRecipients,
+} from "@/api/campaigns"
+import type {
+  CampaignPublic,
+  CampaignStatus,
+  CampaignType,
+} from "@/client/types.gen"
 import { CampaignFormModal } from "@/components/campaigns/CampaignFormModal"
 import { useConfirm } from "@/hooks/useConfirm"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  AlertCircle,
+  Edit2,
   Eye,
   Mail,
   MessageSquare,
@@ -15,8 +26,6 @@ import {
   Trash2,
   Users,
   Zap,
-  Edit2,
-  AlertCircle
 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
@@ -31,13 +40,21 @@ export function MarketingCampaigns() {
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignPublic | null>(null)
+  const [selectedCampaign, setSelectedCampaign] =
+    useState<CampaignPublic | null>(null)
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialog } = useConfirm()
 
   // Fetch campaigns
   const { data, isLoading, error } = useQuery({
-    queryKey: ["campaigns", currentPage, itemsPerPage, searchTerm, statusFilter, typeFilter],
+    queryKey: [
+      "campaigns",
+      currentPage,
+      itemsPerPage,
+      searchTerm,
+      statusFilter,
+      typeFilter,
+    ],
     queryFn: () =>
       getCampaigns({
         skip: currentPage * itemsPerPage,
@@ -67,9 +84,13 @@ export function MarketingCampaigns() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] })
       if (result.test_mode) {
-        showSuccess(`Test execution completed! ${result.sms_sent} SMS would be sent to ${result.customers_matched} customers.`)
+        showSuccess(
+          `Test execution completed! ${result.sms_sent} SMS would be sent to ${result.customers_matched} customers.`,
+        )
       } else {
-        showSuccess(`Campaign executed! ${result.sms_sent} SMS sent to ${result.customers_matched} customers.`)
+        showSuccess(
+          `Campaign executed! ${result.sms_sent} SMS sent to ${result.customers_matched} customers.`,
+        )
       }
     },
     onError: (error) => {
@@ -98,7 +119,7 @@ export function MarketingCampaigns() {
     }
   }
 
-  const handleExecute = async (campaign: CampaignPublic, testMode: boolean = false) => {
+  const handleExecute = async (campaign: CampaignPublic, testMode = false) => {
     const actionText = testMode ? "test" : "execute"
     const confirmed = await confirm({
       title: `${testMode ? "Test" : "Execute"} Campaign`,
@@ -150,14 +171,19 @@ export function MarketingCampaigns() {
   const getStatusBadge = (status: CampaignStatus) => {
     const styles = {
       draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      active: "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200",
-      paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200",
-      completed: "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200",
+      active:
+        "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200",
+      paused:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200",
+      completed:
+        "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200",
       archived: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
     }
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     )
@@ -166,11 +192,13 @@ export function MarketingCampaigns() {
   const getTypeBadge = (type: CampaignType) => {
     const isOnetime = type === "onetime"
     return (
-      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        isOnetime
-          ? "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
-          : "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200"
-      }`}>
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          isOnetime
+            ? "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
+            : "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200"
+        }`}
+      >
         {isOnetime ? <Mail className="w-3 h-3" /> : <Zap className="w-3 h-3" />}
         {isOnetime ? "One-time" : "Trigger"}
       </span>
@@ -180,7 +208,9 @@ export function MarketingCampaigns() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-neutral-600 dark:text-neutral-400">Loading campaigns...</div>
+        <div className="text-neutral-600 dark:text-neutral-400">
+          Loading campaigns...
+        </div>
       </div>
     )
   }
@@ -190,7 +220,9 @@ export function MarketingCampaigns() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <div className="text-red-600 dark:text-red-400">Failed to load campaigns</div>
+          <div className="text-red-600 dark:text-red-400">
+            Failed to load campaigns
+          </div>
           <div className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
             Please try refreshing the page
           </div>
@@ -309,7 +341,10 @@ export function MarketingCampaigns() {
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-600">
                 {campaigns.map((campaign) => (
-                  <tr key={campaign.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
+                  <tr
+                    key={campaign.id}
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
+                  >
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-neutral-900 dark:text-white">
@@ -320,9 +355,7 @@ export function MarketingCampaigns() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      {getTypeBadge(campaign.type)}
-                    </td>
+                    <td className="px-6 py-4">{getTypeBadge(campaign.type)}</td>
                     <td className="px-6 py-4">
                       {getStatusBadge(campaign.status)}
                     </td>
@@ -350,28 +383,29 @@ export function MarketingCampaigns() {
                         >
                           <Users className="w-4 h-4" />
                         </button>
-                        {campaign.type === "onetime" && campaign.status !== "completed" && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleExecute(campaign, true)}
-                              className="p-2 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400"
-                              title="Test run"
-                              disabled={executeMutation.isPending}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleExecute(campaign, false)}
-                              className="p-2 text-neutral-400 hover:text-green-600 dark:hover:text-green-400"
-                              title="Execute campaign"
-                              disabled={executeMutation.isPending}
-                            >
-                              <Play className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
+                        {campaign.type === "onetime" &&
+                          campaign.status !== "completed" && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleExecute(campaign, true)}
+                                className="p-2 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                title="Test run"
+                                disabled={executeMutation.isPending}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleExecute(campaign, false)}
+                                className="p-2 text-neutral-400 hover:text-green-600 dark:hover:text-green-400"
+                                title="Execute campaign"
+                                disabled={executeMutation.isPending}
+                              >
+                                <Play className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         <button
                           type="button"
                           onClick={() => handleEditCampaign(campaign)}
@@ -437,7 +471,14 @@ export function MarketingCampaigns() {
             </span>
             <button
               type="button"
-              onClick={() => setCurrentPage(Math.min(Math.ceil(totalCount / itemsPerPage) - 1, currentPage + 1))}
+              onClick={() =>
+                setCurrentPage(
+                  Math.min(
+                    Math.ceil(totalCount / itemsPerPage) - 1,
+                    currentPage + 1,
+                  ),
+                )
+              }
               disabled={currentPage >= Math.ceil(totalCount / itemsPerPage) - 1}
               className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >

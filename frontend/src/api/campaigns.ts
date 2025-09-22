@@ -3,10 +3,10 @@ import type {
   CampaignExecutionRequest,
   CampaignExecutionResponse,
   CampaignPublic,
-  CampaignsPublic,
   CampaignStatus,
   CampaignType,
   CampaignUpdate,
+  CampaignsPublic,
   CustomerPreviewResponse,
   TriggerCheckResponse,
 } from "@/client/types.gen"
@@ -30,7 +30,9 @@ export async function getCampaigns(
 }
 
 export async function getCampaign(id: string): Promise<CampaignPublic> {
-  const response = await apiClient.get<CampaignPublic>(`/api/v1/campaigns/${id}`)
+  const response = await apiClient.get<CampaignPublic>(
+    `/api/v1/campaigns/${id}`,
+  )
   return response.data
 }
 

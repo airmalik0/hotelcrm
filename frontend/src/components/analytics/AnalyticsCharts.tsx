@@ -51,11 +51,7 @@ const CurrencyTooltip = ({ active, payload, label }: any) => {
         {label}
       </p>
       {payload.map((entry: any, index: number) => (
-        <p
-          key={index}
-          className="text-sm mt-1"
-          style={{ color: entry.color }}
-        >
+        <p key={index} className="text-sm mt-1" style={{ color: entry.color }}>
           {entry.name}: ${entry.value.toLocaleString()}
         </p>
       ))}
@@ -73,11 +69,7 @@ const PercentageTooltip = ({ active, payload, label }: any) => {
         {label}
       </p>
       {payload.map((entry: any, index: number) => (
-        <p
-          key={index}
-          className="text-sm mt-1"
-          style={{ color: entry.color }}
-        >
+        <p key={index} className="text-sm mt-1" style={{ color: entry.color }}>
           {entry.name}: {entry.value.toFixed(1)}%
         </p>
       ))}
@@ -102,14 +94,20 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
           <defs>
             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
               <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="date"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -136,7 +134,10 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
 }
 
 export function RoomPerformanceChart({ metrics }: ChartProps) {
-  if (!metrics.room_type_breakdown || metrics.room_type_breakdown.length === 0) {
+  if (
+    !metrics.room_type_breakdown ||
+    metrics.room_type_breakdown.length === 0
+  ) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
         No room performance data available
@@ -154,8 +155,14 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <BarChart
+          data={data}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="name"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -176,8 +183,18 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
           />
           <Tooltip />
           <Legend />
-          <Bar yAxisId="left" dataKey="revenue" fill={COLORS.primary} name="Revenue" />
-          <Bar yAxisId="right" dataKey="occupancy" fill={COLORS.secondary} name="Occupancy %" />
+          <Bar
+            yAxisId="left"
+            dataKey="revenue"
+            fill={COLORS.primary}
+            name="Revenue"
+          />
+          <Bar
+            yAxisId="right"
+            dataKey="occupancy"
+            fill={COLORS.secondary}
+            name="Occupancy %"
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -253,7 +270,10 @@ export function PaymentDistributionChart({ metrics }: ChartProps) {
             dataKey="value"
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={CHART_COLORS[index % CHART_COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip content={<PercentageTooltip />} />
@@ -281,10 +301,12 @@ export function CustomerDemographicsChart({ metrics }: ChartProps) {
 
   // Age distribution data for bar chart
   const ageData = metrics.customer_metrics.age_distribution
-    ? Object.entries(metrics.customer_metrics.age_distribution).map(([group, count]) => ({
-        age: group,
-        count,
-      }))
+    ? Object.entries(metrics.customer_metrics.age_distribution).map(
+        ([group, count]) => ({
+          age: group,
+          count,
+        }),
+      )
     : []
 
   return (
@@ -304,7 +326,9 @@ export function CustomerDemographicsChart({ metrics }: ChartProps) {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name} ${(percent * 100).toFixed(0)}%`
+                }
               >
                 <Cell fill={COLORS.primary} />
                 <Cell fill={COLORS.secondary} />
@@ -323,8 +347,14 @@ export function CustomerDemographicsChart({ metrics }: ChartProps) {
           </h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ageData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+              <BarChart
+                data={ageData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-neutral-200 dark:stroke-neutral-700"
+                />
                 <XAxis
                   dataKey="age"
                   className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -366,8 +396,14 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <LineChart
+          data={chartData}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="month"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -429,12 +465,14 @@ export function CustomerSegmentsChart({ data }: { data: any }) {
   }
 
   // Transform segments data for pie chart
-  const segmentData = Object.entries(data.segments).map(([segment, info]: [string, any]) => ({
-    name: segment.charAt(0).toUpperCase() + segment.slice(1),
-    value: info.count,
-    revenue: info.total_revenue,
-    percentage: info.percentage,
-  }))
+  const segmentData = Object.entries(data.segments).map(
+    ([segment, info]: [string, any]) => ({
+      name: segment.charAt(0).toUpperCase() + segment.slice(1),
+      value: info.count,
+      revenue: info.total_revenue,
+      percentage: info.percentage,
+    }),
+  )
 
   return (
     <div className="h-80">
@@ -445,19 +483,24 @@ export function CustomerSegmentsChart({ data }: { data: any }) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percentage }) => `${name} ${percentage?.toFixed(1)}%`}
+            label={({ name, percentage }) =>
+              `${name} ${percentage?.toFixed(1)}%`
+            }
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"
           >
             {segmentData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={CHART_COLORS[index % CHART_COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip
             formatter={(value, name, props) => [
               `${value} customers`,
-              props.payload.name
+              props.payload.name,
             ]}
           />
           <Legend />
@@ -488,8 +531,14 @@ export function CustomerLtvChart({ data }: { data: any }) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <BarChart
+          data={chartData}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="range"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -501,8 +550,14 @@ export function CustomerLtvChart({ data }: { data: any }) {
           />
           <Tooltip
             formatter={(value, name) => [
-              name === 'count' ? `${value} customers` : `$${value?.toLocaleString()}`,
-              name === 'count' ? 'Customer Count' : name === 'totalValue' ? 'Total LTV' : 'Average LTV'
+              name === "count"
+                ? `${value} customers`
+                : `$${value?.toLocaleString()}`,
+              name === "count"
+                ? "Customer Count"
+                : name === "totalValue"
+                  ? "Total LTV"
+                  : "Average LTV",
             ]}
           />
           <Legend />
@@ -532,8 +587,14 @@ export function LtvTrendChart({ data }: { data: any }) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <LineChart
+          data={chartData}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="period"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -577,7 +638,11 @@ export function LtvTrendChart({ data }: { data: any }) {
 
 // Booking frequency patterns chart
 export function BookingFrequencyChart({ data }: { data: any }) {
-  if (!data || !data.frequency_distribution || data.frequency_distribution.length === 0) {
+  if (
+    !data ||
+    !data.frequency_distribution ||
+    data.frequency_distribution.length === 0
+  ) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
         No booking frequency data available
@@ -588,8 +653,14 @@ export function BookingFrequencyChart({ data }: { data: any }) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data.frequency_distribution} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <BarChart
+          data={data.frequency_distribution}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="frequency_range"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -601,7 +672,11 @@ export function BookingFrequencyChart({ data }: { data: any }) {
           />
           <Tooltip />
           <Legend />
-          <Bar dataKey="customer_count" fill={COLORS.primary} name="Customer Count" />
+          <Bar
+            dataKey="customer_count"
+            fill={COLORS.primary}
+            name="Customer Count"
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -610,7 +685,11 @@ export function BookingFrequencyChart({ data }: { data: any }) {
 
 // Room preference patterns chart
 export function RoomPreferenceChart({ data }: { data: any }) {
-  if (!data || !data.room_preferences || Object.keys(data.room_preferences).length === 0) {
+  if (
+    !data ||
+    !data.room_preferences ||
+    Object.keys(data.room_preferences).length === 0
+  ) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
         No room preference data available
@@ -618,10 +697,12 @@ export function RoomPreferenceChart({ data }: { data: any }) {
     )
   }
 
-  const chartData = Object.entries(data.room_preferences).map(([roomType, count]) => ({
-    name: roomType.charAt(0).toUpperCase() + roomType.slice(1),
-    value: count as number,
-  }))
+  const chartData = Object.entries(data.room_preferences).map(
+    ([roomType, count]) => ({
+      name: roomType.charAt(0).toUpperCase() + roomType.slice(1),
+      value: count as number,
+    }),
+  )
 
   return (
     <div className="h-80">
@@ -632,13 +713,18 @@ export function RoomPreferenceChart({ data }: { data: any }) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            label={({ name, percent }) =>
+              `${name} ${(percent * 100).toFixed(0)}%`
+            }
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={CHART_COLORS[index % CHART_COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip />
@@ -662,8 +748,14 @@ export function BookingTimingChart({ data }: { data: any }) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data.booking_timing} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <LineChart
+          data={data.booking_timing}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="days_in_advance"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -702,12 +794,15 @@ export function PeriodComparisonChart({ data }: { data: any }) {
   const chartData = []
   const maxLength = Math.max(
     data.period1_data?.length || 0,
-    data.period2_data?.length || 0
+    data.period2_data?.length || 0,
   )
 
   for (let i = 0; i < maxLength; i++) {
     const item: any = {
-      date: data.period1_data?.[i]?.date || data.period2_data?.[i]?.date || `Day ${i + 1}`,
+      date:
+        data.period1_data?.[i]?.date ||
+        data.period2_data?.[i]?.date ||
+        `Day ${i + 1}`,
     }
 
     if (data.period1_data?.[i]) {
@@ -726,8 +821,14 @@ export function PeriodComparisonChart({ data }: { data: any }) {
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+        <LineChart
+          data={chartData}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
           <XAxis
             dataKey="date"
             className="text-xs text-neutral-600 dark:text-neutral-400"
@@ -788,7 +889,10 @@ export function PeriodComparisonChart({ data }: { data: any }) {
 }
 
 // Mini chart for metrics cards
-export function SparklineChart({ data, color = COLORS.primary }: { data: number[]; color?: string }) {
+export function SparklineChart({
+  data,
+  color = COLORS.primary,
+}: { data: number[]; color?: string }) {
   const chartData = data.map((value, index) => ({
     index,
     value,
@@ -796,7 +900,10 @@ export function SparklineChart({ data, color = COLORS.primary }: { data: number[
 
   return (
     <ResponsiveContainer width="100%" height={50}>
-      <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+      <LineChart
+        data={chartData}
+        margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+      >
         <Line
           type="monotone"
           dataKey="value"

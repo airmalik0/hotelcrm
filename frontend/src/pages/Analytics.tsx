@@ -1,35 +1,35 @@
 import {
-  exportToPdf,
-  exportToExcel,
-  getDashboardMetrics,
-  getRevenueDetails,
-  getOccupancyDetails,
-  getCustomerAnalytics,
-  getQuickStats,
   comparePeriods,
-  getHourlyDistribution,
-  getSeasonalTrends,
-  getCustomerSegments,
-  getCustomerLifetimeValue,
+  exportToExcel,
+  exportToPdf,
+  getCustomerAnalytics,
   getCustomerBehaviorPatterns,
+  getCustomerLifetimeValue,
+  getCustomerSegments,
+  getDashboardMetrics,
+  getHourlyDistribution,
+  getOccupancyDetails,
+  getQuickStats,
+  getRevenueDetails,
+  getSeasonalTrends,
 } from "@/api/analytics"
 import type {
   AnalyticsExportRequest,
   DashboardMetrics,
 } from "@/client/types.gen"
 import {
+  BookingFrequencyChart,
+  BookingTimingChart,
   CustomerDemographicsChart,
+  CustomerLtvChart,
+  CustomerSegmentsChart,
+  LtvTrendChart,
   PaymentDistributionChart,
+  PeriodComparisonChart,
   RevenueTrendChart,
   RoomPerformanceChart,
-  SeasonalTrendsChart,
-  CustomerSegmentsChart,
-  CustomerLtvChart,
-  LtvTrendChart,
-  BookingFrequencyChart,
   RoomPreferenceChart,
-  BookingTimingChart,
-  PeriodComparisonChart,
+  SeasonalTrendsChart,
 } from "@/components/analytics/AnalyticsCharts"
 import { useAuth } from "@/contexts/AuthContext"
 import { showError, showSuccess } from "@/utils/error-handling"
@@ -37,25 +37,25 @@ import { formatCurrency } from "@/utils/formatters"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { endOfMonth, format, startOfMonth, subMonths } from "date-fns"
 import {
+  Activity,
+  AlertTriangle,
   BarChart3,
   Bed,
   Calendar,
+  Clock,
   CreditCard,
-  Download,
+  Crown,
   DollarSign,
+  Download,
+  Heart,
+  Star,
+  Target,
+  TrendingDown,
   TrendingUp,
   UserCheck,
+  UserPlus,
   Users,
   XCircle,
-  Clock,
-  TrendingDown,
-  Target,
-  Heart,
-  Activity,
-  Crown,
-  Star,
-  AlertTriangle,
-  UserPlus,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -97,7 +97,6 @@ export function Analytics() {
       </div>
     )
   }
-
 
   // Fetch dashboard metrics with date range
   const {
@@ -154,46 +153,50 @@ export function Analytics() {
   })
 
   // Hourly distribution - check-ins
-  const { data: hourlyCheckinsData, isLoading: hourlyCheckinsLoading } = useQuery({
-    queryKey: ["analytics", "hourly-checkins", dateRange],
-    queryFn: () =>
-      getHourlyDistribution({
-        date_from: `${dateRange.from}T00:00:00`,
-        date_to: `${dateRange.to}T23:59:59`,
-        metric: "check_ins",
-      }),
-    enabled: activeTab === "operations",
-  })
+  const { data: hourlyCheckinsData, isLoading: hourlyCheckinsLoading } =
+    useQuery({
+      queryKey: ["analytics", "hourly-checkins", dateRange],
+      queryFn: () =>
+        getHourlyDistribution({
+          date_from: `${dateRange.from}T00:00:00`,
+          date_to: `${dateRange.to}T23:59:59`,
+          metric: "check_ins",
+        }),
+      enabled: activeTab === "operations",
+    })
 
   // Hourly distribution - check-outs
-  const { data: hourlyCheckoutsData, isLoading: hourlyCheckoutsLoading } = useQuery({
-    queryKey: ["analytics", "hourly-checkouts", dateRange],
-    queryFn: () =>
-      getHourlyDistribution({
-        date_from: `${dateRange.from}T00:00:00`,
-        date_to: `${dateRange.to}T23:59:59`,
-        metric: "check_outs",
-      }),
-    enabled: activeTab === "operations",
-  })
+  const { data: hourlyCheckoutsData, isLoading: hourlyCheckoutsLoading } =
+    useQuery({
+      queryKey: ["analytics", "hourly-checkouts", dateRange],
+      queryFn: () =>
+        getHourlyDistribution({
+          date_from: `${dateRange.from}T00:00:00`,
+          date_to: `${dateRange.to}T23:59:59`,
+          metric: "check_outs",
+        }),
+      enabled: activeTab === "operations",
+    })
 
   // Seasonal trends
-  const { data: seasonalTrendsData, isLoading: seasonalTrendsLoading } = useQuery({
-    queryKey: ["analytics", "seasonal-trends"],
-    queryFn: () => getSeasonalTrends(2),
-    enabled: activeTab === "trends",
-  })
+  const { data: seasonalTrendsData, isLoading: seasonalTrendsLoading } =
+    useQuery({
+      queryKey: ["analytics", "seasonal-trends"],
+      queryFn: () => getSeasonalTrends(2),
+      enabled: activeTab === "trends",
+    })
 
   // Customer segments
-  const { data: customerSegmentsData, isLoading: customerSegmentsLoading } = useQuery({
-    queryKey: ["analytics", "customer-segments", dateRange],
-    queryFn: () =>
-      getCustomerSegments({
-        date_from: `${dateRange.from}T00:00:00`,
-        date_to: `${dateRange.to}T23:59:59`,
-      }),
-    enabled: activeTab === "segments",
-  })
+  const { data: customerSegmentsData, isLoading: customerSegmentsLoading } =
+    useQuery({
+      queryKey: ["analytics", "customer-segments", dateRange],
+      queryFn: () =>
+        getCustomerSegments({
+          date_from: `${dateRange.from}T00:00:00`,
+          date_to: `${dateRange.to}T23:59:59`,
+        }),
+      enabled: activeTab === "segments",
+    })
 
   // Customer lifetime value
   const { data: customerLtvData, isLoading: customerLtvLoading } = useQuery({
@@ -203,15 +206,16 @@ export function Analytics() {
   })
 
   // Customer behavior patterns
-  const { data: behaviorPatternsData, isLoading: behaviorPatternsLoading } = useQuery({
-    queryKey: ["analytics", "behavior-patterns", dateRange],
-    queryFn: () =>
-      getCustomerBehaviorPatterns({
-        date_from: `${dateRange.from}T00:00:00`,
-        date_to: `${dateRange.to}T23:59:59`,
-      }),
-    enabled: activeTab === "behavior",
-  })
+  const { data: behaviorPatternsData, isLoading: behaviorPatternsLoading } =
+    useQuery({
+      queryKey: ["analytics", "behavior-patterns", dateRange],
+      queryFn: () =>
+        getCustomerBehaviorPatterns({
+          date_from: `${dateRange.from}T00:00:00`,
+          date_to: `${dateRange.to}T23:59:59`,
+        }),
+      enabled: activeTab === "behavior",
+    })
 
   // PDF export mutation
   const exportPdfMutation = useMutation({
@@ -264,27 +268,29 @@ export function Analytics() {
     }))
   }
 
-  const setQuickDateRange = (type: 'today' | 'week' | 'month' | 'quarter' | 'year') => {
+  const setQuickDateRange = (
+    type: "today" | "week" | "month" | "quarter" | "year",
+  ) => {
     const now = new Date()
     let from: Date
     let to: Date = now
 
-    switch(type) {
-      case 'today':
+    switch (type) {
+      case "today":
         from = now
         to = now
         break
-      case 'week':
+      case "week":
         from = new Date(now)
         from.setDate(from.getDate() - 7)
         break
-      case 'month':
+      case "month":
         from = startOfMonth(now)
         break
-      case 'quarter':
+      case "quarter":
         from = startOfMonth(subMonths(now, 2))
         break
-      case 'year':
+      case "year":
         from = startOfMonth(subMonths(now, 11))
         to = endOfMonth(now)
         break
@@ -314,27 +320,71 @@ export function Analytics() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewTab metrics={metrics} quickStats={quickStatsData?.data} isLoading={dashboardLoading || quickStatsLoading} />
+        return (
+          <OverviewTab
+            metrics={metrics}
+            quickStats={quickStatsData?.data}
+            isLoading={dashboardLoading || quickStatsLoading}
+          />
+        )
       case "revenue":
-        return <RevenueTab data={revenueData?.data} isLoading={revenueLoading} />
+        return (
+          <RevenueTab data={revenueData?.data} isLoading={revenueLoading} />
+        )
       case "occupancy":
-        return <OccupancyTab data={occupancyData?.data} isLoading={occupancyLoading} />
+        return (
+          <OccupancyTab
+            data={occupancyData?.data}
+            isLoading={occupancyLoading}
+          />
+        )
       case "customers":
-        return <CustomersTab data={customerData?.data} isLoading={customerLoading} />
+        return (
+          <CustomersTab data={customerData?.data} isLoading={customerLoading} />
+        )
       case "operations":
-        return <OperationsTab checkins={hourlyCheckinsData?.data} checkouts={hourlyCheckoutsData?.data} isLoading={hourlyCheckinsLoading || hourlyCheckoutsLoading} />
+        return (
+          <OperationsTab
+            checkins={hourlyCheckinsData?.data}
+            checkouts={hourlyCheckoutsData?.data}
+            isLoading={hourlyCheckinsLoading || hourlyCheckoutsLoading}
+          />
+        )
       case "trends":
-        return <TrendsTab data={seasonalTrendsData?.data} isLoading={seasonalTrendsLoading} />
+        return (
+          <TrendsTab
+            data={seasonalTrendsData?.data}
+            isLoading={seasonalTrendsLoading}
+          />
+        )
       case "segments":
-        return <SegmentsTab data={customerSegmentsData?.data} isLoading={customerSegmentsLoading} />
+        return (
+          <SegmentsTab
+            data={customerSegmentsData?.data}
+            isLoading={customerSegmentsLoading}
+          />
+        )
       case "ltv":
-        return <LtvTab data={customerLtvData?.data} isLoading={customerLtvLoading} />
+        return (
+          <LtvTab data={customerLtvData?.data} isLoading={customerLtvLoading} />
+        )
       case "behavior":
-        return <BehaviorTab data={behaviorPatternsData?.data} isLoading={behaviorPatternsLoading} />
+        return (
+          <BehaviorTab
+            data={behaviorPatternsData?.data}
+            isLoading={behaviorPatternsLoading}
+          />
+        )
       case "compare":
         return <CompareTab dateRange={dateRange} />
       default:
-        return <OverviewTab metrics={metrics} quickStats={quickStatsData?.data} isLoading={dashboardLoading || quickStatsLoading} />
+        return (
+          <OverviewTab
+            metrics={metrics}
+            quickStats={quickStatsData?.data}
+            isLoading={dashboardLoading || quickStatsLoading}
+          />
+        )
     }
   }
 
@@ -397,31 +447,31 @@ export function Analytics() {
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setQuickDateRange('today')}
+              onClick={() => setQuickDateRange("today")}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               Today
             </button>
             <button
-              onClick={() => setQuickDateRange('week')}
+              onClick={() => setQuickDateRange("week")}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               Last 7 Days
             </button>
             <button
-              onClick={() => setQuickDateRange('month')}
+              onClick={() => setQuickDateRange("month")}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               This Month
             </button>
             <button
-              onClick={() => setQuickDateRange('quarter')}
+              onClick={() => setQuickDateRange("quarter")}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               Last 3 Months
             </button>
             <button
-              onClick={() => setQuickDateRange('year')}
+              onClick={() => setQuickDateRange("year")}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
               Last 12 Months
@@ -456,9 +506,7 @@ export function Analytics() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
-          {renderTabContent()}
-        </div>
+        <div className="p-6">{renderTabContent()}</div>
       </div>
     </div>
   )
@@ -489,7 +537,9 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
   if (!metrics) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No data available
+        </p>
       </div>
     )
   }
@@ -499,14 +549,22 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
       {/* Quick Stats */}
       {quickStats && (
         <div>
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Quick Statistics</h3>
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
+            Quick Statistics
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-blue-600/10 to-white dark:from-blue-600/20 dark:to-dark-1 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Today</p>
-                  <p className="text-xl font-bold text-neutral-900 dark:text-white">{formatCurrency(quickStats.today.revenue)}</p>
-                  <p className="text-xs text-neutral-500">{quickStats.today.bookings} bookings</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Today
+                  </p>
+                  <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                    {formatCurrency(quickStats.today.revenue)}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {quickStats.today.bookings} bookings
+                  </p>
                 </div>
                 <Calendar className="w-8 h-8 text-blue-600" />
               </div>
@@ -514,9 +572,15 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             <div className="bg-gradient-to-br from-green-600/10 to-white dark:from-green-600/20 dark:to-dark-1 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">This Week</p>
-                  <p className="text-xl font-bold text-neutral-900 dark:text-white">{formatCurrency(quickStats.week.revenue)}</p>
-                  <p className="text-xs text-neutral-500">{quickStats.week.bookings} bookings</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    This Week
+                  </p>
+                  <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                    {formatCurrency(quickStats.week.revenue)}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {quickStats.week.bookings} bookings
+                  </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-green-600" />
               </div>
@@ -524,9 +588,15 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             <div className="bg-gradient-to-br from-purple-600/10 to-white dark:from-purple-600/20 dark:to-dark-1 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">This Month</p>
-                  <p className="text-xl font-bold text-neutral-900 dark:text-white">{formatCurrency(quickStats.month.revenue)}</p>
-                  <p className="text-xs text-neutral-500">{quickStats.month.bookings} bookings</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    This Month
+                  </p>
+                  <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                    {formatCurrency(quickStats.month.revenue)}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {quickStats.month.bookings} bookings
+                  </p>
                 </div>
                 <BarChart3 className="w-8 h-8 text-purple-600" />
               </div>
@@ -539,87 +609,87 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Revenue Card */}
         <div className="bg-gradient-to-br from-primary-600/10 to-white dark:from-primary-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Total Revenue
-                </p>
-                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
-                  {formatCurrency(metrics.revenue.total_revenue)}
-                </h4>
-              </div>
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center">
+              <DollarSign className="w-6 h-6" />
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {metrics.revenue.total_bookings} bookings
-            </p>
-          </div>
-
-          {/* Occupancy Rate Card */}
-          <div className="bg-gradient-to-br from-success-600/10 to-white dark:from-success-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-12 h-12 bg-success-600 text-white rounded-full flex items-center justify-center">
-                <Bed className="w-6 h-6" />
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Occupancy Rate
-                </p>
-                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
-                  {metrics.occupancy.occupancy_rate}%
-                </h4>
-              </div>
+            <div className="text-right">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                Total Revenue
+              </p>
+              <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                {formatCurrency(metrics.revenue.total_revenue)}
+              </h4>
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {metrics.occupancy.average_length_of_stay.toFixed(1)} nights avg stay
-            </p>
           </div>
-
-          {/* Check-ins Card */}
-          <div className="bg-gradient-to-br from-purple-600/10 to-white dark:from-purple-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center">
-                <UserCheck className="w-6 h-6" />
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Check-ins
-                </p>
-                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
-                  {metrics.occupancy.check_ins}
-                </h4>
-              </div>
-            </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {metrics.customer_metrics.total_customers} total guests
-            </p>
-          </div>
-
-          {/* Cancellations Card */}
-          <div className="bg-gradient-to-br from-danger-600/10 to-white dark:from-danger-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-12 h-12 bg-danger-600 text-white rounded-full flex items-center justify-center">
-                <XCircle className="w-6 h-6" />
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Cancellations
-                </p>
-                <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
-                  {metrics.occupancy.cancellations}
-                </h4>
-              </div>
-            </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {metrics.occupancy.cancellations > 0
-                ? `${((metrics.occupancy.cancellations / metrics.revenue.total_bookings) * 100).toFixed(1)}% rate`
-                : 'No cancellations'
-              }
-            </p>
-          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {metrics.revenue.total_bookings} bookings
+          </p>
         </div>
+
+        {/* Occupancy Rate Card */}
+        <div className="bg-gradient-to-br from-success-600/10 to-white dark:from-success-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-12 h-12 bg-success-600 text-white rounded-full flex items-center justify-center">
+              <Bed className="w-6 h-6" />
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                Occupancy Rate
+              </p>
+              <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                {metrics.occupancy.occupancy_rate}%
+              </h4>
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {metrics.occupancy.average_length_of_stay.toFixed(1)} nights avg
+            stay
+          </p>
+        </div>
+
+        {/* Check-ins Card */}
+        <div className="bg-gradient-to-br from-purple-600/10 to-white dark:from-purple-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                Check-ins
+              </p>
+              <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                {metrics.occupancy.check_ins}
+              </h4>
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {metrics.customer_metrics.total_customers} total guests
+          </p>
+        </div>
+
+        {/* Cancellations Card */}
+        <div className="bg-gradient-to-br from-danger-600/10 to-white dark:from-danger-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="w-12 h-12 bg-danger-600 text-white rounded-full flex items-center justify-center">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                Cancellations
+              </p>
+              <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
+                {metrics.occupancy.cancellations}
+              </h4>
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {metrics.occupancy.cancellations > 0
+              ? `${((metrics.occupancy.cancellations / metrics.revenue.total_bookings) * 100).toFixed(1)}% rate`
+              : "No cancellations"}
+          </p>
+        </div>
+      </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -682,7 +752,9 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No revenue data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No revenue data available
+        </p>
       </div>
     )
   }
@@ -696,7 +768,9 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Revenue</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Total Revenue
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {formatCurrency(data.metrics?.total_revenue || 0)}
               </p>
@@ -710,7 +784,9 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Bookings</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Total Bookings
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.metrics?.booking_count || 0}
               </p>
@@ -724,7 +800,9 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
               <Bed className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Nights</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Total Nights
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.metrics?.total_nights || 0}
               </p>
@@ -744,9 +822,16 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
           <div className="p-6">
             <div className="space-y-2">
               {data.trend.map((point: any, index: number) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b border-neutral-100 dark:border-neutral-700 last:border-0">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{point.date}</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(point.value)}</span>
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-2 border-b border-neutral-100 dark:border-neutral-700 last:border-0"
+                >
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {point.date}
+                  </span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {formatCurrency(point.value)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -776,7 +861,9 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No occupancy data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No occupancy data available
+        </p>
       </div>
     )
   }
@@ -792,7 +879,9 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
             <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
               {data.occupancy_rate}%
             </p>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">Occupancy Rate</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Occupancy Rate
+            </p>
           </div>
         </div>
 
@@ -804,7 +893,9 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
             <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
               {data.check_ins}
             </p>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">Check-ins</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Check-ins
+            </p>
           </div>
         </div>
 
@@ -816,7 +907,9 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
             <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
               {data.average_length_of_stay?.toFixed(1)}
             </p>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">Avg Stay (nights)</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Avg Stay (nights)
+            </p>
           </div>
         </div>
 
@@ -828,36 +921,61 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
             <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
               {data.cancellations}
             </p>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">Cancellations</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Cancellations
+            </p>
           </div>
         </div>
       </div>
 
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Occupancy Details</h3>
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Occupancy Details
+          </h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-neutral-600 dark:text-neutral-400">Total Available Room Nights</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">{data.total_available_room_nights?.toLocaleString()}</span>
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Total Available Room Nights
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {data.total_available_room_nights?.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-600 dark:text-neutral-400">Total Occupied Room Nights</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">{data.total_occupied_room_nights?.toLocaleString()}</span>
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Total Occupied Room Nights
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {data.total_occupied_room_nights?.toLocaleString()}
+                </span>
               </div>
             </div>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-neutral-600 dark:text-neutral-400">Check-outs</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">{data.check_outs}</span>
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Check-outs
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {data.check_outs}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-600 dark:text-neutral-400">Cancellation Rate</span>
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Cancellation Rate
+                </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
-                  {data.check_ins > 0 ? ((data.cancellations / (data.check_ins + data.cancellations)) * 100).toFixed(1) : 0}%
+                  {data.check_ins > 0
+                    ? (
+                        (data.cancellations /
+                          (data.check_ins + data.cancellations)) *
+                        100
+                      ).toFixed(1)
+                    : 0}
+                  %
                 </span>
               </div>
             </div>
@@ -887,7 +1005,9 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No customer data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No customer data available
+        </p>
       </div>
     )
   }
@@ -901,7 +1021,9 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Customers</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Total Customers
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.total_customers}
               </p>
@@ -915,7 +1037,9 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
               <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">New Customers</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                New Customers
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.new_customers}
               </p>
@@ -929,7 +1053,9 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
               <Heart className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Returning Customers</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Returning Customers
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.returning_customers}
               </p>
@@ -942,39 +1068,62 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
       {data.age_distribution && (
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Age Distribution</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Age Distribution
+            </h3>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(data.age_distribution).map(([ageGroup, count]) => (
-                <div key={ageGroup} className="flex justify-between items-center py-2">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{ageGroup}</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">{count as number}</span>
-                </div>
-              ))}
+              {Object.entries(data.age_distribution).map(
+                ([ageGroup, count]) => (
+                  <div
+                    key={ageGroup}
+                    className="flex justify-between items-center py-2"
+                  >
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      {ageGroup}
+                    </span>
+                    <span className="font-semibold text-neutral-900 dark:text-white">
+                      {count as number}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* District Distribution */}
-      {data.district_distribution && Object.keys(data.district_distribution).length > 0 && (
-        <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
-          <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">District Distribution</h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {Object.entries(data.district_distribution).map(([district, count]) => (
-                <div key={district} className="flex justify-between items-center py-2">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{district}</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">{count as number}</span>
-                </div>
-              ))}
+      {data.district_distribution &&
+        Object.keys(data.district_distribution).length > 0 && (
+          <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
+            <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                District Distribution
+              </h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {Object.entries(data.district_distribution).map(
+                  ([district, count]) => (
+                    <div
+                      key={district}
+                      className="flex justify-between items-center py-2"
+                    >
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                        {district}
+                      </span>
+                      <span className="font-semibold text-neutral-900 dark:text-white">
+                        {count as number}
+                      </span>
+                    </div>
+                  ),
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   )
 }
@@ -999,7 +1148,9 @@ function OperationsTab({ checkins, checkouts, isLoading }: OperationsTabProps) {
   if (!checkins && !checkouts) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No operational data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No operational data available
+        </p>
       </div>
     )
   }
@@ -1013,16 +1164,24 @@ function OperationsTab({ checkins, checkouts, isLoading }: OperationsTabProps) {
         {/* Check-ins Distribution */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Check-ins by Hour</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Check-ins by Hour
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {checkinsData.map((item: any, index: number) => (
-                <div key={index} className="flex justify-between items-center py-2">
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-2"
+                >
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {item.label || `${item.hour?.toString().padStart(2, '0')}:00`}
+                    {item.label ||
+                      `${item.hour?.toString().padStart(2, "0")}:00`}
                   </span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">{item.count}</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {item.count}
+                  </span>
                 </div>
               ))}
             </div>
@@ -1032,16 +1191,24 @@ function OperationsTab({ checkins, checkouts, isLoading }: OperationsTabProps) {
         {/* Check-outs Distribution */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Check-outs by Hour</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Check-outs by Hour
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {checkoutsData.map((item: any, index: number) => (
-                <div key={index} className="flex justify-between items-center py-2">
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-2"
+                >
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {item.label || `${item.hour?.toString().padStart(2, '0')}:00`}
+                    {item.label ||
+                      `${item.hour?.toString().padStart(2, "0")}:00`}
                   </span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">{item.count}</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {item.count}
+                  </span>
                 </div>
               ))}
             </div>
@@ -1052,33 +1219,61 @@ function OperationsTab({ checkins, checkouts, isLoading }: OperationsTabProps) {
       {/* Summary */}
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Operational Summary</h3>
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Operational Summary
+          </h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-                {checkinsData.reduce((sum: number, item: any) => sum + item.count, 0)}
+                {checkinsData.reduce(
+                  (sum: number, item: any) => sum + item.count,
+                  0,
+                )}
               </p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Check-ins</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Total Check-ins
+              </p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-                {checkoutsData.reduce((sum: number, item: any) => sum + item.count, 0)}
+                {checkoutsData.reduce(
+                  (sum: number, item: any) => sum + item.count,
+                  0,
+                )}
               </p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Check-outs</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Total Check-outs
+              </p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-                {checkinsData.length > 0 ? checkinsData.reduce((max: any, item: any) => item.count > max.count ? item : max, checkinsData[0])?.label : 'N/A'}
+                {checkinsData.length > 0
+                  ? checkinsData.reduce(
+                      (max: any, item: any) =>
+                        item.count > max.count ? item : max,
+                      checkinsData[0],
+                    )?.label
+                  : "N/A"}
               </p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Peak Check-in Hour</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Peak Check-in Hour
+              </p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-                {checkoutsData.length > 0 ? checkoutsData.reduce((max: any, item: any) => item.count > max.count ? item : max, checkoutsData[0])?.label : 'N/A'}
+                {checkoutsData.length > 0
+                  ? checkoutsData.reduce(
+                      (max: any, item: any) =>
+                        item.count > max.count ? item : max,
+                      checkoutsData[0],
+                    )?.label
+                  : "N/A"}
               </p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Peak Check-out Hour</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Peak Check-out Hour
+              </p>
             </div>
           </div>
         </div>
@@ -1107,7 +1302,9 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No seasonal trends data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No seasonal trends data available
+        </p>
       </div>
     )
   }
@@ -1122,9 +1319,11 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Peak Season</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Peak Season
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                {data.peak_season || 'N/A'}
+                {data.peak_season || "N/A"}
               </p>
             </div>
           </div>
@@ -1136,9 +1335,11 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Highest Revenue Month</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Highest Revenue Month
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                {data.highest_revenue_month || 'N/A'}
+                {data.highest_revenue_month || "N/A"}
               </p>
             </div>
           </div>
@@ -1150,9 +1351,11 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
               <Bed className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">Best Occupancy Month</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Best Occupancy Month
+              </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                {data.highest_occupancy_month || 'N/A'}
+                {data.highest_occupancy_month || "N/A"}
               </p>
             </div>
           </div>
@@ -1166,7 +1369,8 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
             Multi-Year Seasonal Analysis
           </h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            Revenue, occupancy, and booking trends over the past {data.years_analyzed || 2} years
+            Revenue, occupancy, and booking trends over the past{" "}
+            {data.years_analyzed || 2} years
           </p>
         </div>
         <div className="p-6">
@@ -1178,35 +1382,47 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
       {data.seasonal_insights && (
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Seasonal Insights</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Seasonal Insights
+            </h3>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {Object.entries(data.seasonal_insights).map(([season, insights]: [string, any]) => (
-                <div key={season} className="space-y-3">
-                  <h4 className="font-semibold text-neutral-900 dark:text-white capitalize">{season}</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Avg Revenue</span>
-                      <span className="font-semibold text-neutral-900 dark:text-white">
-                        {formatCurrency(insights.avg_revenue || 0)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Avg Occupancy</span>
-                      <span className="font-semibold text-neutral-900 dark:text-white">
-                        {insights.avg_occupancy?.toFixed(1) || 0}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Avg Bookings</span>
-                      <span className="font-semibold text-neutral-900 dark:text-white">
-                        {insights.avg_bookings || 0}
-                      </span>
+              {Object.entries(data.seasonal_insights).map(
+                ([season, insights]: [string, any]) => (
+                  <div key={season} className="space-y-3">
+                    <h4 className="font-semibold text-neutral-900 dark:text-white capitalize">
+                      {season}
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Avg Revenue
+                        </span>
+                        <span className="font-semibold text-neutral-900 dark:text-white">
+                          {formatCurrency(insights.avg_revenue || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Avg Occupancy
+                        </span>
+                        <span className="font-semibold text-neutral-900 dark:text-white">
+                          {insights.avg_occupancy?.toFixed(1) || 0}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Avg Bookings
+                        </span>
+                        <span className="font-semibold text-neutral-900 dark:text-white">
+                          {insights.avg_bookings || 0}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -1216,7 +1432,9 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
       {data.monthly_data && data.monthly_data.length > 0 && (
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Monthly Performance Summary</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Monthly Performance Summary
+            </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-max">
@@ -1238,7 +1456,10 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-600">
                 {data.monthly_data.map((month: any, index: number) => (
-                  <tr key={index} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <tr
+                    key={index}
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">
                       {month.month}
                     </td>
@@ -1281,7 +1502,9 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No customer segments data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No customer segments data available
+        </p>
       </div>
     )
   }
@@ -1290,69 +1513,79 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
   const segmentConfig = {
     vip: {
       icon: Crown,
-      color: "from-yellow-600/10 to-white dark:from-yellow-600/20 dark:to-dark-1",
+      color:
+        "from-yellow-600/10 to-white dark:from-yellow-600/20 dark:to-dark-1",
       iconColor: "text-yellow-600",
-      bgColor: "bg-yellow-600"
+      bgColor: "bg-yellow-600",
     },
     loyal: {
       icon: Star,
       color: "from-blue-600/10 to-white dark:from-blue-600/20 dark:to-dark-1",
       iconColor: "text-blue-600",
-      bgColor: "bg-blue-600"
+      bgColor: "bg-blue-600",
     },
     new: {
       icon: UserPlus,
       color: "from-green-600/10 to-white dark:from-green-600/20 dark:to-dark-1",
       iconColor: "text-green-600",
-      bgColor: "bg-green-600"
+      bgColor: "bg-green-600",
     },
     at_risk: {
       icon: AlertTriangle,
       color: "from-red-600/10 to-white dark:from-red-600/20 dark:to-dark-1",
       iconColor: "text-red-600",
-      bgColor: "bg-red-600"
-    }
+      bgColor: "bg-red-600",
+    },
   }
 
   return (
     <div className="space-y-6">
       {/* Segments Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.segments && Object.entries(data.segments).map(([segment, info]: [string, any]) => {
-          const config = segmentConfig[segment as keyof typeof segmentConfig]
-          if (!config) return null
+        {data.segments &&
+          Object.entries(data.segments).map(
+            ([segment, info]: [string, any]) => {
+              const config =
+                segmentConfig[segment as keyof typeof segmentConfig]
+              if (!config) return null
 
-          const Icon = config.icon
+              const Icon = config.icon
 
-          return (
-            <div key={segment} className={`bg-gradient-to-br ${config.color} rounded-lg border border-neutral-200 dark:border-neutral-600 p-6`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 ${config.bgColor} text-white rounded-full flex items-center justify-center`}>
-                  <Icon className="w-6 h-6" />
+              return (
+                <div
+                  key={segment}
+                  className={`bg-gradient-to-br ${config.color} rounded-lg border border-neutral-200 dark:border-neutral-600 p-6`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`w-12 h-12 ${config.bgColor} text-white rounded-full flex items-center justify-center`}
+                    >
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                        {info.count}
+                      </p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        {info.percentage?.toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-neutral-900 dark:text-white capitalize mb-2">
+                      {segment.replace("_", " ")} Customers
+                    </h3>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Revenue: {formatCurrency(info.total_revenue)}
+                    </p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Avg: {formatCurrency(info.avg_revenue_per_customer)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    {info.count}
-                  </p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {info.percentage?.toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold text-neutral-900 dark:text-white capitalize mb-2">
-                  {segment.replace('_', ' ')} Customers
-                </h3>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Revenue: {formatCurrency(info.total_revenue)}
-                </p>
-                <p className="text-xs text-neutral-500 mt-1">
-                  Avg: {formatCurrency(info.avg_revenue_per_customer)}
-                </p>
-              </div>
-            </div>
-          )
-        })}
+              )
+            },
+          )}
       </div>
 
       {/* Segments Distribution Chart */}
@@ -1374,38 +1607,49 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
         {/* Segment Revenue Comparison */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Revenue by Segment</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Revenue by Segment
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {data.segments && Object.entries(data.segments)
-                .sort(([,a], [,b]) => (b as any).total_revenue - (a as any).total_revenue)
-                .map(([segment, info]: [string, any]) => {
-                  const config = segmentConfig[segment as keyof typeof segmentConfig]
-                  if (!config) return null
-
-                  const maxRevenue = Math.max(...Object.values(data.segments).map((s: any) => s.total_revenue))
-                  const percentage = (info.total_revenue / maxRevenue) * 100
-
-                  return (
-                    <div key={segment} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 capitalize">
-                          {segment.replace('_', ' ')} Customers
-                        </span>
-                        <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                          {formatCurrency(info.total_revenue)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${config.bgColor}`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
+              {data.segments &&
+                Object.entries(data.segments)
+                  .sort(
+                    ([, a], [, b]) =>
+                      (b as any).total_revenue - (a as any).total_revenue,
                   )
-                })}
+                  .map(([segment, info]: [string, any]) => {
+                    const config =
+                      segmentConfig[segment as keyof typeof segmentConfig]
+                    if (!config) return null
+
+                    const maxRevenue = Math.max(
+                      ...Object.values(data.segments).map(
+                        (s: any) => s.total_revenue,
+                      ),
+                    )
+                    const percentage = (info.total_revenue / maxRevenue) * 100
+
+                    return (
+                      <div key={segment} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 capitalize">
+                            {segment.replace("_", " ")} Customers
+                          </span>
+                          <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                            {formatCurrency(info.total_revenue)}
+                          </span>
+                        </div>
+                        <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${config.bgColor}`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
             </div>
           </div>
         </div>
@@ -1413,45 +1657,72 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
         {/* Segment Details Table */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Segment Details</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Segment Details
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {data.segments && Object.entries(data.segments).map(([segment, info]: [string, any]) => {
-                const config = segmentConfig[segment as keyof typeof segmentConfig]
-                if (!config) return null
+              {data.segments &&
+                Object.entries(data.segments).map(
+                  ([segment, info]: [string, any]) => {
+                    const config =
+                      segmentConfig[segment as keyof typeof segmentConfig]
+                    if (!config) return null
 
-                return (
-                  <div key={segment} className="border-b border-neutral-100 dark:border-neutral-700 last:border-0 pb-4 last:pb-0">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-8 h-8 ${config.bgColor} text-white rounded-lg flex items-center justify-center`}>
-                        <config.icon className="w-4 h-4" />
+                    return (
+                      <div
+                        key={segment}
+                        className="border-b border-neutral-100 dark:border-neutral-700 last:border-0 pb-4 last:pb-0"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div
+                            className={`w-8 h-8 ${config.bgColor} text-white rounded-lg flex items-center justify-center`}
+                          >
+                            <config.icon className="w-4 h-4" />
+                          </div>
+                          <h4 className="font-semibold text-neutral-900 dark:text-white capitalize">
+                            {segment.replace("_", " ")} Customers
+                          </h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Count:
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {info.count}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Share:
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {info.percentage?.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Total Revenue:
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {formatCurrency(info.total_revenue)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Avg per Customer:
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {formatCurrency(info.avg_revenue_per_customer)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <h4 className="font-semibold text-neutral-900 dark:text-white capitalize">
-                        {segment.replace('_', ' ')} Customers
-                      </h4>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600 dark:text-neutral-400">Count:</span>
-                        <span className="font-medium text-neutral-900 dark:text-white">{info.count}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600 dark:text-neutral-400">Share:</span>
-                        <span className="font-medium text-neutral-900 dark:text-white">{info.percentage?.toFixed(1)}%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600 dark:text-neutral-400">Total Revenue:</span>
-                        <span className="font-medium text-neutral-900 dark:text-white">{formatCurrency(info.total_revenue)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600 dark:text-neutral-400">Avg per Customer:</span>
-                        <span className="font-medium text-neutral-900 dark:text-white">{formatCurrency(info.avg_revenue_per_customer)}</span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                    )
+                  },
+                )}
             </div>
           </div>
         </div>
@@ -1460,7 +1731,9 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
       {/* Segment Criteria */}
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Segmentation Criteria</h3>
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Segmentation Criteria
+          </h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
             How customers are categorized into different segments
           </p>
@@ -1471,18 +1744,24 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
               <div className="flex items-start gap-3">
                 <Crown className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">VIP Customers</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    VIP Customers
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    High-value customers with significant spending history and frequent bookings
+                    High-value customers with significant spending history and
+                    frequent bookings
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Star className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Loyal Customers</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Loyal Customers
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Regular customers with multiple bookings and consistent engagement
+                    Regular customers with multiple bookings and consistent
+                    engagement
                   </p>
                 </div>
               </div>
@@ -1491,18 +1770,24 @@ function SegmentsTab({ data, isLoading }: SegmentsTabProps) {
               <div className="flex items-start gap-3">
                 <UserPlus className="w-5 h-5 text-green-600 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">New Customers</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    New Customers
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Recent customers with limited booking history but growth potential
+                    Recent customers with limited booking history but growth
+                    potential
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">At-Risk Customers</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    At-Risk Customers
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Previously active customers who haven't booked recently and may churn
+                    Previously active customers who haven't booked recently and
+                    may churn
                   </p>
                 </div>
               </div>
@@ -1533,7 +1818,9 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No LTV data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No LTV data available
+        </p>
       </div>
     )
   }
@@ -1626,47 +1913,82 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
         {/* LTV Segments Breakdown */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">LTV Segments</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              LTV Segments
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {data.ltv_segments && Object.entries(data.ltv_segments).map(([segment, info]: [string, any]) => {
-                const segmentColors = {
-                  high: { bg: 'bg-green-600', color: 'from-green-600/10 to-white dark:from-green-600/20 dark:to-dark-1' },
-                  medium: { bg: 'bg-blue-600', color: 'from-blue-600/10 to-white dark:from-blue-600/20 dark:to-dark-1' },
-                  low: { bg: 'bg-yellow-600', color: 'from-yellow-600/10 to-white dark:from-yellow-600/20 dark:to-dark-1' },
-                  very_low: { bg: 'bg-red-600', color: 'from-red-600/10 to-white dark:from-red-600/20 dark:to-dark-1' }
-                }
-                const config = segmentColors[segment as keyof typeof segmentColors]
+              {data.ltv_segments &&
+                Object.entries(data.ltv_segments).map(
+                  ([segment, info]: [string, any]) => {
+                    const segmentColors = {
+                      high: {
+                        bg: "bg-green-600",
+                        color:
+                          "from-green-600/10 to-white dark:from-green-600/20 dark:to-dark-1",
+                      },
+                      medium: {
+                        bg: "bg-blue-600",
+                        color:
+                          "from-blue-600/10 to-white dark:from-blue-600/20 dark:to-dark-1",
+                      },
+                      low: {
+                        bg: "bg-yellow-600",
+                        color:
+                          "from-yellow-600/10 to-white dark:from-yellow-600/20 dark:to-dark-1",
+                      },
+                      very_low: {
+                        bg: "bg-red-600",
+                        color:
+                          "from-red-600/10 to-white dark:from-red-600/20 dark:to-dark-1",
+                      },
+                    }
+                    const config =
+                      segmentColors[segment as keyof typeof segmentColors]
 
-                return (
-                  <div key={segment} className={`bg-gradient-to-br ${config?.color} rounded-lg border border-neutral-200 dark:border-neutral-600 p-4`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 ${config?.bg} text-white rounded-lg flex items-center justify-center`}>
-                          <Heart className="w-4 h-4" />
+                    return (
+                      <div
+                        key={segment}
+                        className={`bg-gradient-to-br ${config?.color} rounded-lg border border-neutral-200 dark:border-neutral-600 p-4`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 ${config?.bg} text-white rounded-lg flex items-center justify-center`}
+                            >
+                              <Heart className="w-4 h-4" />
+                            </div>
+                            <h4 className="font-semibold text-neutral-900 dark:text-white capitalize">
+                              {segment.replace("_", " ")} LTV
+                            </h4>
+                          </div>
+                          <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                            {info.count} customers
+                          </span>
                         </div>
-                        <h4 className="font-semibold text-neutral-900 dark:text-white capitalize">
-                          {segment.replace('_', ' ')} LTV
-                        </h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Range:
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {info.range}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Avg LTV:
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {formatCurrency(info.avg_ltv)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                        {info.count} customers
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600 dark:text-neutral-400">Range:</span>
-                        <span className="font-medium text-neutral-900 dark:text-white">{info.range}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600 dark:text-neutral-400">Avg LTV:</span>
-                        <span className="font-medium text-neutral-900 dark:text-white">{formatCurrency(info.avg_ltv)}</span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                    )
+                  },
+                )}
             </div>
           </div>
         </div>
@@ -1679,7 +2001,8 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
             LTV Trend Analysis
           </h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            Customer lifetime value trends over the past {data.months_analyzed || 12} months
+            Customer lifetime value trends over the past{" "}
+            {data.months_analyzed || 12} months
           </p>
         </div>
         <div className="p-6">
@@ -1691,7 +2014,9 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
       {data.top_ltv_customers && data.top_ltv_customers.length > 0 && (
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Top LTV Customers</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Top LTV Customers
+            </h3>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
               Highest value customers by lifetime revenue
             </p>
@@ -1722,18 +2047,30 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-600">
                 {data.top_ltv_customers.map((customer: any, index: number) => (
-                  <tr key={index} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <tr
+                    key={index}
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-400' : 'bg-neutral-500'
-                        }`}>
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                            index === 0
+                              ? "bg-yellow-500"
+                              : index === 1
+                                ? "bg-gray-400"
+                                : index === 2
+                                  ? "bg-orange-400"
+                                  : "bg-neutral-500"
+                          }`}
+                        >
                           {index + 1}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">
-                      {customer.customer_name || `Customer #${customer.customer_id}`}
+                      {customer.customer_name ||
+                        `Customer #${customer.customer_id}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                       <span className="font-semibold text-green-600">
@@ -1744,10 +2081,20 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
                       {customer.total_bookings}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                      {customer.first_booking_date ? format(new Date(customer.first_booking_date), 'MMM dd, yyyy') : 'N/A'}
+                      {customer.first_booking_date
+                        ? format(
+                            new Date(customer.first_booking_date),
+                            "MMM dd, yyyy",
+                          )
+                        : "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                      {customer.last_booking_date ? format(new Date(customer.last_booking_date), 'MMM dd, yyyy') : 'N/A'}
+                      {customer.last_booking_date
+                        ? format(
+                            new Date(customer.last_booking_date),
+                            "MMM dd, yyyy",
+                          )
+                        : "N/A"}
                     </td>
                   </tr>
                 ))}
@@ -1760,7 +2107,9 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
       {/* LTV Insights */}
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">LTV Insights & Recommendations</h3>
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            LTV Insights & Recommendations
+          </h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1770,9 +2119,12 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">High LTV Customers</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    High LTV Customers
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Focus on retention strategies and personalized experiences for your most valuable customers
+                    Focus on retention strategies and personalized experiences
+                    for your most valuable customers
                   </p>
                 </div>
               </div>
@@ -1781,9 +2133,12 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Customer Development</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Customer Development
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Identify patterns in high-LTV customers to develop similar value in medium-LTV segments
+                    Identify patterns in high-LTV customers to develop similar
+                    value in medium-LTV segments
                   </p>
                 </div>
               </div>
@@ -1794,9 +2149,12 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
                   <Target className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Growth Opportunities</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Growth Opportunities
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Target low-LTV customers with engagement campaigns to increase their lifetime value
+                    Target low-LTV customers with engagement campaigns to
+                    increase their lifetime value
                   </p>
                 </div>
               </div>
@@ -1805,9 +2163,12 @@ function LtvTab({ data, isLoading }: LtvTabProps) {
                   <Heart className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Loyalty Programs</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Loyalty Programs
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Implement loyalty rewards to encourage repeat bookings and increase customer lifetime value
+                    Implement loyalty rewards to encourage repeat bookings and
+                    increase customer lifetime value
                   </p>
                 </div>
               </div>
@@ -1838,7 +2199,9 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-neutral-600 dark:text-neutral-400">No behavior patterns data available</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          No behavior patterns data available
+        </p>
       </div>
     )
   }
@@ -1886,7 +2249,7 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                {data.most_preferred_room_type || 'N/A'}
+                {data.most_preferred_room_type || "N/A"}
               </p>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Most Preferred Room
@@ -1963,16 +2326,28 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
         {/* Stay Duration Patterns */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Stay Duration Analysis</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Stay Duration Analysis
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {data.stay_duration_patterns && Object.entries(data.stay_duration_patterns).map(([duration, count]: [string, any]) => (
-                <div key={duration} className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{duration}</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">{count} customers</span>
-                </div>
-              ))}
+              {data.stay_duration_patterns &&
+                Object.entries(data.stay_duration_patterns).map(
+                  ([duration, count]: [string, any]) => (
+                    <div
+                      key={duration}
+                      className="flex justify-between items-center"
+                    >
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                        {duration}
+                      </span>
+                      <span className="font-semibold text-neutral-900 dark:text-white">
+                        {count} customers
+                      </span>
+                    </div>
+                  ),
+                )}
             </div>
           </div>
         </div>
@@ -1980,30 +2355,40 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
         {/* Repeat Customer Behavior */}
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Repeat Customer Insights</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Repeat Customer Insights
+            </h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Return Rate</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Return Rate
+                </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.repeat_customer_rate?.toFixed(1) || 0}%
                 </span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Avg Time Between Visits</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Avg Time Between Visits
+                </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.avg_time_between_visits || 0} days
                 </span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Most Loyal Customer</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Most Loyal Customer
+                </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.most_visits_count || 0} visits
                 </span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Average Customer Lifespan</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Average Customer Lifespan
+                </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.avg_customer_lifespan || 0} months
                 </span>
@@ -2017,7 +2402,9 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
       {data.cancellation_patterns && (
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Cancellation Behavior</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Cancellation Behavior
+            </h3>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
               Understanding when and why customers cancel bookings
             </p>
@@ -2029,9 +2416,13 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
                   <XCircle className="w-8 h-8" />
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-                  {data.cancellation_patterns.cancellation_rate?.toFixed(1) || 0}%
+                  {data.cancellation_patterns.cancellation_rate?.toFixed(1) ||
+                    0}
+                  %
                 </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Cancellation Rate</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Cancellation Rate
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-yellow-600 text-white rounded-full flex items-center justify-center mx-auto mb-4">
@@ -2040,16 +2431,20 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
                   {data.cancellation_patterns.avg_days_before_cancellation || 0}
                 </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Avg Days Before Cancel</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Avg Days Before Cancel
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-orange-600 text-white rounded-full flex items-center justify-center mx-auto mb-4">
                   <TrendingDown className="w-8 h-8" />
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-                  {data.cancellation_patterns.most_common_reason || 'N/A'}
+                  {data.cancellation_patterns.most_common_reason || "N/A"}
                 </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Most Common Reason</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Most Common Reason
+                </p>
               </div>
             </div>
           </div>
@@ -2059,7 +2454,9 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
       {/* Behavioral Insights & Recommendations */}
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Behavioral Insights & Recommendations</h3>
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Behavioral Insights & Recommendations
+          </h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2069,9 +2466,12 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
                   <Activity className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Booking Patterns</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Booking Patterns
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Analyze peak booking times to optimize marketing campaigns and pricing strategies
+                    Analyze peak booking times to optimize marketing campaigns
+                    and pricing strategies
                   </p>
                 </div>
               </div>
@@ -2080,9 +2480,12 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Customer Retention</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Customer Retention
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Focus on improving repeat customer experience based on identified behavioral patterns
+                    Focus on improving repeat customer experience based on
+                    identified behavioral patterns
                   </p>
                 </div>
               </div>
@@ -2093,9 +2496,12 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
                   <Bed className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Room Optimization</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Room Optimization
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Adjust inventory and pricing based on room preference patterns and demand
+                    Adjust inventory and pricing based on room preference
+                    patterns and demand
                   </p>
                 </div>
               </div>
@@ -2104,9 +2510,12 @@ function BehaviorTab({ data, isLoading }: BehaviorTabProps) {
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-neutral-900 dark:text-white">Advance Booking Strategy</h4>
+                  <h4 className="font-semibold text-neutral-900 dark:text-white">
+                    Advance Booking Strategy
+                  </h4>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Implement early bird discounts or last-minute deals based on booking timing patterns
+                    Implement early bird discounts or last-minute deals based on
+                    booking timing patterns
                   </p>
                 </div>
               </div>
@@ -2134,7 +2543,11 @@ function CompareTab({ dateRange }: CompareTabProps) {
   })
 
   // Comparison query
-  const { data: comparisonData, isLoading: comparisonLoading, refetch: compareData } = useQuery({
+  const {
+    data: comparisonData,
+    isLoading: comparisonLoading,
+    refetch: compareData,
+  } = useQuery({
     queryKey: ["analytics", "compare", period1, period2],
     queryFn: () =>
       comparePeriods({
@@ -2150,33 +2563,38 @@ function CompareTab({ dateRange }: CompareTabProps) {
     compareData()
   }
 
-  const setQuickComparison = (type: 'month' | 'quarter' | 'year' | 'lastWeekThisWeek') => {
+  const setQuickComparison = (
+    type: "month" | "quarter" | "year" | "lastWeekThisWeek",
+  ) => {
     const now = new Date()
-    let p1From: Date, p1To: Date, p2From: Date, p2To: Date
+    let p1From: Date
+    let p1To: Date
+    let p2From: Date
+    let p2To: Date
 
-    switch(type) {
-      case 'month':
+    switch (type) {
+      case "month":
         // Last month vs this month
         p1From = startOfMonth(subMonths(now, 1))
         p1To = endOfMonth(subMonths(now, 1))
         p2From = startOfMonth(now)
         p2To = now
         break
-      case 'quarter':
+      case "quarter":
         // Last quarter vs this quarter
         p1From = startOfMonth(subMonths(now, 5))
         p1To = endOfMonth(subMonths(now, 3))
         p2From = startOfMonth(subMonths(now, 2))
         p2To = now
         break
-      case 'year':
+      case "year":
         // Last year vs this year
         p1From = new Date(now.getFullYear() - 1, 0, 1)
         p1To = new Date(now.getFullYear() - 1, 11, 31)
         p2From = new Date(now.getFullYear(), 0, 1)
         p2To = now
         break
-      case 'lastWeekThisWeek':
+      case "lastWeekThisWeek":
         // Last week vs this week
         p1From = new Date(now)
         p1From.setDate(p1From.getDate() - 14)
@@ -2226,25 +2644,25 @@ function CompareTab({ dateRange }: CompareTabProps) {
         {/* Quick Comparisons */}
         <div className="flex flex-wrap gap-3 mb-6">
           <button
-            onClick={() => setQuickComparison('lastWeekThisWeek')}
+            onClick={() => setQuickComparison("lastWeekThisWeek")}
             className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
           >
             Last Week vs This Week
           </button>
           <button
-            onClick={() => setQuickComparison('month')}
+            onClick={() => setQuickComparison("month")}
             className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
           >
             Last Month vs This Month
           </button>
           <button
-            onClick={() => setQuickComparison('quarter')}
+            onClick={() => setQuickComparison("quarter")}
             className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
           >
             Last Quarter vs This Quarter
           </button>
           <button
-            onClick={() => setQuickComparison('year')}
+            onClick={() => setQuickComparison("year")}
             className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
           >
             Last Year vs This Year
@@ -2255,7 +2673,9 @@ function CompareTab({ dateRange }: CompareTabProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Period 1 */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-neutral-900 dark:text-white">Period 1</h4>
+            <h4 className="font-semibold text-neutral-900 dark:text-white">
+              Period 1
+            </h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -2264,7 +2684,9 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 <input
                   type="date"
                   value={period1.from}
-                  onChange={(e) => setPeriod1(prev => ({ ...prev, from: e.target.value }))}
+                  onChange={(e) =>
+                    setPeriod1((prev) => ({ ...prev, from: e.target.value }))
+                  }
                   className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -2275,7 +2697,9 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 <input
                   type="date"
                   value={period1.to}
-                  onChange={(e) => setPeriod1(prev => ({ ...prev, to: e.target.value }))}
+                  onChange={(e) =>
+                    setPeriod1((prev) => ({ ...prev, to: e.target.value }))
+                  }
                   className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -2284,7 +2708,9 @@ function CompareTab({ dateRange }: CompareTabProps) {
 
           {/* Period 2 */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-neutral-900 dark:text-white">Period 2</h4>
+            <h4 className="font-semibold text-neutral-900 dark:text-white">
+              Period 2
+            </h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -2293,7 +2719,9 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 <input
                   type="date"
                   value={period2.from}
-                  onChange={(e) => setPeriod2(prev => ({ ...prev, from: e.target.value }))}
+                  onChange={(e) =>
+                    setPeriod2((prev) => ({ ...prev, from: e.target.value }))
+                  }
                   className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -2304,7 +2732,9 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 <input
                   type="date"
                   value={period2.to}
-                  onChange={(e) => setPeriod2(prev => ({ ...prev, to: e.target.value }))}
+                  onChange={(e) =>
+                    setPeriod2((prev) => ({ ...prev, to: e.target.value }))
+                  }
                   className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
@@ -2339,7 +2769,8 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 Performance Comparison
               </h3>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                Period 1: {period1.from} to {period1.to} vs Period 2: {period2.from} to {period2.to}
+                Period 1: {period1.from} to {period1.to} vs Period 2:{" "}
+                {period2.from} to {period2.to}
               </p>
             </div>
             <div className="p-6">
@@ -2347,36 +2778,45 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 {/* Revenue Comparison */}
                 <div className="text-center">
                   <div className="space-y-2">
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">Total Revenue</div>
+                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Total Revenue
+                    </div>
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
-                      {formatCurrency(comparisonData.period1?.total_revenue || 0)}
+                      {formatCurrency(
+                        comparisonData.period1?.total_revenue || 0,
+                      )}
                     </div>
                     <div className="text-xs text-neutral-500">Period 1</div>
                   </div>
-                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600"></div>
+                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600" />
                   <div className="space-y-2">
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
-                      {formatCurrency(comparisonData.period2?.total_revenue || 0)}
+                      {formatCurrency(
+                        comparisonData.period2?.total_revenue || 0,
+                      )}
                     </div>
                     <div className="text-xs text-neutral-500">Period 2</div>
-                    <div className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
-                      calculatePercentageChange(
-                        comparisonData.period1?.total_revenue || 0,
-                        comparisonData.period2?.total_revenue || 0
-                      )
-                    )}`}>
+                    <div
+                      className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
+                        calculatePercentageChange(
+                          comparisonData.period1?.total_revenue || 0,
+                          comparisonData.period2?.total_revenue || 0,
+                        ),
+                      )}`}
+                    >
                       {getChangeIcon(
                         calculatePercentageChange(
                           comparisonData.period1?.total_revenue || 0,
-                          comparisonData.period2?.total_revenue || 0
-                        )
+                          comparisonData.period2?.total_revenue || 0,
+                        ),
                       )}
                       {Math.abs(
                         calculatePercentageChange(
                           comparisonData.period1?.total_revenue || 0,
-                          comparisonData.period2?.total_revenue || 0
-                        )
-                      ).toFixed(1)}%
+                          comparisonData.period2?.total_revenue || 0,
+                        ),
+                      ).toFixed(1)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -2384,36 +2824,41 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 {/* Bookings Comparison */}
                 <div className="text-center">
                   <div className="space-y-2">
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">Total Bookings</div>
+                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Total Bookings
+                    </div>
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
                       {comparisonData.period1?.total_bookings || 0}
                     </div>
                     <div className="text-xs text-neutral-500">Period 1</div>
                   </div>
-                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600"></div>
+                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600" />
                   <div className="space-y-2">
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
                       {comparisonData.period2?.total_bookings || 0}
                     </div>
                     <div className="text-xs text-neutral-500">Period 2</div>
-                    <div className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
-                      calculatePercentageChange(
-                        comparisonData.period1?.total_bookings || 0,
-                        comparisonData.period2?.total_bookings || 0
-                      )
-                    )}`}>
+                    <div
+                      className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
+                        calculatePercentageChange(
+                          comparisonData.period1?.total_bookings || 0,
+                          comparisonData.period2?.total_bookings || 0,
+                        ),
+                      )}`}
+                    >
                       {getChangeIcon(
                         calculatePercentageChange(
                           comparisonData.period1?.total_bookings || 0,
-                          comparisonData.period2?.total_bookings || 0
-                        )
+                          comparisonData.period2?.total_bookings || 0,
+                        ),
                       )}
                       {Math.abs(
                         calculatePercentageChange(
                           comparisonData.period1?.total_bookings || 0,
-                          comparisonData.period2?.total_bookings || 0
-                        )
-                      ).toFixed(1)}%
+                          comparisonData.period2?.total_bookings || 0,
+                        ),
+                      ).toFixed(1)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -2421,36 +2866,41 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 {/* Occupancy Comparison */}
                 <div className="text-center">
                   <div className="space-y-2">
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">Occupancy Rate</div>
+                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Occupancy Rate
+                    </div>
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
                       {comparisonData.period1?.occupancy_rate?.toFixed(1) || 0}%
                     </div>
                     <div className="text-xs text-neutral-500">Period 1</div>
                   </div>
-                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600"></div>
+                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600" />
                   <div className="space-y-2">
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
                       {comparisonData.period2?.occupancy_rate?.toFixed(1) || 0}%
                     </div>
                     <div className="text-xs text-neutral-500">Period 2</div>
-                    <div className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
-                      calculatePercentageChange(
-                        comparisonData.period1?.occupancy_rate || 0,
-                        comparisonData.period2?.occupancy_rate || 0
-                      )
-                    )}`}>
+                    <div
+                      className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
+                        calculatePercentageChange(
+                          comparisonData.period1?.occupancy_rate || 0,
+                          comparisonData.period2?.occupancy_rate || 0,
+                        ),
+                      )}`}
+                    >
                       {getChangeIcon(
                         calculatePercentageChange(
                           comparisonData.period1?.occupancy_rate || 0,
-                          comparisonData.period2?.occupancy_rate || 0
-                        )
+                          comparisonData.period2?.occupancy_rate || 0,
+                        ),
                       )}
                       {Math.abs(
                         calculatePercentageChange(
                           comparisonData.period1?.occupancy_rate || 0,
-                          comparisonData.period2?.occupancy_rate || 0
-                        )
-                      ).toFixed(1)}%
+                          comparisonData.period2?.occupancy_rate || 0,
+                        ),
+                      ).toFixed(1)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -2458,36 +2908,41 @@ function CompareTab({ dateRange }: CompareTabProps) {
                 {/* Average Stay Length Comparison */}
                 <div className="text-center">
                   <div className="space-y-2">
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">Avg Stay Length</div>
+                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Avg Stay Length
+                    </div>
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
                       {comparisonData.period1?.avg_stay_length?.toFixed(1) || 0}
                     </div>
                     <div className="text-xs text-neutral-500">Period 1</div>
                   </div>
-                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600"></div>
+                  <div className="my-3 border-b border-neutral-200 dark:border-neutral-600" />
                   <div className="space-y-2">
                     <div className="text-xl font-bold text-neutral-900 dark:text-white">
                       {comparisonData.period2?.avg_stay_length?.toFixed(1) || 0}
                     </div>
                     <div className="text-xs text-neutral-500">Period 2</div>
-                    <div className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
-                      calculatePercentageChange(
-                        comparisonData.period1?.avg_stay_length || 0,
-                        comparisonData.period2?.avg_stay_length || 0
-                      )
-                    )}`}>
+                    <div
+                      className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(
+                        calculatePercentageChange(
+                          comparisonData.period1?.avg_stay_length || 0,
+                          comparisonData.period2?.avg_stay_length || 0,
+                        ),
+                      )}`}
+                    >
                       {getChangeIcon(
                         calculatePercentageChange(
                           comparisonData.period1?.avg_stay_length || 0,
-                          comparisonData.period2?.avg_stay_length || 0
-                        )
+                          comparisonData.period2?.avg_stay_length || 0,
+                        ),
                       )}
                       {Math.abs(
                         calculatePercentageChange(
                           comparisonData.period1?.avg_stay_length || 0,
-                          comparisonData.period2?.avg_stay_length || 0
-                        )
-                      ).toFixed(1)}%
+                          comparisonData.period2?.avg_stay_length || 0,
+                        ),
+                      ).toFixed(1)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -2513,73 +2968,108 @@ function CompareTab({ dateRange }: CompareTabProps) {
           {/* Insights */}
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
             <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Comparison Insights</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Comparison Insights
+              </h3>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 ${
-                      (comparisonData.period2?.total_revenue || 0) > (comparisonData.period1?.total_revenue || 0)
-                        ? 'bg-green-600' : 'bg-red-600'
-                    } text-white rounded-lg flex items-center justify-center`}>
+                    <div
+                      className={`w-8 h-8 ${
+                        (comparisonData.period2?.total_revenue || 0) >
+                        (comparisonData.period1?.total_revenue || 0)
+                          ? "bg-green-600"
+                          : "bg-red-600"
+                      } text-white rounded-lg flex items-center justify-center`}
+                    >
                       <DollarSign className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-neutral-900 dark:text-white">Revenue Performance</h4>
+                      <h4 className="font-semibold text-neutral-900 dark:text-white">
+                        Revenue Performance
+                      </h4>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Period 2 generated {Math.abs(
+                        Period 2 generated{" "}
+                        {Math.abs(
                           calculatePercentageChange(
                             comparisonData.period1?.total_revenue || 0,
-                            comparisonData.period2?.total_revenue || 0
-                          )
-                        ).toFixed(1)}%
-                        {(comparisonData.period2?.total_revenue || 0) > (comparisonData.period1?.total_revenue || 0)
-                          ? ' more' : ' less'} revenue than Period 1
+                            comparisonData.period2?.total_revenue || 0,
+                          ),
+                        ).toFixed(1)}
+                        %
+                        {(comparisonData.period2?.total_revenue || 0) >
+                        (comparisonData.period1?.total_revenue || 0)
+                          ? " more"
+                          : " less"}{" "}
+                        revenue than Period 1
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 ${
-                      (comparisonData.period2?.total_bookings || 0) > (comparisonData.period1?.total_bookings || 0)
-                        ? 'bg-green-600' : 'bg-red-600'
-                    } text-white rounded-lg flex items-center justify-center`}>
+                    <div
+                      className={`w-8 h-8 ${
+                        (comparisonData.period2?.total_bookings || 0) >
+                        (comparisonData.period1?.total_bookings || 0)
+                          ? "bg-green-600"
+                          : "bg-red-600"
+                      } text-white rounded-lg flex items-center justify-center`}
+                    >
                       <Calendar className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-neutral-900 dark:text-white">Booking Volume</h4>
+                      <h4 className="font-semibold text-neutral-900 dark:text-white">
+                        Booking Volume
+                      </h4>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Period 2 had {Math.abs(
+                        Period 2 had{" "}
+                        {Math.abs(
                           calculatePercentageChange(
                             comparisonData.period1?.total_bookings || 0,
-                            comparisonData.period2?.total_bookings || 0
-                          )
-                        ).toFixed(1)}%
-                        {(comparisonData.period2?.total_bookings || 0) > (comparisonData.period1?.total_bookings || 0)
-                          ? ' more' : ' fewer'} bookings than Period 1
+                            comparisonData.period2?.total_bookings || 0,
+                          ),
+                        ).toFixed(1)}
+                        %
+                        {(comparisonData.period2?.total_bookings || 0) >
+                        (comparisonData.period1?.total_bookings || 0)
+                          ? " more"
+                          : " fewer"}{" "}
+                        bookings than Period 1
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 ${
-                      (comparisonData.period2?.occupancy_rate || 0) > (comparisonData.period1?.occupancy_rate || 0)
-                        ? 'bg-green-600' : 'bg-red-600'
-                    } text-white rounded-lg flex items-center justify-center`}>
+                    <div
+                      className={`w-8 h-8 ${
+                        (comparisonData.period2?.occupancy_rate || 0) >
+                        (comparisonData.period1?.occupancy_rate || 0)
+                          ? "bg-green-600"
+                          : "bg-red-600"
+                      } text-white rounded-lg flex items-center justify-center`}
+                    >
                       <Bed className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-neutral-900 dark:text-white">Occupancy Efficiency</h4>
+                      <h4 className="font-semibold text-neutral-900 dark:text-white">
+                        Occupancy Efficiency
+                      </h4>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Occupancy rate was {Math.abs(
+                        Occupancy rate was{" "}
+                        {Math.abs(
                           calculatePercentageChange(
                             comparisonData.period1?.occupancy_rate || 0,
-                            comparisonData.period2?.occupancy_rate || 0
-                          )
-                        ).toFixed(1)}%
-                        {(comparisonData.period2?.occupancy_rate || 0) > (comparisonData.period1?.occupancy_rate || 0)
-                          ? ' higher' : ' lower'} in Period 2
+                            comparisonData.period2?.occupancy_rate || 0,
+                          ),
+                        ).toFixed(1)}
+                        %
+                        {(comparisonData.period2?.occupancy_rate || 0) >
+                        (comparisonData.period1?.occupancy_rate || 0)
+                          ? " higher"
+                          : " lower"}{" "}
+                        in Period 2
                       </p>
                     </div>
                   </div>
@@ -2588,12 +3078,14 @@ function CompareTab({ dateRange }: CompareTabProps) {
                       <TrendingUp className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-neutral-900 dark:text-white">Overall Trend</h4>
+                      <h4 className="font-semibold text-neutral-900 dark:text-white">
+                        Overall Trend
+                      </h4>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        {(comparisonData.period2?.total_revenue || 0) > (comparisonData.period1?.total_revenue || 0)
-                          ? 'Positive growth trend observed across key metrics'
-                          : 'Decline in key metrics - consider seasonal factors or market changes'
-                        }
+                        {(comparisonData.period2?.total_revenue || 0) >
+                        (comparisonData.period1?.total_revenue || 0)
+                          ? "Positive growth trend observed across key metrics"
+                          : "Decline in key metrics - consider seasonal factors or market changes"}
                       </p>
                     </div>
                   </div>
@@ -2612,7 +3104,8 @@ function CompareTab({ dateRange }: CompareTabProps) {
             Ready to Compare Periods
           </h3>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Select your periods above and click "Compare Periods" to see detailed analytics comparison
+            Select your periods above and click "Compare Periods" to see
+            detailed analytics comparison
           </p>
         </div>
       )}

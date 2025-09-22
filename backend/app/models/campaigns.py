@@ -84,9 +84,12 @@ class Campaign(CampaignBase, table=True):
 
     def update_stats(self) -> None:
         """Update campaign statistics from SMS history"""
-        self.total_sent = len([sms for sms in self.sms_history if sms.status in [SMSStatus.SENT, SMSStatus.DELIVERED, SMSStatus.MOCK]])
-        self.total_delivered = len([sms for sms in self.sms_history if sms.status == SMSStatus.DELIVERED])
-        self.total_failed = len([sms for sms in self.sms_history if sms.status == SMSStatus.FAILED])
+        # Note: This is only used when sms_history is already loaded
+        # For production use, consider using SQL aggregation in CRUD layer
+        if self.sms_history:
+            self.total_sent = len([sms for sms in self.sms_history if sms.status in [SMSStatus.SENT, SMSStatus.DELIVERED, SMSStatus.MOCK]])
+            self.total_delivered = len([sms for sms in self.sms_history if sms.status == SMSStatus.DELIVERED])
+            self.total_failed = len([sms for sms in self.sms_history if sms.status == SMSStatus.FAILED])
 
 
 class SMSHistory(SQLModel, table=True):

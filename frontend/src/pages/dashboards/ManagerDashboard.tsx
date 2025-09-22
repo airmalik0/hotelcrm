@@ -39,8 +39,10 @@ export function ManagerDashboard() {
 
   // Keep room counts from rooms API (for room status breakdown)
   const totalRooms = rooms?.count || 0
-  const availableRooms = rooms?.data?.filter((room) => room.status === "available").length || 0
-  const occupiedRooms = rooms?.data?.filter((room) => room.status === "occupied").length || 0
+  const availableRooms =
+    rooms?.data?.filter((room) => room.status === "available").length || 0
+  const occupiedRooms =
+    rooms?.data?.filter((room) => room.status === "occupied").length || 0
 
   return (
     <div className="space-y-6">

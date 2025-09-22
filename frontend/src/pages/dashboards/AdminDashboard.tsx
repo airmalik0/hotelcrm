@@ -4,8 +4,8 @@ import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
-import { formatCurrency } from "@/utils/formatters"
 import { safeParseDate } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
