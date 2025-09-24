@@ -111,7 +111,7 @@ export function MarketingCampaigns() {
       title: "Delete Campaign",
       message: `Are you sure you want to delete "${campaign.name}"? This action cannot be undone.`,
       confirmText: "Delete",
-      confirmVariant: "destructive",
+      variant: "danger",
     })
 
     if (confirmed) {
@@ -125,7 +125,7 @@ export function MarketingCampaigns() {
       title: `${testMode ? "Test" : "Execute"} Campaign`,
       message: `Are you sure you want to ${actionText} "${campaign.name}"?${testMode ? " This will be a test run with mock SMS." : " This will send real SMS messages."}`,
       confirmText: testMode ? "Test Run" : "Execute",
-      confirmVariant: testMode ? "default" : "destructive",
+      variant: testMode ? "info" : "danger",
     })
 
     if (confirmed) {
@@ -141,7 +141,6 @@ export function MarketingCampaigns() {
         title: "Campaign Recipients Preview",
         message: `Campaign "${campaign.name}" would target ${preview.total_matching_customers} customers. Preview shows first ${preview.preview_customers.length} customers.`,
         confirmText: "OK",
-        showCancel: false,
       })
     } catch (error) {
       // Error already handled by mutation

@@ -7,7 +7,7 @@ import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
 import { Login } from "@/pages/Login"
-import MarketingCampaigns from "@/pages/MarketingCampaigns"
+import { MarketingCampaignsSimple } from "@/pages/MarketingCampaignsSimple"
 import { RoomList } from "@/pages/RoomList"
 import { UserList } from "@/pages/UserList"
 import { Navigate, createBrowserRouter } from "react-router-dom"
@@ -112,7 +112,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin", "manager"]}>
         <MainLayout>
-          <MarketingCampaigns />
+          <MarketingCampaignsSimple />
         </MainLayout>
       </ProtectedRoute>
     ),
