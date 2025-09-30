@@ -3,7 +3,6 @@ import {
   exportToPdf,
   getCustomerAnalytics,
   getDashboardMetrics,
-  getDistrictRevenue,
   getOccupancyDetails,
   getQuickStats,
   getRevenueDetails,
@@ -15,7 +14,6 @@ import type {
 } from "@/client/types.gen"
 import {
   CustomerDemographicsChart,
-  DistrictRevenueChart,
   PaymentDistributionChart,
   RevenueTrendChart,
   RoomPerformanceChart,
@@ -48,7 +46,6 @@ type AnalyticsTab =
   | "occupancy"
   | "customers"
   | "trends"
-  | "districts"
 
 export function Analytics() {
   const { user } = useAuth()
@@ -137,18 +134,6 @@ export function Analytics() {
       queryKey: ["analytics", "seasonal-trends"],
       queryFn: () => getSeasonalTrends(2),
       enabled: activeTab === "trends",
-    })
-
-  // District revenue
-  const { data: districtRevenueData, isLoading: districtRevenueLoading } =
-    useQuery({
-      queryKey: ["analytics", "district-revenue", dateRange],
-      queryFn: () =>
-        getDistrictRevenue({
-          date_from: `${dateRange.from}T00:00:00`,
-          date_to: `${dateRange.to}T23:59:59`,
-        }),
-      enabled: activeTab === "districts",
     })
 
   // PDF export mutation
@@ -244,7 +229,6 @@ export function Analytics() {
     { id: "occupancy", label: "Occupancy", icon: Bed },
     { id: "customers", label: "Customers", icon: Users },
     { id: "trends", label: "Trends", icon: TrendingUp },
-    { id: "districts", label: "Districts", icon: Users },
   ] as const
 
   const renderTabContent = () => {
@@ -277,13 +261,6 @@ export function Analytics() {
           <TrendsTab
             data={seasonalTrendsData?.data}
             isLoading={seasonalTrendsLoading}
-          />
-        )
-      case "districts":
-        return (
-          <DistrictsTab
-            data={districtRevenueData?.data}
-            isLoading={districtRevenueLoading}
           />
         )
       default:
@@ -1238,98 +1215,3 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
   )
 }
 
-// Districts Tab
-interface DistrictsTabProps extends TabProps {
-  data?: any
-}
-
-function DistrictsTab({ data, isLoading }: DistrictsTabProps) {
-  if (isLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
-          <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          <span>Loading district revenue data...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (!data) {
-    return (
-      <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-        No district revenue data available
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Total Revenue
-              </p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
-                ${data.summary.total_revenue.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Total Bookings
-              </p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
-                {data.summary.total_bookings.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-secondary-100 dark:bg-secondary-900 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-secondary-600 dark:text-secondary-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Districts
-              </p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
-                {data.summary.district_count}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-accent-100 dark:bg-accent-900 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-accent-600 dark:text-accent-400" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* District Revenue Chart */}
-      <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
-        <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            Revenue by District
-          </h3>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Revenue breakdown by customer district
-          </p>
-        </div>
-        <div className="p-6">
-          <DistrictRevenueChart data={data} />
-        </div>
-      </div>
-    </div>
-  )
-}
