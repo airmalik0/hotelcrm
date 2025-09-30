@@ -38,7 +38,11 @@ class CRUDExpense(CRUDBase[Expense, ExpenseCreate, ExpenseUpdate]):
         limit: int = 100,
         category_id: UUID | None = None,
     ) -> list[Expense]:
-        statement = select(Expense)
+        from sqlalchemy.orm import joinedload
+
+        statement = select(Expense).options(
+            joinedload(Expense.category)  # type: ignore[arg-type]
+        )
 
         if category_id:
             statement = statement.where(Expense.category_id == category_id)
