@@ -595,3 +595,51 @@ def get_room_performance(
         data=performance_data,
         filters_applied=filters,
     )
+
+
+@router.get("/district-revenue", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_district_revenue(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    date_from: str = Query(description="Start date in ISO format"),
+    date_to: str = Query(description="End date in ISO format"),
+) -> Any:
+    """
+    Get revenue breakdown by customer district.
+
+    Shows how much revenue each district (area) generated.
+    Useful for understanding geographic revenue distribution.
+
+    Requires admin access.
+    """
+    # Parse dates
+    try:
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
+    except ValueError as e:
+        raise ValidationError(f"Invalid date format: {str(e)}")
+
+    service = AnalyticsService(session)
+    district_data = service.get_district_revenue(
+        parsed_date_from,
+        parsed_date_to,
+    )
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="district_revenue",
+        description=f"Viewed district revenue analysis ({district_data['summary']['district_count']} districts)",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data=district_data,
+    )

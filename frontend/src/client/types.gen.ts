@@ -1226,3 +1226,20 @@ export type AnalyticsGetRoomPerformanceData = {
 export type AnalyticsGetRoomPerformanceResponse = (AnalyticsResponse);
 
 export type AnalyticsGetRoomPerformanceError = (HTTPValidationError);
+
+export type AnalyticsGetDistrictRevenueData = {
+    query: {
+        /**
+         * Start date in ISO format
+         */
+        date_from: string;
+        /**
+         * End date in ISO format
+         */
+        date_to: string;
+    };
+};
+
+export type AnalyticsGetDistrictRevenueResponse = (AnalyticsResponse);
+
+export type AnalyticsGetDistrictRevenueError = (HTTPValidationError);

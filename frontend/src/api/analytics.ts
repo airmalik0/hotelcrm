@@ -130,3 +130,16 @@ export async function getSeasonalTrends(years = 2) {
   )
   return data
 }
+
+export async function getDistrictRevenue(params: {
+  date_from: string
+  date_to: string
+}) {
+  const { data } = await apiClient.get<AnalyticsResponse>(
+    "/api/v1/analytics/district-revenue",
+    {
+      params,
+    },
+  )
+  return data
+}

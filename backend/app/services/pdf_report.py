@@ -357,6 +357,10 @@ class PDFReportService:
             top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
             self._add_top_customers_section(elements, top_customers)
 
+            # 9. District Revenue Breakdown
+            district_revenue = analytics_service.get_district_revenue(filters.date_from, filters.date_to)
+            self._add_district_revenue_section(elements, district_revenue)
+
         except Exception as e:
             # Fallback to basic dashboard if comprehensive fails
             elements.append(Paragraph(f"Note: Using basic report due to data limitation: {str(e)}", self.styles["Normal"]))
@@ -625,6 +629,43 @@ class PDFReportService:
             elements.append(customer_table)
         else:
             elements.append(Paragraph("No customer data available.", self.styles["Normal"]))
+
+        elements.append(Spacer(1, 20))
+
+    def _add_district_revenue_section(self, elements: list, district_data: dict[str, Any]) -> None:
+        """Add district revenue breakdown section."""
+        elements.append(PageBreak())
+        elements.append(Paragraph("Revenue by District", self.styles["SectionHeader"]))
+
+        districts = district_data.get("districts", [])
+
+        if districts:
+            # Summary
+            summary = district_data.get("summary", {})
+            summary_text = f"Total Revenue: ${summary.get('total_revenue', 0):,.2f} | Total Bookings: {summary.get('total_bookings', 0):,} | Districts: {summary.get('district_count', 0)}"
+            elements.append(Paragraph(summary_text, self.styles["Normal"]))
+            elements.append(Spacer(1, 10))
+
+            # District table
+            district_table_data = [["Rank", "District", "Revenue", "% Share", "Bookings", "Avg Booking"]]
+
+            for idx, district in enumerate(districts, 1):
+                district_table_data.append([
+                    str(idx),
+                    district.get("district", "").replace("_", " ").title(),
+                    f"${district.get('revenue', 0):,.2f}",
+                    f"{district.get('percentage', 0):.1f}%",
+                    f"{district.get('bookings', 0):,}",
+                    f"${district.get('average_booking_value', 0):,.2f}",
+                ])
+
+            district_table = self._create_table(
+                district_table_data,
+                col_widths=[0.5*inch, 1.8*inch, 1.5*inch, 0.9*inch, 1*inch, 1.3*inch]
+            )
+            elements.append(district_table)
+        else:
+            elements.append(Paragraph("No district data available.", self.styles["Normal"]))
 
         elements.append(Spacer(1, 20))
 

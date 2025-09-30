@@ -482,6 +482,115 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
 
 
 
+// District Revenue Chart
+export function DistrictRevenueChart({ data }: { data: any }) {
+  if (!data?.districts || data.districts.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
+        No district revenue data available
+      </div>
+    )
+  }
+
+  const chartData = data.districts.map((district: any) => ({
+    name: district.district.replace(/_/g, " "),
+    revenue: district.revenue,
+    bookings: district.bookings,
+    percentage: district.percentage,
+  }))
+
+  return (
+    <div className="h-96">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={chartData}
+          margin={{ top: 10, right: 30, left: 0, bottom: 60 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            className="stroke-neutral-200 dark:stroke-neutral-700"
+          />
+          <XAxis
+            dataKey="name"
+            angle={-45}
+            textAnchor="end"
+            height={100}
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 11 }}
+          />
+          <YAxis
+            className="text-xs text-neutral-600 dark:text-neutral-400"
+            tick={{ fontSize: 12 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <Tooltip content={<CurrencyTooltip />} />
+          <Legend />
+          <Bar
+            dataKey="revenue"
+            fill={COLORS.primary}
+            name="Revenue"
+          />
+        </BarChart>
+      </ResponsiveContainer>
+
+      {/* Summary Table */}
+      <div className="mt-6">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-max rounded-lg border-spacing-0 border-separate border border-neutral-200 dark:border-neutral-600">
+            <thead>
+              <tr className="bg-neutral-50 dark:bg-dark-2">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  District
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  Revenue
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  %
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  Bookings
+                </th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                  Avg Booking
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.districts.map((district: any, index: number) => (
+                <tr
+                  key={district.district}
+                  className={
+                    index % 2 === 0
+                      ? "bg-white dark:bg-transparent"
+                      : "bg-neutral-50 dark:bg-dark-2"
+                  }
+                >
+                  <td className="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
+                    {district.district.replace(/_/g, " ")}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
+                    ${district.revenue.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
+                    {district.percentage.toFixed(1)}%
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
+                    {district.bookings}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
+                    ${district.average_booking_value.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Mini chart for metrics cards
 export function SparklineChart({
   data,

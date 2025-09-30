@@ -354,3 +354,21 @@ class AnalyticsService:
                 "occupancy": month_occupancy["occupancy_rate"],
             },
         }
+
+    def get_district_revenue(
+        self,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> dict[str, Any]:
+        """
+        Get revenue breakdown by customer district.
+
+        Args:
+            date_from: Start date
+            date_to: End date
+
+        Returns:
+            Dictionary with district revenue data
+        """
+        self.validate_date_range(date_from, date_to)
+        return self.crud.get_revenue_by_district(self.session, date_from, date_to)

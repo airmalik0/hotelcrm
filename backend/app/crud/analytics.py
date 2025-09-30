@@ -1160,4 +1160,81 @@ class CRUDAnalytics:
             }
         }
 
+    def get_revenue_by_district(
+        self,
+        session: Session,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> dict[str, Any]:
+        """
+        Get revenue breakdown by customer district.
+
+        Args:
+            session: Database session
+            date_from: Start date
+            date_to: End date
+
+        Returns:
+            Dictionary with district revenue data
+        """
+        date_from = _ensure_timezone_aware(date_from)
+        date_to = _ensure_timezone_aware(date_to)
+
+        # Query bookings with customer district
+        query = select(
+            Customer.district,
+            func.sum(Booking.total_amount).label("total_revenue"),
+            func.count(Booking.id).label("booking_count"),
+            func.count(func.distinct(Customer.id)).label("unique_customers"),
+        ).join(
+            Customer, Booking.customer_id == Customer.id
+        ).where(
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+            Customer.district.is_not(None),  # Only customers with district set
+        ).group_by(
+            Customer.district
+        ).order_by(
+            func.sum(Booking.total_amount).desc()
+        )
+
+        results = session.exec(query).all()
+
+        # Calculate totals
+        total_revenue = sum(row.total_revenue or 0 for row in results)
+        total_bookings = sum(row.booking_count for row in results)
+
+        # Format results
+        district_data = []
+        for row in results:
+            revenue = float(row.total_revenue or 0)
+            percentage = (revenue / total_revenue * 100) if total_revenue > 0 else 0
+
+            district_data.append({
+                "district": row.district.value if row.district else "Unknown",
+                "revenue": revenue,
+                "percentage": round(percentage, 2),
+                "bookings": row.booking_count,
+                "unique_customers": row.unique_customers,
+                "average_booking_value": round(revenue / row.booking_count, 2) if row.booking_count > 0 else 0,
+            })
+
+        return {
+            "districts": district_data,
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_bookings": total_bookings,
+                "district_count": len(district_data),
+            },
+            "analysis_period": {
+                "start": date_from.isoformat(),
+                "end": date_to.isoformat(),
+            }
+        }
+
 analytics = CRUDAnalytics()
