@@ -13,6 +13,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     Image,
+    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -442,18 +443,18 @@ class PDFReportService:
 
     def _add_revenue_details_section(self, elements: list[Any], revenue_details: dict[str, Any], include_charts: bool) -> None:
         """Add revenue details section."""
-        elements.append(Paragraph("Revenue Analysis", self.styles["SectionHeader"]))
-
         metrics = revenue_details["metrics"]
         trend = revenue_details["trend"]
+
+        section_content = []
 
         # Revenue trend chart
         if include_charts and trend:
             try:
                 trend_chart_buffer = self.chart_service.generate_revenue_trend_chart(trend)
                 trend_chart = Image(trend_chart_buffer, width=7*inch, height=4.2*inch)
-                elements.append(trend_chart)
-                elements.append(Spacer(1, 10))
+                section_content.append(trend_chart)
+                section_content.append(Spacer(1, 10))
             except Exception:
                 pass
 
@@ -467,12 +468,15 @@ class PDFReportService:
             ["Refund Amount", f"${metrics['refund_amount']:,.2f}"],
         ]
         detailed_table = self._create_table(detailed_data)
-        elements.append(detailed_table)
-        elements.append(Spacer(1, 20))
+        section_content.append(detailed_table)
+        section_content.append(Spacer(1, 20))
+
+        # Add section with header kept together with content
+        self._add_section_with_header(elements, "Revenue Analysis", section_content)
 
     def _add_occupancy_details_section(self, elements: list[Any], occupancy_details: dict[str, Any]) -> None:
         """Add occupancy details section."""
-        elements.append(Paragraph("Occupancy Analysis", self.styles["SectionHeader"]))
+        section_content = []
 
         occupancy_data = [
             ["Metric", "Value"],
@@ -485,12 +489,14 @@ class PDFReportService:
             ["Cancellations", f"{occupancy_details['cancellations']:,}"],
         ]
         occupancy_table = self._create_table(occupancy_data)
-        elements.append(occupancy_table)
-        elements.append(Spacer(1, 20))
+        section_content.append(occupancy_table)
+        section_content.append(Spacer(1, 20))
+
+        self._add_section_with_header(elements, "Occupancy Analysis", section_content)
 
     def _add_customer_details_section(self, elements: list[Any], customer_details: dict[str, Any], include_charts: bool) -> None:
         """Add customer details section."""
-        elements.append(Paragraph("Customer Analytics", self.styles["SectionHeader"]))
+        section_content = []
 
         # Customer demographics chart
         if include_charts:
@@ -500,8 +506,8 @@ class PDFReportService:
                     customer_details.get("district_distribution", {})
                 )
                 demographics_chart = Image(demographics_chart_buffer, width=8*inch, height=4.8*inch)
-                elements.append(demographics_chart)
-                elements.append(Spacer(1, 10))
+                section_content.append(demographics_chart)
+                section_content.append(Spacer(1, 10))
             except Exception:
                 pass
 
@@ -514,8 +520,10 @@ class PDFReportService:
             ["Average Age", f"{customer_details['average_age']:.1f} years" if customer_details.get('average_age') else "N/A"],
         ]
         customer_table = self._create_table(customer_data)
-        elements.append(customer_table)
-        elements.append(Spacer(1, 20))
+        section_content.append(customer_table)
+        section_content.append(Spacer(1, 20))
+
+        self._add_section_with_header(elements, "Customer Analytics", section_content)
 
     def _add_hourly_patterns_section(self, elements: list[Any], checkins: list, checkouts: list, include_charts: bool) -> None:
         """Add hourly patterns section."""
@@ -558,24 +566,22 @@ class PDFReportService:
 
     def _add_seasonal_trends_section(self, elements: list, seasonal_data: dict[str, Any], include_charts: bool) -> None:
         """Add seasonal trends section."""
-        elements.append(Paragraph("Seasonal Trends", self.styles["SectionHeader"]))
-
         monthly_trends = seasonal_data.get("monthly_trends", [])
+        peak_months = seasonal_data.get("peak_months", [])
+
+        section_content = []
 
         if include_charts and monthly_trends:
             try:
                 seasonal_chart_buffer = self.chart_service.generate_seasonal_trends_chart(monthly_trends)
                 seasonal_chart = Image(seasonal_chart_buffer, width=7*inch, height=4.8*inch)
-                elements.append(seasonal_chart)
-                elements.append(Spacer(1, 10))
+                section_content.append(seasonal_chart)
+                section_content.append(Spacer(1, 10))
             except Exception:
                 pass
 
-        # Peak and low seasons
-        peak_months = seasonal_data.get("peak_months", [])
-
         if peak_months:
-            elements.append(Paragraph("Peak Seasons", self.styles["Normal"]))
+            section_content.append(Paragraph("Peak Seasons", self.styles["Normal"]))
             peak_data = [["Month", "Revenue", "Bookings"]]
             for month in peak_months[:5]:  # Top 5
                 peak_data.append([
@@ -584,8 +590,10 @@ class PDFReportService:
                     f"{month['bookings']:,}"
                 ])
             peak_table = self._create_table(peak_data)
-            elements.append(peak_table)
-            elements.append(Spacer(1, 20))
+            section_content.append(peak_table)
+            section_content.append(Spacer(1, 20))
+
+        self._add_section_with_header(elements, "Seasonal Trends", section_content)
 
     def _add_top_customers_section(self, elements: list, top_customers_data: dict[str, Any]) -> None:
         """Add top customers section."""
@@ -710,6 +718,35 @@ class PDFReportService:
 
         table.setStyle(style)
         return table
+
+    def _add_section_with_header(self, elements: list, header_text: str, content_elements: list, force_new_page: bool = False) -> None:
+        """
+        Add a section with header and content, keeping them together on the same page.
+
+        Args:
+            elements: Main elements list
+            header_text: Section header text
+            content_elements: List of elements to include in the section
+            force_new_page: If True, start section on a new page
+        """
+        if force_new_page:
+            elements.append(PageBreak())
+
+        # Create section content with header
+        section_content = [
+            Paragraph(header_text, self.styles["SectionHeader"]),
+        ]
+        section_content.extend(content_elements)
+
+        # Keep header and at least first part of content together
+        # For large content, we'll keep header with first few elements
+        if len(content_elements) <= 3:
+            # Keep entire section together if it's small
+            elements.append(KeepTogether(section_content))
+        else:
+            # Keep header with first element(s) together, rest can flow
+            elements.append(KeepTogether([section_content[0], section_content[1]]))
+            elements.extend(section_content[2:])
 
     def generate_comparison_report(
         self,
