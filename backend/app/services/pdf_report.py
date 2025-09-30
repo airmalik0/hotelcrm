@@ -324,13 +324,9 @@ class PDFReportService:
             seasonal_trends = analytics_service.get_seasonal_trends(2)
             self._add_seasonal_trends_section(elements, seasonal_trends, include_charts)
 
-            # 8. Customer Segments
-            customer_segments = analytics_service.get_customer_segments(filters.date_from, filters.date_to)
-            self._add_customer_segments_section(elements, customer_segments, include_charts)
-
-            # 9. Customer Lifetime Value
-            customer_ltv = analytics_service.get_customer_lifetime_value(12)
-            self._add_customer_ltv_section(elements, customer_ltv, include_charts)
+            # 8. Top Customers (by revenue)
+            top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
+            self._add_top_customers_section(elements, top_customers)
 
             # 10. Customer Behavior Patterns
             behavior_patterns = analytics_service.get_customer_behavior_patterns(filters.date_from, filters.date_to)
@@ -567,60 +563,33 @@ class PDFReportService:
             elements.append(peak_table)
             elements.append(Spacer(1, 20))
 
-    def _add_customer_segments_section(self, elements: list, segments_data: dict[str, Any], include_charts: bool) -> None:
-        """Add customer segmentation section."""
-        elements.append(Paragraph("Customer Segmentation", self.styles["SectionHeader"]))
+    def _add_top_customers_section(self, elements: list, top_customers_data: dict[str, Any]) -> None:
+        """Add top customers section."""
+        elements.append(PageBreak())
+        elements.append(Paragraph("Top Customers by Revenue", self.styles["SectionHeader"]))
 
-        if include_charts:
-            try:
-                segments_chart_buffer = self.chart_service.generate_customer_segments_chart(segments_data)
-                segments_chart = Image(segments_chart_buffer, width=6*inch, height=4.8*inch)
-                elements.append(segments_chart)
-                elements.append(Spacer(1, 10))
-            except Exception:
-                pass
+        top_customers = top_customers_data.get("top_customers", [])
 
-        segments = segments_data.get("segments", {})
-        segment_data = [["Segment", "Count", "Total Revenue", "Avg Revenue"]]
+        if top_customers:
+            customer_data = [["Rank", "Name", "Total Revenue", "Bookings", "Avg Booking"]]
 
-        for segment_name, segment_info in segments.items():
-            if segment_info.get("count", 0) > 0:
-                segment_data.append([
-                    segment_name.replace("_", " ").title(),
-                    f"{segment_info['count']:,}",
-                    f"${segment_info['total_revenue']:,.2f}",
-                    f"${segment_info['average_revenue']:,.2f}"
+            for idx, customer in enumerate(top_customers[:20], 1):
+                customer_data.append([
+                    str(idx),
+                    customer.get("name", "N/A")[:25],  # Truncate long names
+                    f"${customer.get('total_revenue', 0):,.2f}",
+                    f"{customer.get('total_bookings', 0):,}",
+                    f"${customer.get('average_booking_value', 0):,.2f}"
                 ])
 
-        if len(segment_data) > 1:
-            segment_table = self._create_table(segment_data, col_widths=[1.5*inch, 1*inch, 1.5*inch, 1.5*inch])
-            elements.append(segment_table)
-        elements.append(Spacer(1, 20))
+            customer_table = self._create_table(
+                customer_data,
+                col_widths=[0.5*inch, 2*inch, 1.5*inch, 1*inch, 1.5*inch]
+            )
+            elements.append(customer_table)
+        else:
+            elements.append(Paragraph("No customer data available.", self.styles["Normal"]))
 
-    def _add_customer_ltv_section(self, elements: list, ltv_data: dict[str, Any], include_charts: bool) -> None:
-        """Add customer LTV section."""
-        elements.append(Paragraph("Customer Lifetime Value", self.styles["SectionHeader"]))
-
-        ltv_by_tenure = ltv_data.get("ltv_by_tenure", [])
-
-        if include_charts and ltv_by_tenure:
-            try:
-                ltv_chart_buffer = self.chart_service.generate_ltv_distribution_chart(ltv_by_tenure)
-                ltv_chart = Image(ltv_chart_buffer, width=6*inch, height=3.6*inch)
-                elements.append(ltv_chart)
-                elements.append(Spacer(1, 10))
-            except Exception:
-                pass
-
-        # LTV summary
-        ltv_summary_data = [
-            ["Metric", "Value"],
-            ["Average LTV", f"${ltv_data.get('average_ltv', 0):,.2f}"],
-            ["Total LTV", f"${ltv_data.get('total_ltv', 0):,.2f}"],
-            ["Customers Analyzed", f"{ltv_data.get('analysis_period', {}).get('customers_analyzed', 0):,}"],
-        ]
-        ltv_summary_table = self._create_table(ltv_summary_data)
-        elements.append(ltv_summary_table)
         elements.append(Spacer(1, 20))
 
     def _add_behavior_patterns_section(self, elements: list, behavior_data: dict[str, Any]) -> None:

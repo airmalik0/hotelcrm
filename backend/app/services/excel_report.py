@@ -101,8 +101,7 @@ class ExcelReportService:
                 filters.date_from, filters.date_to, "check_outs"
             )
             seasonal_trends = analytics_service.get_seasonal_trends(2)
-            customer_segments = analytics_service.get_customer_segments(filters.date_from, filters.date_to)
-            customer_ltv = analytics_service.get_customer_lifetime_value(12)
+            top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
             behavior_patterns = analytics_service.get_customer_behavior_patterns(filters.date_from, filters.date_to)
 
             # Create comprehensive sheets
@@ -114,8 +113,7 @@ class ExcelReportService:
             self._create_room_performance_sheet(wb, dashboard_metrics)
             self._create_hourly_patterns_sheet(wb, hourly_checkins, hourly_checkouts, include_charts)
             self._create_seasonal_trends_sheet(wb, seasonal_trends, include_charts)
-            self._create_customer_segments_sheet(wb, customer_segments, include_charts)
-            self._create_customer_ltv_sheet(wb, customer_ltv, include_charts)
+            self._create_top_customers_sheet(wb, top_customers)
             self._create_behavior_patterns_sheet(wb, behavior_patterns)
 
         except Exception:
@@ -877,69 +875,47 @@ class ExcelReportService:
         ws.column_dimensions["D"].width = 15
         ws.column_dimensions["E"].width = 15
 
-    def _create_customer_segments_sheet(self, wb: Workbook, customer_segments: dict[str, Any], include_charts: bool = True) -> None:
-        """Create customer segments analysis sheet."""
-        ws = wb.create_sheet("Customer Segments")
+    def _create_top_customers_sheet(self, wb: Workbook, top_customers_data: dict[str, Any]) -> None:
+        """Create top customers sheet."""
+        ws = wb.create_sheet("Top Customers")
 
         # Header
-        ws["A1"] = "Customer Segments Analysis"
+        ws["A1"] = "Top Customers by Revenue"
         ws["A1"].font = Font(size=14, bold=True)
         ws.merge_cells("A1:F1")
 
-        # Segment overview
+        # Top customers table
         row = 3
-        ws[f"A{row}"] = "SEGMENT OVERVIEW"
+        ws[f"A{row}"] = "TOP CUSTOMERS"
         ws[f"A{row}"].font = self.header_font
         ws[f"A{row}"].fill = self.header_fill
         ws.merge_cells(f"A{row}:F{row}")
 
         row += 1
-        headers = ["Segment", "Customers", "Revenue", "Avg Value", "Bookings", "Percentage"]
+        headers = ["Rank", "Name", "Total Revenue", "Bookings", "Avg Booking", "Period Revenue"]
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=row, column=col, value=header)
             cell.font = self.header_font
             cell.fill = self.header_fill
             cell.border = self.border
 
-        for segment in customer_segments.get('segments', []):
+        top_customers = top_customers_data.get('top_customers', [])
+        for idx, customer in enumerate(top_customers, 1):
             row += 1
-            ws.cell(row=row, column=1, value=segment.get('name', '')).border = self.border
-            ws.cell(row=row, column=2, value=segment.get('customers', 0)).border = self.border
-            ws.cell(row=row, column=3, value=f"${segment.get('revenue', 0):,.2f}").border = self.border
-            ws.cell(row=row, column=4, value=f"${segment.get('avg_value', 0):,.2f}").border = self.border
-            ws.cell(row=row, column=5, value=segment.get('bookings', 0)).border = self.border
-            ws.cell(row=row, column=6, value=f"{segment.get('percentage', 0):.1f}%").border = self.border
-
-        # Value distribution
-        if 'value_distribution' in customer_segments:
-            row += 3
-            ws[f"A{row}"] = "VALUE DISTRIBUTION"
-            ws[f"A{row}"].font = self.header_font
-            ws[f"A{row}"].fill = self.header_fill
-            ws.merge_cells(f"A{row}:D{row}")
-
-            row += 1
-            dist_headers = ["Value Range", "Customers", "Total Value", "Percentage"]
-            for col, header in enumerate(dist_headers, 1):
-                cell = ws.cell(row=row, column=col, value=header)
-                cell.font = self.header_font
-                cell.fill = self.header_fill
-                cell.border = self.border
-
-            for dist in customer_segments.get('value_distribution', []):
-                row += 1
-                ws.cell(row=row, column=1, value=dist.get('range', '')).border = self.border
-                ws.cell(row=row, column=2, value=dist.get('customers', 0)).border = self.border
-                ws.cell(row=row, column=3, value=f"${dist.get('total_value', 0):,.2f}").border = self.border
-                ws.cell(row=row, column=4, value=f"{dist.get('percentage', 0):.1f}%").border = self.border
+            ws.cell(row=row, column=1, value=idx).border = self.border
+            ws.cell(row=row, column=2, value=customer.get('name', 'N/A')).border = self.border
+            ws.cell(row=row, column=3, value=f"${customer.get('total_revenue', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=4, value=customer.get('total_bookings', 0)).border = self.border
+            ws.cell(row=row, column=5, value=f"${customer.get('average_booking_value', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=6, value=f"${customer.get('period_revenue', 0):,.2f}").border = self.border
 
         # Adjust column widths
-        ws.column_dimensions["A"].width = 20
-        ws.column_dimensions["B"].width = 15
-        ws.column_dimensions["C"].width = 20
-        ws.column_dimensions["D"].width = 15
-        ws.column_dimensions["E"].width = 15
-        ws.column_dimensions["F"].width = 15
+        ws.column_dimensions["A"].width = 8
+        ws.column_dimensions["B"].width = 30
+        ws.column_dimensions["C"].width = 18
+        ws.column_dimensions["D"].width = 12
+        ws.column_dimensions["E"].width = 18
+        ws.column_dimensions["F"].width = 18
 
     def _create_customer_ltv_sheet(self, wb: Workbook, customer_ltv: dict[str, Any], include_charts: bool = True) -> None:
         """Create customer lifetime value analysis sheet."""
