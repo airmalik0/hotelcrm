@@ -144,17 +144,6 @@ class DashboardMetrics(SQLModel):
     revenue_trend: list[TimeSeriesDataPoint] = Field(default_factory=list, description="Revenue over time")
 
 
-class ComparisonMetrics(SQLModel):
-    """Comparison between two periods."""
-    period1_label: str
-    period2_label: str
-    period1_metrics: DashboardMetrics
-    period2_metrics: DashboardMetrics
-    revenue_change_percentage: float
-    occupancy_change_percentage: float
-    bookings_change_percentage: float
-
-
 class AnalyticsExportRequest(SQLModel):
     """Request model for exporting analytics."""
     filters: AnalyticsFilter

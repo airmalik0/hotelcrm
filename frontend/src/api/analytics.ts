@@ -1,7 +1,6 @@
 import type {
   AnalyticsExportRequest,
   AnalyticsResponse,
-  ComparisonMetrics,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
@@ -58,23 +57,6 @@ export async function getCustomerAnalytics(params: AnalyticsParams) {
 export async function getQuickStats() {
   const { data } = await apiClient.get<AnalyticsResponse>(
     "/api/v1/analytics/quick-stats",
-  )
-  return data
-}
-
-export async function comparePeriods(params: {
-  period1_from: string
-  period1_to: string
-  period2_from: string
-  period2_to: string
-  room_id?: string
-  room_type?: string
-}) {
-  const { data } = await apiClient.get<ComparisonMetrics>(
-    "/api/v1/analytics/compare",
-    {
-      params,
-    },
   )
   return data
 }
@@ -144,42 +126,6 @@ export async function getSeasonalTrends(years = 2) {
     "/api/v1/analytics/seasonal-trends",
     {
       params: { years },
-    },
-  )
-  return data
-}
-
-export async function getCustomerSegments(params?: {
-  date_from?: string
-  date_to?: string
-}) {
-  const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/customer-segments",
-    {
-      params,
-    },
-  )
-  return data
-}
-
-export async function getCustomerLifetimeValue(months_back = 12) {
-  const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/customer-lifetime",
-    {
-      params: { months_back },
-    },
-  )
-  return data
-}
-
-export async function getCustomerBehaviorPatterns(params?: {
-  date_from?: string
-  date_to?: string
-}) {
-  const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/customer-behavior",
-    {
-      params,
     },
   )
   return data

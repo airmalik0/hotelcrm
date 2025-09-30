@@ -16,7 +16,6 @@ from app.models.analytics import (
     AnalyticsExportRequest,
     AnalyticsFilter,
     AnalyticsResponse,
-    ComparisonMetrics,
     GroupBy,
 )
 from app.services.analytics import AnalyticsService
@@ -241,55 +240,6 @@ def get_customer_analytics(
         data=customer_data,
         filters_applied=filters,
     )
-
-
-@router.get("/compare", response_model=ComparisonMetrics)
-@limiter.limit(RateLimits.READ_SINGLE)
-def compare_periods(
-    request: Request,  # noqa: ARG001
-    session: SessionDep,
-    current_user: User = Depends(require_admin),
-    period1_from: str = Query(description="Start of first period"),
-    period1_to: str = Query(description="End of first period"),
-    period2_from: str = Query(description="Start of second period"),
-    period2_to: str = Query(description="End of second period"),
-    room_id: str | None = Query(None, description="Filter by room ID"),
-    room_type: str | None = Query(None, description="Filter by room type"),
-) -> Any:
-    """
-    Compare metrics between two periods.
-
-    Requires admin access.
-    """
-    # Parse dates
-    try:
-        p1_from = parse_isoformat_date(period1_from)
-        p1_to = parse_isoformat_date(period1_to)
-        p2_from = parse_isoformat_date(period2_from)
-        p2_to = parse_isoformat_date(period2_to)
-    except ValueError as e:
-        raise ValidationError(f"Invalid date format: {str(e)}")
-
-    service = AnalyticsService(session)
-    comparison = service.compare_periods(
-        p1_from, p1_to,
-        p2_from, p2_to,
-        room_id, room_type,
-    )
-
-    # Log audit
-    log_audit(
-        session=session,
-        user=current_user,
-        action="viewed",
-        entity_type="analytics",
-        entity_id=current_user.id,
-        entity_name="period_comparison",
-        description=f"Compared periods: {period1_from} to {period1_to} vs {period2_from} to {period2_to}",
-    )
-    session.commit()
-
-    return comparison
 
 
 @router.post("/export/pdf")
@@ -644,60 +594,4 @@ def get_room_performance(
         success=True,
         data=performance_data,
         filters_applied=filters,
-    )
-
-
-@router.get("/customer-behavior", response_model=AnalyticsResponse)
-@limiter.limit(RateLimits.READ_SINGLE)
-def get_customer_behavior_patterns(
-    request: Request,  # noqa: ARG001
-    session: SessionDep,
-    current_user: User = Depends(require_admin),
-    date_from: str | None = Query(None, description="Start date in ISO format"),
-    date_to: str | None = Query(None, description="End date in ISO format"),
-) -> Any:
-    """
-    Analyze customer booking behavior patterns.
-
-    Includes:
-    - Booking frequency distribution
-    - Room type preferences
-    - Booking lead time analysis
-    - Day of week preferences
-    - Repeat customer rate
-
-    Requires admin access.
-    """
-    # Parse dates if provided
-    parsed_date_from = None
-    parsed_date_to = None
-    if date_from:
-        try:
-            parsed_date_from = parse_isoformat_date(date_from)
-        except ValueError as e:
-            raise ValidationError(f"Invalid date_from format: {str(e)}")
-    if date_to:
-        try:
-            parsed_date_to = parse_isoformat_date(date_to)
-        except ValueError as e:
-            raise ValidationError(f"Invalid date_to format: {str(e)}")
-
-    service = AnalyticsService(session)
-    behavior_data = service.get_customer_behavior_patterns(parsed_date_from, parsed_date_to)
-
-    # Log audit
-    log_audit(
-        session=session,
-        user=current_user,
-        action="viewed",
-        entity_type="analytics",
-        entity_id=current_user.id,
-        entity_name="customer_behavior",
-        description="Viewed customer behavior analysis",
-    )
-    session.commit()
-
-    return AnalyticsResponse(
-        success=True,
-        data=behavior_data,
     )

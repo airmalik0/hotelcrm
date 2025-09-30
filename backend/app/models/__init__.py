@@ -65,7 +65,6 @@ from .analytics import (
     OccupancyMetrics,
     PaymentDistribution,
     CustomerMetrics,
-    ComparisonMetrics,
     GroupBy,
     TimePeriod,
     AgeGroup,

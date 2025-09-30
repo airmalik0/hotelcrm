@@ -982,41 +982,6 @@ export const CampaignsPublicSchema = {
     description: 'Collection wrapper for campaigns list API'
 } as const;
 
-export const ComparisonMetricsSchema = {
-    properties: {
-        period1_label: {
-            type: 'string',
-            title: 'Period1 Label'
-        },
-        period2_label: {
-            type: 'string',
-            title: 'Period2 Label'
-        },
-        period1_metrics: {
-            '$ref': '#/components/schemas/DashboardMetrics'
-        },
-        period2_metrics: {
-            '$ref': '#/components/schemas/DashboardMetrics'
-        },
-        revenue_change_percentage: {
-            type: 'number',
-            title: 'Revenue Change Percentage'
-        },
-        occupancy_change_percentage: {
-            type: 'number',
-            title: 'Occupancy Change Percentage'
-        },
-        bookings_change_percentage: {
-            type: 'number',
-            title: 'Bookings Change Percentage'
-        }
-    },
-    type: 'object',
-    required: ['period1_label', 'period2_label', 'period1_metrics', 'period2_metrics', 'revenue_change_percentage', 'occupancy_change_percentage', 'bookings_change_percentage'],
-    title: 'ComparisonMetrics',
-    description: 'Comparison between two periods.'
-} as const;
-
 export const CustomerCreateSchema = {
     properties: {
         first_name: {
@@ -1093,63 +1058,6 @@ export const CustomerCreateSchema = {
     type: 'object',
     required: ['first_name', 'last_name'],
     title: 'CustomerCreate'
-} as const;
-
-export const CustomerMetricsSchema = {
-    properties: {
-        total_customers: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Total Customers',
-            description: 'Total unique customers'
-        },
-        new_customers: {
-            type: 'integer',
-            minimum: 0,
-            title: 'New Customers',
-            description: 'New customers in period'
-        },
-        returning_customers: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Returning Customers',
-            description: 'Returning customers'
-        },
-        average_age: {
-            anyOf: [
-                {
-                    type: 'number',
-                    maximum: 150,
-                    minimum: 0
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Average Age',
-            description: 'Average customer age'
-        },
-        district_distribution: {
-            additionalProperties: {
-                type: 'integer'
-            },
-            type: 'object',
-            title: 'District Distribution',
-            description: 'Customers by district'
-        },
-        age_distribution: {
-            additionalProperties: {
-                type: 'integer'
-            },
-            type: 'object',
-            title: 'Age Distribution',
-            description: 'Customers by age group'
-        }
-    },
-    type: 'object',
-    required: ['total_customers', 'new_customers', 'returning_customers', 'average_age'],
-    title: 'CustomerMetrics',
-    description: 'Customer-related metrics.'
 } as const;
 
 export const CustomerPreviewResponseSchema = {
@@ -1425,47 +1333,6 @@ export const CustomersPublicSchema = {
     title: 'CustomersPublic'
 } as const;
 
-export const DashboardMetricsSchema = {
-    properties: {
-        period: {
-            type: 'string',
-            title: 'Period',
-            description: "Period description (e.g., 'Jan 2024 - Dec 2024')"
-        },
-        revenue: {
-            '$ref': '#/components/schemas/RevenueMetrics'
-        },
-        occupancy: {
-            '$ref': '#/components/schemas/OccupancyMetrics'
-        },
-        payment_distribution: {
-            '$ref': '#/components/schemas/PaymentDistribution'
-        },
-        customer_metrics: {
-            '$ref': '#/components/schemas/CustomerMetrics'
-        },
-        room_type_breakdown: {
-            items: {
-                '$ref': '#/components/schemas/RoomTypeMetrics'
-            },
-            type: 'array',
-            title: 'Room Type Breakdown'
-        },
-        revenue_trend: {
-            items: {
-                '$ref': '#/components/schemas/TimeSeriesDataPoint'
-            },
-            type: 'array',
-            title: 'Revenue Trend',
-            description: 'Revenue over time'
-        }
-    },
-    type: 'object',
-    required: ['period', 'revenue', 'occupancy', 'payment_distribution', 'customer_metrics'],
-    title: 'DashboardMetrics',
-    description: 'Combined metrics for dashboard view.'
-} as const;
-
 export const DateModificationRequestSchema = {
     properties: {
         new_check_in: {
@@ -1564,58 +1431,6 @@ export const MessageSchema = {
     title: 'Message'
 } as const;
 
-export const OccupancyMetricsSchema = {
-    properties: {
-        occupancy_rate: {
-            type: 'number',
-            maximum: 100,
-            minimum: 0,
-            title: 'Occupancy Rate',
-            description: 'Percentage of rooms occupied'
-        },
-        average_length_of_stay: {
-            type: 'number',
-            minimum: 0,
-            title: 'Average Length Of Stay',
-            description: 'Average nights per booking'
-        },
-        total_available_room_nights: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Total Available Room Nights',
-            description: 'Total room nights available'
-        },
-        total_occupied_room_nights: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Total Occupied Room Nights',
-            description: 'Total room nights occupied'
-        },
-        check_ins: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Check Ins',
-            description: 'Number of check-ins'
-        },
-        check_outs: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Check Outs',
-            description: 'Number of check-outs'
-        },
-        cancellations: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Cancellations',
-            description: 'Number of cancellations'
-        }
-    },
-    type: 'object',
-    required: ['occupancy_rate', 'average_length_of_stay', 'total_available_room_nights', 'total_occupied_room_nights', 'check_ins', 'check_outs', 'cancellations'],
-    title: 'OccupancyMetrics',
-    description: 'Occupancy and utilization metrics.'
-} as const;
-
 export const PaymentAdjustmentResponseSchema = {
     properties: {
         booking: {
@@ -1632,127 +1447,10 @@ export const PaymentAdjustmentResponseSchema = {
     description: 'Response model for operations that result in payment adjustments.'
 } as const;
 
-export const PaymentDistributionSchema = {
-    properties: {
-        cash_percentage: {
-            type: 'number',
-            maximum: 100,
-            minimum: 0,
-            title: 'Cash Percentage',
-            description: 'Percentage of cash payments'
-        },
-        transfer_percentage: {
-            type: 'number',
-            maximum: 100,
-            minimum: 0,
-            title: 'Transfer Percentage',
-            description: 'Percentage of transfer payments'
-        },
-        terminal_percentage: {
-            type: 'number',
-            maximum: 100,
-            minimum: 0,
-            title: 'Terminal Percentage',
-            description: 'Percentage of terminal payments'
-        },
-        cash_count: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Cash Count',
-            description: 'Number of cash payments'
-        },
-        transfer_count: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Transfer Count',
-            description: 'Number of transfer payments'
-        },
-        terminal_count: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Terminal Count',
-            description: 'Number of terminal payments'
-        },
-        cash_amount: {
-            type: 'number',
-            minimum: 0,
-            title: 'Cash Amount',
-            description: 'Total cash revenue'
-        },
-        transfer_amount: {
-            type: 'number',
-            minimum: 0,
-            title: 'Transfer Amount',
-            description: 'Total transfer revenue'
-        },
-        terminal_amount: {
-            type: 'number',
-            minimum: 0,
-            title: 'Terminal Amount',
-            description: 'Total terminal revenue'
-        }
-    },
-    type: 'object',
-    required: ['cash_percentage', 'transfer_percentage', 'terminal_percentage', 'cash_count', 'transfer_count', 'terminal_count', 'cash_amount', 'transfer_amount', 'terminal_amount'],
-    title: 'PaymentDistribution',
-    description: 'Payment method distribution.'
-} as const;
-
 export const PaymentMethodSchema = {
     type: 'string',
     enum: ['cash', 'transfer', 'terminal'],
     title: 'PaymentMethod'
-} as const;
-
-export const RevenueMetricsSchema = {
-    properties: {
-        total_revenue: {
-            type: 'number',
-            minimum: 0,
-            title: 'Total Revenue',
-            description: 'Total revenue for the period'
-        },
-        average_daily_rate: {
-            type: 'number',
-            minimum: 0,
-            title: 'Average Daily Rate',
-            description: 'ADR - Average price per night'
-        },
-        revenue_per_available_room: {
-            type: 'number',
-            minimum: 0,
-            title: 'Revenue Per Available Room',
-            description: 'RevPAR'
-        },
-        total_bookings: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Total Bookings',
-            description: 'Number of bookings'
-        },
-        total_nights: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Total Nights',
-            description: 'Total nights booked'
-        },
-        discount_amount: {
-            type: 'number',
-            minimum: 0,
-            title: 'Discount Amount',
-            description: 'Total discounts given'
-        },
-        refund_amount: {
-            type: 'number',
-            minimum: 0,
-            title: 'Refund Amount',
-            description: 'Total refunds'
-        }
-    },
-    type: 'object',
-    required: ['total_revenue', 'average_daily_rate', 'revenue_per_available_room', 'total_bookings', 'total_nights', 'discount_amount', 'refund_amount'],
-    title: 'RevenueMetrics',
-    description: 'Revenue-related metrics.'
 } as const;
 
 export const RoomChangeRequestSchema = {
@@ -1893,44 +1591,6 @@ export const RoomTypeSchema = {
     type: 'string',
     enum: ['standard', 'vip'],
     title: 'RoomType'
-} as const;
-
-export const RoomTypeMetricsSchema = {
-    properties: {
-        room_type: {
-            type: 'string',
-            title: 'Room Type'
-        },
-        revenue: {
-            type: 'number',
-            minimum: 0,
-            title: 'Revenue',
-            description: 'Revenue for this room type'
-        },
-        bookings: {
-            type: 'integer',
-            minimum: 0,
-            title: 'Bookings',
-            description: 'Number of bookings for this room type'
-        },
-        occupancy_rate: {
-            type: 'number',
-            maximum: 100,
-            minimum: 0,
-            title: 'Occupancy Rate',
-            description: 'Occupancy rate for this room type'
-        },
-        average_rate: {
-            type: 'number',
-            minimum: 0,
-            title: 'Average Rate',
-            description: 'Average rate for this room type'
-        }
-    },
-    type: 'object',
-    required: ['room_type', 'revenue', 'bookings', 'occupancy_rate', 'average_rate'],
-    title: 'RoomTypeMetrics',
-    description: 'Metrics broken down by room type.'
 } as const;
 
 export const RoomUpdateSchema = {
@@ -2143,34 +1803,6 @@ export const SMSStatusSchema = {
     enum: ['pending', 'sent', 'delivered', 'failed', 'mock'],
     title: 'SMSStatus',
     description: 'SMS delivery status'
-} as const;
-
-export const TimeSeriesDataPointSchema = {
-    properties: {
-        date: {
-            type: 'string',
-            title: 'Date'
-        },
-        value: {
-            type: 'number',
-            title: 'Value'
-        },
-        label: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Label'
-        }
-    },
-    type: 'object',
-    required: ['date', 'value'],
-    title: 'TimeSeriesDataPoint',
-    description: 'Single data point in a time series.'
 } as const;
 
 export const TokenSchema = {

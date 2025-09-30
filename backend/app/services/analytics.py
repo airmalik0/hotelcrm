@@ -10,7 +10,6 @@ from app.core.exceptions import BusinessRuleViolation, ValidationError
 from app.crud.analytics import analytics as crud_analytics
 from app.models.analytics import (
     AnalyticsFilter,
-    ComparisonMetrics,
     CustomerMetrics,
     DashboardMetrics,
     OccupancyMetrics,
@@ -170,83 +169,6 @@ class AnalyticsService:
             revenue_trend=revenue_trend,
         )
 
-    def compare_periods(
-        self,
-        period1_from: datetime,
-        period1_to: datetime,
-        period2_from: datetime,
-        period2_to: datetime,
-        room_id: str | None = None,
-        room_type: str | None = None,
-    ) -> ComparisonMetrics:
-        """
-        Compare metrics between two periods.
-
-        Args:
-            period1_from: Start of first period
-            period1_to: End of first period
-            period2_from: Start of second period
-            period2_to: End of second period
-            room_id: Optional room filter
-            room_type: Optional room type filter
-
-        Returns:
-            ComparisonMetrics with both periods and change percentages
-        """
-        # Validate both date ranges
-        self.validate_date_range(period1_from, period1_to)
-        self.validate_date_range(period2_from, period2_to)
-
-        # Create filters for both periods
-        filters1 = AnalyticsFilter(
-            date_from=period1_from,
-            date_to=period1_to,
-            room_id=room_id,
-            room_type=room_type,
-        )
-
-        filters2 = AnalyticsFilter(
-            date_from=period2_from,
-            date_to=period2_to,
-            room_id=room_id,
-            room_type=room_type,
-        )
-
-        # Get metrics for both periods
-        metrics1 = self.get_dashboard_metrics(filters1)
-        metrics2 = self.get_dashboard_metrics(filters2)
-
-        # Calculate percentage changes
-        def calculate_change(old_value: float, new_value: float) -> float:
-            if old_value == 0:
-                return 100.0 if new_value > 0 else 0.0
-            return round(((new_value - old_value) / old_value) * 100, 2)
-
-        revenue_change = calculate_change(
-            metrics1.revenue.total_revenue,
-            metrics2.revenue.total_revenue,
-        )
-
-        occupancy_change = calculate_change(
-            metrics1.occupancy.occupancy_rate,
-            metrics2.occupancy.occupancy_rate,
-        )
-
-        bookings_change = calculate_change(
-            metrics1.revenue.total_bookings,
-            metrics2.revenue.total_bookings,
-        )
-
-        return ComparisonMetrics(
-            period1_label=metrics1.period,
-            period2_label=metrics2.period,
-            period1_metrics=metrics1,
-            period2_metrics=metrics2,
-            revenue_change_percentage=revenue_change,
-            occupancy_change_percentage=occupancy_change,
-            bookings_change_percentage=bookings_change,
-        )
-
     def get_hourly_distribution(
         self,
         date_from: datetime,
@@ -309,41 +231,6 @@ class AnalyticsService:
             self.validate_date_range(date_from, date_to)
 
         return self.crud.get_top_customers(self.session, limit, date_from, date_to)
-
-    def get_customer_lifetime_value(self, months_back: int = 12) -> dict[str, Any]:
-        """
-        Calculate customer lifetime value metrics.
-
-        Args:
-            months_back: Number of months to analyze (default: 12)
-
-        Returns:
-            Customer LTV analysis
-        """
-        if months_back < 1 or months_back > 60:
-            raise ValidationError("Months back must be between 1 and 60")
-
-        return self.crud.get_customer_lifetime_value(self.session, months_back)
-
-    def get_customer_behavior_patterns(
-        self,
-        date_from: datetime | None = None,
-        date_to: datetime | None = None,
-    ) -> dict[str, Any]:
-        """
-        Analyze customer booking behavior patterns.
-
-        Args:
-            date_from: Start date for analysis
-            date_to: End date for analysis
-
-        Returns:
-            Customer behavior analysis
-        """
-        if date_from and date_to:
-            self.validate_date_range(date_from, date_to)
-
-        return self.crud.get_customer_behavior_patterns(self.session, date_from, date_to)
 
     def get_revenue_details(self, filters: AnalyticsFilter, group_by: str = "day") -> dict[str, Any]:
         """Get detailed revenue analytics with time series data."""

@@ -1,4 +1,4 @@
-// Working version - replaced entire file to fix React error #130
+// Exact copy of original MarketingCampaigns with standard ES6 imports
 import {
   deleteCampaign,
   executeCampaign,
@@ -34,7 +34,7 @@ import { useState } from "react"
 type StatusFilter = "all" | CampaignStatus
 type TypeFilter = "all" | CampaignType
 
-export function MarketingCampaigns() {
+export function MarketingCampaignsFixed2() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
@@ -46,7 +46,7 @@ export function MarketingCampaigns() {
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialog } = useConfirm()
 
-  console.log("MarketingCampaigns - FIXED VERSION - All imports successful:", {
+  console.log("MarketingCampaignsFixed2 - All imports successful:", {
     CampaignFormModal,
     useConfirm,
     ConfirmDialog,
@@ -246,7 +246,7 @@ export function MarketingCampaigns() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Marketing Campaigns
+            Marketing Campaigns (Fixed v2)
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
             Create and manage SMS marketing campaigns
@@ -262,50 +262,6 @@ export function MarketingCampaigns() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <input
-                type="text"
-                placeholder="Search campaigns..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-sm text-neutral-900 dark:text-white"
-          >
-            <option value="all">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
-            <option value="archived">Archived</option>
-          </select>
-
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-            className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-sm text-neutral-900 dark:text-white"
-          >
-            <option value="all">All Types</option>
-            <option value="onetime">One-time</option>
-            <option value="trigger">Trigger</option>
-          </select>
-        </div>
-      </div>
-
       {/* Campaigns Table */}
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 overflow-hidden">
         {campaigns.length === 0 ? (
@@ -315,9 +271,7 @@ export function MarketingCampaigns() {
               No campaigns found
             </h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              {searchTerm || statusFilter !== "all" || typeFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Create your first marketing campaign to get started"}
+              Create your first marketing campaign to get started
             </p>
           </div>
         ) : (
@@ -438,61 +392,6 @@ export function MarketingCampaigns() {
           </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalCount > 0 && (
-        <div className="flex items-center justify-between bg-white dark:bg-dark-2 px-6 py-3 border border-neutral-200 dark:border-neutral-600 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              Show
-            </span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value))
-                setCurrentPage(0)
-              }}
-              className="border border-neutral-300 dark:border-neutral-500 rounded bg-white dark:bg-transparent px-2 py-1 text-sm"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              of {totalCount} campaigns
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-              disabled={currentPage === 0}
-              className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              Page {currentPage + 1} of {Math.ceil(totalCount / itemsPerPage)}
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                setCurrentPage(
-                  Math.min(
-                    Math.ceil(totalCount / itemsPerPage) - 1,
-                    currentPage + 1,
-                  ),
-                )
-              }
-              disabled={currentPage >= Math.ceil(totalCount / itemsPerPage) - 1}
-              className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
 
       <ConfirmDialog />
 

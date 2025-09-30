@@ -10,6 +10,17 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Prevent mangling that might cause React error #130
+        manualChunks: undefined,
+      },
+    },
+    // Disable minification to help debug React error #130
+    minify: false,
+    sourcemap: true,
+  },
   server: {
     proxy: {
       "/api": {

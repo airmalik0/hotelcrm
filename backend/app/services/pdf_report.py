@@ -328,10 +328,6 @@ class PDFReportService:
             top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
             self._add_top_customers_section(elements, top_customers)
 
-            # 10. Customer Behavior Patterns
-            behavior_patterns = analytics_service.get_customer_behavior_patterns(filters.date_from, filters.date_to)
-            self._add_behavior_patterns_section(elements, behavior_patterns)
-
         except Exception as e:
             # Fallback to basic dashboard if comprehensive fails
             elements.append(Paragraph(f"Note: Using basic report due to data limitation: {str(e)}", self.styles["Normal"]))
@@ -591,45 +587,6 @@ class PDFReportService:
             elements.append(Paragraph("No customer data available.", self.styles["Normal"]))
 
         elements.append(Spacer(1, 20))
-
-    def _add_behavior_patterns_section(self, elements: list, behavior_data: dict[str, Any]) -> None:
-        """Add customer behavior patterns section."""
-        elements.append(PageBreak())
-        elements.append(Paragraph("Customer Behavior Patterns", self.styles["SectionHeader"]))
-
-        # Booking frequency
-        frequency_dist = behavior_data.get("booking_frequency", [])
-        if frequency_dist:
-            freq_data = [["Booking Count", "Customers"]]
-            for freq in frequency_dist[:10]:  # Top 10
-                freq_data.append([freq["label"], f"{freq['customer_count']:,}"])
-
-            freq_table = self._create_table(freq_data)
-            elements.append(freq_table)
-            elements.append(Spacer(1, 15))
-
-        # Lead time distribution
-        lead_time = behavior_data.get("lead_time_distribution", {})
-        if lead_time:
-            elements.append(Paragraph("Booking Lead Time Distribution", self.styles["Normal"]))
-            lead_data = [["Lead Time", "Bookings"]]
-            for period, count in lead_time.items():
-                if count > 0:
-                    lead_data.append([period.replace("_", " ").title(), f"{count:,}"])
-
-            lead_table = self._create_table(lead_data)
-            elements.append(lead_table)
-            elements.append(Spacer(1, 15))
-
-        # Metrics summary
-        metrics = behavior_data.get("metrics", {})
-        behavior_summary_data = [
-            ["Behavior Metric", "Value"],
-            ["Repeat Customer Rate", f"{metrics.get('repeat_customer_rate', 0):.1f}%"],
-            ["Total Customers Analyzed", f"{metrics.get('total_customers_analyzed', 0):,}"],
-        ]
-        behavior_summary_table = self._create_table(behavior_summary_data)
-        elements.append(behavior_summary_table)
 
     def _find_peak_hour(self, hourly_data: list[dict[str, Any]]) -> str:
         """Find the peak hour from hourly data."""

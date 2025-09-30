@@ -244,19 +244,6 @@ export type CampaignUpdate = {
     trigger_frequency_minutes?: (number | null);
 };
 
-/**
- * Comparison between two periods.
- */
-export type ComparisonMetrics = {
-    period1_label: string;
-    period2_label: string;
-    period1_metrics: DashboardMetrics;
-    period2_metrics: DashboardMetrics;
-    revenue_change_percentage: number;
-    occupancy_change_percentage: number;
-    bookings_change_percentage: number;
-};
-
 export type CustomerCreate = {
     first_name: string;
     last_name: string;
@@ -265,40 +252,6 @@ export type CustomerCreate = {
     district?: (District | null);
     passport_photo_path?: (string | null);
     notes?: (string | null);
-};
-
-/**
- * Customer-related metrics.
- */
-export type CustomerMetrics = {
-    /**
-     * Total unique customers
-     */
-    total_customers: number;
-    /**
-     * New customers in period
-     */
-    new_customers: number;
-    /**
-     * Returning customers
-     */
-    returning_customers: number;
-    /**
-     * Average customer age
-     */
-    average_age: (number | null);
-    /**
-     * Customers by district
-     */
-    district_distribution?: {
-        [key: string]: (number);
-    };
-    /**
-     * Customers by age group
-     */
-    age_distribution?: {
-        [key: string]: (number);
-    };
 };
 
 /**
@@ -349,25 +302,6 @@ export type CustomerUpdate = {
 };
 
 /**
- * Combined metrics for dashboard view.
- */
-export type DashboardMetrics = {
-    /**
-     * Period description (e.g., 'Jan 2024 - Dec 2024')
-     */
-    period: string;
-    revenue: RevenueMetrics;
-    occupancy: OccupancyMetrics;
-    payment_distribution: PaymentDistribution;
-    customer_metrics: CustomerMetrics;
-    room_type_breakdown?: Array<RoomTypeMetrics>;
-    /**
-     * Revenue over time
-     */
-    revenue_trend?: Array<TimeSeriesDataPoint>;
-};
-
-/**
  * Request model for modifying booking dates.
  */
 export type DateModificationRequest = {
@@ -402,40 +336,6 @@ export type Message = {
 };
 
 /**
- * Occupancy and utilization metrics.
- */
-export type OccupancyMetrics = {
-    /**
-     * Percentage of rooms occupied
-     */
-    occupancy_rate: number;
-    /**
-     * Average nights per booking
-     */
-    average_length_of_stay: number;
-    /**
-     * Total room nights available
-     */
-    total_available_room_nights: number;
-    /**
-     * Total room nights occupied
-     */
-    total_occupied_room_nights: number;
-    /**
-     * Number of check-ins
-     */
-    check_ins: number;
-    /**
-     * Number of check-outs
-     */
-    check_outs: number;
-    /**
-     * Number of cancellations
-     */
-    cancellations: number;
-};
-
-/**
  * Response model for operations that result in payment adjustments.
  */
 export type PaymentAdjustmentResponse = {
@@ -443,83 +343,7 @@ export type PaymentAdjustmentResponse = {
     payment_difference: number;
 };
 
-/**
- * Payment method distribution.
- */
-export type PaymentDistribution = {
-    /**
-     * Percentage of cash payments
-     */
-    cash_percentage: number;
-    /**
-     * Percentage of transfer payments
-     */
-    transfer_percentage: number;
-    /**
-     * Percentage of terminal payments
-     */
-    terminal_percentage: number;
-    /**
-     * Number of cash payments
-     */
-    cash_count: number;
-    /**
-     * Number of transfer payments
-     */
-    transfer_count: number;
-    /**
-     * Number of terminal payments
-     */
-    terminal_count: number;
-    /**
-     * Total cash revenue
-     */
-    cash_amount: number;
-    /**
-     * Total transfer revenue
-     */
-    transfer_amount: number;
-    /**
-     * Total terminal revenue
-     */
-    terminal_amount: number;
-};
-
 export type PaymentMethod = 'cash' | 'transfer' | 'terminal';
-
-/**
- * Revenue-related metrics.
- */
-export type RevenueMetrics = {
-    /**
-     * Total revenue for the period
-     */
-    total_revenue: number;
-    /**
-     * ADR - Average price per night
-     */
-    average_daily_rate: number;
-    /**
-     * RevPAR
-     */
-    revenue_per_available_room: number;
-    /**
-     * Number of bookings
-     */
-    total_bookings: number;
-    /**
-     * Total nights booked
-     */
-    total_nights: number;
-    /**
-     * Total discounts given
-     */
-    discount_amount: number;
-    /**
-     * Total refunds
-     */
-    refund_amount: number;
-};
 
 /**
  * Request model for changing booking room.
@@ -559,29 +383,6 @@ export type RoomStatus = 'available' | 'occupied' | 'cleaning' | 'maintenance';
 
 export type RoomType = 'standard' | 'vip';
 
-/**
- * Metrics broken down by room type.
- */
-export type RoomTypeMetrics = {
-    room_type: string;
-    /**
-     * Revenue for this room type
-     */
-    revenue: number;
-    /**
-     * Number of bookings for this room type
-     */
-    bookings: number;
-    /**
-     * Occupancy rate for this room type
-     */
-    occupancy_rate: number;
-    /**
-     * Average rate for this room type
-     */
-    average_rate: number;
-};
-
 export type RoomUpdate = {
     room_number?: (string | null);
     floor?: (number | null);
@@ -620,15 +421,6 @@ export type SMSHistoryPublic = {
  * SMS delivery status
  */
 export type SMSStatus = 'pending' | 'sent' | 'delivered' | 'failed' | 'mock';
-
-/**
- * Single data point in a time series.
- */
-export type TimeSeriesDataPoint = {
-    date: string;
-    value: number;
-    label?: (string | null);
-};
 
 export type Token = {
     access_token: string;
@@ -1315,39 +1107,6 @@ export type AnalyticsGetCustomerAnalyticsResponse = (AnalyticsResponse);
 
 export type AnalyticsGetCustomerAnalyticsError = (HTTPValidationError);
 
-export type AnalyticsComparePeriodsData = {
-    query: {
-        /**
-         * Start of first period
-         */
-        period1_from: string;
-        /**
-         * End of first period
-         */
-        period1_to: string;
-        /**
-         * Start of second period
-         */
-        period2_from: string;
-        /**
-         * End of second period
-         */
-        period2_to: string;
-        /**
-         * Filter by room ID
-         */
-        room_id?: (string | null);
-        /**
-         * Filter by room type
-         */
-        room_type?: (string | null);
-    };
-};
-
-export type AnalyticsComparePeriodsResponse = (ComparisonMetrics);
-
-export type AnalyticsComparePeriodsError = (HTTPValidationError);
-
 export type AnalyticsExportToPdfData = {
     body: AnalyticsExportRequest;
     query?: {
@@ -1426,7 +1185,7 @@ export type AnalyticsGetSeasonalTrendsResponse = (AnalyticsResponse);
 
 export type AnalyticsGetSeasonalTrendsError = (HTTPValidationError);
 
-export type AnalyticsGetCustomerSegmentsData = {
+export type AnalyticsGetTopCustomersData = {
     query?: {
         /**
          * Start date in ISO format
@@ -1436,39 +1195,34 @@ export type AnalyticsGetCustomerSegmentsData = {
          * End date in ISO format
          */
         date_to?: (string | null);
-    };
-};
-
-export type AnalyticsGetCustomerSegmentsResponse = (AnalyticsResponse);
-
-export type AnalyticsGetCustomerSegmentsError = (HTTPValidationError);
-
-export type AnalyticsGetCustomerLifetimeValueData = {
-    query?: {
         /**
-         * Number of months to analyze (1-60)
+         * Number of top customers to return (1-100)
          */
-        months_back?: number;
+        limit?: number;
     };
 };
 
-export type AnalyticsGetCustomerLifetimeValueResponse = (AnalyticsResponse);
+export type AnalyticsGetTopCustomersResponse = (AnalyticsResponse);
 
-export type AnalyticsGetCustomerLifetimeValueError = (HTTPValidationError);
+export type AnalyticsGetTopCustomersError = (HTTPValidationError);
 
-export type AnalyticsGetCustomerBehaviorPatternsData = {
-    query?: {
+export type AnalyticsGetRoomPerformanceData = {
+    query: {
         /**
          * Start date in ISO format
          */
-        date_from?: (string | null);
+        date_from: string;
         /**
          * End date in ISO format
          */
-        date_to?: (string | null);
+        date_to: string;
+        /**
+         * Number of top/bottom rooms to show
+         */
+        top_n?: number;
     };
 };
 
-export type AnalyticsGetCustomerBehaviorPatternsResponse = (AnalyticsResponse);
+export type AnalyticsGetRoomPerformanceResponse = (AnalyticsResponse);
 
-export type AnalyticsGetCustomerBehaviorPatternsError = (HTTPValidationError);
+export type AnalyticsGetRoomPerformanceError = (HTTPValidationError);

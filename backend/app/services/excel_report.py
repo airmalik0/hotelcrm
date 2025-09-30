@@ -102,7 +102,6 @@ class ExcelReportService:
             )
             seasonal_trends = analytics_service.get_seasonal_trends(2)
             top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
-            behavior_patterns = analytics_service.get_customer_behavior_patterns(filters.date_from, filters.date_to)
 
             # Create comprehensive sheets
             self._create_executive_summary_sheet(wb, quick_stats, dashboard_metrics, filters)
@@ -114,7 +113,6 @@ class ExcelReportService:
             self._create_hourly_patterns_sheet(wb, hourly_checkins, hourly_checkouts, include_charts)
             self._create_seasonal_trends_sheet(wb, seasonal_trends, include_charts)
             self._create_top_customers_sheet(wb, top_customers)
-            self._create_behavior_patterns_sheet(wb, behavior_patterns)
 
         except Exception:
             # Fallback to basic dashboard if comprehensive fails
@@ -1000,79 +998,3 @@ class ExcelReportService:
         ws.column_dimensions["D"].width = 15
         ws.column_dimensions["E"].width = 15
 
-    def _create_behavior_patterns_sheet(self, wb: Workbook, behavior_patterns: dict[str, Any]) -> None:
-        """Create customer behavior patterns analysis sheet."""
-        ws = wb.create_sheet("Behavior Patterns")
-
-        # Header
-        ws["A1"] = "Customer Behavior Patterns Analysis"
-        ws["A1"].font = Font(size=14, bold=True)
-        ws.merge_cells("A1:F1")
-
-        # Booking patterns
-        row = 3
-        ws[f"A{row}"] = "BOOKING PATTERNS"
-        ws[f"A{row}"].font = self.header_font
-        ws[f"A{row}"].fill = self.header_fill
-        ws.merge_cells(f"A{row}:D{row}")
-
-        booking_metrics = [
-            ("Average Advance Booking", f"{behavior_patterns.get('avg_advance_days', 0):.1f} days"),
-            ("Peak Booking Day", behavior_patterns.get('peak_booking_day', 'N/A')),
-            ("Average Stay Duration", f"{behavior_patterns.get('avg_stay_duration', 0):.1f} nights"),
-            ("Most Popular Room Type", behavior_patterns.get('popular_room_type', 'N/A')),
-        ]
-
-        for label, value in booking_metrics:
-            row += 1
-            ws.cell(row=row, column=1, value=label).border = self.border
-            ws.cell(row=row, column=2, value=value).border = self.border
-
-        # Payment preferences
-        if 'payment_preferences' in behavior_patterns:
-            row += 3
-            ws[f"A{row}"] = "PAYMENT PREFERENCES"
-            ws[f"A{row}"].font = self.header_font
-            ws[f"A{row}"].fill = self.header_fill
-            ws.merge_cells(f"A{row}:C{row}")
-
-            row += 1
-            payment_headers = ["Payment Method", "Usage %", "Avg Amount"]
-            for col, header in enumerate(payment_headers, 1):
-                cell = ws.cell(row=row, column=col, value=header)
-                cell.font = self.header_font
-                cell.fill = self.header_fill
-                cell.border = self.border
-
-            for payment in behavior_patterns.get('payment_preferences', []):
-                row += 1
-                ws.cell(row=row, column=1, value=payment.get('method', '')).border = self.border
-                ws.cell(row=row, column=2, value=f"{payment.get('percentage', 0):.1f}%").border = self.border
-                ws.cell(row=row, column=3, value=f"${payment.get('avg_amount', 0):,.2f}").border = self.border
-
-        # Seasonal preferences
-        if 'seasonal_preferences' in behavior_patterns:
-            row += 3
-            ws[f"A{row}"] = "SEASONAL PREFERENCES"
-            ws[f"A{row}"].font = self.header_font
-            ws[f"A{row}"].fill = self.header_fill
-            ws.merge_cells(f"A{row}:C{row}")
-
-            row += 1
-            seasonal_headers = ["Season", "Bookings", "Percentage"]
-            for col, header in enumerate(seasonal_headers, 1):
-                cell = ws.cell(row=row, column=col, value=header)
-                cell.font = self.header_font
-                cell.fill = self.header_fill
-                cell.border = self.border
-
-            for season in behavior_patterns.get('seasonal_preferences', []):
-                row += 1
-                ws.cell(row=row, column=1, value=season.get('season', '')).border = self.border
-                ws.cell(row=row, column=2, value=season.get('bookings', 0)).border = self.border
-                ws.cell(row=row, column=3, value=f"{season.get('percentage', 0):.1f}%").border = self.border
-
-        # Adjust column widths
-        ws.column_dimensions["A"].width = 25
-        ws.column_dimensions["B"].width = 20
-        ws.column_dimensions["C"].width = 15
