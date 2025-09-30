@@ -390,7 +390,7 @@ class PDFReportService:
         elements.append(Spacer(1, 20))
 
     def _add_dashboard_section(self, elements: list[Any], metrics: DashboardMetrics, include_charts: bool) -> None:
-        """Add dashboard metrics section."""
+        """Add dashboard metrics section with key performance indicators."""
         elements.append(Paragraph("Dashboard Overview", self.styles["SectionHeader"]))
 
         # Revenue Chart
@@ -405,17 +405,14 @@ class PDFReportService:
             except Exception:
                 pass  # Skip chart if generation fails
 
-        # Revenue metrics table
-        revenue_data = [
-            ["Revenue Metric", "Value"],
-            ["Total Revenue", f"${metrics.revenue.total_revenue:,.2f}"],
-            ["Average Daily Rate", f"${metrics.revenue.average_daily_rate:,.2f}"],
-            ["RevPAR", f"${metrics.revenue.revenue_per_available_room:,.2f}"],
-            ["Total Bookings", f"{metrics.revenue.total_bookings:,}"],
-            ["Total Nights", f"{metrics.revenue.total_nights:,}"],
+        # Key Performance Indicators (KPIs) - unique metrics only
+        kpi_data = [
+            ["KPI", "Value"],
+            ["Average Daily Rate (ADR)", f"${metrics.revenue.average_daily_rate:,.2f}"],
+            ["Revenue Per Available Room (RevPAR)", f"${metrics.revenue.revenue_per_available_room:,.2f}"],
         ]
-        revenue_table = self._create_table(revenue_data)
-        elements.append(revenue_table)
+        kpi_table = self._create_table(kpi_data)
+        elements.append(kpi_table)
         elements.append(Spacer(1, 15))
 
         # Payment Distribution Chart
@@ -441,19 +438,6 @@ class PDFReportService:
         ]
         payment_table = self._create_table(payment_data, col_widths=[2*inch, 1.5*inch, 2*inch])
         elements.append(payment_table)
-        elements.append(Spacer(1, 15))
-
-        # Occupancy metrics
-        occupancy_data = [
-            ["Occupancy Metric", "Value"],
-            ["Occupancy Rate", f"{metrics.occupancy.occupancy_rate}%"],
-            ["Avg Length of Stay", f"{metrics.occupancy.average_length_of_stay:.1f} nights"],
-            ["Check-ins", f"{metrics.occupancy.check_ins:,}"],
-            ["Check-outs", f"{metrics.occupancy.check_outs:,}"],
-            ["Cancellations", f"{metrics.occupancy.cancellations:,}"],
-        ]
-        occupancy_table = self._create_table(occupancy_data)
-        elements.append(occupancy_table)
         elements.append(Spacer(1, 20))
 
     def _add_revenue_details_section(self, elements: list[Any], revenue_details: dict[str, Any], include_charts: bool) -> None:
