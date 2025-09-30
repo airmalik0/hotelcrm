@@ -118,12 +118,26 @@ export function MarketingDebugComponents() {
 
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
         <div className="space-y-4">
-          <div><strong>Campaigns loaded:</strong> {campaigns.length}</div>
-          <div><strong>Modal open:</strong> {isFormModalOpen ? "Yes" : "No"}</div>
-          <div><strong>CampaignFormModal available:</strong> {CampaignFormModal ? "Yes" : "No"}</div>
-          <div><strong>CampaignFormModal type:</strong> {typeof CampaignFormModal}</div>
-          <div><strong>ConfirmDialog available:</strong> {ConfirmDialog ? "Yes" : "No"}</div>
-          <div><strong>ConfirmDialog type:</strong> {typeof ConfirmDialog}</div>
+          <div>
+            <strong>Campaigns loaded:</strong> {campaigns.length}
+          </div>
+          <div>
+            <strong>Modal open:</strong> {isFormModalOpen ? "Yes" : "No"}
+          </div>
+          <div>
+            <strong>CampaignFormModal available:</strong>{" "}
+            {CampaignFormModal ? "Yes" : "No"}
+          </div>
+          <div>
+            <strong>CampaignFormModal type:</strong> {typeof CampaignFormModal}
+          </div>
+          <div>
+            <strong>ConfirmDialog available:</strong>{" "}
+            {ConfirmDialog ? "Yes" : "No"}
+          </div>
+          <div>
+            <strong>ConfirmDialog type:</strong> {typeof ConfirmDialog}
+          </div>
         </div>
       </div>
 

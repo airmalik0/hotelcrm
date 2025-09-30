@@ -95,9 +95,17 @@ export function MarketingTestConfirm() {
 
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
         <div className="space-y-4">
-          <div><strong>Campaigns loaded:</strong> {campaigns.length}</div>
-          <div><strong>Confirm function available:</strong> {confirm ? "Yes" : "No"}</div>
-          <div><strong>ConfirmDialog component available:</strong> {ConfirmDialog ? "Yes" : "No"}</div>
+          <div>
+            <strong>Campaigns loaded:</strong> {campaigns.length}
+          </div>
+          <div>
+            <strong>Confirm function available:</strong>{" "}
+            {confirm ? "Yes" : "No"}
+          </div>
+          <div>
+            <strong>ConfirmDialog component available:</strong>{" "}
+            {ConfirmDialog ? "Yes" : "No"}
+          </div>
         </div>
       </div>
 

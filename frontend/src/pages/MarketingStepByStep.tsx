@@ -26,17 +26,20 @@ export function MarketingStepByStep() {
 
     const styles = {
       draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      active: "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200",
-      paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200",
-      completed: "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200",
+      active:
+        "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200",
+      paused:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200",
+      completed:
+        "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200",
       archived: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
     }
 
     const result = (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-red-100 text-red-800'}`}
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || "bg-red-100 text-red-800"}`}
       >
-        {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'}
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown"}
       </span>
     )
 
@@ -154,7 +157,11 @@ export function MarketingStepByStep() {
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-600">
                 {campaigns.map((campaign) => {
-                  console.log("Rendering campaign in map:", campaign.id, campaign.name)
+                  console.log(
+                    "Rendering campaign in map:",
+                    campaign.id,
+                    campaign.name,
+                  )
 
                   return (
                     <tr
@@ -172,15 +179,24 @@ export function MarketingStepByStep() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {console.log("About to render type badge for:", campaign.type)}
+                        {console.log(
+                          "About to render type badge for:",
+                          campaign.type,
+                        )}
                         {getTypeBadge(campaign.type)}
                       </td>
                       <td className="px-6 py-4">
-                        {console.log("About to render status badge for:", campaign.status)}
+                        {console.log(
+                          "About to render status badge for:",
+                          campaign.status,
+                        )}
                         {getStatusBadge(campaign.status)}
                       </td>
                       <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                        {console.log("About to render date for:", campaign.updated_at)}
+                        {console.log(
+                          "About to render date for:",
+                          campaign.updated_at,
+                        )}
                         {formatDate(campaign.updated_at)}
                       </td>
                     </tr>

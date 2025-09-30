@@ -90,7 +90,11 @@ export function MarketingDebug2() {
     },
   })
 
-  console.log("Mutations created:", { deleteMutation, executeMutation, previewMutation })
+  console.log("Mutations created:", {
+    deleteMutation,
+    executeMutation,
+    previewMutation,
+  })
 
   if (isLoading) {
     return (

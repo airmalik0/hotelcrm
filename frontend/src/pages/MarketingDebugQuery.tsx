@@ -67,9 +67,16 @@ export function MarketingDebugQuery() {
 
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
         <div className="space-y-4">
-          <div><strong>Query Status:</strong> {isLoading ? "Loading" : error ? "Error" : "Success"}</div>
-          <div><strong>Campaigns loaded:</strong> {campaigns.length}</div>
-          <div><strong>Data structure:</strong> {JSON.stringify(data, null, 2)}</div>
+          <div>
+            <strong>Query Status:</strong>{" "}
+            {isLoading ? "Loading" : error ? "Error" : "Success"}
+          </div>
+          <div>
+            <strong>Campaigns loaded:</strong> {campaigns.length}
+          </div>
+          <div>
+            <strong>Data structure:</strong> {JSON.stringify(data, null, 2)}
+          </div>
         </div>
       </div>
 

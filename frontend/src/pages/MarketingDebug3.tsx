@@ -29,7 +29,10 @@ export function MarketingDebug3() {
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialog } = useConfirm()
 
-  console.log("MarketingDebug3 rendering with useConfirm:", { confirm, ConfirmDialog })
+  console.log("MarketingDebug3 rendering with useConfirm:", {
+    confirm,
+    ConfirmDialog,
+  })
 
   // Fetch campaigns
   const { data, isLoading, error } = useQuery({

@@ -77,6 +77,27 @@ const PercentageTooltip = ({ active, payload, label }: any) => {
   )
 }
 
+// Custom tooltip for payment distribution (percentage + amount)
+const PaymentDistributionTooltip = ({ active, payload }: any) => {
+  if (!active || !payload || !payload.length) return null
+
+  const data = payload[0].payload
+
+  return (
+    <div className="bg-white dark:bg-dark-2 p-3 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-600">
+      <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+        {data.name}
+      </p>
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Percentage: <span className="font-semibold">{data.value.toFixed(1)}%</span>
+      </p>
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Amount: <span className="font-semibold">${data.amount.toLocaleString()}</span>
+      </p>
+    </div>
+  )
+}
+
 export function RevenueTrendChart({ metrics }: ChartProps) {
   if (!metrics.revenue_trend || metrics.revenue_trend.length === 0) {
     return (
@@ -276,7 +297,7 @@ export function PaymentDistributionChart({ metrics }: ChartProps) {
               />
             ))}
           </Pie>
-          <Tooltip content={<PercentageTooltip />} />
+          <Tooltip content={<PaymentDistributionTooltip />} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

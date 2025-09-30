@@ -19,7 +19,7 @@ export function MarketingDebugMinimal() {
         </div>
         <button
           type="button"
-          onClick={() => setCounter(c => c + 1)}
+          onClick={() => setCounter((c) => c + 1)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Counter: {counter}

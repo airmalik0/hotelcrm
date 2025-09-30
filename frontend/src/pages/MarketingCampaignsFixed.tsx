@@ -33,7 +33,8 @@ import { useState } from "react"
 // Import CampaignFormModal with fallback
 let CampaignFormModal: React.ComponentType<any>
 try {
-  CampaignFormModal = require("@/components/campaigns/CampaignFormModal").CampaignFormModal
+  CampaignFormModal =
+    require("@/components/campaigns/CampaignFormModal").CampaignFormModal
   console.log("CampaignFormModal loaded successfully:", CampaignFormModal)
 } catch (error) {
   console.error("Failed to import CampaignFormModal:", error)
@@ -51,7 +52,7 @@ try {
   console.error("Failed to import useConfirm:", error)
   useConfirm = () => ({
     confirm: async () => true,
-    ConfirmDialog: () => <div>ConfirmDialog import error</div>
+    ConfirmDialog: () => <div>ConfirmDialog import error</div>,
   })
 }
 

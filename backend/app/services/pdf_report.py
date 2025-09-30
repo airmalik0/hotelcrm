@@ -9,6 +9,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     Image,
     PageBreak,
@@ -30,17 +32,33 @@ class PDFReportService:
 
     def __init__(self) -> None:
         """Initialize PDF report service."""
+        self._register_unicode_fonts()
         self.styles = getSampleStyleSheet()
         self.chart_service = ChartService()
         self._setup_custom_styles()
 
+    def _register_unicode_fonts(self) -> None:
+        """Register Unicode-compatible fonts (DejaVu) for international character support."""
+        try:
+            # Register DejaVu Sans (supports Cyrillic, Arabic, and other Unicode)
+            pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+            pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
+        except Exception:
+            # Fallback to Helvetica if DejaVu is not available
+            pass
+
     def _setup_custom_styles(self) -> None:
         """Setup custom styles for the report."""
+        # Determine which font to use
+        font_name = "DejaVuSans" if "DejaVuSans" in pdfmetrics.getRegisteredFontNames() else "Helvetica"
+        font_name_bold = "DejaVuSans-Bold" if "DejaVuSans-Bold" in pdfmetrics.getRegisteredFontNames() else "Helvetica-Bold"
+
         # Title style
         self.styles.add(
             ParagraphStyle(
                 name="CustomTitle",
                 parent=self.styles["Heading1"],
+                fontName=font_name_bold,
                 fontSize=24,
                 textColor=colors.HexColor("#1f2937"),
                 spaceAfter=30,
@@ -53,6 +71,7 @@ class PDFReportService:
             ParagraphStyle(
                 name="SectionHeader",
                 parent=self.styles["Heading2"],
+                fontName=font_name_bold,
                 fontSize=16,
                 textColor=colors.HexColor("#374151"),
                 spaceBefore=20,
@@ -65,11 +84,21 @@ class PDFReportService:
             ParagraphStyle(
                 name="MetricValue",
                 parent=self.styles["Normal"],
+                fontName=font_name,
                 fontSize=14,
                 textColor=colors.HexColor("#059669"),
                 alignment=2,  # Right alignment
             )
         )
+
+        # Store font names for table usage
+        self.font_name = font_name
+        self.font_name_bold = font_name_bold
+
+        # Update Normal style to use Unicode font
+        self.styles["Normal"].fontName = font_name
+        self.styles["Heading1"].fontName = font_name_bold
+        self.styles["Heading2"].fontName = font_name_bold
 
     def generate_dashboard_report(
         self,
@@ -619,12 +648,12 @@ class PDFReportService:
             # Header row
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f3f4f6")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#1f2937")),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, 0), self.font_name_bold),
             ("FONTSIZE", (0, 0), (-1, 0), 12),
             ("ALIGN", (0, 0), (-1, 0), "LEFT"),
 
             # Data rows
-            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTNAME", (0, 1), (-1, -1), self.font_name),
             ("FONTSIZE", (0, 1), (-1, -1), 10),
             ("ALIGN", (0, 1), (0, -1), "LEFT"),  # First column left aligned
             ("ALIGN", (1, 1), (-1, -1), "RIGHT"),  # Other columns right aligned

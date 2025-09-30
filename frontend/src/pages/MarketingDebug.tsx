@@ -1,8 +1,6 @@
 // Step-by-step recreation of MarketingCampaigns to isolate React error #130
 
-import {
-  getCampaigns,
-} from "@/api/campaigns"
+import { getCampaigns } from "@/api/campaigns"
 import type {
   CampaignPublic,
   CampaignStatus,

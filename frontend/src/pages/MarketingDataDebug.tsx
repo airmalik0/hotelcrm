@@ -79,12 +79,15 @@ export function MarketingDataDebug() {
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
         <div className="space-y-4">
           <div>
-            <strong>Total campaigns:</strong> {campaigns.length} (total: {totalCount})
+            <strong>Total campaigns:</strong> {campaigns.length} (total:{" "}
+            {totalCount})
           </div>
 
           {campaigns.length > 0 && (
             <div>
-              <strong>First campaign data (check console for full details):</strong>
+              <strong>
+                First campaign data (check console for full details):
+              </strong>
               <pre className="mt-2 p-4 bg-gray-100 dark:bg-gray-800 rounded text-sm overflow-auto">
                 {JSON.stringify(campaigns[0], null, 2)}
               </pre>
@@ -100,10 +103,18 @@ export function MarketingDataDebug() {
             Simple Campaign Render Test
           </h2>
           <div className="space-y-2">
-            <div><strong>Name:</strong> {String(campaigns[0].name)}</div>
-            <div><strong>Type:</strong> {String(campaigns[0].type)}</div>
-            <div><strong>Status:</strong> {String(campaigns[0].status)}</div>
-            <div><strong>Message:</strong> {String(campaigns[0].message_template)}</div>
+            <div>
+              <strong>Name:</strong> {String(campaigns[0].name)}
+            </div>
+            <div>
+              <strong>Type:</strong> {String(campaigns[0].type)}
+            </div>
+            <div>
+              <strong>Status:</strong> {String(campaigns[0].status)}
+            </div>
+            <div>
+              <strong>Message:</strong> {String(campaigns[0].message_template)}
+            </div>
           </div>
         </div>
       )}
