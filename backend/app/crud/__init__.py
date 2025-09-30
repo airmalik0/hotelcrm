@@ -6,6 +6,10 @@ from app.crud.user import (
     update_user,
     user,
 )
+from app.crud.expense import (
+    expense,
+    expense_category,
+)
 
 __all__ = [
     "user",
@@ -13,4 +17,6 @@ __all__ = [
     "update_user",
     "get_user_by_username",
     "authenticate",
+    "expense",
+    "expense_category",
 ]

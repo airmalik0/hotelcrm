@@ -84,6 +84,20 @@ from .campaigns import (
     CustomerPreviewResponse,
     TriggerCheckResponse,
 )
+from .expense import (
+    ExpenseCategoryBase,
+    ExpenseCategory,
+    ExpenseCategoryCreate,
+    ExpenseCategoryUpdate,
+    ExpenseCategoryPublic,
+    ExpenseCategoriesPublic,
+    ExpenseBase,
+    Expense,
+    ExpenseCreate,
+    ExpenseUpdate,
+    ExpensePublic,
+    ExpensesPublic,
+)
 
 from sqlmodel import SQLModel  # re-export for Alembic
 

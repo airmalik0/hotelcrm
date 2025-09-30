@@ -6,6 +6,7 @@ import { BookingGridPage } from "@/pages/BookingGrid"
 import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
+import { Expenses } from "@/pages/Expenses"
 import { Login } from "@/pages/Login"
 import { MarketingCampaigns } from "@/pages/MarketingCampaigns"
 import { RoomList } from "@/pages/RoomList"
@@ -113,6 +114,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={["admin", "manager"]}>
         <MainLayout>
           <MarketingCampaigns />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/expenses",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+        <MainLayout>
+          <Expenses />
         </MainLayout>
       </ProtectedRoute>
     ),

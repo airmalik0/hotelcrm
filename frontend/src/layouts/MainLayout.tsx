@@ -10,6 +10,7 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
+  DollarSign,
   FileText,
   Home,
   LayoutGrid,
@@ -86,6 +87,13 @@ const menuItems: MenuItem[] = [
     label: "Marketing",
     icon: Mail,
     href: "/marketing",
+    roles: ["admin", "manager"],
+  },
+  {
+    key: "expenses",
+    label: "Expenses",
+    icon: DollarSign,
+    href: "/expenses",
     roles: ["admin", "manager"],
   },
   {
