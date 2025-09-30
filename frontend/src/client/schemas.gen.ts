@@ -1655,6 +1655,24 @@ export const PaymentDistributionSchema = {
             title: 'Terminal Percentage',
             description: 'Percentage of terminal payments'
         },
+        cash_count: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Cash Count',
+            description: 'Number of cash payments'
+        },
+        transfer_count: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Transfer Count',
+            description: 'Number of transfer payments'
+        },
+        terminal_count: {
+            type: 'integer',
+            minimum: 0,
+            title: 'Terminal Count',
+            description: 'Number of terminal payments'
+        },
         cash_amount: {
             type: 'number',
             minimum: 0,
@@ -1675,7 +1693,7 @@ export const PaymentDistributionSchema = {
         }
     },
     type: 'object',
-    required: ['cash_percentage', 'transfer_percentage', 'terminal_percentage', 'cash_amount', 'transfer_amount', 'terminal_amount'],
+    required: ['cash_percentage', 'transfer_percentage', 'terminal_percentage', 'cash_count', 'transfer_count', 'terminal_count', 'cash_amount', 'transfer_amount', 'terminal_amount'],
     title: 'PaymentDistribution',
     description: 'Payment method distribution.'
 } as const;

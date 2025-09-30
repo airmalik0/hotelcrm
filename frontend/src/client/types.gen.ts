@@ -460,6 +460,18 @@ export type PaymentDistribution = {
      */
     terminal_percentage: number;
     /**
+     * Number of cash payments
+     */
+    cash_count: number;
+    /**
+     * Number of transfer payments
+     */
+    transfer_count: number;
+    /**
+     * Number of terminal payments
+     */
+    terminal_count: number;
+    /**
      * Total cash revenue
      */
     cash_amount: number;

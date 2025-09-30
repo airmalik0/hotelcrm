@@ -538,24 +538,24 @@ def get_seasonal_trends(
     )
 
 
-@router.get("/customer-segments", response_model=AnalyticsResponse)
+@router.get("/top-customers", response_model=AnalyticsResponse)
 @limiter.limit(RateLimits.READ_SINGLE)
-def get_customer_segments(
+def get_top_customers(
     request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: User = Depends(require_admin),
+    limit: int = Query(20, ge=1, le=100, description="Number of top customers to return (1-100)"),
     date_from: str | None = Query(None, description="Start date in ISO format"),
     date_to: str | None = Query(None, description="End date in ISO format"),
 ) -> Any:
     """
-    Segment customers into categories based on booking behavior.
+    Get top customers by total revenue and booking count.
 
-    Categories:
-    - VIP: Top 10% by revenue
-    - Loyal: 5+ bookings
-    - Regular: 2-4 bookings
-    - New: First booking within last 30 days
-    - At Risk: No bookings in last 90 days
+    Returns the top N customers sorted by total spent, with their:
+    - Total revenue
+    - Total bookings
+    - Average booking value
+    - First and last booking dates
 
     Requires admin access.
     """
@@ -574,7 +574,7 @@ def get_customer_segments(
             raise ValidationError(f"Invalid date_to format: {str(e)}")
 
     service = AnalyticsService(session)
-    segments_data = service.get_customer_segments(parsed_date_from, parsed_date_to)
+    top_customers_data = service.get_top_customers(limit, parsed_date_from, parsed_date_to)
 
     # Log audit
     log_audit(
@@ -583,38 +583,50 @@ def get_customer_segments(
         action="viewed",
         entity_type="analytics",
         entity_id=current_user.id,
-        entity_name="customer_segments",
-        description="Viewed customer segmentation analysis",
+        entity_name="top_customers",
+        description=f"Viewed top {limit} customers",
     )
     session.commit()
 
     return AnalyticsResponse(
         success=True,
-        data=segments_data,
+        data=top_customers_data,
     )
 
 
-@router.get("/customer-lifetime", response_model=AnalyticsResponse)
+@router.get("/room-performance", response_model=AnalyticsResponse)
 @limiter.limit(RateLimits.READ_SINGLE)
-def get_customer_lifetime_value(
+def get_room_performance(
     request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: User = Depends(require_admin),
-    months_back: int = Query(12, ge=1, le=60, description="Number of months to analyze (1-60)"),
+    date_from: str = Query(..., description="Start date in ISO format"),
+    date_to: str = Query(..., description="End date in ISO format"),
+    top_n: int = Query(3, ge=1, le=10, description="Number of top/bottom rooms to show"),
 ) -> Any:
     """
-    Calculate customer lifetime value (LTV) metrics.
+    Get best and worst performing rooms by ADR (Average Daily Rate).
 
-    Analyzes:
-    - Average LTV across all customers
-    - LTV by customer tenure
-    - Top customers by LTV
-    - Average booking value and frequency
+    Returns:
+    - Top N rooms with highest ADR
+    - Bottom N rooms with lowest ADR
+    - Each room includes: room number, ADR, total revenue, bookings, occupancy rate
 
     Requires admin access.
     """
+    # Parse dates
+    try:
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
+    except ValueError as e:
+        raise ValidationError(f"Invalid date format: {str(e)}")
+
     service = AnalyticsService(session)
-    ltv_data = service.get_customer_lifetime_value(months_back)
+    filters = AnalyticsFilter(
+        date_from=parsed_date_from,
+        date_to=parsed_date_to,
+    )
+    performance_data = service.get_room_performance(filters, top_n)
 
     # Log audit
     log_audit(
@@ -623,14 +635,15 @@ def get_customer_lifetime_value(
         action="viewed",
         entity_type="analytics",
         entity_id=current_user.id,
-        entity_name="customer_lifetime_value",
-        description=f"Viewed customer LTV analysis for {months_back} months",
+        entity_name="room_performance",
+        description=f"Viewed room performance analysis (top {top_n})",
     )
     session.commit()
 
     return AnalyticsResponse(
         success=True,
-        data=ltv_data,
+        data=performance_data,
+        filters_applied=filters,
     )
 
 

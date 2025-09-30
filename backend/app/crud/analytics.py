@@ -259,6 +259,9 @@ class CRUDAnalytics:
             "cash_percentage": 0.0,
             "transfer_percentage": 0.0,
             "terminal_percentage": 0.0,
+            "cash_count": 0,
+            "transfer_count": 0,
+            "terminal_count": 0,
             "cash_amount": 0.0,
             "transfer_amount": 0.0,
             "terminal_amount": 0.0,
@@ -268,6 +271,7 @@ class CRUDAnalytics:
             method = result.payment_method.value.lower()
             percentage = (result.count / total_bookings * 100) if total_bookings > 0 else 0
             distribution[f"{method}_percentage"] = round(percentage, 2)
+            distribution[f"{method}_count"] = int(result.count)
             distribution[f"{method}_amount"] = float(result.amount or 0)
 
         return distribution
@@ -379,6 +383,148 @@ class CRUDAnalytics:
             "average_age": round(average_age, 1) if average_age else None,
             "age_distribution": age_distribution,
             "district_distribution": district_distribution,
+        }
+
+    def get_room_performance(
+        self,
+        session: Session,
+        date_from: datetime,
+        date_to: datetime,
+        top_n: int = 3,
+    ) -> dict[str, Any]:
+        """
+        Get best and worst performing rooms by ADR (Average Daily Rate).
+
+        Args:
+            session: Database session
+            date_from: Start date
+            date_to: End date
+            top_n: Number of top/bottom rooms to return
+
+        Returns:
+            Dictionary with top_performers and bottom_performers lists
+        """
+        # Calculate ADR per room (total_revenue / total_nights)
+        nights_expr = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
+        query = select(
+            Room.id,
+            Room.room_number,
+            Room.room_type,
+            func.count(Booking.id).label("bookings"),
+            func.sum(Booking.total_amount).label("revenue"),
+            func.sum(nights_expr).label("total_nights"),
+            (func.sum(Booking.total_amount) / func.sum(nights_expr)).label("adr"),
+        ).join(
+            Booking, Room.id == Booking.room_id
+        ).where(
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            Room.id, Room.room_number, Room.room_type
+        ).having(
+            func.count(Booking.id) > 0  # Only rooms with bookings
+        )
+
+        results = session.exec(query).all()
+
+        # Sort by ADR
+        sorted_results = sorted(results, key=lambda x: x.adr if x.adr else 0, reverse=True)
+
+        # Get top N and bottom N
+        top_performers = []
+        for result in sorted_results[:top_n]:
+            # Calculate occupancy for this room
+            days_in_period = (date_to - date_from).days
+            if days_in_period <= 0:
+                days_in_period = 1
+            available_nights = days_in_period
+
+            # Get occupied nights for this room
+            occupied_nights = session.exec(
+                select(
+                    func.sum(func.greatest(1, func.extract("day",
+                        func.least(Booking.check_out, date_to) -
+                        func.greatest(Booking.check_in, date_from)
+                    )))
+                ).where(
+                    Booking.room_id == result.id,
+                    Booking.check_in < date_to,
+                    Booking.check_out > date_from,
+                    Booking.status.in_([
+                        BookingStatus.CONFIRMED,
+                        BookingStatus.CHECKED_IN,
+                        BookingStatus.CHECKED_OUT
+                    ]),
+                )
+            ).first() or 0
+
+            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
+
+            top_performers.append({
+                "room_id": str(result.id),
+                "room_number": result.room_number,
+                "room_type": result.room_type.value,
+                "adr": round(float(result.adr or 0), 2),
+                "revenue": float(result.revenue or 0),
+                "bookings": int(result.bookings or 0),
+                "total_nights": int(result.total_nights or 0),
+                "occupancy_rate": round(occupancy_rate, 2),
+            })
+
+        bottom_performers = []
+        for result in sorted_results[-top_n:]:
+            # Calculate occupancy for this room
+            days_in_period = (date_to - date_from).days
+            if days_in_period <= 0:
+                days_in_period = 1
+            available_nights = days_in_period
+
+            # Get occupied nights for this room
+            occupied_nights = session.exec(
+                select(
+                    func.sum(func.greatest(1, func.extract("day",
+                        func.least(Booking.check_out, date_to) -
+                        func.greatest(Booking.check_in, date_from)
+                    )))
+                ).where(
+                    Booking.room_id == result.id,
+                    Booking.check_in < date_to,
+                    Booking.check_out > date_from,
+                    Booking.status.in_([
+                        BookingStatus.CONFIRMED,
+                        BookingStatus.CHECKED_IN,
+                        BookingStatus.CHECKED_OUT
+                    ]),
+                )
+            ).first() or 0
+
+            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
+
+            bottom_performers.append({
+                "room_id": str(result.id),
+                "room_number": result.room_number,
+                "room_type": result.room_type.value,
+                "adr": round(float(result.adr or 0), 2),
+                "revenue": float(result.revenue or 0),
+                "bookings": int(result.bookings or 0),
+                "total_nights": int(result.total_nights or 0),
+                "occupancy_rate": round(occupancy_rate, 2),
+            })
+
+        return {
+            "top_performers": top_performers,
+            "bottom_performers": list(reversed(bottom_performers)),  # Show worst first
+            "total_rooms_analyzed": len(results),
+            "analysis_period": {
+                "start": date_from.isoformat(),
+                "end": date_to.isoformat(),
+            }
         }
 
     def get_room_type_breakdown(
@@ -776,6 +922,94 @@ class CRUDAnalytics:
                 "end": end_date.isoformat(),
                 "years": years,
             }
+        }
+
+    def get_top_customers(
+        self,
+        session: Session,
+        limit: int = 20,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, Any]:
+        """
+        Get top customers by total revenue.
+
+        Args:
+            limit: Number of top customers to return
+            date_from: Optional start date for filtering
+            date_to: Optional end date for filtering
+
+        Returns:
+            Dictionary with top customers list
+        """
+        if not date_to:
+            date_to = datetime.now(timezone.utc)
+        if not date_from:
+            date_from = date_to - timedelta(days=365)
+
+        # Get all customers with stats in the period
+        customer_query = select(
+            Customer.id,
+            Customer.first_name,
+            Customer.last_name,
+            Customer.phone,
+            Customer.first_booking_date,
+            Customer.last_booking_date,
+            Customer.total_bookings,
+            Customer.total_spent,
+            func.count(Booking.id).label("period_bookings"),
+            func.sum(Booking.total_amount).label("period_revenue"),
+        ).join(
+            Booking, Customer.id == Booking.customer_id, isouter=True
+        ).where(
+            Booking.check_out >= date_from,
+            Booking.check_in <= date_to,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        ).group_by(
+            Customer.id,
+            Customer.first_name,
+            Customer.last_name,
+            Customer.phone,
+            Customer.first_booking_date,
+            Customer.last_booking_date,
+            Customer.total_bookings,
+            Customer.total_spent
+        ).order_by(
+            Customer.total_spent.desc()
+        ).limit(limit)
+
+        results = session.exec(customer_query).all()
+
+        # Format results
+        top_customers = []
+        for customer in results:
+            full_name = f"{customer.first_name} {customer.last_name}" if customer.first_name and customer.last_name else customer.first_name or customer.last_name or ""
+            avg_booking_value = float(customer.total_spent or 0) / max(1, customer.total_bookings)
+
+            top_customers.append({
+                "id": str(customer.id),
+                "name": full_name,
+                "phone": customer.phone,
+                "total_revenue": float(customer.total_spent or 0),
+                "total_bookings": customer.total_bookings,
+                "average_booking_value": round(avg_booking_value, 2),
+                "first_booking_date": customer.first_booking_date.isoformat() if customer.first_booking_date else None,
+                "last_booking_date": customer.last_booking_date.isoformat() if customer.last_booking_date else None,
+                "period_bookings": customer.period_bookings,
+                "period_revenue": float(customer.period_revenue or 0),
+            })
+
+        return {
+            "top_customers": top_customers,
+            "analysis_period": {
+                "start": date_from.isoformat(),
+                "end": date_to.isoformat(),
+            },
+            "total_customers": len(top_customers),
         }
 
     def get_customer_segments(

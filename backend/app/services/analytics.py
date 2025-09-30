@@ -288,22 +288,27 @@ class AnalyticsService:
 
         return self.crud.get_seasonal_trends(self.session, years)
 
-    def get_customer_segments(
+    def get_top_customers(
         self,
+        limit: int = 20,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
     ) -> dict[str, Any]:
         """
-        Segment customers into categories based on booking behavior.
+        Get top customers by total revenue.
 
         Args:
-            date_from: Start date for analysis
-            date_to: End date for analysis
+            limit: Number of top customers to return
+            date_from: Optional start date for filtering bookings
+            date_to: Optional end date for filtering bookings
 
         Returns:
-            Customer segmentation data
+            List of top customers with revenue, bookings, and dates
         """
-        return self.crud.get_customer_segments(self.session, date_from, date_to)
+        if date_from and date_to:
+            self.validate_date_range(date_from, date_to)
+
+        return self.crud.get_top_customers(self.session, limit, date_from, date_to)
 
     def get_customer_lifetime_value(self, months_back: int = 12) -> dict[str, Any]:
         """
@@ -394,6 +399,26 @@ class AnalyticsService:
         )
 
         return customer_data
+
+    def get_room_performance(self, filters: AnalyticsFilter, top_n: int = 3) -> dict[str, Any]:
+        """
+        Get best and worst performing rooms by ADR.
+
+        Args:
+            filters: Analytics filter parameters
+            top_n: Number of top/bottom rooms to show
+
+        Returns:
+            Dictionary with top_performers and bottom_performers
+        """
+        self.validate_date_range(filters.date_from, filters.date_to)
+
+        return self.crud.get_room_performance(
+            self.session,
+            filters.date_from,
+            filters.date_to,
+            top_n,
+        )
 
     def get_quick_stats(self) -> dict[str, Any]:
         """Get quick statistics for today, this week, and this month."""
