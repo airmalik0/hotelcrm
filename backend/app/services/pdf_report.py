@@ -13,7 +13,6 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     Image,
-    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -719,34 +718,19 @@ class PDFReportService:
         table.setStyle(style)
         return table
 
-    def _add_section_with_header(self, elements: list, header_text: str, content_elements: list, force_new_page: bool = False) -> None:
+    def _add_section_with_header(self, elements: list, header_text: str, content_elements: list) -> None:
         """
-        Add a section with header and content, keeping them together on the same page.
+        Add a section with header and content on a new page.
 
         Args:
             elements: Main elements list
             header_text: Section header text
             content_elements: List of elements to include in the section
-            force_new_page: If True, start section on a new page
         """
-        if force_new_page:
-            elements.append(PageBreak())
-
-        # Create section content with header
-        section_content = [
-            Paragraph(header_text, self.styles["SectionHeader"]),
-        ]
-        section_content.extend(content_elements)
-
-        # Keep header and at least first part of content together
-        # For large content, we'll keep header with first few elements
-        if len(content_elements) <= 3:
-            # Keep entire section together if it's small
-            elements.append(KeepTogether(section_content))
-        else:
-            # Keep header with first element(s) together, rest can flow
-            elements.append(KeepTogether([section_content[0], section_content[1]]))
-            elements.extend(section_content[2:])
+        # Start each major section on a new page
+        elements.append(PageBreak())
+        elements.append(Paragraph(header_text, self.styles["SectionHeader"]))
+        elements.extend(content_elements)
 
     def generate_comparison_report(
         self,
