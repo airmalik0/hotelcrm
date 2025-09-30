@@ -330,6 +330,12 @@ class AnalyticsService:
         today_occupancy = self.crud.get_occupancy_metrics(
             self.session, today_start, now
         )
+        week_occupancy = self.crud.get_occupancy_metrics(
+            self.session, week_start, now
+        )
+        month_occupancy = self.crud.get_occupancy_metrics(
+            self.session, month_start, now
+        )
 
         return {
             "today": {
@@ -340,9 +346,11 @@ class AnalyticsService:
             "week": {
                 "revenue": week_revenue["total_revenue"],
                 "bookings": week_revenue["booking_count"],
+                "occupancy": week_occupancy["occupancy_rate"],
             },
             "month": {
                 "revenue": month_revenue["total_revenue"],
                 "bookings": month_revenue["booking_count"],
+                "occupancy": month_occupancy["occupancy_rate"],
             },
         }

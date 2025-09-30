@@ -377,11 +377,11 @@ class PDFReportService:
             ["Today", f"${quick_stats['today']['revenue']:,.2f}",
              f"{quick_stats['today']['bookings']}", f"{quick_stats['today']['occupancy']:.1f}%"],
             ["This Week", f"${quick_stats['week']['revenue']:,.2f}",
-             f"{quick_stats['week']['bookings']}", "N/A"],
+             f"{quick_stats['week']['bookings']}", f"{quick_stats['week']['occupancy']:.1f}%"],
             ["This Month", f"${quick_stats['month']['revenue']:,.2f}",
-             f"{quick_stats['month']['bookings']}", "N/A"],
+             f"{quick_stats['month']['bookings']}", f"{quick_stats['month']['occupancy']:.1f}%"],
         ]
-        quick_table = self._create_table(quick_data, col_widths=[1.5*inch, 1.5*inch, 1*inch, 1*inch])
+        quick_table = self._create_table(quick_data, col_widths=[1.3*inch, 1.8*inch, 1.1*inch, 1.3*inch])
         elements.append(quick_table)
         elements.append(Spacer(1, 20))
 
@@ -427,6 +427,17 @@ class PDFReportService:
                 elements.append(Spacer(1, 10))
             except Exception:
                 pass
+
+        # Payment Distribution Table with amounts
+        payment_data = [
+            ["Payment Method", "Percentage", "Amount"],
+            ["Cash", f"{metrics.payment_distribution.cash_percentage:.1f}%", f"${metrics.payment_distribution.cash_amount:,.2f}"],
+            ["Bank Transfer", f"{metrics.payment_distribution.transfer_percentage:.1f}%", f"${metrics.payment_distribution.transfer_amount:,.2f}"],
+            ["Terminal/Card", f"{metrics.payment_distribution.terminal_percentage:.1f}%", f"${metrics.payment_distribution.terminal_amount:,.2f}"],
+        ]
+        payment_table = self._create_table(payment_data, col_widths=[2*inch, 1.5*inch, 2*inch])
+        elements.append(payment_table)
+        elements.append(Spacer(1, 15))
 
         # Occupancy metrics
         occupancy_data = [
