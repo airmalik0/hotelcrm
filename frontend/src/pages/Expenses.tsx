@@ -355,7 +355,7 @@ function ExpensesTab({
                       {formatDate(expense.expense_date)}
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-900 dark:text-white font-medium">
-                      {expense.category.name}
+                      {expense.category?.name || "N/A"}
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-300">
                       {expense.description || "-"}
@@ -483,12 +483,12 @@ function ExpenseModal({
   } = useForm<ExpenseCreate | ExpenseUpdate>({
     defaultValues: expense
       ? {
-          category_id: expense.category_id,
+          category_id: expense.category_id as any,
           amount: expense.amount,
           description: expense.description || "",
           expense_date: expense.expense_date
             ? new Date(expense.expense_date).toISOString().slice(0, 16)
-            : undefined,
+            : new Date().toISOString().slice(0, 16),
         }
       : {
           expense_date: new Date().toISOString().slice(0, 16),
