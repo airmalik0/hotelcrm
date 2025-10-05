@@ -302,7 +302,7 @@ function ExpensesTab({
             >
               <option value="">Все категории</option>
               {categoriesData?.data.map((cat: ExpenseCategoryPublic) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={String(cat.id)} value={String(cat.id)}>
                   {cat.name}
                 </option>
               ))}
@@ -348,14 +348,14 @@ function ExpensesTab({
               ) : (
                 expensesData?.data.map((expense: ExpensePublic) => (
                   <tr
-                    key={expense.id}
+                    key={String(expense.id)}
                     className="border-b border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700"
                   >
                     <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-300">
                       {formatDate(expense.expense_date)}
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-900 dark:text-white font-medium">
-                      {expense.category?.name || "N/A"}
+                      {expense.category ? String(expense.category.name) : "N/A"}
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-300">
                       {expense.description || "-"}
@@ -428,7 +428,7 @@ function CategoriesTab({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
           {categoriesData?.data.map((category: ExpenseCategoryPublic) => (
             <div
-              key={category.id}
+              key={String(category.id)}
               className="border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between">
@@ -483,7 +483,7 @@ function ExpenseModal({
   } = useForm<ExpenseCreate | ExpenseUpdate>({
     defaultValues: expense
       ? {
-          category_id: expense.category_id as any,
+          category_id: String(expense.category_id),
           amount: expense.amount,
           description: expense.description || "",
           expense_date: expense.expense_date
@@ -543,7 +543,7 @@ function ExpenseModal({
               >
                 <option value="">Выберите категорию</option>
                 {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
+                  <option key={String(cat.id)} value={String(cat.id)}>
                     {cat.name}
                   </option>
                 ))}

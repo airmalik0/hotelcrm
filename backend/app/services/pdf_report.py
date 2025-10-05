@@ -361,6 +361,10 @@ class PDFReportService:
             district_revenue = analytics_service.get_district_revenue(filters.date_from, filters.date_to)
             self._add_district_revenue_section(elements, district_revenue)
 
+            # 10. Room Performance Analysis
+            room_performance = analytics_service.get_room_performance(filters, top_n=10)
+            self._add_room_performance_section(elements, room_performance)
+
         except Exception as e:
             # Fallback to basic dashboard if comprehensive fails
             elements.append(Paragraph(f"Note: Using basic report due to data limitation: {str(e)}", self.styles["Normal"]))
@@ -667,6 +671,81 @@ class PDFReportService:
 
         max_hour = max(hourly_data, key=lambda x: x['count'])
         return f"{max_hour['hour']:02d}:00 ({max_hour['count']} events)"
+
+    def _add_room_performance_section(self, elements: list[Any], room_performance_data: dict[str, Any]) -> None:
+        """Add room performance analysis section (similar to district revenue)."""
+        elements.append(PageBreak())
+        elements.append(Paragraph("Room Performance Analysis", self.styles["SectionHeader"]))
+
+        top_performers = room_performance_data.get("top_performers", [])
+        bottom_performers = room_performance_data.get("bottom_performers", [])
+        total_rooms = room_performance_data.get("total_rooms_analyzed", 0)
+
+        if total_rooms == 0:
+            elements.append(Paragraph("No room performance data available.", self.styles["Normal"]))
+            return
+
+        # Summary
+        summary_text = f"Total Rooms Analyzed: {total_rooms}"
+        elements.append(Paragraph(summary_text, self.styles["Normal"]))
+        elements.append(Spacer(1, 10))
+
+        # Top Performers Table
+        if top_performers:
+            elements.append(Paragraph("Top Performing Rooms (by ADR)", self.styles["Normal"]))
+            elements.append(Spacer(1, 5))
+
+            top_table_data = [[
+                "Rank", "Room #", "Type", "ADR", "Revenue", "Bookings", "Nights", "Occupancy"
+            ]]
+
+            for idx, room in enumerate(top_performers, 1):
+                top_table_data.append([
+                    str(idx),
+                    room.get("room_number", "N/A"),
+                    room.get("room_type", "").upper(),
+                    f"${room.get('adr', 0):,.2f}",
+                    f"${room.get('revenue', 0):,.2f}",
+                    f"{room.get('bookings', 0):,}",
+                    f"{room.get('total_nights', 0):,}",
+                    f"{room.get('occupancy_rate', 0):.1f}%",
+                ])
+
+            top_table = self._create_table(
+                top_table_data,
+                col_widths=[0.5*inch, 0.8*inch, 0.8*inch, 1*inch, 1.2*inch, 0.9*inch, 0.8*inch, 1*inch]
+            )
+            elements.append(top_table)
+            elements.append(Spacer(1, 15))
+
+        # Bottom Performers Table
+        if bottom_performers:
+            elements.append(Paragraph("Underperforming Rooms (by ADR)", self.styles["Normal"]))
+            elements.append(Spacer(1, 5))
+
+            bottom_table_data = [[
+                "Rank", "Room #", "Type", "ADR", "Revenue", "Bookings", "Nights", "Occupancy"
+            ]]
+
+            for idx, room in enumerate(bottom_performers, 1):
+                bottom_table_data.append([
+                    str(idx),
+                    room.get("room_number", "N/A"),
+                    room.get("room_type", "").upper(),
+                    f"${room.get('adr', 0):,.2f}",
+                    f"${room.get('revenue', 0):,.2f}",
+                    f"{room.get('bookings', 0):,}",
+                    f"{room.get('total_nights', 0):,}",
+                    f"{room.get('occupancy_rate', 0):.1f}%",
+                ])
+
+            bottom_table = self._create_table(
+                bottom_table_data,
+                col_widths=[0.5*inch, 0.8*inch, 0.8*inch, 1*inch, 1.2*inch, 0.9*inch, 0.8*inch, 1*inch]
+            )
+            elements.append(bottom_table)
+
+        elements.append(Spacer(1, 20))
 
 
     def _create_table(

@@ -46,12 +46,6 @@ export function MarketingCampaigns() {
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialog } = useConfirm()
 
-  console.log("MarketingCampaigns - FIXED VERSION - All imports successful:", {
-    CampaignFormModal,
-    useConfirm,
-    ConfirmDialog,
-  })
-
   // Fetch campaigns
   const { data, isLoading, error } = useQuery({
     queryKey: [

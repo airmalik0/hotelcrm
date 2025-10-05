@@ -322,6 +322,70 @@ export type DiscountModificationRequest = {
  */
 export type District = 'ALMAZAR' | 'BEKTEMIR' | 'MIRABAD' | 'MIRZO_ULUGBEK' | 'SERGELI' | 'UCHTEPA' | 'CHILANZAR' | 'SHAYKHANTAKHUR' | 'YUNUSABAD' | 'YAKKASARAY' | 'YASHNABAD' | 'YANGIHAYOT';
 
+export type ExpenseCategoriesPublic = {
+    data: Array<ExpenseCategoryPublic>;
+    count: number;
+};
+
+export type ExpenseCategoryCreate = {
+    name: string;
+    description?: (string | null);
+};
+
+export type ExpenseCategoryPublic = {
+    name: string;
+    description?: (string | null);
+    id: string;
+    created_at: string;
+};
+
+export type ExpenseCategoryUpdate = {
+    name?: (string | null);
+    description?: (string | null);
+};
+
+export type ExpenseCreate = {
+    category_id: string;
+    /**
+     * Expense amount (must be positive)
+     */
+    amount: number;
+    description?: (string | null);
+    /**
+     * Date when expense occurred
+     */
+    expense_date?: string;
+};
+
+export type ExpensePublic = {
+    category_id: string;
+    /**
+     * Expense amount (must be positive)
+     */
+    amount: number;
+    description?: (string | null);
+    /**
+     * Date when expense occurred
+     */
+    expense_date?: string;
+    id: string;
+    created_at: string;
+    updated_at: string;
+    category: ExpenseCategoryPublic;
+};
+
+export type ExpensesPublic = {
+    data: Array<ExpensePublic>;
+    count: number;
+};
+
+export type ExpenseUpdate = {
+    category_id?: (string | null);
+    amount?: (number | null);
+    description?: (string | null);
+    expense_date?: (string | null);
+};
+
 /**
  * Grouping options for analytics.
  */
@@ -1206,7 +1270,7 @@ export type AnalyticsGetTopCustomersResponse = (AnalyticsResponse);
 
 export type AnalyticsGetTopCustomersError = (HTTPValidationError);
 
-export type AnalyticsGetRoomPerformanceData = {
+export type AnalyticsGetRoomPerformanceEndpointData = {
     query: {
         /**
          * Start date in ISO format
@@ -1223,9 +1287,9 @@ export type AnalyticsGetRoomPerformanceData = {
     };
 };
 
-export type AnalyticsGetRoomPerformanceResponse = (AnalyticsResponse);
+export type AnalyticsGetRoomPerformanceEndpointResponse = (AnalyticsResponse);
 
-export type AnalyticsGetRoomPerformanceError = (HTTPValidationError);
+export type AnalyticsGetRoomPerformanceEndpointError = (HTTPValidationError);
 
 export type AnalyticsGetDistrictRevenueData = {
     query: {
@@ -1243,3 +1307,104 @@ export type AnalyticsGetDistrictRevenueData = {
 export type AnalyticsGetDistrictRevenueResponse = (AnalyticsResponse);
 
 export type AnalyticsGetDistrictRevenueError = (HTTPValidationError);
+
+export type ExpensesReadExpenseCategoriesData = {
+    query?: {
+        limit?: number;
+        skip?: number;
+    };
+};
+
+export type ExpensesReadExpenseCategoriesResponse = (ExpenseCategoriesPublic);
+
+export type ExpensesReadExpenseCategoriesError = (HTTPValidationError);
+
+export type ExpensesCreateExpenseCategoryData = {
+    body: ExpenseCategoryCreate;
+};
+
+export type ExpensesCreateExpenseCategoryResponse = (ExpenseCategoryPublic);
+
+export type ExpensesCreateExpenseCategoryError = (HTTPValidationError);
+
+export type ExpensesReadExpenseCategoryData = {
+    path: {
+        category_id: string;
+    };
+};
+
+export type ExpensesReadExpenseCategoryResponse = (ExpenseCategoryPublic);
+
+export type ExpensesReadExpenseCategoryError = (HTTPValidationError);
+
+export type ExpensesUpdateExpenseCategoryData = {
+    body: ExpenseCategoryUpdate;
+    path: {
+        category_id: string;
+    };
+};
+
+export type ExpensesUpdateExpenseCategoryResponse = (ExpenseCategoryPublic);
+
+export type ExpensesUpdateExpenseCategoryError = (HTTPValidationError);
+
+export type ExpensesDeleteExpenseCategoryData = {
+    path: {
+        category_id: string;
+    };
+};
+
+export type ExpensesDeleteExpenseCategoryResponse = (Message);
+
+export type ExpensesDeleteExpenseCategoryError = (HTTPValidationError);
+
+export type ExpensesReadExpensesData = {
+    query?: {
+        category_id?: (string | null);
+        limit?: number;
+        skip?: number;
+    };
+};
+
+export type ExpensesReadExpensesResponse = (ExpensesPublic);
+
+export type ExpensesReadExpensesError = (HTTPValidationError);
+
+export type ExpensesCreateExpenseData = {
+    body: ExpenseCreate;
+};
+
+export type ExpensesCreateExpenseResponse = (ExpensePublic);
+
+export type ExpensesCreateExpenseError = (HTTPValidationError);
+
+export type ExpensesReadExpenseData = {
+    path: {
+        expense_id: string;
+    };
+};
+
+export type ExpensesReadExpenseResponse = (ExpensePublic);
+
+export type ExpensesReadExpenseError = (HTTPValidationError);
+
+export type ExpensesUpdateExpenseData = {
+    body: ExpenseUpdate;
+    path: {
+        expense_id: string;
+    };
+};
+
+export type ExpensesUpdateExpenseResponse = (ExpensePublic);
+
+export type ExpensesUpdateExpenseError = (HTTPValidationError);
+
+export type ExpensesDeleteExpenseData = {
+    path: {
+        expense_id: string;
+    };
+};
+
+export type ExpensesDeleteExpenseResponse = (Message);
+
+export type ExpensesDeleteExpenseError = (HTTPValidationError);

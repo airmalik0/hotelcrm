@@ -94,7 +94,7 @@ class ExpenseService:
 
     def get_expense_or_404(self, expense_id: uuid.UUID) -> Expense:
         """Get expense by ID or raise NotFoundError."""
-        expense = self.crud.get(self.session, id=expense_id)
+        expense = self.crud.get_with_category(self.session, expense_id=expense_id)
         if not expense:
             raise NotFoundError("Expense", str(expense_id))
         return expense

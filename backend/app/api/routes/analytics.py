@@ -643,3 +643,56 @@ def get_district_revenue(
         success=True,
         data=district_data,
     )
+
+
+@router.get("/room-performance", response_model=AnalyticsResponse)
+@limiter.limit(RateLimits.READ_SINGLE)
+def get_room_performance_endpoint(
+    request: Request,  # noqa: ARG001
+    session: SessionDep,
+    current_user: User = Depends(require_admin),
+    date_from: str = Query(description="Start date in ISO format"),
+    date_to: str = Query(description="End date in ISO format"),
+    top_n: int = Query(10, ge=1, le=20, description="Number of top/bottom rooms to show"),
+) -> Any:
+    """
+    Get room performance metrics by ADR (Average Daily Rate).
+
+    Shows:
+    - Top N rooms by ADR (highest revenue per night)
+    - Bottom N rooms by ADR (lowest revenue per night)
+    - Revenue, bookings, occupancy rate for each room
+
+    Requires admin access.
+    """
+    # Parse dates
+    try:
+        parsed_date_from = parse_isoformat_date(date_from)
+        parsed_date_to = parse_isoformat_date(date_to)
+    except ValueError as e:
+        raise ValidationError(f"Invalid date format: {str(e)}")
+
+    service = AnalyticsService(session)
+    filters = AnalyticsFilter(
+        date_from=parsed_date_from,
+        date_to=parsed_date_to,
+    )
+    performance_data = service.get_room_performance(filters, top_n)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="viewed",
+        entity_type="analytics",
+        entity_id=current_user.id,
+        entity_name="room_performance",
+        description=f"Viewed room performance analysis (top {top_n})",
+    )
+    session.commit()
+
+    return AnalyticsResponse(
+        success=True,
+        data=performance_data,
+        filters_applied=filters,
+    )

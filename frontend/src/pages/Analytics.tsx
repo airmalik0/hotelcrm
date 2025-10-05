@@ -8,6 +8,7 @@ import {
   getRevenueDetails,
   getSeasonalTrends,
 } from "@/api/analytics"
+import { getRooms } from "@/api/rooms"
 import type {
   AnalyticsExportRequest,
   DashboardMetrics,
@@ -58,6 +59,16 @@ export function Analytics() {
     to: format(currentDate, "yyyy-MM-dd"), // Use today as end date, not end of month
   })
 
+  // Room and room type filters
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("all")
+  const [selectedRoomType, setSelectedRoomType] = useState<string>("all")
+
+  // Fetch rooms for filter dropdown
+  const { data: roomsData } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: () => getRooms({ limit: 100 }),
+  })
+
   // Check if user has admin access
   if (user?.role !== "admin" && !user?.is_superuser) {
     return (
@@ -80,11 +91,13 @@ export function Analytics() {
     isLoading: dashboardLoading,
     refetch: refetchDashboard,
   } = useQuery({
-    queryKey: ["analytics", "dashboard", dateRange],
+    queryKey: ["analytics", "dashboard", dateRange, selectedRoomId, selectedRoomType],
     queryFn: () =>
       getDashboardMetrics({
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
+        room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
+        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
       }),
   })
 
@@ -96,23 +109,27 @@ export function Analytics() {
 
   // Revenue details
   const { data: revenueData, isLoading: revenueLoading } = useQuery({
-    queryKey: ["analytics", "revenue", dateRange],
+    queryKey: ["analytics", "revenue", dateRange, selectedRoomId, selectedRoomType],
     queryFn: () =>
       getRevenueDetails({
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
         group_by: "day",
+        room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
+        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
       }),
     enabled: activeTab === "revenue",
   })
 
   // Occupancy details
   const { data: occupancyData, isLoading: occupancyLoading } = useQuery({
-    queryKey: ["analytics", "occupancy", dateRange],
+    queryKey: ["analytics", "occupancy", dateRange, selectedRoomId, selectedRoomType],
     queryFn: () =>
       getOccupancyDetails({
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
+        room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
+        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
       }),
     enabled: activeTab === "occupancy",
   })
@@ -163,6 +180,8 @@ export function Analytics() {
       filters: {
         date_from: new Date(`${dateRange.from}T00:00:00`),
         date_to: new Date(`${dateRange.to}T23:59:59`),
+        room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
+        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
       },
       format: "pdf",
       include_charts: false,
@@ -174,6 +193,8 @@ export function Analytics() {
       filters: {
         date_from: new Date(`${dateRange.from}T00:00:00`),
         date_to: new Date(`${dateRange.to}T23:59:59`),
+        room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
+        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
       },
       format: "excel",
       include_charts: false,
@@ -308,59 +329,105 @@ export function Analytics() {
 
       {/* Date Range Selection */}
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              From Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.from}
-              onChange={(e) => handleDateChange("from", e.target.value)}
-              className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={dateRange.from}
+                onChange={(e) => handleDateChange("from", e.target.value)}
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={dateRange.to}
+                onChange={(e) => handleDateChange("to", e.target.value)}
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setQuickDateRange("today")}
+                className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setQuickDateRange("week")}
+                className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+              >
+                Last 7 Days
+              </button>
+              <button
+                onClick={() => setQuickDateRange("month")}
+                className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+              >
+                This Month
+              </button>
+              <button
+                onClick={() => setQuickDateRange("quarter")}
+                className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+              >
+                Last 3 Months
+              </button>
+              <button
+                onClick={() => setQuickDateRange("year")}
+                className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
+              >
+                Last 12 Months
+              </button>
+            </div>
           </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              To Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.to}
-              onChange={(e) => handleDateChange("to", e.target.value)}
-              className="border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
+
+          {/* Room and Room Type Filters */}
+          <div className="flex flex-wrap items-end gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-600">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Room Type
+              </label>
+              <select
+                value={selectedRoomType}
+                onChange={(e) => setSelectedRoomType(e.target.value)}
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="all">All Room Types</option>
+                <option value="standard">Standard</option>
+                <option value="vip">VIP</option>
+              </select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Specific Room
+              </label>
+              <select
+                value={selectedRoomId}
+                onChange={(e) => setSelectedRoomId(e.target.value)}
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="all">All Rooms</option>
+                {roomsData?.data.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    Room {room.room_number} ({room.room_type})
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
-              onClick={() => setQuickDateRange("today")}
+              onClick={() => {
+                setSelectedRoomId("all")
+                setSelectedRoomType("all")
+              }}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
-              Today
-            </button>
-            <button
-              onClick={() => setQuickDateRange("week")}
-              className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-            >
-              Last 7 Days
-            </button>
-            <button
-              onClick={() => setQuickDateRange("month")}
-              className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-            >
-              This Month
-            </button>
-            <button
-              onClick={() => setQuickDateRange("quarter")}
-              className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-            >
-              Last 3 Months
-            </button>
-            <button
-              onClick={() => setQuickDateRange("year")}
-              className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
-            >
-              Last 12 Months
+              Clear Filters
             </button>
           </div>
         </div>

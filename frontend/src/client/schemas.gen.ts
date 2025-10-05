@@ -1398,6 +1398,283 @@ export const DistrictSchema = {
     description: 'Districts of Tashkent - stored as uppercase in DB'
 } as const;
 
+export const ExpenseCategoriesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ExpenseCategoryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ExpenseCategoriesPublic'
+} as const;
+
+export const ExpenseCategoryCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ExpenseCategoryCreate'
+} as const;
+
+export const ExpenseCategoryPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['name', 'id', 'created_at'],
+    title: 'ExpenseCategoryPublic'
+} as const;
+
+export const ExpenseCategoryUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    title: 'ExpenseCategoryUpdate'
+} as const;
+
+export const ExpenseCreateSchema = {
+    properties: {
+        category_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Category Id'
+        },
+        amount: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Amount',
+            description: 'Expense amount (must be positive)'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        expense_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Expense Date',
+            description: 'Date when expense occurred'
+        }
+    },
+    type: 'object',
+    required: ['category_id', 'amount'],
+    title: 'ExpenseCreate'
+} as const;
+
+export const ExpensePublicSchema = {
+    properties: {
+        category_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Category Id'
+        },
+        amount: {
+            type: 'number',
+            exclusiveMinimum: 0,
+            title: 'Amount',
+            description: 'Expense amount (must be positive)'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        expense_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Expense Date',
+            description: 'Date when expense occurred'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        },
+        category: {
+            '$ref': '#/components/schemas/ExpenseCategoryPublic'
+        }
+    },
+    type: 'object',
+    required: ['category_id', 'amount', 'id', 'created_at', 'updated_at', 'category'],
+    title: 'ExpensePublic'
+} as const;
+
+export const ExpenseUpdateSchema = {
+    properties: {
+        category_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Category Id'
+        },
+        amount: {
+            anyOf: [
+                {
+                    type: 'number',
+                    exclusiveMinimum: 0
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Amount'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        expense_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expense Date'
+        }
+    },
+    type: 'object',
+    title: 'ExpenseUpdate'
+} as const;
+
+export const ExpensesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ExpensePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ExpensesPublic'
+} as const;
+
 export const GroupBySchema = {
     type: 'string',
     enum: ['day', 'week', 'month', 'room_type', 'room', 'payment_method', 'district', 'age_group'],
