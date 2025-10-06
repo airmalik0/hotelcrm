@@ -31,23 +31,35 @@ class CRUDAnalytics:
         include_cancelled: bool = False,
     ) -> dict[str, Any]:
         """
-        Get revenue metrics for a period.
+        Get revenue metrics for a period using proportional calculation.
+
+        For bookings that span multiple days, only counts revenue/nights
+        for the days that fall within the specified period.
+
+        Example: 7-day booking ($700) overlapping 1 day of period = $100 revenue
 
         Returns:
             Dictionary with total_revenue, booking_count, total_nights, discount_amount, refund_amount
         """
+        # Calculate proportional revenue for days within the period
+        # Formula: (days_in_period / total_booking_days) * total_amount
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         query = select(
-            func.sum(Booking.total_amount).label("total_revenue"),
+            func.sum(
+                Booking.total_amount * days_in_period / total_booking_days
+            ).label("total_revenue"),
             func.count(Booking.id).label("booking_count"),
+            func.sum(days_in_period).label("total_nights"),
             func.sum(
-                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
-            ).label("total_nights"),
-            func.sum(
-                Booking.total_amount * Booking.discount / 100
+                Booking.total_amount * Booking.discount / 100 * days_in_period / total_booking_days
             ).label("discount_amount"),
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,  # Booking starts before period ends
+            Booking.check_out > date_from,  # Booking ends after period starts
         )
 
         # Status filter - include CONFIRMED, CHECKED_IN, CHECKED_OUT
@@ -70,8 +82,8 @@ class CRUDAnalytics:
 
         # Calculate refunds from payment_adjustments - get bookings with adjustments
         refund_query = select(Booking.payment_adjustments).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
         )
 
         # Apply same filters as main query
@@ -228,18 +240,24 @@ class CRUDAnalytics:
         include_cancelled: bool = False,
     ) -> dict[str, Any]:
         """
-        Get payment method distribution for bookings.
+        Get payment method distribution for bookings with proportional amounts.
 
         Returns:
             Dictionary with percentages and amounts for each payment method
         """
+        # Proportional calculation
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         query = select(
             Booking.payment_method,
             func.count(Booking.id).label("count"),
-            func.sum(Booking.total_amount).label("amount"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("amount"),
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
         )
 
         if not include_cancelled:
@@ -416,22 +434,25 @@ class CRUDAnalytics:
         Returns:
             Dictionary with top_performers and bottom_performers lists
         """
-        # Calculate ADR per room (total_revenue / total_nights)
-        nights_expr = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        # Calculate ADR per room with proportional revenue
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
 
         query = select(
             Room.id,
             Room.room_number,
             Room.room_type,
             func.count(Booking.id).label("bookings"),
-            func.sum(Booking.total_amount).label("revenue"),
-            func.sum(nights_expr).label("total_nights"),
-            (func.sum(Booking.total_amount) / func.sum(nights_expr)).label("adr"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
+            func.sum(days_in_period).label("total_nights"),
+            (func.sum(Booking.total_amount * days_in_period / total_booking_days) / func.sum(days_in_period)).label("adr"),
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -551,19 +572,22 @@ class CRUDAnalytics:
         Returns:
             List of dictionaries with metrics for each room type
         """
-        # Use GREATEST to ensure at least 1 day to avoid division by zero
-        nights_expr = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        # Proportional revenue calculation
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
 
         query = select(
             Room.room_type,
             func.count(Booking.id).label("bookings"),
-            func.sum(Booking.total_amount).label("revenue"),
-            func.avg(Booking.total_amount / nights_expr).label("avg_rate"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
+            func.avg((Booking.total_amount * days_in_period / total_booking_days) / days_in_period).label("avg_rate"),
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -643,12 +667,18 @@ class CRUDAnalytics:
         else:  # day
             date_trunc = func.date_trunc("day", Booking.check_in)
 
+        # Proportional revenue calculation
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         query = select(
             date_trunc.label("period"),
-            func.sum(Booking.total_amount).label("revenue"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -774,17 +804,23 @@ class CRUDAnalytics:
 
         # Monthly revenue and occupancy trends
         # Use a column reference for GROUP BY to avoid PostgreSQL grouping error
+        # NOTE: For monthly grouping, we use check_in month but apply proportional revenue
         month_col = func.date_trunc("month", Booking.check_in)
+
+        # Proportional revenue for the entire analysis period
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, end_date) - func.greatest(Booking.check_in, start_date)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         monthly_query = select(
             month_col.label("month"),
-            func.sum(Booking.total_amount).label("revenue"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
             func.count(Booking.id).label("bookings"),
-            func.sum(
-                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
-            ).label("nights"),
+            func.sum(days_in_period).label("nights"),
         ).where(
-            Booking.check_in >= start_date,
-            Booking.check_in <= end_date,
+            Booking.check_in < end_date,  # Overlap condition
+            Booking.check_out > start_date,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -822,15 +858,17 @@ class CRUDAnalytics:
         # Use column references for GROUP BY to avoid PostgreSQL grouping error
         year_col = func.extract("year", Booking.check_in)
         quarter_col = func.extract("quarter", Booking.check_in)
+
+        # Reuse proportional calculation (already defined above)
         quarterly_query = select(
             year_col.label("year"),
             quarter_col.label("quarter"),
-            func.sum(Booking.total_amount).label("revenue"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
             func.count(Booking.id).label("bookings"),
-            func.avg(Booking.total_amount).label("avg_booking_value"),
+            func.avg(Booking.total_amount * days_in_period / total_booking_days).label("avg_booking_value"),
         ).where(
-            Booking.check_in >= start_date,
-            Booking.check_in <= end_date,
+            Booking.check_in < end_date,  # Overlap condition
+            Booking.check_out > start_date,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -995,6 +1033,12 @@ class CRUDAnalytics:
         if not date_from:
             date_from = date_to - timedelta(days=365)
 
+        # Proportional revenue for period
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         # Get all customers with stats in the period
         customer_query = select(
             Customer.id,
@@ -1004,14 +1048,14 @@ class CRUDAnalytics:
             Customer.first_booking_date,
             Customer.last_booking_date,
             Customer.total_bookings,
-            Customer.total_spent,
+            Customer.total_spent,  # Keep cumulative total_spent as-is
             func.count(Booking.id).label("period_bookings"),
-            func.sum(Booking.total_amount).label("period_revenue"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("period_revenue"),
         ).join(
             Booking, Customer.id == Booking.customer_id, isouter=True
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -1089,6 +1133,12 @@ class CRUDAnalytics:
         if not date_from:
             date_from = date_to - timedelta(days=365)
 
+        # Proportional revenue for period
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         # Get all customers with booking stats in the period
         customer_stats_query = select(
             Customer.id,
@@ -1101,13 +1151,13 @@ class CRUDAnalytics:
             Customer.total_bookings,
             Customer.total_spent,
             func.count(Booking.id).label("period_bookings"),
-            func.sum(Booking.total_amount).label("period_revenue"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("period_revenue"),
             func.max(Booking.check_in).label("last_booking"),
         ).join(
             Booking, Customer.id == Booking.customer_id, isouter=True
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -1241,17 +1291,23 @@ class CRUDAnalytics:
         date_from = _ensure_timezone_aware(date_from)
         date_to = _ensure_timezone_aware(date_to)
 
+        # Proportional revenue calculation
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
         # Query bookings with customer district
         query = select(
             Customer.district,
-            func.sum(Booking.total_amount).label("total_revenue"),
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("total_revenue"),
             func.count(Booking.id).label("booking_count"),
             func.count(func.distinct(Customer.id)).label("unique_customers"),
         ).join(
             Customer, Booking.customer_id == Customer.id
         ).where(
-            Booking.check_out >= date_from,
-            Booking.check_in <= date_to,
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
             Booking.status.in_([
                 BookingStatus.CONFIRMED,
                 BookingStatus.CHECKED_IN,
@@ -1269,7 +1325,7 @@ class CRUDAnalytics:
         query = query.group_by(
             Customer.district
         ).order_by(
-            func.sum(Booking.total_amount).desc()
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).desc()
         )
 
         results = session.exec(query).all()

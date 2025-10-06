@@ -5,8 +5,8 @@ import type {
   ExpenseCategoryUpdate,
   ExpenseCreate,
   ExpensePublic,
-  ExpensesPublic,
   ExpenseUpdate,
+  ExpensesPublic,
   Message,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"

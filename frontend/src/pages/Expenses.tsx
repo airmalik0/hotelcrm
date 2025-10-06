@@ -20,14 +20,7 @@ import { useConfirm } from "@/hooks/useConfirm"
 import { handleFormError, showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency, formatDate } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  DollarSign,
-  FolderOpen,
-  Plus,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react"
+import { DollarSign, FolderOpen, Plus, Search, Trash2, X } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -497,17 +490,23 @@ function ExpenseModal({
 
   const mutation = useMutation({
     mutationFn: (data: ExpenseCreate | ExpenseUpdate) =>
-      expense ? updateExpense(expense.id, data) : createExpense(data as ExpenseCreate),
+      expense
+        ? updateExpense(expense.id, data)
+        : createExpense(data as ExpenseCreate),
     onSuccess: () => {
       showSuccess(expense ? "Расход обновлен" : "Расход создан")
       onSuccess()
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => {
-        Object.entries(validationErrors).forEach(([field, message]) => {
-          setError(field as any, { message })
-        })
-      }, "Ошибка при сохранении расхода")
+      handleFormError(
+        error,
+        (validationErrors) => {
+          Object.entries(validationErrors).forEach(([field, message]) => {
+            setError(field as any, { message })
+          })
+        },
+        "Ошибка при сохранении расхода",
+      )
     },
   })
 

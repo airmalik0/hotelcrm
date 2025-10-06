@@ -89,10 +89,12 @@ const PaymentDistributionTooltip = ({ active, payload }: any) => {
         {data.name}
       </p>
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Percentage: <span className="font-semibold">{data.value.toFixed(1)}%</span>
+        Percentage:{" "}
+        <span className="font-semibold">{data.value.toFixed(1)}%</span>
       </p>
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Amount: <span className="font-semibold">${data.amount.toLocaleString()}</span>
+        Amount:{" "}
+        <span className="font-semibold">${data.amount.toLocaleString()}</span>
       </p>
     </div>
   )
@@ -475,13 +477,6 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
   )
 }
 
-
-
-
-
-
-
-
 // District Revenue Chart
 export function DistrictRevenueChart({ data }: { data: any }) {
   if (!data?.districts || data.districts.length === 0) {
@@ -525,11 +520,7 @@ export function DistrictRevenueChart({ data }: { data: any }) {
           />
           <Tooltip content={<CurrencyTooltip />} />
           <Legend />
-          <Bar
-            dataKey="revenue"
-            fill={COLORS.primary}
-            name="Revenue"
-          />
+          <Bar dataKey="revenue" fill={COLORS.primary} name="Revenue" />
         </BarChart>
       </ResponsiveContainer>
 

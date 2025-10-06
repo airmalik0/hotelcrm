@@ -91,7 +91,13 @@ export function Analytics() {
     isLoading: dashboardLoading,
     refetch: refetchDashboard,
   } = useQuery({
-    queryKey: ["analytics", "dashboard", dateRange, selectedRoomId, selectedRoomType],
+    queryKey: [
+      "analytics",
+      "dashboard",
+      dateRange,
+      selectedRoomId,
+      selectedRoomType,
+    ],
     queryFn: () =>
       getDashboardMetrics({
         date_from: `${dateRange.from}T00:00:00`,
@@ -109,7 +115,13 @@ export function Analytics() {
 
   // Revenue details
   const { data: revenueData, isLoading: revenueLoading } = useQuery({
-    queryKey: ["analytics", "revenue", dateRange, selectedRoomId, selectedRoomType],
+    queryKey: [
+      "analytics",
+      "revenue",
+      dateRange,
+      selectedRoomId,
+      selectedRoomType,
+    ],
     queryFn: () =>
       getRevenueDetails({
         date_from: `${dateRange.from}T00:00:00`,
@@ -123,7 +135,13 @@ export function Analytics() {
 
   // Occupancy details
   const { data: occupancyData, isLoading: occupancyLoading } = useQuery({
-    queryKey: ["analytics", "occupancy", dateRange, selectedRoomId, selectedRoomType],
+    queryKey: [
+      "analytics",
+      "occupancy",
+      dateRange,
+      selectedRoomId,
+      selectedRoomType,
+    ],
     queryFn: () =>
       getOccupancyDetails({
         date_from: `${dateRange.from}T00:00:00`,
@@ -1281,4 +1299,3 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
     </div>
   )
 }
-

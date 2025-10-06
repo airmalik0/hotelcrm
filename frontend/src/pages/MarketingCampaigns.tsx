@@ -168,7 +168,9 @@ export function MarketingCampaigns() {
     queryClient.invalidateQueries({ queryKey: ["campaigns"] })
   }
 
-  const getStatusBadge = (status: CampaignStatus) => {
+  const getStatusBadge = (status?: CampaignStatus) => {
+    if (!status) return <span className="text-neutral-400">-</span>
+
     const styles = {
       draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
       active:
@@ -361,9 +363,9 @@ export function MarketingCampaigns() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-neutral-900 dark:text-white">
-                        <div>Sent: {campaign.total_sent}</div>
-                        <div>Delivered: {campaign.total_delivered}</div>
-                        {campaign.total_failed > 0 && (
+                        <div>Sent: {campaign.total_sent ?? 0}</div>
+                        <div>Delivered: {campaign.total_delivered ?? 0}</div>
+                        {(campaign.total_failed ?? 0) > 0 && (
                           <div className="text-red-600 dark:text-red-400">
                             Failed: {campaign.total_failed}
                           </div>
