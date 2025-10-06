@@ -573,16 +573,16 @@ class CRUDAnalytics:
             List of dictionaries with metrics for each room type
         """
         # Proportional revenue calculation
-        days_in_period = func.extract("day",
+        days_in_period = func.greatest(1, func.extract("day",
             func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
-        )
+        ))
         total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
 
         query = select(
             Room.room_type,
             func.count(Booking.id).label("bookings"),
             func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
-            func.avg((Booking.total_amount * days_in_period / total_booking_days) / days_in_period).label("avg_rate"),
+            func.avg(Booking.total_amount / total_booking_days).label("avg_rate"),  # ADR = daily rate
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(
