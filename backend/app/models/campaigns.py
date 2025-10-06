@@ -153,12 +153,7 @@ class CampaignPublic(CampaignBase):
     total_delivered: int = 0
     total_failed: int = 0
 
-    @property
-    def success_rate(self) -> float:
-        """Calculate SMS delivery success rate"""
-        if self.total_sent == 0:
-            return 0.0
-        return (self.total_delivered / self.total_sent) * 100
+    # Note: success_rate can be calculated on frontend: (total_delivered / total_sent) * 100
 
 
 class CampaignsPublic(SQLModel):

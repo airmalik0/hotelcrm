@@ -281,9 +281,16 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         district: str | None = None,
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get customer-related metrics.
+
+        Args:
+            district: Optional filter by customer district
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             Dictionary with customer counts, age distribution, district distribution
@@ -307,6 +314,12 @@ class CRUDAnalytics:
 
         if district and district != "all":
             customer_ids_query = customer_ids_query.where(Customer.district == district)
+
+        # Add room filters
+        if room_id:
+            customer_ids_query = customer_ids_query.where(Booking.room_id == room_id)
+        if room_type:
+            customer_ids_query = customer_ids_query.join(Room, Booking.room_id == Room.id).where(Room.room_type == room_type)
 
         customer_ids = session.exec(customer_ids_query).all()
 
@@ -961,6 +974,8 @@ class CRUDAnalytics:
         limit: int = 20,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get top customers by total revenue.
@@ -969,6 +984,8 @@ class CRUDAnalytics:
             limit: Number of top customers to return
             date_from: Optional start date for filtering
             date_to: Optional end date for filtering
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             Dictionary with top customers list
@@ -1000,7 +1017,15 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(
+        )
+
+        # Add room filters
+        if room_id:
+            customer_query = customer_query.where(Booking.room_id == room_id)
+        if room_type:
+            customer_query = customer_query.join(Room, Booking.room_id == Room.id).where(Room.room_type == room_type)
+
+        customer_query = customer_query.group_by(
             Customer.id,
             Customer.first_name,
             Customer.last_name,
@@ -1197,6 +1222,8 @@ class CRUDAnalytics:
         session: Session,
         date_from: datetime,
         date_to: datetime,
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get revenue breakdown by customer district.
@@ -1205,6 +1232,8 @@ class CRUDAnalytics:
             session: Database session
             date_from: Start date
             date_to: End date
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             Dictionary with district revenue data
@@ -1229,7 +1258,15 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_OUT
             ]),
             Customer.district.is_not(None),  # Only customers with district set
-        ).group_by(
+        )
+
+        # Add room filters
+        if room_id:
+            query = query.where(Booking.room_id == room_id)
+        if room_type:
+            query = query.join(Room, Booking.room_id == Room.id).where(Room.room_type == room_type)
+
+        query = query.group_by(
             Customer.district
         ).order_by(
             func.sum(Booking.total_amount).desc()

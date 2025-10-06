@@ -124,7 +124,13 @@ class BookingUpdate(SQLModel):
     payment_adjustments: list[dict[str, Any]] | None = None
 
 
-class BookingPublic(BookingBase, PaymentCalculationMixin):
+class BookingPublic(BookingBase):
+    """Public booking schema for API responses.
+
+    Note: refund_amount and additional_payment are computed properties
+    available on the Booking table model but not serialized in API responses.
+    Calculate these on frontend if needed from payment_adjustments.
+    """
     id: uuid.UUID
     customer: CustomerPublic | None = None
     room: RoomPublic | None = None

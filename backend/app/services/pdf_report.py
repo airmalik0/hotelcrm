@@ -354,11 +354,16 @@ class PDFReportService:
             self._add_seasonal_trends_section(elements, seasonal_trends, include_charts)
 
             # 8. Top Customers (by revenue)
-            top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
+            top_customers = analytics_service.get_top_customers(
+                limit=20, date_from=filters.date_from, date_to=filters.date_to,
+                room_id=filters.room_id, room_type=filters.room_type
+            )
             self._add_top_customers_section(elements, top_customers)
 
             # 9. District Revenue Breakdown
-            district_revenue = analytics_service.get_district_revenue(filters.date_from, filters.date_to)
+            district_revenue = analytics_service.get_district_revenue(
+                filters.date_from, filters.date_to, filters.room_id, filters.room_type
+            )
             self._add_district_revenue_section(elements, district_revenue)
 
             # 10. Room Performance Analysis

@@ -502,7 +502,12 @@ export const BookingPublicSchema = {
     },
     type: 'object',
     required: ['customer_id', 'room_id', 'check_in', 'check_out', 'total_amount', 'id', 'booking_date', 'created_at'],
-    title: 'BookingPublic'
+    title: 'BookingPublic',
+    description: `Public booking schema for API responses.
+
+Note: refund_amount and additional_payment are computed properties
+available on the Booking table model but not serialized in API responses.
+Calculate these on frontend if needed from payment_adjustments.`
 } as const;
 
 export const BookingStatusSchema = {

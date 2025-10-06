@@ -92,6 +92,13 @@ export type BookingCreate = {
     registration_need?: boolean;
 };
 
+/**
+ * Public booking schema for API responses.
+ *
+ * Note: refund_amount and additional_payment are computed properties
+ * available on the Booking table model but not serialized in API responses.
+ * Calculate these on frontend if needed from payment_adjustments.
+ */
 export type BookingPublic = {
     customer_id: string;
     room_id: string;

@@ -228,6 +228,8 @@ class AnalyticsService:
         limit: int = 20,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get top customers by total revenue.
@@ -236,6 +238,8 @@ class AnalyticsService:
             limit: Number of top customers to return
             date_from: Optional start date for filtering bookings
             date_to: Optional end date for filtering bookings
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             List of top customers with revenue, bookings, and dates
@@ -243,7 +247,7 @@ class AnalyticsService:
         if date_from and date_to:
             self.validate_date_range(date_from, date_to)
 
-        return self.crud.get_top_customers(self.session, limit, date_from, date_to)
+        return self.crud.get_top_customers(self.session, limit, date_from, date_to, room_id, room_type)
 
     def get_revenue_details(self, filters: AnalyticsFilter, group_by: str = "day") -> dict[str, Any]:
         """Get detailed revenue analytics with time series data."""
@@ -296,6 +300,8 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.district,
+            filters.room_id,
+            filters.room_type,
         )
 
         return customer_data
@@ -372,6 +378,8 @@ class AnalyticsService:
         self,
         date_from: datetime,
         date_to: datetime,
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get revenue breakdown by customer district.
@@ -379,9 +387,11 @@ class AnalyticsService:
         Args:
             date_from: Start date
             date_to: End date
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             Dictionary with district revenue data
         """
         self.validate_date_range(date_from, date_to)
-        return self.crud.get_revenue_by_district(self.session, date_from, date_to)
+        return self.crud.get_revenue_by_district(self.session, date_from, date_to, room_id, room_type)
