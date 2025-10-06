@@ -342,7 +342,7 @@ export function MarketingCampaigns() {
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-600">
                 {campaigns.map((campaign) => (
                   <tr
-                    key={campaign.id}
+                    key={String(campaign.id)}
                     className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
                   >
                     <td className="px-6 py-4">

@@ -675,12 +675,16 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         metric: str = "check_ins",
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Get hourly distribution of check-ins or check-outs.
 
         Args:
             metric: 'check_ins' or 'check_outs'
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             List of dictionaries with hour and count
@@ -692,7 +696,7 @@ class CRUDAnalytics:
         else:  # default to check_ins
             time_field = func.coalesce(Booking.actual_check_in, Booking.check_in)
 
-        # Query to get hour distribution
+        # Build base query
         query = select(
             func.extract("hour", time_field).label("hour"),
             func.count(Booking.id).label("count"),
@@ -704,7 +708,15 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(
+        )
+
+        # Add room filters
+        if room_id:
+            query = query.where(Booking.room_id == room_id)
+        if room_type:
+            query = query.join(Room).where(Room.room_type == room_type)
+
+        query = query.group_by(
             func.extract("hour", time_field)
         ).order_by(
             func.extract("hour", time_field)
@@ -730,12 +742,16 @@ class CRUDAnalytics:
         self,
         session: Session,
         years: int = 2,
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get seasonal trends analysis over multiple years.
 
         Args:
             years: Number of years to analyze (default: 2)
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             Dictionary with monthly trends, quarterly trends, and year-over-year comparison
@@ -761,7 +777,15 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(
+        )
+
+        # Add room filters
+        if room_id:
+            monthly_query = monthly_query.where(Booking.room_id == room_id)
+        if room_type:
+            monthly_query = monthly_query.join(Room).where(Room.room_type == room_type)
+
+        monthly_query = monthly_query.group_by(
             month_col
         ).order_by(
             month_col
@@ -799,7 +823,15 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(
+        )
+
+        # Add room filters to quarterly query
+        if room_id:
+            quarterly_query = quarterly_query.where(Booking.room_id == room_id)
+        if room_type:
+            quarterly_query = quarterly_query.join(Room).where(Room.room_type == room_type)
+
+        quarterly_query = quarterly_query.group_by(
             year_col,
             quarter_col
         ).order_by(

@@ -342,15 +342,15 @@ class PDFReportService:
 
             # 6. Hourly Distribution
             hourly_checkins = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_ins"
+                filters.date_from, filters.date_to, "check_ins", filters.room_id, filters.room_type
             )
             hourly_checkouts = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_outs"
+                filters.date_from, filters.date_to, "check_outs", filters.room_id, filters.room_type
             )
             self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts)
 
             # 7. Seasonal Trends
-            seasonal_trends = analytics_service.get_seasonal_trends(2)
+            seasonal_trends = analytics_service.get_seasonal_trends(2, filters.room_id, filters.room_type)
             self._add_seasonal_trends_section(elements, seasonal_trends, include_charts)
 
             # 8. Top Customers (by revenue)

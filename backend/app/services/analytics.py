@@ -174,6 +174,8 @@ class AnalyticsService:
         date_from: datetime,
         date_to: datetime,
         metric: str = "check_ins",
+        room_id: str | None = None,
+        room_type: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Get hourly distribution of events (check-ins, check-outs).
@@ -182,6 +184,8 @@ class AnalyticsService:
             date_from: Start date
             date_to: End date
             metric: 'check_ins' or 'check_outs'
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             List of hourly counts
@@ -193,14 +197,23 @@ class AnalyticsService:
             date_from,
             date_to,
             metric,
+            room_id,
+            room_type,
         )
 
-    def get_seasonal_trends(self, years: int = 2) -> dict[str, Any]:
+    def get_seasonal_trends(
+        self,
+        years: int = 2,
+        room_id: str | None = None,
+        room_type: str | None = None,
+    ) -> dict[str, Any]:
         """
         Get seasonal trends analysis over multiple years.
 
         Args:
             years: Number of years to analyze (default: 2)
+            room_id: Optional filter by specific room
+            room_type: Optional filter by room type
 
         Returns:
             Seasonal trends data including monthly, quarterly, and YoY comparisons
@@ -208,7 +221,7 @@ class AnalyticsService:
         if years < 1 or years > 5:
             raise ValidationError("Years must be between 1 and 5")
 
-        return self.crud.get_seasonal_trends(self.session, years)
+        return self.crud.get_seasonal_trends(self.session, years, room_id, room_type)
 
     def get_top_customers(
         self,
