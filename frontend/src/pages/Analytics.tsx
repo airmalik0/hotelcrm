@@ -262,7 +262,7 @@ export function Analytics() {
         tags: tags.length ? tags : undefined,
       },
       format: "pdf",
-      include_charts: false,
+      include_charts: true,
     })
   }
 
