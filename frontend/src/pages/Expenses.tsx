@@ -20,8 +20,8 @@ import { useConfirm } from "@/hooks/useConfirm"
 import { handleFormError, showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency, formatDate } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { DollarSign, FolderOpen, Plus, Search, Trash2, X } from "lucide-react"
-import type React from "react"
+import { Edit2, FolderOpen, Plus, Trash2, X } from "lucide-react"
+// React import not needed directly
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
@@ -64,6 +64,10 @@ export function Expenses() {
     ? Math.ceil(expensesData.count / itemsPerPage)
     : 0
 
+  // Debug: log data structure
+  console.log('[Expenses] categoriesData:', categoriesData)
+  console.log('[Expenses] expensesData:', expensesData)
+
   return (
     <>
       <div className="grid grid-cols-12 gap-6">
@@ -71,7 +75,7 @@ export function Expenses() {
         <div className="col-span-12">
           <div className="flex items-center justify-between mb-6">
             <h4 className="text-2xl font-bold text-neutral-900 dark:text-white">
-              Расходы
+              Expenses
             </h4>
             <div className="flex gap-3">
               <button
@@ -83,7 +87,7 @@ export function Expenses() {
                 className="rounded-lg py-2 px-4 inline-flex items-center gap-2 transition bg-neutral-600 text-white hover:bg-neutral-700"
               >
                 <FolderOpen className="w-4 h-4" />
-                Добавить категорию
+                Add category
               </button>
               <button
                 type="button"
@@ -94,7 +98,7 @@ export function Expenses() {
                 className="rounded-lg py-2 px-4 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700"
               >
                 <Plus className="w-4 h-4" />
-                Добавить расход
+                Add expense
               </button>
             </div>
           </div>
@@ -111,7 +115,7 @@ export function Expenses() {
                     : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                 }`}
               >
-                Расходы
+                Expenses
               </button>
               <button
                 type="button"
@@ -122,7 +126,7 @@ export function Expenses() {
                     : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                 }`}
               >
-                Категории
+                Categories
               </button>
             </div>
           </div>
@@ -147,18 +151,18 @@ export function Expenses() {
             }}
             onDelete={async (expense) => {
               const confirmed = await confirm({
-                title: "Удалить расход",
-                message: "Вы уверены, что хотите удалить этот расход?",
-                confirmText: "Удалить",
+                title: "Delete expense",
+                message: "Are you sure you want to delete this expense?",
+                confirmText: "Delete",
                 variant: "danger",
               })
               if (confirmed) {
                 try {
                   await deleteExpense(expense.id)
                   queryClient.invalidateQueries({ queryKey: ["expenses"] })
-                  showSuccess("Расход удален")
+                  showSuccess("Expense deleted")
                 } catch (error) {
-                  showError(error, "Ошибка при удалении расхода")
+                  showError(error, "Error deleting expense")
                 }
               }
             }}
@@ -172,9 +176,9 @@ export function Expenses() {
             }}
             onDelete={async (category) => {
               const confirmed = await confirm({
-                title: "Удалить категорию",
-                message: "Вы уверены, что хотите удалить эту категорию?",
-                confirmText: "Удалить",
+              title: "Delete category",
+              message: "Are you sure you want to delete this category?",
+              confirmText: "Delete",
                 variant: "danger",
               })
               if (confirmed) {
@@ -183,9 +187,9 @@ export function Expenses() {
                   queryClient.invalidateQueries({
                     queryKey: ["expense-categories"],
                   })
-                  showSuccess("Категория удалена")
+                  showSuccess("Category deleted")
                 } catch (error) {
-                  showError(error, "Ошибка при удалении категории")
+                  showError(error, "Error deleting category")
                 }
               }
             }}
@@ -225,7 +229,7 @@ export function Expenses() {
         />
       )}
 
-      <ConfirmDialog />
+      {ConfirmDialog}
     </>
   )
 }
@@ -267,7 +271,7 @@ function ExpensesTab({
         <div className="border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-6 py-4 flex items-center flex-wrap gap-3 justify-between">
           <div className="flex items-center flex-wrap gap-3">
             <span className="text-base font-medium text-neutral-600 dark:text-neutral-400">
-              Показать
+              Show
             </span>
             <select
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
@@ -283,7 +287,7 @@ function ExpensesTab({
               <option value={50}>50</option>
             </select>
             <span className="text-base font-medium text-neutral-600 dark:text-neutral-400">
-              Категория
+              Category
             </span>
             <select
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
@@ -293,8 +297,8 @@ function ExpensesTab({
                 setCurrentPage(0)
               }}
             >
-              <option value="">Все категории</option>
-              {categoriesData?.data.map((cat: ExpenseCategoryPublic) => (
+              <option value="">All categories</option>
+              {categoriesData?.data?.map((cat: ExpenseCategoryPublic) => (
                 <option key={String(cat.id)} value={String(cat.id)}>
                   {cat.name}
                 </option>
@@ -308,38 +312,28 @@ function ExpensesTab({
           <table className="w-full">
             <thead>
               <tr className="border-b border-neutral-200 dark:border-neutral-600">
-                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
-                  Дата
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
-                  Категория
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
-                  Описание
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
-                  Сумма
-                </th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
-                  Действия
-                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">Date</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">Category</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">Description</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">Amount</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">Actions</th>
               </tr>
             </thead>
             <tbody>
               {expensesLoading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center">
-                    Загрузка...
+                    Loading...
                   </td>
                 </tr>
-              ) : expensesData?.data.length === 0 ? (
+              ) : (expensesData?.data?.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center">
-                    Нет расходов
+                    No expenses
                   </td>
                 </tr>
               ) : (
-                expensesData?.data.map((expense: ExpensePublic) => (
+                expensesData?.data?.map((expense: ExpensePublic) => (
                   <tr
                     key={String(expense.id)}
                     className="border-b border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700"
@@ -357,13 +351,24 @@ function ExpensesTab({
                       {formatCurrency(expense.amount)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => onDelete(expense)}
-                        className="text-danger-600 hover:text-danger-700 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(expense)}
+                          className="text-neutral-500 hover:text-neutral-700 p-1"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(expense)}
+                          className="text-danger-600 hover:text-danger-700 p-1"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -381,10 +386,10 @@ function ExpensesTab({
               disabled={currentPage === 0}
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-500 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Назад
+              Prev
             </button>
             <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              Страница {currentPage + 1} из {totalPages}
+              Page {currentPage + 1} of {totalPages}
             </span>
             <button
               type="button"
@@ -394,7 +399,7 @@ function ExpensesTab({
               disabled={currentPage >= totalPages - 1}
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-500 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Вперед
+              Next
             </button>
           </div>
         )}
@@ -419,7 +424,7 @@ function CategoriesTab({
     <div className="col-span-12">
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-sm dark:shadow-none overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-          {categoriesData?.data.map((category: ExpenseCategoryPublic) => (
+          {categoriesData?.data?.map((category: ExpenseCategoryPublic) => (
             <div
               key={String(category.id)}
               className="border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -430,22 +435,33 @@ function CategoriesTab({
                     {category.name}
                   </h5>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {category.description || "Нет описания"}
+                    {category.description || "No description"}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onDelete(category)}
-                  className="text-danger-600 hover:text-danger-700 p-1"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(category)}
+                    className="text-neutral-500 hover:text-neutral-700 p-1"
+                    title="Edit"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(category)}
+                    className="text-danger-600 hover:text-danger-700 p-1"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
-          {categoriesData?.data.length === 0 && (
+          {(categoriesData?.data?.length ?? 0) === 0 && (
             <div className="col-span-full text-center py-8 text-neutral-500">
-              Нет категорий
+              No categories
             </div>
           )}
         </div>
@@ -494,7 +510,7 @@ function ExpenseModal({
         ? updateExpense(expense.id, data)
         : createExpense(data as ExpenseCreate),
     onSuccess: () => {
-      showSuccess(expense ? "Расход обновлен" : "Расход создан")
+      showSuccess(expense ? "Expense updated" : "Expense created")
       onSuccess()
     },
     onError: (error) => {
@@ -505,7 +521,7 @@ function ExpenseModal({
             setError(field as any, { message })
           })
         },
-        "Ошибка при сохранении расхода",
+        "Error saving expense",
       )
     },
   })
@@ -519,7 +535,7 @@ function ExpenseModal({
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h5 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {expense ? "Редактировать расход" : "Новый расход"}
+            {expense ? "Edit expense" : "New expense"}
           </h5>
           <button
             type="button"
@@ -534,13 +550,13 @@ function ExpenseModal({
           <div className="px-6 py-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Категория *
+                Category *
               </label>
               <select
-                {...register("category_id", { required: "Выберите категорию" })}
+                {...register("category_id", { required: "Please select a category" })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
               >
-                <option value="">Выберите категорию</option>
+                <option value="">Select a category</option>
                 {categories.map((cat) => (
                   <option key={String(cat.id)} value={String(cat.id)}>
                     {cat.name}
@@ -556,14 +572,14 @@ function ExpenseModal({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Сумма *
+                Amount *
               </label>
               <input
                 type="number"
                 step="0.01"
                 {...register("amount", {
-                  required: "Введите сумму",
-                  min: { value: 0.01, message: "Сумма должна быть больше 0" },
+                  required: "Enter an amount",
+                  min: { value: 0.01, message: "Amount must be greater than 0" },
                 })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
                 placeholder="0.00"
@@ -577,7 +593,7 @@ function ExpenseModal({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Дата
+                Date
               </label>
               <input
                 type="datetime-local"
@@ -588,13 +604,13 @@ function ExpenseModal({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Описание
+                Description
               </label>
               <textarea
                 {...register("description")}
                 rows={3}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
-                placeholder="Дополнительная информация..."
+                placeholder="Additional information..."
               />
             </div>
           </div>
@@ -605,14 +621,14 @@ function ExpenseModal({
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-500 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-600"
             >
-              Отмена
+              Cancel
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {mutation.isPending ? "Сохранение..." : "Сохранить"}
+              {mutation.isPending ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
@@ -644,7 +660,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
         ? updateExpenseCategory(category.id, data)
         : createExpenseCategory(data as ExpenseCategoryCreate),
     onSuccess: () => {
-      showSuccess(category ? "Категория обновлена" : "Категория создана")
+      showSuccess(category ? "Category updated" : "Category created")
       onSuccess()
     },
     onError: (error) => {
@@ -655,7 +671,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
             setError(field as any, { message })
           })
         },
-        "Ошибка при сохранении категории",
+        "Error saving category",
       )
     },
   })
@@ -669,7 +685,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h5 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {category ? "Редактировать категорию" : "Новая категория"}
+            {category ? "Edit category" : "New category"}
           </h5>
           <button
             type="button"
@@ -684,13 +700,13 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
           <div className="px-6 py-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Название *
+                Name *
               </label>
               <input
                 type="text"
-                {...register("name", { required: "Введите название" })}
+                {...register("name", { required: "Enter a name" })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
-                placeholder="Например: Коммунальные услуги"
+                placeholder="E.g., Utilities"
               />
               {errors.name && (
                 <p className="text-sm text-danger-600 mt-1">
@@ -701,13 +717,13 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Описание
+                Description
               </label>
               <textarea
                 {...register("description")}
                 rows={3}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
-                placeholder="Дополнительная информация..."
+                placeholder="Additional information..."
               />
             </div>
           </div>
@@ -718,14 +734,14 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-500 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-600"
             >
-              Отмена
+              Cancel
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {mutation.isPending ? "Сохранение..." : "Сохранить"}
+              {mutation.isPending ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
