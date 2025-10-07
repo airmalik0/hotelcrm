@@ -5,6 +5,9 @@ import type {
   RoomStatus,
   RoomUpdate,
   RoomsPublic,
+  RoomCategoriesPublic,
+  RoomCategoryCreate,
+  RoomCategoryPublic,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
@@ -90,6 +93,37 @@ export async function updateRoomStatus(
     `/api/v1/rooms/${roomId}/status`,
     null,
     { params: { status } },
+  )
+  return response.data
+}
+
+// Room Categories API
+export async function getRoomCategories(params?: RoomParams): Promise<RoomCategoriesPublic> {
+  const response = await apiClient.get<RoomCategoriesPublic>(
+    "/api/v1/rooms/categories",
+    {
+      params: {
+        skip: params?.skip || 0,
+        limit: params?.limit || 100,
+      },
+    },
+  )
+  return response.data
+}
+
+export async function createRoomCategory(
+  data: RoomCategoryCreate,
+): Promise<RoomCategoryPublic> {
+  const response = await apiClient.post<RoomCategoryPublic>(
+    "/api/v1/rooms/categories",
+    data,
+  )
+  return response.data
+}
+
+export async function deleteRoomCategory(categoryId: string): Promise<Message> {
+  const response = await apiClient.delete<Message>(
+    `/api/v1/rooms/categories/${categoryId}`,
   )
   return response.data
 }

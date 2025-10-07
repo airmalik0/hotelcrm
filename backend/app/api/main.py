@@ -5,6 +5,7 @@ from app.api.routes import (
     audit,
     bookings,
     campaigns,
+    geo,
     customers,
     expenses,
     files,
@@ -26,5 +27,6 @@ api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 api_router.include_router(files.router, prefix="/files", tags=["files"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 api_router.include_router(expenses.router, prefix="/expenses", tags=["expenses"])
+api_router.include_router(geo.router, prefix="/geo", tags=["geo"])
 
 

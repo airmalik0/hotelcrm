@@ -210,24 +210,7 @@ class PDFReportService:
         elements.append(customer_table)
         elements.append(Spacer(1, 20))
 
-        # Room Type Breakdown (if available)
-        if metrics.room_type_breakdown:
-            elements.append(Paragraph("Performance by Room Type", self.styles["SectionHeader"]))
-            room_type_data = [["Room Type", "Revenue", "Bookings", "Occupancy", "Avg Rate"]]
-            for room_metrics in metrics.room_type_breakdown:
-                room_type_data.append([
-                    room_metrics.room_type.title(),
-                    f"${room_metrics.revenue:,.2f}",
-                    f"{room_metrics.bookings:,}",
-                    f"{room_metrics.occupancy_rate:.1f}%",
-                    f"${room_metrics.average_rate:,.2f}",
-                ])
-            room_type_table = self._create_table(
-                room_type_data,
-                col_widths=[1.5*inch, 1.5*inch, 1*inch, 1*inch, 1.5*inch]
-            )
-            elements.append(room_type_table)
-            elements.append(Spacer(1, 20))
+        # Room Type Breakdown removed
 
         # Age Distribution (if available)
         if metrics.customer_metrics.age_distribution:
@@ -342,27 +325,27 @@ class PDFReportService:
 
             # 6. Hourly Distribution
             hourly_checkins = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_ins", filters.room_id, filters.room_type
+                filters.date_from, filters.date_to, "check_ins", filters.room_id, filters
             )
             hourly_checkouts = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_outs", filters.room_id, filters.room_type
+                filters.date_from, filters.date_to, "check_outs", filters.room_id, filters
             )
             self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts)
 
             # 7. Seasonal Trends
-            seasonal_trends = analytics_service.get_seasonal_trends(2, filters.room_id, filters.room_type)
+            seasonal_trends = analytics_service.get_seasonal_trends(2, filters.room_id)
             self._add_seasonal_trends_section(elements, seasonal_trends, include_charts)
 
             # 8. Top Customers (by revenue)
             top_customers = analytics_service.get_top_customers(
                 limit=20, date_from=filters.date_from, date_to=filters.date_to,
-                room_id=filters.room_id, room_type=filters.room_type
+                room_id=filters.room_id
             )
             self._add_top_customers_section(elements, top_customers)
 
             # 9. District Revenue Breakdown
             district_revenue = analytics_service.get_district_revenue(
-                filters.date_from, filters.date_to, filters.room_id, filters.room_type
+                filters.date_from, filters.date_to, filters.room_id
             )
             self._add_district_revenue_section(elements, district_revenue)
 
@@ -701,14 +684,14 @@ class PDFReportService:
             elements.append(Spacer(1, 5))
 
             top_table_data = [[
-                "Rank", "Room #", "Type", "ADR", "Revenue", "Bookings", "Nights", "Occupancy"
+                "Rank", "Room #", "Category", "ADR", "Revenue", "Bookings", "Nights", "Occupancy"
             ]]
 
             for idx, room in enumerate(top_performers, 1):
                 top_table_data.append([
                     str(idx),
                     room.get("room_number", "N/A"),
-                    room.get("room_type", "").upper(),
+                    (room.get("category_name") or room.get("category_id") or "").upper(),
                     f"${room.get('adr', 0):,.2f}",
                     f"${room.get('revenue', 0):,.2f}",
                     f"{room.get('bookings', 0):,}",
@@ -729,14 +712,14 @@ class PDFReportService:
             elements.append(Spacer(1, 5))
 
             bottom_table_data = [[
-                "Rank", "Room #", "Type", "ADR", "Revenue", "Bookings", "Nights", "Occupancy"
+                "Rank", "Room #", "Category", "ADR", "Revenue", "Bookings", "Nights", "Occupancy"
             ]]
 
             for idx, room in enumerate(bottom_performers, 1):
                 bottom_table_data.append([
                     str(idx),
                     room.get("room_number", "N/A"),
-                    room.get("room_type", "").upper(),
+                    (room.get("category_name") or room.get("category_id") or "").upper(),
                     f"${room.get('adr', 0):,.2f}",
                     f"${room.get('revenue', 0):,.2f}",
                     f"{room.get('bookings', 0):,}",

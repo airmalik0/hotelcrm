@@ -8,12 +8,6 @@ class UserRole(str, Enum):
     MANAGER = "manager"
     HOST = "host"
 
-
-class RoomType(str, Enum):
-    STANDARD = "standard"
-    VIP = "vip"
-
-
 class RoomStatus(str, Enum):
     AVAILABLE = "available"
     OCCUPIED = "occupied"

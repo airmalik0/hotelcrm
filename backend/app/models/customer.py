@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -18,6 +18,11 @@ class CustomerBase(SQLModel):
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(default=None, max_length=20, unique=True, index=True)
     date_of_birth: datetime | None = None
+    # Geographic fields
+    country_code: str | None = Field(default=None, max_length=2, description="ISO-3166 alpha-2 code (e.g., UZ)")
+    # Region for Uzbekistan (область) or similar first-level admin division
+    # We store normalized upper-case slugs like TASHKENT_CITY, SAMARKAND, etc.
+    region: str | None = Field(default=None, max_length=64)
     district: District | None = None
     passport_photo_path: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None, max_length=1000)
@@ -40,6 +45,67 @@ class CustomerBase(SQLModel):
             # Store only digits to ensure uniqueness
             return digits_only
         return v
+
+    @field_validator("country_code")
+    @classmethod
+    def normalize_country_code(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        v_norm = v.strip().upper()
+        if len(v_norm) != 2:
+            raise ValueError("country_code must be ISO-3166 alpha-2 (2 letters)")
+        return v_norm
+
+    @field_validator("region")
+    @classmethod
+    def normalize_region(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        # Store in upper-case with underscores for consistency
+        v_norm = re.sub(r"\s+", "_", v.strip()).upper()
+        return v_norm
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_geo_consistency(cls, data):  # type: ignore[no-untyped-def]
+        """Ensure geographic fields are consistent using pre-validation.
+
+        This validator works on the input data payload to avoid mutating
+        SQLModel table instances during construction (which can break SQLAlchemy
+        instrumentation). It returns the possibly adjusted data mapping.
+        Rules:
+        - If country != UZ → region and district must be None
+        - If country == UZ and region != TASHKENT_CITY → district must be None
+        - If district is set but country/region are missing → set UZ/TASHKENT_CITY
+        """
+        # Normalize input to a plain dict for safe mutation
+        if not isinstance(data, dict):
+            try:
+                data = data.model_dump()
+            except AttributeError:
+                return data
+
+        country = data.get("country_code")
+        region = data.get("region")
+        district = data.get("district")
+
+        # If district provided but country/region missing, infer UZ/TASHKENT_CITY
+        if district is not None and not country and not region:
+            data["country_code"] = "UZ"
+            data["region"] = "TASHKENT_CITY"
+
+        country = data.get("country_code")
+        region = data.get("region")
+
+        if country and country != "UZ":
+            # Non-UZ: only country allowed
+            data["region"] = None
+            data["district"] = None
+        elif country == "UZ":
+            # UZ: district only for Tashkent city
+            if region and region != "TASHKENT_CITY":
+                data["district"] = None
+        return data
 
     @field_validator("date_of_birth")
     @classmethod
@@ -85,6 +151,8 @@ class CustomerUpdate(SQLModel):
     last_name: str | None = None
     phone: str | None = None
     date_of_birth: datetime | None = None
+    country_code: str | None = None
+    region: str | None = None
     district: District | None = None
     passport_photo_path: str | None = None
     tags: list[str] | None = None
@@ -132,6 +200,33 @@ class CustomerUpdate(SQLModel):
             if age > 150:
                 raise ValueError("Invalid date of birth (age over 150 years)")
         return v
+
+    @field_validator("country_code")
+    @classmethod
+    def normalize_country_code_update(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        v_norm = v.strip().upper()
+        if len(v_norm) != 2:
+            raise ValueError("country_code must be ISO-3166 alpha-2 (2 letters)")
+        return v_norm
+
+    @field_validator("region")
+    @classmethod
+    def normalize_region_update(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        return re.sub(r"\s+", "_", v.strip()).upper()
+
+    @model_validator(mode="after")
+    def validate_geo_consistency_update(self) -> "CustomerUpdate":
+        if self.country_code and self.country_code != "UZ":
+            self.region = None
+            self.district = None
+        elif self.country_code == "UZ":
+            if self.region and self.region != "TASHKENT_CITY":
+                self.district = None
+        return self
 
 
 class CustomerPublic(CustomerBase):

@@ -26,6 +26,21 @@ class CustomerService:
             if self.crud.get_by_phone(self.session, phone=customer_in.phone):
                 raise AlreadyExistsError("phone", "Phone number already in use")
 
+        # Enforce geo invariants during updates using existing values when fields are omitted
+        # If country_code is provided and is not UZ → clear region and district
+        if customer_in.country_code is not None and customer_in.country_code != "UZ":
+            customer_in.region = None
+            customer_in.district = None
+
+        # Determine the effective country after update (provided value or current stored)
+        effective_country = (
+            customer_in.country_code if customer_in.country_code is not None else customer.country_code
+        )
+
+        # If region is being updated and effective country is UZ but region != TASHKENT_CITY → clear district
+        if customer_in.region is not None and effective_country == "UZ" and customer_in.region != "TASHKENT_CITY":
+            customer_in.district = None
+
         return self.crud.update(self.session, db_obj=customer, obj_in=customer_in)
 
     def delete_customer(self, customer_id: uuid.UUID) -> Customer | None:

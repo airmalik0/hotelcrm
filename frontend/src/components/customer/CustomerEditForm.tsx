@@ -1,10 +1,6 @@
 import { updateCustomer } from "@/api/customers"
-import type {
-  CustomerPublic,
-  CustomerUpdate,
-  District,
-} from "@/client/types.gen"
-import { SearchableSelect } from "@/components/ui/SearchableSelect"
+import type { CustomerPublic, CustomerUpdate, District } from "@/client/types.gen"
+import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { TagsInput } from "@/components/ui/TagsInput"
 import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
@@ -13,21 +9,7 @@ import type React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-// District options from the enum
-const DISTRICT_OPTIONS: Array<{ value: District; label: string }> = [
-  { value: "ALMAZAR", label: "Almazar" },
-  { value: "BEKTEMIR", label: "Bektemir" },
-  { value: "MIRABAD", label: "Mirabad" },
-  { value: "MIRZO_ULUGBEK", label: "Mirzo Ulugbek" },
-  { value: "SERGELI", label: "Sergeli" },
-  { value: "UCHTEPA", label: "Uchtepa" },
-  { value: "CHILANZAR", label: "Chilanzar" },
-  { value: "SHAYKHANTAKHUR", label: "Shaykhantakhur" },
-  { value: "YUNUSABAD", label: "Yunusabad" },
-  { value: "YAKKASARAY", label: "Yakkasaray" },
-  { value: "YASHNABAD", label: "Yashnabad" },
-  { value: "YANGIHAYOT", label: "Yangihayot" },
-]
+// Legacy district-only options removed; use GeoSelect
 
 // Available customer tags from backend enum
 const CUSTOMER_TAGS: Array<{ value: string; label: string }> = [
@@ -51,6 +33,8 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     date_of_birth: customer.date_of_birth
       ? safeParseDate(customer.date_of_birth).toISOString().split("T")[0]
       : "",
+    country_code: customer.country_code || (customer.district ? "UZ" : undefined),
+    region: customer.region || (customer.district ? "TASHKENT_CITY" : undefined),
     district: customer.district || undefined,
     notes: customer.notes || "",
     tags: customer.tags || [],
@@ -127,7 +111,10 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         last_name: formData.last_name || undefined,
         phone: formData.phone || undefined,
         date_of_birth: formData.date_of_birth || undefined,
-        district: formData.district as District | undefined,
+        // Important: send nulls to explicitly clear values when user removed them
+        country_code: formData.country_code ?? null,
+        region: formData.region ?? null,
+        district: (formData.district as District | null) ?? null,
         notes: formData.notes || undefined,
         tags: formData.tags || undefined,
       }
@@ -261,15 +248,28 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
             />
           </div>
 
-          {/* District */}
+          {/* Location */}
           <div className="sm:col-span-2">
-            <SearchableSelect
-              label="District"
-              value={formData.district || ""}
-              onChange={handleDistrictChange}
-              options={DISTRICT_OPTIONS}
-              placeholder="Select a district"
-              error={errors.district}
+            <GeoSelect
+              label="Location"
+              value={{
+                country_code: formData.country_code || null,
+                region: formData.region || null,
+                district: (formData.district as string | null) || null,
+              }}
+              onChange={(geo) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  // Keep undefined for untouched, but allow nulls for clearing
+                  country_code: geo.country_code,
+                  region: geo.region,
+                  district: (geo.district as District | null),
+                }))
+                // Clear field error linkage if any
+                if (errors.district || errors.region || errors.country_code) {
+                  setErrors((prev) => ({ ...prev, district: undefined, region: undefined, country_code: undefined }))
+                }
+              }}
             />
           </div>
 

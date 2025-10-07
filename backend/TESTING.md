@@ -1,4 +1,4 @@
-# Testing Best Practices & Common Pitfalls
+# (Archived) Testing Docs
 
 ## API Factories Ideology
 
@@ -320,76 +320,8 @@ assert "admin" in response.json()["detail"].lower()
 - [ ] Verify database state, not just API response
 - [ ] Ensure proper cleanup
 
-## Running Tests
-
-### 🔴 IMPORTANT: Always Run Tests in Docker Container
-
-Tests require database access and proper environment configuration. **ALWAYS use Docker for testing.**
-
-### Docker Testing (Recommended)
-
-#### Easy Way: Use Test Script
-
-```bash
-# Run all tests
-./scripts/test.sh
-
-# Quick test (stops on first failure)
-./scripts/test.sh quick
-
-# Verbose output
-./scripts/test.sh verbose
-
-# With coverage
-./scripts/test.sh coverage
-
-# Run only failed tests from last run
-./scripts/test.sh failed
-
-# Run specific test file
-./scripts/test.sh app/tests/api/routes/test_users.py
-```
-
-#### Manual Way: Direct Docker Commands
-
-```bash
-# Run all tests in Docker container
-docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest"
-
-# Run specific test file
-docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest app/tests/api/routes/test_users.py"
-
-# Run with verbose output
-docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest -xvs"
-
-# Run with coverage
-docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest --cov=app --cov-report=term-missing"
-
-# Quick test run (stops on first failure)
-docker exec hotelcrm-backend-1 bash -c "export TESTING_IN_DOCKER=1 && uv run python -m pytest -x"
-```
-
-### Environment Variables
-
-- **`TESTING_IN_DOCKER=1`**: MUST be set when running tests in Docker container
-  - When set: Tests connect to `db` container using internal Docker network
-  - When not set: Tests try to connect to `localhost:5433` (for local development)
-
-### Local Testing (Not Recommended)
-
-If you must run tests locally (not in Docker):
-```bash
-# Requires PostgreSQL exposed on port 5433
-uv run python -m pytest
-
-# Will use: postgresql://postgres:PASSWORD@localhost:5433/test_app
-```
-
-⚠️ **Warning**: Local testing requires:
-- PostgreSQL running on port 5433
-- Correct password in conftest.py
-- All dependencies installed locally
-- Proper environment setup
+## Внимание
+Pytest и связанные скрипты выключены в текущем проекте. Документ оставлен для справки.
 
 ## Test Database
 

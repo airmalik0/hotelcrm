@@ -47,16 +47,9 @@ function getStatusText(status: RoomStatus): string {
   }
 }
 
-// Get room type badge classes
-function getRoomTypeBadgeClasses(type: string): string {
-  switch (type) {
-    case "vip":
-      return "text-primary-600 bg-primary-100 dark:bg-primary-600/30 dark:text-primary-400"
-    case "standard":
-      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/30 dark:text-neutral-400"
-    default:
-      return "text-neutral-600 bg-neutral-100 dark:bg-neutral-600/30 dark:text-neutral-400"
-  }
+// Get category badge classes
+function getCategoryBadgeClasses(): string {
+  return "text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-600/30"
 }
 
 export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
@@ -109,13 +102,11 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
               </p>
             </div>
           </div>
-          {/* Room Type Badge */}
+          {/* Category Badge */}
           <span
-            className={`text-xs font-semibold px-3 py-1 rounded-full uppercase ${getRoomTypeBadgeClasses(
-              room.room_type,
-            )}`}
+            className={`text-xs font-semibold px-3 py-1 rounded-full uppercase ${getCategoryBadgeClasses()}`}
           >
-            {room.room_type}
+            {room.category?.name || "Uncategorized"}
           </span>
         </div>
       </div>

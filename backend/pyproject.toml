@@ -29,16 +29,15 @@ dependencies = [
     "apscheduler>=3.10.4",
     "slowapi>=0.1.9",
     "psycopg2-binary>=2.9.10",
+    "pycountry>=22.3.5",
 ]
 
 [tool.uv]
 dev-dependencies = [
-    "pytest<8.0.0,>=7.4.3",
     "mypy<2.0.0,>=1.8.0",
     "ruff<1.0.0,>=0.2.2",
     "pre-commit>=3.6.2,<4.0.0",
     "types-passlib<2.0.0.0,>=1.7.7.20240106",
-    "coverage<8.0.0,>=7.4.3",
     "isort>=6.0.1",
     "types-openpyxl>=3.1.5.20250822",
     "types-requests>=2.32.4.20250809",

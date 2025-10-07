@@ -157,10 +157,7 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
 }
 
 export function RoomPerformanceChart({ metrics }: ChartProps) {
-  if (
-    !metrics.room_type_breakdown ||
-    metrics.room_type_breakdown.length === 0
-  ) {
+  if (!metrics.category_breakdown || metrics.category_breakdown.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
         No room performance data available
@@ -168,11 +165,11 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
     )
   }
 
-  const data = metrics.room_type_breakdown.map((room) => ({
-    name: room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1),
-    revenue: room.revenue,
-    bookings: room.bookings,
-    occupancy: room.occupancy_rate,
+  const data = metrics.category_breakdown.map((cat) => ({
+    name: cat.category_name || "",
+    revenue: cat.revenue,
+    bookings: cat.bookings,
+    occupancy: cat.occupancy_rate,
   }))
 
   return (

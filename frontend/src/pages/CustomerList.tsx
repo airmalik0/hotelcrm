@@ -123,7 +123,7 @@ export function CustomerList() {
                         Phone
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        District
+                        Location
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
                         Total Spent
@@ -195,7 +195,13 @@ export function CustomerList() {
                           {formatPhoneNumber(customer.phone)}
                         </td>
                         <td className="py-3 px-2 text-neutral-600 dark:text-neutral-300">
-                          {customer.district || "N/A"}
+                          {(() => {
+                            const parts: string[] = []
+                            if (customer.country_code) parts.push(customer.country_code)
+                            if (customer.region) parts.push(customer.region)
+                            if (customer.district) parts.push(customer.district)
+                            return parts.length ? parts.join(" · ") : "N/A"
+                          })()}
                         </td>
                         <td className="py-3 px-2">
                           <span className="font-semibold text-success-600 dark:text-success-400">

@@ -25,11 +25,18 @@ class GroupBy(str, Enum):
     DAY = "day"
     WEEK = "week"
     MONTH = "month"
-    ROOM_TYPE = "room_type"
     ROOM = "room"
     PAYMENT_METHOD = "payment_method"
+    COUNTRY = "country"
+    REGION = "region"
     DISTRICT = "district"
     AGE_GROUP = "age_group"
+
+
+class CustomerType(str, Enum):
+    """Customer type categories for filtering."""
+    NEW = "new"
+    RETURNING = "returning"
 
 
 class AgeGroup(str, Enum):
@@ -47,9 +54,15 @@ class AnalyticsFilter(SQLModel):
     date_from: datetime
     date_to: datetime
     room_id: str | None = None  # Can be UUID or "all"
-    room_type: str | None = None  # standard/vip/all
+    category_id: str | None = None  # Filter by room category id
     customer_id: str | None = None
+    # Location filters
+    country_code: str | None = None
+    region: str | None = None
     district: str | None = None
+    # Customer filters
+    customer_type: CustomerType | None = None
+    tags: list[str] | None = None
     group_by: GroupBy | None = None
     include_cancelled: bool = Field(default=False, description="Include cancelled bookings in metrics")
 
@@ -63,13 +76,21 @@ class AnalyticsFilter(SQLModel):
             return v.replace(tzinfo=timezone.utc)
         return v
 
-    @field_validator('room_type')
+
+    @field_validator('country_code')
     @classmethod
-    def validate_room_type(cls, v: str | None) -> str | None:
-        """Validate room type values."""
-        if v is not None and v not in ["standard", "vip", "all"]:
-            raise ValueError("room_type must be 'standard', 'vip', or 'all'")
-        return v
+    def normalize_country_code(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        return v.strip().upper()
+
+    @field_validator('region')
+    @classmethod
+    def normalize_region(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        import re as _re
+        return _re.sub(r"\s+", "_", v.strip()).upper()
 
 
 class RevenueMetrics(SQLModel):
@@ -117,13 +138,14 @@ class CustomerMetrics(SQLModel):
     age_distribution: dict[str, int] = Field(default_factory=dict, description="Customers by age group")
 
 
-class RoomTypeMetrics(SQLModel):
-    """Metrics broken down by room type."""
-    room_type: str
-    revenue: float = Field(ge=0, description="Revenue for this room type")
-    bookings: int = Field(ge=0, description="Number of bookings for this room type")
-    occupancy_rate: float = Field(ge=0, le=100, description="Occupancy rate for this room type")
-    average_rate: float = Field(ge=0, description="Average rate for this room type")
+class CategoryMetrics(SQLModel):
+    """Metrics broken down by room category."""
+    category_id: str | None = None
+    category_name: str | None = None
+    revenue: float = Field(ge=0, description="Revenue for this category")
+    bookings: int = Field(ge=0, description="Number of bookings for this category")
+    occupancy_rate: float = Field(ge=0, le=100, description="Occupancy rate for this category")
+    average_rate: float = Field(ge=0, description="Average rate for this category")
 
 
 class TimeSeriesDataPoint(SQLModel):
@@ -140,7 +162,7 @@ class DashboardMetrics(SQLModel):
     occupancy: OccupancyMetrics
     payment_distribution: PaymentDistribution
     customer_metrics: CustomerMetrics
-    room_type_breakdown: list[RoomTypeMetrics] = Field(default_factory=list)
+    category_breakdown: list[CategoryMetrics] = Field(default_factory=list)
     revenue_trend: list[TimeSeriesDataPoint] = Field(default_factory=list, description="Revenue over time")
 
 

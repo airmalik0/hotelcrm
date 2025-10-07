@@ -157,7 +157,8 @@ export function getGuestInitials(fullName: string | undefined | null): string {
  * Format room display name
  */
 export function formatRoomName(room: RoomPublic): string {
-  return `${room.room_number}${room.room_type === "vip" ? " ⭐" : ""}`
+  const star = room.category?.name?.toLowerCase().includes("vip") ? " ⭐" : ""
+  return `${room.room_number}${star}`
 }
 
 /**

@@ -31,7 +31,7 @@ from app.models import (
     SMSHistory,
     SMSStatus,
 )
-from app.models.common import District, RoomType
+from app.models.common import District
 
 
 class CampaignService:
@@ -378,14 +378,9 @@ class CampaignService:
             if not isinstance(criteria["days_since_last_visit"], int | float) or criteria["days_since_last_visit"] < 0:
                 raise BusinessRuleViolation("days_since_last_visit must be a positive number")
 
-        # Validate room types
+        # Remove legacy: visited_room_types no longer supported
         if "visited_room_types" in criteria:
-            if not isinstance(criteria["visited_room_types"], list):
-                raise BusinessRuleViolation("visited_room_types must be a list")
-            valid_room_types = [rt.value for rt in RoomType]
-            for room_type in criteria["visited_room_types"]:
-                if room_type not in valid_room_types:
-                    raise BusinessRuleViolation(f"Invalid room type: {room_type}")
+            raise BusinessRuleViolation("visited_room_types is no longer supported. Use categories segmentation instead.")
 
     def _evaluate_customer_criteria(self, criteria: dict[str, Any]) -> list[Customer]:
         """
@@ -427,37 +422,15 @@ class CampaignService:
         if filters:
             query = query.where(and_(*filters))  # type: ignore
 
-        # If room type filtering is needed, eager load bookings and rooms
-        if "visited_room_types" in criteria and criteria["visited_room_types"]:
-            # Eager load bookings and their rooms to avoid N+1 queries
-            query = query.options(joinedload(Customer.bookings).joinedload("room"))  # type: ignore
+        # Legacy room types removed
 
         customers = list(self.session.exec(query).all())
 
-        # Room type filtering (with eager loaded data)
-        if "visited_room_types" in criteria and criteria["visited_room_types"]:
-            customers = self._filter_by_visited_room_types(customers, criteria["visited_room_types"])
+        # No room-type based filtering anymore
 
         return customers
 
-    def _filter_by_visited_room_types(self, customers: list[Customer], room_types: list[str]) -> list[Customer]:
-        """Filter customers who have visited specific room types."""
-        filtered_customers = []
-
-        for customer in customers:
-            # Check if customer has bookings with specified room types
-            # Use a simpler approach: check customer's booking relationships
-            has_visited_room_type = False
-
-            for booking in customer.bookings:
-                if booking.room and booking.room.room_type.value in room_types:
-                    has_visited_room_type = True
-                    break
-
-            if has_visited_room_type:
-                filtered_customers.append(customer)
-
-        return filtered_customers
+    # Legacy helpers removed: room type filtering
 
     def _should_trigger_campaign_run(self, campaign: Campaign) -> bool:
         """Check if enough time has passed since last execution based on frequency."""

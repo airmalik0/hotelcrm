@@ -1,22 +1,24 @@
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import field_validator
 from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
-from .common import RoomStatus, RoomType
+from .common import RoomStatus
+from .room_category import RoomCategoryPublic  # for typing in public schema
 
 if TYPE_CHECKING:
     from .booking import Booking
+    from .room_category import RoomCategory
 
 
 class RoomBase(SQLModel):
     room_number: str = Field(unique=True, index=True, min_length=1, max_length=10)
     floor: int = Field(ge=1, le=20)
-    room_type: RoomType
+    category_id: uuid.UUID | None = Field(default=None, foreign_key="roomcategory.id", index=True)
     price_per_night: float = Field(gt=0, le=100000)
     status: RoomStatus = Field(default=RoomStatus.AVAILABLE)
     description: str | None = Field(default=None, max_length=500)
@@ -35,6 +37,7 @@ class RoomBase(SQLModel):
 class Room(RoomBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     bookings: list["Booking"] = Relationship(back_populates="room")
+    category: Optional["RoomCategory"] = Relationship(back_populates="rooms")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
 
@@ -58,7 +61,7 @@ class RoomCreate(RoomBase):
 class RoomUpdate(SQLModel):
     room_number: str | None = None
     floor: int | None = None
-    room_type: RoomType | None = None
+    category_id: uuid.UUID | None = None
     price_per_night: float | None = None
     status: RoomStatus | None = None
     description: str | None = None
@@ -68,6 +71,8 @@ class RoomUpdate(SQLModel):
 class RoomPublic(RoomBase):
     id: uuid.UUID
     created_at: datetime
+    # Optional expanded category info for convenience in some endpoints
+    category: RoomCategoryPublic | None = None
 
 
 class RoomsPublic(SQLModel):

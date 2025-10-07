@@ -1,7 +1,8 @@
 import { deleteRoom, getRooms } from "@/api/rooms"
-import type { RoomPublic, RoomStatus, RoomType } from "@/client/types.gen"
+import type { RoomPublic, RoomStatus } from "@/client/types.gen"
 import { RoomCard } from "@/components/room/RoomCard"
 import { RoomCreateModal } from "@/components/room/RoomCreateModal"
+import { RoomCategoryManagerModal } from "@/components/room/RoomCategoryManagerModal"
 import { RoomEditModal } from "@/components/room/RoomEditModal"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
@@ -13,11 +14,12 @@ import { useMemo, useState } from "react"
 
 export function RoomList() {
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomPublic | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<RoomStatus | "all">("all")
-  const [filterType, setFilterType] = useState<RoomType | "all">("all")
+  const [filterType, setFilterType] = useState<string | "all">("all")
   const [filterFloor, setFilterFloor] = useState<number | "all">("all")
   const queryClient = useQueryClient()
   const { hasAnyRole } = useRole()
@@ -61,8 +63,8 @@ export function RoomList() {
         return false
       }
 
-      // Type filter
-      if (filterType !== "all" && room.room_type !== filterType) {
+      // Category filter (by id)
+      if (filterType !== "all" && room.category?.id !== filterType) {
         return false
       }
 
@@ -144,13 +146,22 @@ export function RoomList() {
             Room Management
           </h1>
           {canEdit && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium shadow-sm hover:shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              Add New Room
-            </button>
+            <>
+              <button
+                onClick={() => setShowCategoryModal(true)}
+                className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-neutral-600 text-white hover:bg-neutral-700 text-sm font-medium shadow-sm hover:shadow-md"
+              >
+                <Filter className="w-4 h-4" />
+                Manage categories
+              </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium shadow-sm hover:shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                Add New Room
+              </button>
+            </>
           )}
         </div>
         <p className="text-neutral-600 dark:text-neutral-400">
@@ -247,17 +258,27 @@ export function RoomList() {
                 <option value="maintenance">Maintenance</option>
               </select>
 
-              {/* Type Filter */}
+              {/* Category Filter */}
               <select
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
                 value={filterType}
                 onChange={(e) =>
-                  setFilterType(e.target.value as RoomType | "all")
+                  setFilterType(e.target.value as string | "all")
                 }
               >
-                <option value="all">All Types</option>
-                <option value="standard">Standard</option>
-                <option value="vip">VIP</option>
+                <option value="all">All Categories</option>
+                {/* Category options can be populated from rooms list */}
+                {Array.from(
+                  new Map(
+                    (data?.data || [])
+                      .filter((r) => r.category?.id)
+                      .map((r) => [r.category!.id, r.category!.name || "Unnamed"]),
+                  ).entries(),
+                ).map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
               </select>
 
               {/* Floor Filter */}
@@ -342,6 +363,15 @@ export function RoomList() {
             setSelectedRoom(null)
           }}
           viewOnly={!canEdit}
+        />
+      )}
+      {/* Category Manager Modal */}
+      {showCategoryModal && (
+        <RoomCategoryManagerModal
+          onClose={() => {
+            setShowCategoryModal(false)
+            queryClient.invalidateQueries({ queryKey: ["room-categories"] })
+          }}
         />
       )}
       {ConfirmDialog}

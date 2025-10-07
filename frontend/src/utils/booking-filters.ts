@@ -9,7 +9,7 @@ import { safeParseDate } from "./date-helpers"
 export interface BookingFilters {
   searchTerm: string
   statusFilters: BookingStatus[]
-  roomTypeFilters: string[]
+  categoryFilters: string[] // list of category_id strings
 }
 
 /**
@@ -53,12 +53,10 @@ export function filterBookings(
       }
     }
 
-    // Room type filter
-    if (filters.roomTypeFilters.length > 0) {
-      if (
-        !booking.room?.room_type ||
-        !filters.roomTypeFilters.includes(booking.room.room_type)
-      ) {
+    // Category filter
+    if (filters.categoryFilters.length > 0) {
+      const catId = booking.room?.category?.id || null
+      if (!catId || !filters.categoryFilters.includes(catId)) {
         return false
       }
     }
@@ -73,14 +71,14 @@ export function filterBookings(
 export function filterRooms(
   rooms: RoomPublic[],
   filteredBookings: BookingPublic[],
-  roomTypeFilters: string[],
+  categoryFilters: string[],
 ): RoomPublic[] {
   let filtered = rooms
 
-  // Room type filter
-  if (roomTypeFilters.length > 0) {
+  // Category filter
+  if (categoryFilters.length > 0) {
     filtered = filtered.filter((room) =>
-      roomTypeFilters.includes(room.room_type),
+      room.category?.id ? categoryFilters.includes(room.category.id) : false,
     )
   }
 
@@ -92,11 +90,22 @@ export function filterRooms(
 }
 
 /**
- * Get unique room types from a list of rooms
+ * Get unique categories from a list of rooms
  */
-export function getUniqueRoomTypes(rooms: RoomPublic[]): string[] {
-  const types = new Set(rooms.map((room) => room.room_type))
-  return Array.from(types).sort()
+export function getUniqueCategories(
+  rooms: RoomPublic[],
+): Array<{ id: string; name: string }> {
+  const map = new Map<string, string>()
+  rooms.forEach((room) => {
+    const id = room.category?.id
+    const name = room.category?.name
+    if (id && !map.has(id)) {
+      map.set(id, name || "")
+    }
+  })
+  return Array.from(map.entries())
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 /**

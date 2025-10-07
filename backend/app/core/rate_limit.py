@@ -73,9 +73,15 @@ def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded)
         media_type="application/json"
     )
 
-    # Log rate limit violation
+    # Log rate limit violation and record it for potential blocking
     client_ip = get_real_client_ip(request)
     logger.warning(f"Rate limit exceeded for IP {client_ip}: {request.url.path}")
+    try:
+        from app.core.rate_limit import ip_blocker
+        ip_blocker.record_violation(client_ip)
+    except Exception:
+        # Swallow errors to avoid breaking error handling path
+        pass
 
     return response
 

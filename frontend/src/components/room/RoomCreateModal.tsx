@@ -1,10 +1,15 @@
-import { createRoom } from "@/api/rooms"
-import type { RoomCreate, RoomStatus, RoomType } from "@/client/types.gen"
+import { createRoom, getRoomCategories } from "@/api/rooms"
+import type {
+  RoomCategoriesPublic,
+  RoomCategoryPublic,
+  RoomCreate,
+  RoomStatus,
+} from "@/client/types.gen"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { X } from "lucide-react"
 import type React from "react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 interface RoomCreateModalProps {
   onClose: () => void
@@ -15,12 +20,23 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
   const [formData, setFormData] = useState<RoomCreate>({
     room_number: "",
     floor: 1,
-    room_type: "standard",
     price_per_night: 100,
     status: "available",
     description: "",
+    category_id: null,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Fetch categories
+  const { data: categoriesData } = useQuery<RoomCategoriesPublic>({
+    queryKey: ["room-categories"],
+    queryFn: () => getRoomCategories({ limit: 100 }),
+  })
+
+  const categories: RoomCategoryPublic[] = useMemo(
+    () => categoriesData?.data || [],
+    [categoriesData?.data],
+  )
 
   const createMutation = useMutation({
     mutationFn: createRoom,
@@ -165,29 +181,37 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                 )}
               </div>
 
-              {/* Room Type */}
-              <div>
-                <label
-                  htmlFor="room_type"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-                >
-                  Room Type *
-                </label>
-                <select
-                  id="room_type"
-                  value={formData.room_type}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      room_type: e.target.value as RoomType,
-                    })
-                  }
-                  className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-                >
-                  <option value="standard">Standard</option>
-                  <option value="vip">VIP</option>
-                </select>
-              </div>
+              {/* Room Type removed */}
+
+          {/* Category */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="category_id"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              >
+                Category
+              </label>
+            </div>
+            <select
+              id="category_id"
+              value={formData.category_id || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category_id: e.target.value ? e.target.value : null,
+                })
+              }
+              className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
+            >
+              <option value="">No category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
               {/* Price per Night */}
               <div>

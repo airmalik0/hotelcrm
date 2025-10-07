@@ -1,5 +1,5 @@
 import type { RoomPublic } from "@/client/types.gen"
-import { getRoomStatusColor, getRoomTypeColor } from "@/utils/booking-colors"
+import { getRoomStatusColor } from "@/utils/booking-colors"
 import { formatRoomName } from "@/utils/booking-grid"
 import clsx from "clsx"
 import { Bed, DollarSign } from "lucide-react"
@@ -35,11 +35,10 @@ export const RoomCell = memo(function RoomCell({
           </h3>
           <span
             className={clsx(
-              "text-[10px] px-1.5 py-0.5 rounded-full",
-              getRoomTypeColor(room.room_type),
+              "text-[10px] px-1.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-600/30 text-neutral-700 dark:text-neutral-400",
             )}
           >
-            {room.room_type}
+            {room.category?.name || "Uncategorized"}
           </span>
 
           {/* Icons */}

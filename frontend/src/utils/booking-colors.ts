@@ -63,18 +63,7 @@ export function getRoomStatusColor(status: string | undefined): string {
 /**
  * Get room type badge color
  */
-export function getRoomTypeColor(type: string): string {
-  const colors: Record<string, string> = {
-    STANDARD:
-      "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-700 dark:text-neutral-400",
-    VIP: "bg-purple-100 dark:bg-purple-600/30 text-purple-700 dark:text-purple-400",
-    SUITE:
-      "bg-indigo-100 dark:bg-indigo-600/30 text-indigo-700 dark:text-indigo-400",
-    DELUXE: "bg-cyan-100 dark:bg-cyan-600/30 text-cyan-700 dark:text-cyan-400",
-  }
-
-  return colors[type] || colors.STANDARD
-}
+// Room type color removed; categories are displayed with neutral badge
 
 /**
  * Get drag state classes

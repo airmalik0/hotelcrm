@@ -321,7 +321,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           </div>
           {room && (
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Room {room.room_number} - {room.room_type}
+              Room {room.room_number} - {room.category?.name || "Uncategorized"}
             </p>
           )}
         </div>
@@ -352,7 +352,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     value={room.id}
                     disabled={room.status === "maintenance"}
                   >
-                    Room {room.room_number} - {room.room_type} ($
+                    Room {room.room_number} - {room.category?.name || "Uncategorized"} ($
                     {room.price_per_night}/night)
                     {room.status === "maintenance" &&
                       " [MAINTENANCE - UNAVAILABLE]"}

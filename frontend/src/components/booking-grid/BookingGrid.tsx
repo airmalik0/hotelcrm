@@ -15,7 +15,7 @@ import {
   calculateFilteredStats,
   filterBookings,
   filterRooms,
-  getUniqueRoomTypes,
+  getUniqueCategories,
 } from "@/utils/booking-filters"
 import type { BookingFilters } from "@/utils/booking-filters"
 import { groupBookingsByRoom, sortRoomsByNumber } from "@/utils/booking-grid"
@@ -89,14 +89,14 @@ function BookingGridContent() {
   const [filters, setFilters] = useState<BookingFilters>({
     searchTerm: "",
     statusFilters: [],
-    roomTypeFilters: [],
+    categoryFilters: [],
   })
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 300)
   const debouncedFilters = useMemo(
     () => ({ ...filters, searchTerm: debouncedSearchTerm }),
-    [filters.statusFilters, filters.roomTypeFilters, debouncedSearchTerm],
+    [filters.statusFilters, filters.categoryFilters, debouncedSearchTerm],
   )
 
   // Calculate view range
@@ -218,8 +218,8 @@ function BookingGridContent() {
 
   const filteredRooms = useMemo(
     () =>
-      filterRooms(allRooms, filteredBookings, debouncedFilters.roomTypeFilters),
-    [allRooms, filteredBookings, debouncedFilters.roomTypeFilters],
+      filterRooms(allRooms, filteredBookings, debouncedFilters.categoryFilters),
+    [allRooms, filteredBookings, debouncedFilters.categoryFilters],
   )
 
   const bookingsByRoom = useMemo(
@@ -227,8 +227,8 @@ function BookingGridContent() {
     [filteredBookings],
   )
 
-  const availableRoomTypes = useMemo(
-    () => getUniqueRoomTypes(allRooms),
+  const availableCategories = useMemo(
+    () => getUniqueCategories(allRooms),
     [allRooms],
   )
 
@@ -374,15 +374,15 @@ function BookingGridContent() {
     setFilters((prev) => ({ ...prev, statusFilters }))
   }
 
-  const handleRoomTypeFilterChange = (roomTypeFilters: string[]) => {
-    setFilters((prev) => ({ ...prev, roomTypeFilters }))
+  const handleCategoryFilterChange = (categoryFilters: string[]) => {
+    setFilters((prev) => ({ ...prev, categoryFilters }))
   }
 
   const handleClearAllFilters = () => {
     setFilters({
       searchTerm: "",
       statusFilters: [],
-      roomTypeFilters: [],
+      categoryFilters: [],
     })
   }
 
@@ -453,9 +453,9 @@ function BookingGridContent() {
             onSearchChange={handleSearchChange}
             statusFilters={filters.statusFilters}
             onStatusFilterChange={handleStatusFilterChange}
-            roomTypeFilters={filters.roomTypeFilters}
-            onRoomTypeFilterChange={handleRoomTypeFilterChange}
-            availableRoomTypes={availableRoomTypes}
+            categoryFilters={filters.categoryFilters}
+            onCategoryFilterChange={handleCategoryFilterChange}
+            availableCategories={availableCategories}
             totalBookings={filteredStats.totalBookings}
             occupancyRate={filteredStats.occupancyRate}
             onClearAllFilters={handleClearAllFilters}

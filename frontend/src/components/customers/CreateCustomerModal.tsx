@@ -1,9 +1,6 @@
 import { createCustomer } from "@/api/customers"
-import type {
-  CustomerCreate,
-  CustomerPublic,
-  District,
-} from "@/client/types.gen"
+import type { CustomerCreate, CustomerPublic, District } from "@/client/types.gen"
+import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { ImageUpload } from "@/components/ui/ImageUpload"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -24,28 +21,7 @@ interface CreateCustomerModalProps {
   onSuccess?: (customer: CustomerPublic) => void
 }
 
-const DISTRICTS: District[] = [
-  "ALMAZAR",
-  "BEKTEMIR",
-  "MIRABAD",
-  "MIRZO_ULUGBEK",
-  "SERGELI",
-  "UCHTEPA",
-  "CHILANZAR",
-  "SHAYKHANTAKHUR",
-  "YUNUSABAD",
-  "YAKKASARAY",
-  "YASHNABAD",
-  "YANGIHAYOT",
-]
-
-// Helper function to format district for display
-const formatDistrictDisplay = (district: string): string => {
-  return district
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase())
-}
+// Legacy district-only UI removed; using GeoSelect
 
 export const CreateCustomerModal = memo(function CreateCustomerModal({
   isOpen,
@@ -58,7 +34,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     last_name: string
     phone: string
     date_of_birth: string
-    district: District | ""
+    geo: GeoValue
     passport_photo_path: string | null
     notes: string
   }>({
@@ -66,7 +42,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     last_name: "",
     phone: "",
     date_of_birth: "",
-    district: "",
+    geo: { country_code: "UZ", region: null, district: null },
     passport_photo_path: null,
     notes: "",
   })
@@ -97,7 +73,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       last_name: "",
       phone: "",
       date_of_birth: "",
-      district: "",
+      geo: { country_code: "UZ", region: null, district: null },
       passport_photo_path: null,
       notes: "",
     })
@@ -140,7 +116,9 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       last_name: formData.last_name.trim(),
       phone: formData.phone.trim() || null,
       date_of_birth: formData.date_of_birth || null,
-      district: (formData.district as District) || null,
+      country_code: formData.geo.country_code,
+      region: formData.geo.region,
+      district: (formData.geo.district as District | null) || null,
       passport_photo_path: formData.passport_photo_path,
       notes: formData.notes.trim() || null,
     }
@@ -301,28 +279,10 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               <MapPin className="w-4 h-4" />
               Location
             </h3>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                District
-              </label>
-              <select
-                value={formData.district}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    district: e.target.value as District | "",
-                  }))
-                }
-                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Select district</option>
-                {DISTRICTS.map((district) => (
-                  <option key={district} value={district}>
-                    {formatDistrictDisplay(district)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <GeoSelect
+              value={formData.geo}
+              onChange={(geo) => setFormData((prev) => ({ ...prev, geo }))}
+            />
           </div>
 
           {/* Additional Information */}

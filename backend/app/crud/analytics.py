@@ -3,11 +3,14 @@ CRUD operations for analytics.
 All SQL queries for analytics data retrieval.
 """
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Optional
 
-from sqlmodel import Session, func, select
+from sqlmodel import Session, func, select, or_
+from sqlalchemy import cast
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models import Booking, BookingStatus, Customer, Room
+from app.models.room_category import RoomCategory
 from app.models.analytics import AgeGroup
 
 
@@ -27,8 +30,8 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         room_id: str | None = None,
-        room_type: str | None = None,
         include_cancelled: bool = False,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Get revenue metrics for a period using proportional calculation.
@@ -43,10 +46,13 @@ class CRUDAnalytics:
         """
         # Calculate proportional revenue for days within the period
         # Formula: (days_in_period / total_booking_days) * total_amount
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Use EPOCH (seconds) / 86400 for accurate fractional days
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
             func.sum(
@@ -74,9 +80,31 @@ class CRUDAnalytics:
         if room_id and room_id != "all":
             query = query.where(Booking.room_id == room_id)
 
-        # Room type filter
-        if room_type and room_type != "all":
-            query = query.join(Room).where(Room.room_type == room_type)
+        # Category filter
+        if filters and getattr(filters, "category_id", None):
+            query = query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        # Customer-based filters
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            query = query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                query = query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
 
         result = session.exec(query).first()
 
@@ -97,8 +125,30 @@ class CRUDAnalytics:
         if room_id and room_id != "all":
             refund_query = refund_query.where(Booking.room_id == room_id)
 
-        if room_type and room_type != "all":
-            refund_query = refund_query.join(Room).where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            refund_query = refund_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        # Apply same customer-based filters to refunds
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            refund_query = refund_query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                refund_query = refund_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                refund_query = refund_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                refund_query = refund_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    refund_query = refund_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    refund_query = refund_query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    refund_query = refund_query.where(Customer.first_booking_date < date_from)
 
         refund_results = session.exec(refund_query).all()
 
@@ -125,7 +175,7 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         room_id: str | None = None,
-        room_type: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Calculate occupancy metrics for a period.
@@ -137,8 +187,8 @@ class CRUDAnalytics:
         room_query = select(func.count(Room.id))
         if room_id and room_id != "all":
             room_query = room_query.where(Room.id == room_id)
-        if room_type and room_type != "all":
-            room_query = room_query.where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            room_query = room_query.where(Room.category_id == filters.category_id)
 
         total_rooms = session.exec(room_query).first() or 1
 
@@ -153,13 +203,16 @@ class CRUDAnalytics:
         # For bookings that span the period boundaries, count only the days within the period
         occupied_query = select(
             func.sum(
-                func.greatest(1, func.extract("day",
-                    func.least(Booking.check_out, date_to) -
-                    func.greatest(Booking.check_in, date_from)
-                ))
+                func.greatest(1,
+                    func.extract("epoch",
+                        func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+                    ) / 86400
+                )
             ).label("occupied_nights"),
             func.avg(
-                func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+                func.greatest(1,
+                    func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+                )
             ).label("avg_stay"),
         ).where(
             Booking.check_in < date_to,
@@ -173,8 +226,29 @@ class CRUDAnalytics:
 
         if room_id and room_id != "all":
             occupied_query = occupied_query.where(Booking.room_id == room_id)
-        if room_type and room_type != "all":
-            occupied_query = occupied_query.join(Room).where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            occupied_query = occupied_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            occupied_query = occupied_query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                occupied_query = occupied_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                occupied_query = occupied_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                occupied_query = occupied_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    occupied_query = occupied_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    occupied_query = occupied_query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    occupied_query = occupied_query.where(Customer.first_booking_date < date_from)
 
         occupied_result = session.exec(occupied_query).first()
         occupied_nights = int(occupied_result.occupied_nights or 0)
@@ -189,8 +263,8 @@ class CRUDAnalytics:
         )
         if room_id and room_id != "all":
             checkin_query = checkin_query.where(Booking.room_id == room_id)
-        if room_type and room_type != "all":
-            checkin_query = checkin_query.join(Room).where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            checkin_query = checkin_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
 
         check_ins = session.exec(checkin_query).first() or 0
 
@@ -202,8 +276,36 @@ class CRUDAnalytics:
         )
         if room_id and room_id != "all":
             checkout_query = checkout_query.where(Booking.room_id == room_id)
-        if room_type and room_type != "all":
-            checkout_query = checkout_query.join(Room).where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            checkout_query = checkout_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            checkin_query = checkin_query.join(Customer, Customer.id == Booking.customer_id)
+            checkout_query = checkout_query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                checkin_query = checkin_query.where(Customer.country_code == filters.country_code)
+                checkout_query = checkout_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                checkin_query = checkin_query.where(Customer.region == filters.region)
+                checkout_query = checkout_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                checkin_query = checkin_query.where(Customer.district == filters.district)
+                checkout_query = checkout_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    checkin_query = checkin_query.where(or_(*tag_filters))
+                    checkout_query = checkout_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    checkin_query = checkin_query.where(Customer.first_booking_date >= date_from)
+                    checkout_query = checkout_query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    checkin_query = checkin_query.where(Customer.first_booking_date < date_from)
+                    checkout_query = checkout_query.where(Customer.first_booking_date < date_from)
 
         check_outs = session.exec(checkout_query).first() or 0
 
@@ -215,8 +317,8 @@ class CRUDAnalytics:
         )
         if room_id and room_id != "all":
             cancellation_query = cancellation_query.where(Booking.room_id == room_id)
-        if room_type and room_type != "all":
-            cancellation_query = cancellation_query.join(Room).where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            cancellation_query = cancellation_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
 
         cancellations = session.exec(cancellation_query).first() or 0
 
@@ -238,6 +340,8 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         include_cancelled: bool = False,
+        room_id: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Get payment method distribution for bookings with proportional amounts.
@@ -245,11 +349,13 @@ class CRUDAnalytics:
         Returns:
             Dictionary with percentages and amounts for each payment method
         """
-        # Proportional calculation
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional calculation using EPOCH for accuracy
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
             Booking.payment_method,
@@ -266,6 +372,32 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]))
+
+        if room_id and room_id != "all":
+            query = query.where(Booking.room_id == room_id)
+        if filters and getattr(filters, "category_id", None):
+            query = query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            query = query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                query = query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
 
         query = query.group_by(Booking.payment_method)
         results = session.exec(query).all()
@@ -298,9 +430,8 @@ class CRUDAnalytics:
         session: Session,
         date_from: datetime,
         date_to: datetime,
-        district: str | None = None,
+        filters: "AnalyticsFilter",
         room_id: str | None = None,
-        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get customer-related metrics.
@@ -330,14 +461,31 @@ class CRUDAnalytics:
             .distinct()
         )
 
-        if district and district != "all":
-            customer_ids_query = customer_ids_query.where(Customer.district == district)
+        # Location filters
+        if filters.country_code and filters.country_code != "":
+            customer_ids_query = customer_ids_query.where(Customer.country_code == filters.country_code)
+        if filters.region and filters.region != "":
+            customer_ids_query = customer_ids_query.where(Customer.region == filters.region)
+        if filters.district and filters.district != "all":
+            customer_ids_query = customer_ids_query.where(Customer.district == filters.district)
+        # Tags filter (any-of) for JSON array: use Postgres @> operator
+        if filters.tags:
+            col = cast(Customer.tags, JSONB)
+            tag_filters = [col.contains([tag]) for tag in filters.tags]
+            if tag_filters:
+                customer_ids_query = customer_ids_query.where(or_(*tag_filters))
+        # Customer type filter
+        if filters.customer_type:
+            if filters.customer_type.value == "new":
+                customer_ids_query = customer_ids_query.where(Customer.first_booking_date >= date_from)
+            elif filters.customer_type.value == "returning":
+                customer_ids_query = customer_ids_query.where(Customer.first_booking_date < date_from)
 
         # Add room filters
         if room_id:
             customer_ids_query = customer_ids_query.where(Booking.room_id == room_id)
-        if room_type:
-            customer_ids_query = customer_ids_query.join(Room, Booking.room_id == Room.id).where(Room.room_type == room_type)
+        if filters and getattr(filters, "category_id", None):
+            customer_ids_query = customer_ids_query.join(Room, Booking.room_id == Room.id).where(Room.category_id == filters.category_id)
 
         customer_ids = session.exec(customer_ids_query).all()
 
@@ -397,9 +545,17 @@ class CRUDAnalytics:
             else:
                 age_distribution[AgeGroup.UNKNOWN.value] += 1
 
-        # District distribution
-        district_distribution = {}
+        # Geo distributions
+        country_distribution: dict[str, int] = {}
+        region_distribution: dict[str, int] = {}
+        district_distribution: dict[str, int] = {}
         for customer in customers:
+            if customer.country_code:
+                country = customer.country_code
+                country_distribution[country] = country_distribution.get(country, 0) + 1
+            if customer.region:
+                region = customer.region
+                region_distribution[region] = region_distribution.get(region, 0) + 1
             if customer.district:
                 district_name = customer.district.value
                 district_distribution[district_name] = district_distribution.get(district_name, 0) + 1
@@ -412,6 +568,8 @@ class CRUDAnalytics:
             "returning_customers": returning_customers,
             "average_age": round(average_age, 1) if average_age else None,
             "age_distribution": age_distribution,
+            "country_distribution": country_distribution,
+            "region_distribution": region_distribution,
             "district_distribution": district_distribution,
         }
 
@@ -421,6 +579,7 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         top_n: int = 3,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Get best and worst performing rooms by ADR (Average Daily Rate).
@@ -443,7 +602,7 @@ class CRUDAnalytics:
         query = select(
             Room.id,
             Room.room_number,
-            Room.room_type,
+            Room.category_id,
             func.count(Booking.id).label("bookings"),
             func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
             func.sum(days_in_period).label("total_nights"),
@@ -458,8 +617,30 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(
-            Room.id, Room.room_number, Room.room_type
+        )
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            query = query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                query = query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
+
+        query = query.group_by(
+            Room.id, Room.room_number, Room.category_id
         ).having(
             func.count(Booking.id) > 0  # Only rooms with bookings
         )
@@ -499,10 +680,17 @@ class CRUDAnalytics:
 
             occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
 
+            # Resolve category name lazily (small N)
+            category_name = None
+            if result.category_id:
+                cat = session.exec(select(RoomCategory).where(RoomCategory.id == result.category_id)).first()
+                category_name = cat.name if cat else None
+
             top_performers.append({
                 "room_id": str(result.id),
                 "room_number": result.room_number,
-                "room_type": result.room_type.value,
+                "category_id": str(result.category_id) if result.category_id else None,
+                "category_name": category_name,
                 "adr": round(float(result.adr or 0), 2),
                 "revenue": float(result.revenue or 0),
                 "bookings": int(result.bookings or 0),
@@ -539,10 +727,16 @@ class CRUDAnalytics:
 
             occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
 
+            category_name = None
+            if result.category_id:
+                cat = session.exec(select(RoomCategory).where(RoomCategory.id == result.category_id)).first()
+                category_name = cat.name if cat else None
+
             bottom_performers.append({
                 "room_id": str(result.id),
                 "room_number": result.room_number,
-                "room_type": result.room_type.value,
+                "category_id": str(result.category_id) if result.category_id else None,
+                "category_name": category_name,
                 "adr": round(float(result.adr or 0), 2),
                 "revenue": float(result.revenue or 0),
                 "bookings": int(result.bookings or 0),
@@ -560,29 +754,25 @@ class CRUDAnalytics:
             }
         }
 
-    def get_room_type_breakdown(
+    def get_category_breakdown(
         self,
         session: Session,
         date_from: datetime,
         date_to: datetime,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> list[dict[str, Any]]:
-        """
-        Get metrics broken down by room type.
-
-        Returns:
-            List of dictionaries with metrics for each room type
-        """
         # Proportional revenue calculation
-        days_in_period = func.greatest(1, func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
-        ))
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
+        )
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
-            Room.room_type,
+            Room.category_id,
             func.count(Booking.id).label("bookings"),
             func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
-            func.avg(Booking.total_amount / total_booking_days).label("avg_rate"),  # ADR = daily rate
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(
@@ -593,32 +783,67 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(Room.room_type)
+        )
 
-        results = session.exec(query).all()
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            query = query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                query = query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
 
-        breakdown = []
-        for result in results:
-            # Calculate occupancy for this room type
-            room_count = session.exec(
-                select(func.count(Room.id)).where(Room.room_type == result.room_type)
-            ).first()
+        if filters and getattr(filters, "category_id", None):
+            query = query.where(Room.category_id == filters.category_id)
 
-            days_in_period = (date_to - date_from).days
-            if days_in_period <= 0:
-                days_in_period = 1
-            available_nights = room_count * days_in_period if room_count else 1
+        query = query.group_by(Room.category_id)
 
-            # Get occupied nights for this room type - calculate intersection with analysis period
+        rows = session.exec(query).all()
+
+        # Names map
+        category_ids = [r.category_id for r in rows if r.category_id]
+        names_map: dict[str, str] = {}
+        if category_ids:
+            cats = session.exec(select(RoomCategory).where(RoomCategory.id.in_(category_ids))).all()
+            names_map = {str(c.id): c.name for c in cats}
+
+        # Compute occupancy rate and avg_rate per category
+        results: list[dict[str, Any]] = []
+        for r in rows:
+            cat_id = str(r.category_id) if r.category_id else None
+
+            rooms_count = session.exec(
+                select(func.count(Room.id)).where(Room.category_id == r.category_id)
+            ).first() or 0
+
+            days = (date_to - date_from).days or 1
+            available_nights = max(1, rooms_count * days)
+
             occupied_nights = session.exec(
                 select(
-                    func.sum(func.greatest(1, func.extract("day",
-                        func.least(Booking.check_out, date_to) -
-                        func.greatest(Booking.check_in, date_from)
-                    )))
-                ).join(
-                    Room, Room.id == Booking.room_id
-                ).where(
+                    func.sum(
+                        func.greatest(1,
+                            func.extract(
+                                "epoch",
+                                func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+                            ) / 86400
+                        )
+                    )
+                ).join(Room, Room.id == Booking.room_id)
+                .where(
                     Booking.check_in < date_to,
                     Booking.check_out > date_from,
                     Booking.status.in_([
@@ -626,21 +851,23 @@ class CRUDAnalytics:
                         BookingStatus.CHECKED_IN,
                         BookingStatus.CHECKED_OUT
                     ]),
-                    Room.room_type == result.room_type,
+                    Room.category_id == r.category_id,
                 )
             ).first() or 0
 
-            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
+            occupancy_rate = (float(occupied_nights) / available_nights * 100) if available_nights > 0 else 0.0
+            avg_rate = float(r.revenue or 0) / max(1.0, float(occupied_nights))
 
-            breakdown.append({
-                "room_type": result.room_type.value,
-                "revenue": float(result.revenue or 0),
-                "bookings": int(result.bookings or 0),
-                "occupancy_rate": round(occupancy_rate, 2),
-                "average_rate": float(result.avg_rate or 0),
+            results.append({
+                "category_id": cat_id,
+                "category_name": names_map.get(cat_id or "", None),
+                "revenue": float(r.revenue or 0),
+                "bookings": int(r.bookings or 0),
+                "occupancy_rate": round(float(occupancy_rate), 2),
+                "average_rate": round(avg_rate, 2),
             })
 
-        return breakdown
+        return results
 
     def get_revenue_trend(
         self,
@@ -648,6 +875,7 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         group_by: str = "day",
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> list[dict[str, Any]]:
         """
         Get revenue trend over time.
@@ -684,7 +912,29 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_IN,
                 BookingStatus.CHECKED_OUT
             ]),
-        ).group_by(
+        )
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            query = query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                query = query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
+
+        query = query.group_by(
             date_trunc
         ).order_by(
             date_trunc
@@ -719,7 +969,7 @@ class CRUDAnalytics:
         date_to: datetime,
         metric: str = "check_ins",
         room_id: str | None = None,
-        room_type: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> list[dict[str, Any]]:
         """
         Get hourly distribution of check-ins or check-outs.
@@ -756,8 +1006,27 @@ class CRUDAnalytics:
         # Add room filters
         if room_id:
             query = query.where(Booking.room_id == room_id)
-        if room_type:
-            query = query.join(Room).where(Room.room_type == room_type)
+
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            query = query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                query = query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
 
         query = query.group_by(
             func.extract("hour", time_field)
@@ -786,7 +1055,6 @@ class CRUDAnalytics:
         session: Session,
         years: int = 2,
         room_id: str | None = None,
-        room_type: str | None = None,
     ) -> dict[str, Any]:
         """
         Get seasonal trends analysis over multiple years.
@@ -831,8 +1099,6 @@ class CRUDAnalytics:
         # Add room filters
         if room_id:
             monthly_query = monthly_query.where(Booking.room_id == room_id)
-        if room_type:
-            monthly_query = monthly_query.join(Room).where(Room.room_type == room_type)
 
         monthly_query = monthly_query.group_by(
             month_col
@@ -879,8 +1145,6 @@ class CRUDAnalytics:
         # Add room filters to quarterly query
         if room_id:
             quarterly_query = quarterly_query.where(Booking.room_id == room_id)
-        if room_type:
-            quarterly_query = quarterly_query.join(Room).where(Room.room_type == room_type)
 
         quarterly_query = quarterly_query.group_by(
             year_col,
@@ -1013,7 +1277,7 @@ class CRUDAnalytics:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         room_id: str | None = None,
-        room_type: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Get top customers by total revenue.
@@ -1066,8 +1330,27 @@ class CRUDAnalytics:
         # Add room filters
         if room_id:
             customer_query = customer_query.where(Booking.room_id == room_id)
-        if room_type:
-            customer_query = customer_query.join(Room, Booking.room_id == Room.id).where(Room.room_type == room_type)
+        # Customer filters
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            customer_query = customer_query.where(True)  # no-op to chain conditions
+            if filters.country_code:
+                customer_query = customer_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                customer_query = customer_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                customer_query = customer_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    customer_query = customer_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    customer_query = customer_query.where(Customer.first_booking_date >= (date_from or datetime.min.replace(tzinfo=timezone.utc)))
+                elif filters.customer_type.value == "returning":
+                    customer_query = customer_query.where(Customer.first_booking_date < (date_from or datetime.max.replace(tzinfo=timezone.utc)))
 
         customer_query = customer_query.group_by(
             Customer.id,
@@ -1273,7 +1556,7 @@ class CRUDAnalytics:
         date_from: datetime,
         date_to: datetime,
         room_id: str | None = None,
-        room_type: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Get revenue breakdown by customer district.
@@ -1319,8 +1602,25 @@ class CRUDAnalytics:
         # Add room filters
         if room_id:
             query = query.where(Booking.room_id == room_id)
-        if room_type:
-            query = query.join(Room, Booking.room_id == Room.id).where(Room.room_type == room_type)
+
+        # Customer filters
+        if filters and any([
+            filters.country_code, filters.region, filters.tags, filters.customer_type
+        ]):
+            if filters.country_code:
+                query = query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                query = query.where(Customer.region == filters.region)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    query = query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    query = query.where(Customer.first_booking_date >= date_from)
+                elif filters.customer_type.value == "returning":
+                    query = query.where(Customer.first_booking_date < date_from)
 
         query = query.group_by(
             Customer.district
@@ -1360,6 +1660,132 @@ class CRUDAnalytics:
                 "start": date_from.isoformat(),
                 "end": date_to.isoformat(),
             }
+        }
+
+    def get_revenue_by_country(
+        self,
+        session: Session,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> dict[str, Any]:
+        date_from = _ensure_timezone_aware(date_from)
+        date_to = _ensure_timezone_aware(date_to)
+
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
+        query = select(
+            Customer.country_code,
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("total_revenue"),
+            func.count(Booking.id).label("booking_count"),
+            func.count(func.distinct(Customer.id)).label("unique_customers"),
+        ).join(
+            Customer, Booking.customer_id == Customer.id
+        ).where(
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+            Customer.country_code.is_not(None),
+        ).group_by(
+            Customer.country_code
+        ).order_by(
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).desc()
+        )
+
+        rows = session.exec(query).all()
+        total_revenue = sum(float(r.total_revenue or 0) for r in rows)
+        total_bookings = sum(r.booking_count for r in rows)
+
+        countries = []
+        for r in rows:
+            revenue = float(r.total_revenue or 0)
+            percentage = (revenue / total_revenue * 100) if total_revenue > 0 else 0
+            countries.append({
+                "country": r.country_code or "Unknown",
+                "revenue": revenue,
+                "percentage": round(percentage, 2),
+                "bookings": r.booking_count,
+                "unique_customers": r.unique_customers,
+                "average_booking_value": round(revenue / r.booking_count, 2) if r.booking_count > 0 else 0,
+            })
+
+        return {
+            "countries": countries,
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_bookings": total_bookings,
+                "country_count": len(countries),
+            },
+            "analysis_period": {"start": date_from.isoformat(), "end": date_to.isoformat()},
+        }
+
+    def get_revenue_by_region(
+        self,
+        session: Session,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> dict[str, Any]:
+        date_from = _ensure_timezone_aware(date_from)
+        date_to = _ensure_timezone_aware(date_to)
+
+        days_in_period = func.extract("day",
+            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        )
+        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+
+        query = select(
+            Customer.region,
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("total_revenue"),
+            func.count(Booking.id).label("booking_count"),
+            func.count(func.distinct(Customer.id)).label("unique_customers"),
+        ).join(
+            Customer, Booking.customer_id == Customer.id
+        ).where(
+            Booking.check_in < date_to,
+            Booking.check_out > date_from,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+            Customer.region.is_not(None),
+        ).group_by(
+            Customer.region
+        ).order_by(
+            func.sum(Booking.total_amount * days_in_period / total_booking_days).desc()
+        )
+
+        rows = session.exec(query).all()
+        total_revenue = sum(float(r.total_revenue or 0) for r in rows)
+        total_bookings = sum(r.booking_count for r in rows)
+
+        regions = []
+        for r in rows:
+            revenue = float(r.total_revenue or 0)
+            percentage = (revenue / total_revenue * 100) if total_revenue > 0 else 0
+            regions.append({
+                "region": r.region or "Unknown",
+                "revenue": revenue,
+                "percentage": round(percentage, 2),
+                "bookings": r.booking_count,
+                "unique_customers": r.unique_customers,
+                "average_booking_value": round(revenue / r.booking_count, 2) if r.booking_count > 0 else 0,
+            })
+
+        return {
+            "regions": regions,
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_bookings": total_bookings,
+                "region_count": len(regions),
+            },
+            "analysis_period": {"start": date_from.isoformat(), "end": date_to.isoformat()},
         }
 
 analytics = CRUDAnalytics()

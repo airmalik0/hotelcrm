@@ -1,16 +1,17 @@
-import { updateRoom } from "@/api/rooms"
+import { getRoomCategories, updateRoom } from "@/api/rooms"
 import type {
   RoomPublic,
   RoomStatus,
-  RoomType,
   RoomUpdate,
+  RoomCategoriesPublic,
+  RoomCategoryPublic,
 } from "@/client/types.gen"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { X } from "lucide-react"
 import type React from "react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 interface RoomEditModalProps {
   room: RoomPublic
@@ -27,12 +28,22 @@ export function RoomEditModal({
   const [formData, setFormData] = useState<RoomUpdate>({
     room_number: room.room_number,
     floor: room.floor,
-    room_type: room.room_type,
     price_per_night: room.price_per_night,
     status: room.status,
     description: room.description,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Fetch categories
+  const { data: categoriesData } = useQuery<RoomCategoriesPublic>({
+    queryKey: ["room-categories"],
+    queryFn: () => getRoomCategories({ limit: 100 }),
+  })
+
+  const categories: RoomCategoryPublic[] = useMemo(
+    () => categoriesData?.data || [],
+    [categoriesData?.data],
+  )
 
   const updateMutation = useMutation({
     mutationFn: (data: RoomUpdate) => updateRoom(room.id, data),
@@ -99,9 +110,7 @@ export function RoomEditModal({
     if (formData.floor !== room.floor) {
       changedFields.floor = formData.floor
     }
-    if (formData.room_type !== room.room_type) {
-      changedFields.room_type = formData.room_type
-    }
+    // room_type removed
     if (formData.price_per_night !== room.price_per_night) {
       changedFields.price_per_night = formData.price_per_night
     }
@@ -110,6 +119,9 @@ export function RoomEditModal({
     }
     if (formData.description !== room.description) {
       changedFields.description = formData.description || null
+    }
+    if (formData.category_id !== room.category?.id) {
+      changedFields.category_id = (formData as any).category_id ?? null
     }
 
     if (Object.keys(changedFields).length === 0) {
@@ -215,28 +227,37 @@ export function RoomEditModal({
                 )}
               </div>
 
-              {/* Room Type */}
+              {/* Room Type removed */}
+
+              {/* Category */}
               <div>
-                <label
-                  htmlFor="room_type"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-                >
-                  Room Type
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    htmlFor="category_id"
+                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  >
+                    Category
+                  </label>
+                </div>
                 <select
-                  id="room_type"
-                  value={formData.room_type || "standard"}
+                  id="category_id"
+                  value={(formData as any).category_id ?? room.category?.id ?? ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      room_type: e.target.value as RoomType,
+                      // @ts-expect-error dynamic field present on API type
+                      category_id: e.target.value ? e.target.value : null,
                     })
                   }
                   disabled={viewOnly}
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed"
                 >
-                  <option value="standard">Standard</option>
-                  <option value="vip">VIP</option>
+                  <option value="">No category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

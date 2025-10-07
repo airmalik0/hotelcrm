@@ -15,7 +15,6 @@ from app.models.analytics import (
     OccupancyMetrics,
     PaymentDistribution,
     RevenueMetrics,
-    RoomTypeMetrics,
     TimeSeriesDataPoint,
 )
 
@@ -56,8 +55,8 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.room_id,
-            filters.room_type,
             filters.include_cancelled,
+            filters,
         )
 
         # Calculate ADR and RevPAR
@@ -73,7 +72,7 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.room_id,
-            filters.room_type,
+            filters,
         )
 
         # Calculate RevPAR
@@ -109,6 +108,8 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.include_cancelled,
+            filters.room_id,
+            filters,
         )
 
         payment_distribution = PaymentDistribution(**payment_data)
@@ -118,7 +119,8 @@ class AnalyticsService:
             self.session,
             filters.date_from,
             filters.date_to,
-            filters.district,
+            filters,
+            filters.room_id,
         )
 
         customer_metrics = CustomerMetrics(
@@ -130,16 +132,14 @@ class AnalyticsService:
             age_distribution=customer_data["age_distribution"],
         )
 
-        # Get room type breakdown
-        room_type_data = self.crud.get_room_type_breakdown(
+        # Category breakdown
+        category_breakdown_data = self.crud.get_category_breakdown(
             self.session,
             filters.date_from,
             filters.date_to,
+            filters,
         )
-
-        room_type_breakdown = [
-            RoomTypeMetrics(**room_data) for room_data in room_type_data
-        ]
+        category_breakdown = category_breakdown_data
 
         # Get revenue trend (default to daily for periods <= 31 days, monthly otherwise)
         days_in_period = (filters.date_to - filters.date_from).days
@@ -150,6 +150,7 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             group_by,
+            filters,
         )
 
         revenue_trend = [
@@ -165,7 +166,7 @@ class AnalyticsService:
             occupancy=occupancy_metrics,
             payment_distribution=payment_distribution,
             customer_metrics=customer_metrics,
-            room_type_breakdown=room_type_breakdown,
+            category_breakdown=category_breakdown,
             revenue_trend=revenue_trend,
         )
 
@@ -176,6 +177,7 @@ class AnalyticsService:
         metric: str = "check_ins",
         room_id: str | None = None,
         room_type: str | None = None,
+        filters: AnalyticsFilter | None = None,
     ) -> list[dict[str, Any]]:
         """
         Get hourly distribution of events (check-ins, check-outs).
@@ -198,7 +200,7 @@ class AnalyticsService:
             date_to,
             metric,
             room_id,
-            room_type,
+            filters,
         )
 
     def get_seasonal_trends(
@@ -221,7 +223,7 @@ class AnalyticsService:
         if years < 1 or years > 5:
             raise ValidationError("Years must be between 1 and 5")
 
-        return self.crud.get_seasonal_trends(self.session, years, room_id, room_type)
+        return self.crud.get_seasonal_trends(self.session, years, room_id)
 
     def get_top_customers(
         self,
@@ -247,7 +249,7 @@ class AnalyticsService:
         if date_from and date_to:
             self.validate_date_range(date_from, date_to)
 
-        return self.crud.get_top_customers(self.session, limit, date_from, date_to, room_id, room_type)
+        return self.crud.get_top_customers(self.session, limit, date_from, date_to, room_id)
 
     def get_revenue_details(self, filters: AnalyticsFilter, group_by: str = "day") -> dict[str, Any]:
         """Get detailed revenue analytics with time series data."""
@@ -259,6 +261,7 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             group_by,
+            filters,
         )
 
         # Get revenue metrics
@@ -267,8 +270,9 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.room_id,
-            filters.room_type,
+            None,
             filters.include_cancelled,
+            filters,
         )
 
         return {
@@ -286,7 +290,7 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.room_id,
-            filters.room_type,
+            filters,
         )
 
         return occupancy_data
@@ -299,12 +303,19 @@ class AnalyticsService:
             self.session,
             filters.date_from,
             filters.date_to,
-            filters.district,
+            filters,
             filters.room_id,
-            filters.room_type,
         )
 
         return customer_data
+
+    def get_geo_revenue(self, date_from: datetime, date_to: datetime, level: str = "district") -> dict[str, Any]:
+        """Get revenue breakdown by geographic level (country/region/district)."""
+        if level == "country":
+            return self.crud.get_revenue_by_country(self.session, date_from, date_to)
+        if level == "region":
+            return self.crud.get_revenue_by_region(self.session, date_from, date_to)
+        return self.crud.get_revenue_by_district(self.session, date_from, date_to)
 
     def get_room_performance(self, filters: AnalyticsFilter, top_n: int = 3) -> dict[str, Any]:
         """
@@ -394,4 +405,4 @@ class AnalyticsService:
             Dictionary with district revenue data
         """
         self.validate_date_range(date_from, date_to)
-        return self.crud.get_revenue_by_district(self.session, date_from, date_to, room_id, room_type)
+        return self.crud.get_revenue_by_district(self.session, date_from, date_to, room_id)

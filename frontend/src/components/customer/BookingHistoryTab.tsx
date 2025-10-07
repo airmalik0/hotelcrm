@@ -366,7 +366,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
                               Room Type
                             </p>
                             <p className="font-medium text-neutral-900 dark:text-white">
-                              {booking.room?.room_type || "N/A"}
+                              {booking.room?.category?.name || "N/A"}
                             </p>
                           </div>
                         </div>

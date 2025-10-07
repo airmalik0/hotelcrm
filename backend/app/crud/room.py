@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import Session, func, select
 
 from app.crud.base import CRUDBase
-from app.models import Room, RoomCreate, RoomStatus, RoomUpdate
+from app.models import Room, RoomCategory, RoomCreate, RoomStatus, RoomUpdate
 
 
 class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
@@ -15,7 +15,8 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
             select(Room)
             .where(Room.id == room_id)
             .options(
-                joinedload(Room.bookings)  # type: ignore[arg-type]
+                joinedload(Room.bookings),  # type: ignore[arg-type]
+                joinedload(Room.category),  # type: ignore[arg-type]
             )
         )
         return session.exec(statement).first()
@@ -49,4 +50,19 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         return room
 
 
+class CRUDRoomCategory(CRUDBase[RoomCategory, "RoomCategoryCreate", "RoomCategoryUpdate"]):
+    def get_by_name(self, session: Session, *, name: str) -> RoomCategory | None:
+        statement = select(RoomCategory).where(RoomCategory.name == name)
+        return session.exec(statement).first()
+
+    def get_multi(self, session: Session, *, skip: int = 0, limit: int = 100) -> list[RoomCategory]:
+        statement = select(RoomCategory).offset(skip).limit(limit).order_by(RoomCategory.name)
+        return session.exec(statement).all()
+
+    def count(self, session: Session) -> int:
+        statement = select(func.count()).select_from(RoomCategory)
+        return session.exec(statement).one()
+
+
 room = CRUDRoom(Room)
+room_category = CRUDRoomCategory(RoomCategory)

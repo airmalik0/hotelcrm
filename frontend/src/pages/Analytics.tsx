@@ -8,7 +8,7 @@ import {
   getRevenueDetails,
   getSeasonalTrends,
 } from "@/api/analytics"
-import { getRooms } from "@/api/rooms"
+import { getRooms, getRoomCategories } from "@/api/rooms"
 import type {
   AnalyticsExportRequest,
   DashboardMetrics,
@@ -40,6 +40,7 @@ import {
   XCircle,
 } from "lucide-react"
 import { useState } from "react"
+import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 
 type AnalyticsTab =
   | "overview"
@@ -59,14 +60,24 @@ export function Analytics() {
     to: format(currentDate, "yyyy-MM-dd"), // Use today as end date, not end of month
   })
 
-  // Room and room type filters
+  // Room and category filters
   const [selectedRoomId, setSelectedRoomId] = useState<string>("all")
-  const [selectedRoomType, setSelectedRoomType] = useState<string>("all")
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all")
+  // New filters: location, customer type, tags
+  const [geoFilter, setGeoFilter] = useState<GeoValue>({ country_code: null, region: null, district: null })
+  const [customerType, setCustomerType] = useState<"" | "new" | "returning">("")
+  const [tags, setTags] = useState<string[]>([])
 
   // Fetch rooms for filter dropdown
   const { data: roomsData } = useQuery({
     queryKey: ["rooms"],
     queryFn: () => getRooms({ limit: 100 }),
+  })
+
+  // Fetch categories for filter dropdown
+  const { data: categoriesData } = useQuery({
+    queryKey: ["room-categories"],
+    queryFn: () => getRoomCategories({ limit: 100 }),
   })
 
   // Check if user has admin access
@@ -96,14 +107,24 @@ export function Analytics() {
       "dashboard",
       dateRange,
       selectedRoomId,
-      selectedRoomType,
+      selectedCategoryId,
+      geoFilter.country_code,
+      geoFilter.region,
+      geoFilter.district,
+      customerType,
+      tags,
     ],
     queryFn: () =>
       getDashboardMetrics({
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
+        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        country_code: geoFilter.country_code || undefined,
+        region: geoFilter.region || undefined,
+        district: geoFilter.district || undefined,
+        customer_type: customerType || undefined,
+        tags: tags.length ? tags : undefined,
       }),
   })
 
@@ -120,7 +141,12 @@ export function Analytics() {
       "revenue",
       dateRange,
       selectedRoomId,
-      selectedRoomType,
+      selectedCategoryId,
+      geoFilter.country_code,
+      geoFilter.region,
+      geoFilter.district,
+      customerType,
+      tags,
     ],
     queryFn: () =>
       getRevenueDetails({
@@ -128,7 +154,12 @@ export function Analytics() {
         date_to: `${dateRange.to}T23:59:59`,
         group_by: "day",
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
+        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        country_code: geoFilter.country_code || undefined,
+        region: geoFilter.region || undefined,
+        district: geoFilter.district || undefined,
+        customer_type: customerType || undefined,
+        tags: tags.length ? tags : undefined,
       }),
     enabled: activeTab === "revenue",
   })
@@ -140,25 +171,49 @@ export function Analytics() {
       "occupancy",
       dateRange,
       selectedRoomId,
-      selectedRoomType,
+      selectedCategoryId,
+      geoFilter.country_code,
+      geoFilter.region,
+      geoFilter.district,
+      customerType,
+      tags,
     ],
     queryFn: () =>
       getOccupancyDetails({
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
+        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        country_code: geoFilter.country_code || undefined,
+        region: geoFilter.region || undefined,
+        district: geoFilter.district || undefined,
+        customer_type: customerType || undefined,
+        tags: tags.length ? tags : undefined,
       }),
     enabled: activeTab === "occupancy",
   })
 
   // Customer analytics
   const { data: customerData, isLoading: customerLoading } = useQuery({
-    queryKey: ["analytics", "customers", dateRange],
+    queryKey: [
+      "analytics",
+      "customers",
+      dateRange,
+      geoFilter.country_code,
+      geoFilter.region,
+      geoFilter.district,
+      customerType,
+      tags,
+    ],
     queryFn: () =>
       getCustomerAnalytics({
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
+        country_code: geoFilter.country_code || undefined,
+        region: geoFilter.region || undefined,
+        district: geoFilter.district || undefined,
+        customer_type: customerType || undefined,
+        tags: tags.length ? tags : undefined,
       }),
     enabled: activeTab === "customers",
   })
@@ -199,7 +254,12 @@ export function Analytics() {
         date_from: new Date(`${dateRange.from}T00:00:00`),
         date_to: new Date(`${dateRange.to}T23:59:59`),
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
+        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        country_code: geoFilter.country_code || undefined,
+        region: geoFilter.region || undefined,
+        district: geoFilter.district || undefined,
+        customer_type: customerType || undefined,
+        tags: tags.length ? tags : undefined,
       },
       format: "pdf",
       include_charts: false,
@@ -212,7 +272,12 @@ export function Analytics() {
         date_from: new Date(`${dateRange.from}T00:00:00`),
         date_to: new Date(`${dateRange.to}T23:59:59`),
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        room_type: selectedRoomType !== "all" ? selectedRoomType : undefined,
+        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        country_code: geoFilter.country_code || undefined,
+        region: geoFilter.region || undefined,
+        district: geoFilter.district || undefined,
+        customer_type: customerType || undefined,
+        tags: tags.length ? tags : undefined,
       },
       format: "excel",
       include_charts: false,
@@ -405,20 +470,28 @@ export function Analytics() {
             </div>
           </div>
 
-          {/* Room and Room Type Filters */}
+          {/* Room and Category Filters */}
           <div className="flex flex-wrap items-end gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-600">
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Room Type
+                Room Category
               </label>
               <select
-                value={selectedRoomType}
-                onChange={(e) => setSelectedRoomType(e.target.value)}
+                value={selectedCategoryId}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setSelectedCategoryId(val)
+                  if (val !== "all") setSelectedRoomId("all")
+                }}
+                disabled={selectedRoomId !== "all"}
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value="all">All Room Types</option>
-                <option value="standard">Standard</option>
-                <option value="vip">VIP</option>
+                <option value="all">All Categories</option>
+                {categoriesData?.data.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="flex-1 min-w-[200px]">
@@ -427,21 +500,54 @@ export function Analytics() {
               </label>
               <select
                 value={selectedRoomId}
-                onChange={(e) => setSelectedRoomId(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setSelectedRoomId(val)
+                  if (val !== "all") setSelectedCategoryId("all")
+                }}
+                disabled={selectedCategoryId !== "all"}
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">All Rooms</option>
                 {roomsData?.data.map((room) => (
                   <option key={room.id} value={room.id}>
-                    Room {room.room_number} ({room.room_type})
+                    Room {room.room_number} ({room.category?.name || '-'})
                   </option>
                 ))}
               </select>
             </div>
+            {/* Location filters */}
+            <div className="flex-1 min-w-[220px]">
+              <GeoSelect
+                label="Location Filter"
+                value={geoFilter}
+                onChange={(v) => setGeoFilter(v)}
+                variant="popover"
+                size="sm"
+                hideLabels
+              />
+            </div>
+            {/* Customer type */}
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Customer Type</label>
+              <select value={customerType} onChange={(e) => setCustomerType(e.target.value as any)} className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="">All</option>
+                <option value="new">New</option>
+                <option value="returning">Returning</option>
+              </select>
+            </div>
+            {/* Tags (comma-separated) */}
+            <div className="flex-1 min-w-[220px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Tags</label>
+              <input value={tags.join(',')} onChange={(e) => setTags(e.target.value.split(',').map(t => t.trim()).filter(Boolean))} placeholder="vip,loyal" className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
             <button
               onClick={() => {
                 setSelectedRoomId("all")
-                setSelectedRoomType("all")
+                setSelectedCategoryId("all")
+                setGeoFilter({ country_code: null, region: null, district: null })
+                setCustomerType("")
+                setTags([])
               }}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >

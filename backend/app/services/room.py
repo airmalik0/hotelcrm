@@ -9,7 +9,17 @@ from app.core.exceptions import AlreadyExistsError, BusinessRuleViolation, NotFo
 if TYPE_CHECKING:
     from app.models import User
 from app.crud.room import room as crud_room
-from app.models import BookingStatus, Room, RoomCreate, RoomStatus, RoomUpdate
+from app.crud.room import room_category as crud_room_category
+from app.models import (
+    BookingStatus,
+    Room,
+    RoomCategory,
+    RoomCategoryCreate,
+    RoomCategoryUpdate,
+    RoomCreate,
+    RoomStatus,
+    RoomUpdate,
+)
 
 
 class RoomService:
@@ -23,6 +33,12 @@ class RoomService:
         if self.crud.get_by_room_number(self.session, room_number=room_in.room_number):
             raise AlreadyExistsError("room_number", "Room number already exists")
 
+        # If category_id is provided, verify it exists
+        if getattr(room_in, "category_id", None):
+            category = crud_room_category.get(self.session, id=room_in.category_id)  # type: ignore[attr-defined]
+            if not category:
+                raise NotFoundError("RoomCategory", str(room_in.category_id))
+
         return self.crud.create(self.session, obj_in=room_in)
 
     def update_room(self, room: Room, room_in: RoomUpdate) -> Room:
@@ -30,6 +46,12 @@ class RoomService:
         if room_in.room_number and room_in.room_number != room.room_number:
             if self.crud.get_by_room_number(self.session, room_number=room_in.room_number):
                 raise AlreadyExistsError("room_number", "Room number already exists")
+
+        # If category is being changed, verify it exists
+        if getattr(room_in, "category_id", None) and room_in.category_id != room.category_id:  # type: ignore[attr-defined]
+            category = crud_room_category.get(self.session, id=room_in.category_id)  # type: ignore[attr-defined]
+            if not category:
+                raise NotFoundError("RoomCategory", str(room_in.category_id))
 
         return self.crud.update(self.session, db_obj=room, obj_in=room_in)
 
@@ -87,3 +109,39 @@ class RoomService:
             )
             if not active_bookings:
                 raise BusinessRuleViolation("Cannot mark room as occupied without an active checked-in booking")
+
+
+class RoomCategoryService:
+    def __init__(self, session: Session):
+        self.session = session
+        self.crud = crud_room_category
+
+    def create_category(self, category_in: RoomCategoryCreate) -> RoomCategory:
+        if self.crud.get_by_name(self.session, name=category_in.name):
+            raise AlreadyExistsError("name", "Category name already exists")
+        return self.crud.create(self.session, obj_in=category_in)
+
+    def update_category(self, category: RoomCategory, category_in: RoomCategoryUpdate) -> RoomCategory:
+        if category_in.name and category_in.name != category.name:
+            if self.crud.get_by_name(self.session, name=category_in.name):
+                raise AlreadyExistsError("name", "Category name already exists")
+        return self.crud.update(self.session, db_obj=category, obj_in=category_in)
+
+    def get_category_or_404(self, category_id: uuid.UUID) -> RoomCategory:
+        category = self.crud.get(self.session, id=category_id)
+        if not category:
+            raise NotFoundError("RoomCategory", str(category_id))
+        return category
+
+    def get_category_for_delete(self, category_id: uuid.UUID) -> RoomCategory:
+        category = self.get_category_or_404(category_id)
+
+        # Prevent deletion if there are rooms using this category
+        from sqlmodel import select
+        existing_rooms = self.session.exec(select(Room).where(Room.category_id == category_id)).first()
+        if existing_rooms:
+            raise BusinessRuleViolation("Cannot delete category with existing rooms")
+        return category
+
+    def delete_category(self, category_id: uuid.UUID) -> RoomCategory | None:
+        return self.crud.delete(self.session, id=category_id)

@@ -20,9 +20,9 @@ interface GridControlsProps {
   onSearchChange: (value: string) => void
   statusFilters: BookingStatus[]
   onStatusFilterChange: (statuses: BookingStatus[]) => void
-  roomTypeFilters: string[]
-  onRoomTypeFilterChange: (types: string[]) => void
-  availableRoomTypes: string[]
+  categoryFilters: string[]
+  onCategoryFilterChange: (ids: string[]) => void
+  availableCategories: Array<{ id: string; name: string }>
   totalBookings: number
   occupancyRate: number
   onClearAllFilters: () => void
@@ -61,22 +61,22 @@ export const GridControls = memo(function GridControls({
   onSearchChange,
   statusFilters,
   onStatusFilterChange,
-  roomTypeFilters,
-  onRoomTypeFilterChange,
-  availableRoomTypes,
+  categoryFilters,
+  onCategoryFilterChange,
+  availableCategories,
   totalBookings,
   occupancyRate,
   onClearAllFilters,
   currentGridState,
 }: GridControlsProps) {
-  const [showRoomTypeFilter, setShowRoomTypeFilter] = useState(false)
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false)
   const [showStatusFilter, setShowStatusFilter] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const statusButtonRef = useRef<HTMLButtonElement>(null)
 
   const hasActiveFilters =
     statusFilters.length > 0 ||
-    roomTypeFilters.length > 0 ||
+    categoryFilters.length > 0 ||
     searchTerm.length > 0
 
   const toggleStatusFilter = (status: BookingStatus) => {
@@ -87,11 +87,11 @@ export const GridControls = memo(function GridControls({
     }
   }
 
-  const toggleRoomTypeFilter = (roomType: string) => {
-    if (roomTypeFilters.includes(roomType)) {
-      onRoomTypeFilterChange(roomTypeFilters.filter((t) => t !== roomType))
+  const toggleCategoryFilter = (id: string) => {
+    if (categoryFilters.includes(id)) {
+      onCategoryFilterChange(categoryFilters.filter((t) => t !== id))
     } else {
-      onRoomTypeFilterChange([...roomTypeFilters, roomType])
+      onCategoryFilterChange([...categoryFilters, id])
     }
   }
 
@@ -231,30 +231,30 @@ export const GridControls = memo(function GridControls({
             )}
           </div>
 
-          {/* Room Type Filter */}
+          {/* Category Filter */}
           <div className="relative">
             <button
               ref={buttonRef}
               type="button"
-              onClick={() => setShowRoomTypeFilter(!showRoomTypeFilter)}
+              onClick={() => setShowCategoryFilter(!showCategoryFilter)}
               className={clsx(
                 "px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-2",
-                roomTypeFilters.length > 0
+                categoryFilters.length > 0
                   ? "bg-primary-100 dark:bg-primary-600/30 border-primary-300 dark:border-primary-600/50 text-primary-700 dark:text-primary-400"
                   : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
               )}
             >
               <Bed className="w-4 h-4" />
-              Room Types
-              {roomTypeFilters.length > 0 && (
+              Categories
+              {categoryFilters.length > 0 && (
                 <span className="bg-primary-600 dark:bg-primary-400 text-white dark:text-neutral-900 text-xs px-1.5 py-0.5 rounded-full">
-                  {roomTypeFilters.length}
+                  {categoryFilters.length}
                 </span>
               )}
               <ChevronDown className="w-3 h-3" />
             </button>
 
-            {showRoomTypeFilter && buttonRef.current && (
+            {showCategoryFilter && buttonRef.current && (
               <div
                 className="fixed z-30 w-48 bg-white dark:bg-dark-2 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg"
                 style={{
@@ -263,14 +263,14 @@ export const GridControls = memo(function GridControls({
                 }}
               >
                 <div className="p-2">
-                  {availableRoomTypes.map((roomType) => (
+                  {availableCategories.map((cat) => (
                     <button
                       type="button"
-                      key={roomType}
-                      onClick={() => toggleRoomTypeFilter(roomType)}
+                      key={cat.id}
+                      onClick={() => toggleCategoryFilter(cat.id)}
                       className={clsx(
                         "w-full px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2",
-                        roomTypeFilters.includes(roomType)
+                        categoryFilters.includes(cat.id)
                           ? "bg-primary-100 dark:bg-primary-600/30 text-primary-700 dark:text-primary-400"
                           : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-dark-3",
                       )}
@@ -278,16 +278,16 @@ export const GridControls = memo(function GridControls({
                       <div
                         className={clsx(
                           "w-3 h-3 rounded border-2 flex items-center justify-center",
-                          roomTypeFilters.includes(roomType)
+                          categoryFilters.includes(cat.id)
                             ? "border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400"
                             : "border-neutral-300 dark:border-neutral-600",
                         )}
                       >
-                        {roomTypeFilters.includes(roomType) && (
+                        {categoryFilters.includes(cat.id) && (
                           <div className="w-1.5 h-1.5 bg-white dark:bg-neutral-900 rounded-full" />
                         )}
                       </div>
-                      {roomType}
+                      {cat.name || "Unnamed"}
                     </button>
                   ))}
                 </div>
@@ -329,10 +329,10 @@ export const GridControls = memo(function GridControls({
       </div>
 
       {/* Click outside handlers */}
-      {showRoomTypeFilter && (
+      {showCategoryFilter && (
         <div
           className="fixed inset-0 z-20"
-          onClick={() => setShowRoomTypeFilter(false)}
+          onClick={() => setShowCategoryFilter(false)}
         />
       )}
       {showStatusFilter && (

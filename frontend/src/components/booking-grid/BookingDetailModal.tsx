@@ -833,7 +833,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
                             return filteredRooms.map((room) => (
                               <option key={room.id} value={room.id}>
-                                {room.room_number} - {room.room_type} ($
+                                {room.room_number} - {room.category?.name || "Uncategorized"} ($
                                 {room.price_per_night}/night)
                                 {room.status !== "available" &&
                                   ` [${room.status}]`}
@@ -917,7 +917,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         Room:
                       </span>
                       <span className="ml-2 font-medium text-neutral-900 dark:text-white">
-                        {booking.room?.room_number} - {booking.room?.room_type}
+                        {booking.room?.room_number} - {booking.room?.category?.name || "Uncategorized"}
                       </span>
                     </div>
                     <div>

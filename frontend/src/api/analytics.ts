@@ -8,10 +8,14 @@ interface AnalyticsParams {
   date_from: string
   date_to: string
   room_id?: string
-  room_type?: string
+  category_id?: string
+  country_code?: string
+  region?: string
   district?: string
   include_cancelled?: boolean
   group_by?: string
+  customer_type?: 'new' | 'returning'
+  tags?: string[]
 }
 
 export async function getDashboardMetrics(params: AnalyticsParams) {
@@ -19,6 +23,20 @@ export async function getDashboardMetrics(params: AnalyticsParams) {
     "/api/v1/analytics/dashboard",
     {
       params,
+      paramsSerializer: {
+        serialize: (p: Record<string, any>) => {
+          const usp = new URLSearchParams()
+          Object.entries(p).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') return
+            if (Array.isArray(value)) {
+              value.forEach((v) => usp.append(key, String(v)))
+            } else {
+              usp.append(key, String(value))
+            }
+          })
+          return usp.toString()
+        },
+      },
     },
   )
   return data
@@ -26,9 +44,23 @@ export async function getDashboardMetrics(params: AnalyticsParams) {
 
 export async function getRevenueDetails(params: AnalyticsParams) {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/revenue",
+    "/api/v1/analytics/revenue_details",
     {
       params,
+      paramsSerializer: {
+        serialize: (p: Record<string, any>) => {
+          const usp = new URLSearchParams()
+          Object.entries(p).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') return
+            if (Array.isArray(value)) {
+              value.forEach((v) => usp.append(key, String(v)))
+            } else {
+              usp.append(key, String(value))
+            }
+          })
+          return usp.toString()
+        },
+      },
     },
   )
   return data
@@ -36,9 +68,23 @@ export async function getRevenueDetails(params: AnalyticsParams) {
 
 export async function getOccupancyDetails(params: AnalyticsParams) {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/occupancy",
+    "/api/v1/analytics/occupancy_details",
     {
       params,
+      paramsSerializer: {
+        serialize: (p: Record<string, any>) => {
+          const usp = new URLSearchParams()
+          Object.entries(p).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') return
+            if (Array.isArray(value)) {
+              value.forEach((v) => usp.append(key, String(v)))
+            } else {
+              usp.append(key, String(value))
+            }
+          })
+          return usp.toString()
+        },
+      },
     },
   )
   return data
@@ -46,9 +92,23 @@ export async function getOccupancyDetails(params: AnalyticsParams) {
 
 export async function getCustomerAnalytics(params: AnalyticsParams) {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/customers",
+    "/api/v1/analytics/customer_details",
     {
       params,
+      paramsSerializer: {
+        serialize: (p: Record<string, any>) => {
+          const usp = new URLSearchParams()
+          Object.entries(p).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') return
+            if (Array.isArray(value)) {
+              value.forEach((v) => usp.append(key, String(v)))
+            } else {
+              usp.append(key, String(value))
+            }
+          })
+          return usp.toString()
+        },
+      },
     },
   )
   return data
@@ -56,7 +116,7 @@ export async function getCustomerAnalytics(params: AnalyticsParams) {
 
 export async function getQuickStats() {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/quick-stats",
+    "/api/v1/analytics/quick_stats",
   )
   return data
 }
@@ -113,7 +173,7 @@ export async function getHourlyDistribution(params: {
   metric: "check_ins" | "check_outs"
 }) {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/hourly-distribution",
+    "/api/v1/analytics/hourly_distribution",
     {
       params,
     },
@@ -123,7 +183,7 @@ export async function getHourlyDistribution(params: {
 
 export async function getSeasonalTrends(years = 2) {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/seasonal-trends",
+    "/api/v1/analytics/seasonal_trends",
     {
       params: { years },
     },
@@ -131,14 +191,11 @@ export async function getSeasonalTrends(years = 2) {
   return data
 }
 
-export async function getDistrictRevenue(params: {
-  date_from: string
-  date_to: string
-}) {
+export async function getDistrictRevenue(params: { date_from: string; date_to: string }) {
   const { data } = await apiClient.get<AnalyticsResponse>(
-    "/api/v1/analytics/district-revenue",
+    "/api/v1/analytics/geo_revenue",
     {
-      params,
+      params: { ...params, level: "district" },
     },
   )
   return data

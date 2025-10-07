@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.crud.room import room as crud_room
+from app.crud.room import room_category as crud_room_category
 from app.models import (
     Message,
     RoomCreate,
@@ -13,8 +14,11 @@ from app.models import (
     RoomsPublic,
     RoomStatus,
     RoomUpdate,
+    RoomCategoryCreate,
+    RoomCategoryPublic,
+    RoomCategoriesPublic,
 )
-from app.services.room import RoomService
+from app.services.room import RoomService, RoomCategoryService
 
 router = APIRouter()
 
@@ -34,7 +38,7 @@ def read_rooms(
     return RoomsPublic(data=rooms, count=count)
 
 
-@router.get("/{room_id}", response_model=RoomPublic)
+@router.get("/{room_id:uuid}", response_model=RoomPublic)
 def read_room(
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
@@ -44,7 +48,10 @@ def read_room(
     Get room by ID.
     """
     service = RoomService(session)
-    return service.get_room_or_404(room_id)
+    room = service.get_room_or_404(room_id)
+    # Ensure category relationship is loaded for response
+    _ = room.category  # access to trigger load if not already
+    return room
 
 
 @router.post("/", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])
@@ -78,7 +85,7 @@ def create_room(
     return room
 
 
-@router.put("/{room_id}", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])
+@router.put("/{room_id:uuid}", response_model=RoomPublic, dependencies=[Depends(require_admin_or_manager)])
 def update_room(
     *,
     session: SessionDep,
@@ -118,7 +125,7 @@ def update_room(
     return room
 
 
-@router.delete("/{room_id}", response_model=Message, dependencies=[Depends(require_admin_or_manager)])
+@router.delete("/{room_id:uuid}", response_model=Message, dependencies=[Depends(require_admin_or_manager)])
 def delete_room(
     session: SessionDep,
     current_user: CurrentUser,
@@ -161,7 +168,69 @@ def read_available_rooms(
     return RoomsPublic(data=rooms, count=count)
 
 
-@router.post("/{room_id}/status", response_model=RoomPublic)
+# Room Category Routes
+@router.get("/categories", response_model=RoomCategoriesPublic)
+def read_room_categories(
+    session: SessionDep,
+    current_user: CurrentUser,  # noqa: ARG001
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    categories = crud_room_category.get_multi(session, skip=skip, limit=limit)
+    count = crud_room_category.count(session)
+    return RoomCategoriesPublic(data=categories, count=count)
+
+
+@router.post("/categories", response_model=RoomCategoryPublic, dependencies=[Depends(require_admin_or_manager)])
+def create_room_category(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    category_in: RoomCategoryCreate,
+) -> Any:
+    service = RoomCategoryService(session)
+    category = service.create_category(category_in)
+
+    entity_name = get_entity_name("room_category", category)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="created",
+        entity_type="room_category",
+        entity_id=category.id,
+        entity_name=entity_name,
+    )
+
+    session.commit()
+    session.refresh(category)
+    return category
+
+
+@router.delete("/categories/{category_id}", response_model=Message, dependencies=[Depends(require_admin_or_manager)])
+def delete_room_category(
+    session: SessionDep,
+    current_user: CurrentUser,
+    category_id: uuid.UUID,
+) -> Any:
+    service = RoomCategoryService(session)
+    category = service.get_category_for_delete(category_id)
+
+    entity_name = get_entity_name("room_category", category)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="deleted",
+        entity_type="room_category",
+        entity_id=category.id,
+        entity_name=entity_name,
+    )
+
+    service.delete_category(category_id)
+    session.commit()
+    return Message(message="Room category deleted successfully")
+
+
+@router.post("/{room_id:uuid}/status", response_model=RoomPublic)
 def update_room_status(
     *,
     session: SessionDep,

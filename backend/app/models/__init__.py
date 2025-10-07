@@ -1,6 +1,5 @@
 from .common import (
     UserRole,
-    RoomType,
     RoomStatus,
     BookingStatus,
     PaymentMethod,
@@ -30,6 +29,14 @@ from .room import (
     RoomUpdate,
     RoomPublic,
     RoomsPublic,
+)
+from .room_category import (
+    RoomCategoryBase,
+    RoomCategory,
+    RoomCategoryCreate,
+    RoomCategoryUpdate,
+    RoomCategoryPublic,
+    RoomCategoriesPublic,
 )
 from .customer import (
     CustomerBase,

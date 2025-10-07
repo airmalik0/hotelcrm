@@ -95,10 +95,10 @@ class ExcelReportService:
             occupancy_details = analytics_service.get_occupancy_details(filters)
             customer_details = analytics_service.get_customer_details(filters)
             hourly_checkins = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_ins"
+                filters.date_from, filters.date_to, "check_ins", None, None, filters
             )
             hourly_checkouts = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_outs"
+                filters.date_from, filters.date_to, "check_outs", None, None, filters
             )
             seasonal_trends = analytics_service.get_seasonal_trends(2)
             top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
@@ -506,34 +506,35 @@ class ExcelReportService:
         ws = wb.create_sheet("Room Performance")
 
         # Header
-        ws["A1"] = "Room Type Performance"
+        ws["A1"] = "Room Performance"
         ws["A1"].font = Font(size=14, bold=True)
         ws.merge_cells("A1:E1")
 
-        if metrics.room_type_breakdown:
+        # Using category_breakdown from metrics
+        if metrics.category_breakdown:
             row = 3
-            headers = ["Room Type", "Revenue", "Bookings", "Occupancy Rate", "Average Rate"]
+            headers = ["Category", "Revenue", "Bookings", "Occupancy Rate", "Average Rate"]
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=row, column=col, value=header)
                 cell.font = self.header_font
                 cell.fill = self.header_fill
                 cell.border = self.border
 
-            for room in metrics.room_type_breakdown:
+            for cat in metrics.category_breakdown:
                 row += 1
-                ws.cell(row=row, column=1, value=room.room_type.title()).border = self.border
-                ws.cell(row=row, column=2, value=f"${room.revenue:,.2f}").border = self.border
-                ws.cell(row=row, column=3, value=room.bookings).border = self.border
-                ws.cell(row=row, column=4, value=f"{room.occupancy_rate}%").border = self.border
-                ws.cell(row=row, column=5, value=f"${room.average_rate:,.2f}").border = self.border
+                ws.cell(row=row, column=1, value=(cat.category_name or cat.category_id or "")).border = self.border
+                ws.cell(row=row, column=2, value=f"${cat.revenue:,.2f}").border = self.border
+                ws.cell(row=row, column=3, value=cat.bookings).border = self.border
+                ws.cell(row=row, column=4, value=f"{cat.occupancy_rate}%").border = self.border
+                ws.cell(row=row, column=5, value=f"${cat.average_rate:,.2f}").border = self.border
 
             # Calculate totals
             row += 1
             ws.cell(row=row, column=1, value="TOTAL").font = Font(bold=True)
             ws.cell(row=row, column=1).border = self.border
 
-            total_revenue = sum(room.revenue for room in metrics.room_type_breakdown)
-            total_bookings = sum(room.bookings for room in metrics.room_type_breakdown)
+            total_revenue = sum(cat.revenue for cat in metrics.category_breakdown)
+            total_bookings = sum(cat.bookings for cat in metrics.category_breakdown)
 
             ws.cell(row=row, column=2, value=f"${total_revenue:,.2f}").font = Font(bold=True)
             ws.cell(row=row, column=2).border = self.border

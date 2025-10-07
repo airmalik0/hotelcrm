@@ -176,20 +176,23 @@ class ChartService:
         return self._save_chart_to_buffer(fig)
 
     def generate_room_performance_chart(self, room_data: list[dict[str, Any]]) -> io.BytesIO:
-        """Generate room type performance chart."""
+        """Generate room category performance chart."""
         if not room_data:
             return self._generate_empty_chart("No room performance data available")
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
         # Extract data
-        room_types = [room['room_type'].title() for room in room_data]
+        room_types = [
+            (room.get('category_name') or room.get('category_id') or 'Uncategorized')
+            for room in room_data
+        ]
         revenues = [room['revenue'] for room in room_data]
         occupancy_rates = [room['occupancy_rate'] for room in room_data]
 
         # Revenue bar chart
         bars1 = ax1.bar(room_types, revenues, color=self.colors['primary'], alpha=0.8)
-        ax1.set_title('Revenue by Room Type', fontsize=14, fontweight='bold')
+        ax1.set_title('Revenue by Category', fontsize=14, fontweight='bold')
         ax1.set_ylabel('Revenue ($)')
         ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
 
@@ -200,7 +203,7 @@ class ChartService:
 
         # Occupancy rate bar chart
         bars2 = ax2.bar(room_types, occupancy_rates, color=self.colors['success'], alpha=0.8)
-        ax2.set_title('Occupancy Rate by Room Type', fontsize=14, fontweight='bold')
+        ax2.set_title('Occupancy Rate by Category', fontsize=14, fontweight='bold')
         ax2.set_ylabel('Occupancy Rate (%)')
         ax2.set_ylim(0, 100)
 
