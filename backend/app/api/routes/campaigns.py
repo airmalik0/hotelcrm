@@ -182,10 +182,11 @@ def delete_campaign(
 @limiter.limit(RateLimits.BOOKING_CREATE)  # Reuse booking rate limit for execution
 def execute_campaign(
     *,
+    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,
     campaign_id: uuid.UUID,
-    request: CampaignExecutionRequest,
+    execution_in: CampaignExecutionRequest,
 ) -> Any:
     """
     Execute a one-time campaign immediately.
@@ -195,7 +196,7 @@ def execute_campaign(
     campaign = service.get_campaign_or_404(campaign_id)
 
     # Execute campaign
-    result = service.execute_onetime_campaign(campaign, test_mode=request.test_mode)
+    result = service.execute_onetime_campaign(campaign, test_mode=execution_in.test_mode)
 
     # Log audit
     entity_name = get_entity_name("campaign", campaign)
