@@ -30,7 +30,7 @@ class ExcelReportService:
             bottom=Side(style="thin"),
         )
 
-    def generate_dashboard_report(self, metrics: DashboardMetrics) -> BytesIO:
+    def generate_dashboard_report(self, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None) -> BytesIO:
         """
         Generate comprehensive Excel report with dashboard metrics.
 
@@ -47,7 +47,7 @@ class ExcelReportService:
             wb.remove(wb.active)
 
         # Create sheets
-        self._create_summary_sheet(wb, metrics)
+        self._create_summary_sheet(wb, metrics, filters)
         self._create_revenue_sheet(wb, metrics)
         self._create_occupancy_sheet(wb, metrics)
         self._create_customer_sheet(wb, metrics)
@@ -90,7 +90,6 @@ class ExcelReportService:
         try:
             # Get all analytics data
             dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
-            quick_stats = analytics_service.get_quick_stats()
             revenue_details = analytics_service.get_revenue_details(filters, "day")
             occupancy_details = analytics_service.get_occupancy_details(filters)
             customer_details = analytics_service.get_customer_details(filters)
@@ -100,11 +99,11 @@ class ExcelReportService:
             hourly_checkouts = analytics_service.get_hourly_distribution(
                 filters.date_from, filters.date_to, "check_outs", None, None, filters
             )
-            seasonal_trends = analytics_service.get_seasonal_trends(2)
+            seasonal_trends = analytics_service.get_seasonal_trends(2, None, None)
             top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
 
             # Create comprehensive sheets
-            self._create_executive_summary_sheet(wb, quick_stats, dashboard_metrics, filters)
+            self._create_executive_summary_sheet(wb, dashboard_metrics, filters)
             self._create_revenue_analysis_sheet(wb, revenue_details, include_charts)
             self._create_occupancy_analysis_sheet(wb, occupancy_details, include_charts)
             self._create_customer_analytics_sheet(wb, customer_details, include_charts)
@@ -117,7 +116,7 @@ class ExcelReportService:
         except Exception:
             # Fallback to basic dashboard if comprehensive fails
             dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
-            self._create_summary_sheet(wb, dashboard_metrics)
+            self._create_summary_sheet(wb, dashboard_metrics, filters)
             self._create_revenue_sheet(wb, dashboard_metrics)
             self._create_occupancy_sheet(wb, dashboard_metrics)
             self._create_customer_sheet(wb, dashboard_metrics)
@@ -131,8 +130,8 @@ class ExcelReportService:
 
         return buffer
 
-    def _create_executive_summary_sheet(self, wb: Workbook, quick_stats: dict[str, Any], metrics: DashboardMetrics, filters: AnalyticsFilter) -> None:
-        """Create executive summary sheet with key insights."""
+    def _create_executive_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics, filters: AnalyticsFilter) -> None:
+        """Create executive summary sheet with key insights (without Quick Statistics)."""
         ws = wb.create_sheet("Executive Summary")
 
         # Title
@@ -148,34 +147,33 @@ class ExcelReportService:
         ws["A3"].font = Font(size=10, italic=True)
         ws.merge_cells("A3:F3")
 
-        # Quick Stats
-        row = 5
-        ws[f"A{row}"] = "QUICK STATISTICS"
-        ws[f"A{row}"].font = self.header_font
-        ws[f"A{row}"].fill = self.header_fill
-        ws.merge_cells(f"A{row}:D{row}")
+        # Filters row
+        row = 4
+        filters_parts = []
+        if filters.room_id and filters.room_id != "all":
+            filters_parts.append(f"Room: {filters.room_id}")
+        if filters.category_id:
+            filters_parts.append(f"Category: {filters.category_id}")
+        if filters.country_code:
+            filters_parts.append(f"Country: {filters.country_code}")
+        if filters.region:
+            filters_parts.append(f"Region: {filters.region}")
+        if filters.district and filters.district != "all":
+            filters_parts.append(f"District: {filters.district}")
+        if filters.customer_type:
+            filters_parts.append(f"Customer Type: {filters.customer_type.value}")
+        if filters.tags:
+            filters_parts.append(f"Tags: {', '.join(filters.tags)}")
+        if filters.include_cancelled:
+            filters_parts.append("Include Cancelled: Yes")
 
-        quick_data = [
-            ["Period", "Revenue", "Bookings", "Occupancy"],
-            ["Today", f"${quick_stats['today']['revenue']:,.2f}",
-             f"{quick_stats['today']['bookings']}", f"{quick_stats['today']['occupancy']:.1f}%"],
-            ["This Week", f"${quick_stats['week']['revenue']:,.2f}",
-             f"{quick_stats['week']['bookings']}", "N/A"],
-            ["This Month", f"${quick_stats['month']['revenue']:,.2f}",
-             f"{quick_stats['month']['bookings']}", "N/A"],
-        ]
-
-        for i, row_data in enumerate(quick_data):
-            current_row = row + 1 + i
-            for j, value in enumerate(row_data):
-                cell = ws.cell(row=current_row, column=j + 1, value=value)
-                cell.border = self.border
-                if i == 0:  # Header row
-                    cell.font = self.header_font
-                    cell.fill = self.header_fill
+        if filters_parts:
+            ws[f"A{row}"] = "Filters: " + ", ".join(filters_parts)
+            ws.merge_cells(f"A{row}:F{row}")
+            row += 2
 
         # Key Performance Indicators
-        row += len(quick_data) + 3
+        row = row
         ws[f"A{row}"] = "KEY PERFORMANCE INDICATORS"
         ws[f"A{row}"].font = self.header_font
         ws[f"A{row}"].fill = self.header_fill
@@ -236,7 +234,7 @@ class ExcelReportService:
         ws.column_dimensions["B"].width = 15
         ws.column_dimensions["C"].width = 20
 
-    def _create_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics) -> None:
+    def _create_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None) -> None:
         """Create summary sheet with key metrics."""
         ws = wb.create_sheet("Summary")
 
@@ -252,6 +250,32 @@ class ExcelReportService:
         ws["A3"] = f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}"
         ws["A3"].font = Font(size=10, italic=True)
         ws.merge_cells("A3:D3")
+
+        # Filters
+        row = 4
+        if filters is not None:
+            filters_parts = []
+            if filters.room_id and filters.room_id != "all":
+                filters_parts.append(f"Room: {filters.room_id}")
+            if filters.category_id:
+                filters_parts.append(f"Category: {filters.category_id}")
+            if filters.country_code:
+                filters_parts.append(f"Country: {filters.country_code}")
+            if filters.region:
+                filters_parts.append(f"Region: {filters.region}")
+            if filters.district and filters.district != "all":
+                filters_parts.append(f"District: {filters.district}")
+            if filters.customer_type:
+                filters_parts.append(f"Customer Type: {filters.customer_type.value}")
+            if filters.tags:
+                filters_parts.append(f"Tags: {', '.join(filters.tags)}")
+            if filters.include_cancelled:
+                filters_parts.append("Include Cancelled: Yes")
+
+            if filters_parts:
+                ws[f"A{row}"] = "Filters: " + ", ".join(filters_parts)
+                ws.merge_cells(f"A{row}:D{row}")
+                row += 2
 
         # Key Metrics
         row = 5

@@ -208,6 +208,7 @@ class AnalyticsService:
         years: int = 2,
         room_id: str | None = None,
         room_type: str | None = None,
+        filters: AnalyticsFilter | None = None,
     ) -> dict[str, Any]:
         """
         Get seasonal trends analysis over multiple years.
@@ -232,6 +233,7 @@ class AnalyticsService:
         date_to: datetime | None = None,
         room_id: str | None = None,
         room_type: str | None = None,
+        filters: AnalyticsFilter | None = None,
     ) -> dict[str, Any]:
         """
         Get top customers by total revenue.
@@ -249,7 +251,7 @@ class AnalyticsService:
         if date_from and date_to:
             self.validate_date_range(date_from, date_to)
 
-        return self.crud.get_top_customers(self.session, limit, date_from, date_to, room_id)
+        return self.crud.get_top_customers(self.session, limit, date_from, date_to, room_id, filters)
 
     def get_revenue_details(self, filters: AnalyticsFilter, group_by: str = "day") -> dict[str, Any]:
         """Get detailed revenue analytics with time series data."""
@@ -389,7 +391,7 @@ class AnalyticsService:
         date_from: datetime,
         date_to: datetime,
         room_id: str | None = None,
-        room_type: str | None = None,
+        filters: AnalyticsFilter | None = None,
     ) -> dict[str, Any]:
         """
         Get revenue breakdown by customer district.
@@ -404,4 +406,4 @@ class AnalyticsService:
             Dictionary with district revenue data
         """
         self.validate_date_range(date_from, date_to)
-        return self.crud.get_revenue_by_district(self.session, date_from, date_to, room_id)
+        return self.crud.get_revenue_by_district(self.session, date_from, date_to, room_id, filters)

@@ -104,6 +104,7 @@ class PDFReportService:
         self,
         metrics: DashboardMetrics,
         hotel_name: str = "Hotel CRM",
+        filters: AnalyticsFilter | None = None,
     ) -> BytesIO:
         """
         Generate a PDF report from dashboard metrics.
@@ -141,6 +142,30 @@ class PDFReportService:
             self.styles["Normal"]
         )
         elements.append(period_text)
+
+        # Filters summary
+        if filters is not None:
+            filters_lines = []
+            if filters.room_id and filters.room_id != "all":
+                filters_lines.append(f"Room: {filters.room_id}")
+            if filters.category_id:
+                filters_lines.append(f"Category: {filters.category_id}")
+            if filters.country_code:
+                filters_lines.append(f"Country: {filters.country_code}")
+            if filters.region:
+                filters_lines.append(f"Region: {filters.region}")
+            if filters.district and filters.district != "all":
+                filters_lines.append(f"District: {filters.district}")
+            if filters.customer_type:
+                filters_lines.append(f"Customer Type: {filters.customer_type.value}")
+            if filters.tags:
+                filters_lines.append(f"Tags: {', '.join(filters.tags)}")
+            if filters.include_cancelled:
+                filters_lines.append("Include Cancelled: Yes")
+
+            if filters_lines:
+                filters_text = Paragraph("Filters: " + "; ".join(filters_lines), self.styles["Normal"])
+                elements.append(filters_text)
 
         # Generated timestamp
         generated_text = Paragraph(
@@ -303,27 +328,23 @@ class PDFReportService:
 
         # Get all analytics data
         try:
-            # 1. Quick Stats
-            quick_stats = analytics_service.get_quick_stats()
-            self._add_quick_stats_section(elements, quick_stats)
-
-            # 2. Dashboard Metrics
+            # Dashboard Metrics
             dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
             self._add_dashboard_section(elements, dashboard_metrics, include_charts)
 
-            # 3. Revenue Details
+            # Revenue Details
             revenue_details = analytics_service.get_revenue_details(filters, "day")
             self._add_revenue_details_section(elements, revenue_details, include_charts)
 
-            # 4. Occupancy Details
+            # Occupancy Details
             occupancy_details = analytics_service.get_occupancy_details(filters)
             self._add_occupancy_details_section(elements, occupancy_details)
 
-            # 5. Customer Details
+            # Customer Details
             customer_details = analytics_service.get_customer_details(filters)
             self._add_customer_details_section(elements, customer_details, include_charts)
 
-            # 6. Hourly Distribution
+            # Hourly Distribution
             hourly_checkins = analytics_service.get_hourly_distribution(
                 filters.date_from, filters.date_to, "check_ins", filters.room_id, None, filters
             )
@@ -332,24 +353,24 @@ class PDFReportService:
             )
             self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts)
 
-            # 7. Seasonal Trends
-            seasonal_trends = analytics_service.get_seasonal_trends(2, filters.room_id)
+            # Seasonal Trends
+            seasonal_trends = analytics_service.get_seasonal_trends(2, filters.room_id, None, filters)
             self._add_seasonal_trends_section(elements, seasonal_trends, include_charts)
 
-            # 8. Top Customers (by revenue)
+            # Top Customers (by revenue)
             top_customers = analytics_service.get_top_customers(
                 limit=20, date_from=filters.date_from, date_to=filters.date_to,
-                room_id=filters.room_id
+                room_id=filters.room_id, room_type=None, filters=filters
             )
             self._add_top_customers_section(elements, top_customers)
 
-            # 9. District Revenue Breakdown
+            # District Revenue Breakdown
             district_revenue = analytics_service.get_district_revenue(
-                filters.date_from, filters.date_to, filters.room_id
+                filters.date_from, filters.date_to, filters.room_id, filters
             )
             self._add_district_revenue_section(elements, district_revenue)
 
-            # 10. Room Performance Analysis
+            # Room Performance Analysis
             room_performance = analytics_service.get_room_performance(filters, top_n=10)
             self._add_room_performance_section(elements, room_performance)
 
