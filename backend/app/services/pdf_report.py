@@ -325,10 +325,10 @@ class PDFReportService:
 
             # 6. Hourly Distribution
             hourly_checkins = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_ins", filters.room_id, filters
+                filters.date_from, filters.date_to, "check_ins", filters.room_id, None, filters
             )
             hourly_checkouts = analytics_service.get_hourly_distribution(
-                filters.date_from, filters.date_to, "check_outs", filters.room_id, filters
+                filters.date_from, filters.date_to, "check_outs", filters.room_id, None, filters
             )
             self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts)
 

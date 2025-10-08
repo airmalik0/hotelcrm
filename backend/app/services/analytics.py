@@ -270,7 +270,6 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             filters.room_id,
-            None,
             filters.include_cancelled,
             filters,
         )
