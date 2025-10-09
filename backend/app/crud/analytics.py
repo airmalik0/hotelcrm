@@ -593,11 +593,15 @@ class CRUDAnalytics:
         Returns:
             Dictionary with top_performers and bottom_performers lists
         """
-        # Calculate ADR per room with proportional revenue
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Calculate ADR per room with proportional revenue (use seconds/86400 to avoid zero-day divisions)
+        days_in_period = func.greatest(1,
+            func.extract("epoch",
+                func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+            ) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
             Room.id,
@@ -606,7 +610,10 @@ class CRUDAnalytics:
             func.count(Booking.id).label("bookings"),
             func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
             func.sum(days_in_period).label("total_nights"),
-            (func.sum(Booking.total_amount * days_in_period / total_booking_days) / func.sum(days_in_period)).label("adr"),
+            (
+                func.sum(Booking.total_amount * days_in_period / total_booking_days)
+                / func.nullif(func.sum(days_in_period), 0)
+            ).label("adr"),
         ).join(
             Booking, Room.id == Booking.room_id
         ).where(

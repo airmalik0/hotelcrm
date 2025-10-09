@@ -20,6 +20,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from reportlab.lib.utils import ImageReader
 from sqlmodel import Session
 
 from app.models.analytics import AnalyticsFilter, DashboardMetrics
@@ -436,7 +437,7 @@ class PDFReportService:
                 revenue_chart_buffer = self.chart_service.generate_revenue_trend_chart(
                     [{"date": point.date, "value": point.value} for point in metrics.revenue_trend]
                 )
-                revenue_chart = Image(revenue_chart_buffer, width=6*inch, height=3.6*inch)
+                revenue_chart = Image(ImageReader(revenue_chart_buffer), width=6*inch, height=3.6*inch)
                 elements.append(revenue_chart)
                 elements.append(Spacer(1, 10))
             except Exception:
@@ -460,7 +461,7 @@ class PDFReportService:
                     "transfer_percentage": metrics.payment_distribution.transfer_percentage,
                     "terminal_percentage": metrics.payment_distribution.terminal_percentage,
                 })
-                payment_chart = Image(payment_chart_buffer, width=4*inch, height=4*inch)
+                payment_chart = Image(ImageReader(payment_chart_buffer), width=4*inch, height=4*inch)
                 elements.append(payment_chart)
                 elements.append(Spacer(1, 10))
             except Exception:
@@ -488,7 +489,7 @@ class PDFReportService:
         if include_charts and trend:
             try:
                 trend_chart_buffer = self.chart_service.generate_revenue_trend_chart(trend)
-                trend_chart = Image(trend_chart_buffer, width=7*inch, height=4.2*inch)
+                trend_chart = Image(ImageReader(trend_chart_buffer), width=7*inch, height=4.2*inch)
                 section_content.append(trend_chart)
                 section_content.append(Spacer(1, 10))
             except Exception:
@@ -541,7 +542,7 @@ class PDFReportService:
                     customer_details.get("age_distribution", {}),
                     customer_details.get("district_distribution", {})
                 )
-                demographics_chart = Image(demographics_chart_buffer, width=8*inch, height=4.8*inch)
+                demographics_chart = Image(ImageReader(demographics_chart_buffer), width=8*inch, height=4.8*inch)
                 section_content.append(demographics_chart)
                 section_content.append(Spacer(1, 10))
             except Exception:
@@ -570,7 +571,7 @@ class PDFReportService:
             # Check-ins hourly chart
             try:
                 checkins_chart_buffer = self.chart_service.generate_hourly_distribution_chart(checkins, "check_ins")
-                checkins_chart = Image(checkins_chart_buffer, width=7*inch, height=3*inch)
+                checkins_chart = Image(ImageReader(checkins_chart_buffer), width=7*inch, height=3*inch)
                 elements.append(checkins_chart)
                 elements.append(Spacer(1, 10))
             except Exception:
@@ -579,7 +580,7 @@ class PDFReportService:
             # Check-outs hourly chart
             try:
                 checkouts_chart_buffer = self.chart_service.generate_hourly_distribution_chart(checkouts, "check_outs")
-                checkouts_chart = Image(checkouts_chart_buffer, width=7*inch, height=3*inch)
+                checkouts_chart = Image(ImageReader(checkouts_chart_buffer), width=7*inch, height=3*inch)
                 elements.append(checkouts_chart)
                 elements.append(Spacer(1, 10))
             except Exception:
@@ -610,7 +611,7 @@ class PDFReportService:
         if include_charts and monthly_trends:
             try:
                 seasonal_chart_buffer = self.chart_service.generate_seasonal_trends_chart(monthly_trends)
-                seasonal_chart = Image(seasonal_chart_buffer, width=7*inch, height=4.8*inch)
+                seasonal_chart = Image(ImageReader(seasonal_chart_buffer), width=7*inch, height=4.8*inch)
                 section_content.append(seasonal_chart)
                 section_content.append(Spacer(1, 10))
             except Exception:
