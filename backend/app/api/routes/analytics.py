@@ -218,10 +218,10 @@ def export_pdf(
         if include_charts:
             buffer = pdf_service.generate_comprehensive_report(session, filters, include_charts=True)
         else:
-            buffer = pdf_service.generate_dashboard_report(metrics)
+            buffer = pdf_service.generate_dashboard_report(metrics, filters=filters)
     except Exception:
         # Fallback to basic dashboard report in case of any error
-        buffer = pdf_service.generate_dashboard_report(metrics)
+        buffer = pdf_service.generate_dashboard_report(metrics, filters=filters)
 
     return StreamingResponse(
         buffer,
@@ -249,7 +249,7 @@ def export_excel(
         # Fallback to dashboard-only if comprehensive fails
         analytics_service = AnalyticsService(session)
         dashboard = analytics_service.get_dashboard_metrics(filters)
-        buffer = excel_service.generate_dashboard_report(dashboard)
+        buffer = excel_service.generate_dashboard_report(dashboard, filters=filters)
 
     return StreamingResponse(
         buffer,

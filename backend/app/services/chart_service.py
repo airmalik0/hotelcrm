@@ -66,7 +66,37 @@ class ChartService:
         values = [point['value'] for point in revenue_trend]
 
         # Convert dates to datetime objects for better formatting
-        date_objects = [datetime.fromisoformat(date.replace('Z', '+00:00')) for date in dates]
+        date_objects: list[datetime] = []
+        for date in dates:
+            try:
+                # Full ISO with optional Z
+                date_objects.append(datetime.fromisoformat(date.replace('Z', '+00:00')))
+                continue
+            except Exception:
+                pass
+            try:
+                # YYYY-MM (month)
+                date_objects.append(datetime.strptime(date, "%Y-%m"))
+                continue
+            except Exception:
+                pass
+            try:
+                # YYYY-Wxx (week number) → take Monday of that ISO week
+                if 'W' in date:
+                    year_str, week_str = date.split('-W')
+                    year = int(year_str)
+                    week = int(week_str)
+                    # ISO weeks: Monday is 1
+                    date_objects.append(datetime.fromisocalendar(year, week, 1))
+                    continue
+            except Exception:
+                pass
+            # Fallback: use first day of current month/year if parse fails
+            try:
+                date_objects.append(datetime.strptime(date, "%Y-%m-%d"))
+            except Exception:
+                # As a last resort, use epoch
+                date_objects.append(datetime(1970, 1, 1))
 
         # Create line chart
         ax.plot(date_objects, values, marker='o', linewidth=2.5, markersize=6,

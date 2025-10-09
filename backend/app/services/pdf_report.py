@@ -326,6 +326,30 @@ class PDFReportService:
         elements.append(generated_text)
         elements.append(Spacer(1, 20))
 
+        # Filters summary
+        filters_lines = []
+        if filters.room_id and filters.room_id != "all":
+            filters_lines.append(f"Room: {filters.room_id}")
+        if filters.category_id:
+            filters_lines.append(f"Category: {filters.category_id}")
+        if filters.country_code:
+            filters_lines.append(f"Country: {filters.country_code}")
+        if filters.region:
+            filters_lines.append(f"Region: {filters.region}")
+        if filters.district and filters.district != "all":
+            filters_lines.append(f"District: {filters.district}")
+        if filters.customer_type:
+            filters_lines.append(f"Customer Type: {filters.customer_type.value}")
+        if filters.tags:
+            filters_lines.append(f"Tags: {', '.join(filters.tags)}")
+        if filters.include_cancelled:
+            filters_lines.append("Include Cancelled: Yes")
+
+        if filters_lines:
+            filters_text = Paragraph("Filters: " + "; ".join(filters_lines), self.styles["Normal"])
+            elements.append(filters_text)
+            elements.append(Spacer(1, 12))
+
         # Get all analytics data
         try:
             # Dashboard Metrics
