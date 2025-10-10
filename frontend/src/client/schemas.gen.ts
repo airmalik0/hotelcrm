@@ -15,7 +15,7 @@ export const AnalyticsExportRequestSchema = {
             type: 'boolean',
             title: 'Include Charts',
             description: 'Include charts in export',
-            default: false
+            default: true
         },
         metrics_to_include: {
             items: {

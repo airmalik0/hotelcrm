@@ -170,7 +170,7 @@ class AnalyticsExportRequest(SQLModel):
     """Request model for exporting analytics."""
     filters: AnalyticsFilter
     format: str = Field(default="pdf", pattern="^(pdf|excel|csv)$")
-    include_charts: bool = Field(default=False, description="Include charts in export")
+    include_charts: bool = Field(default=True, description="Include charts in export")
     metrics_to_include: list[str] = Field(
         default_factory=lambda: ["revenue", "occupancy", "payment", "customers"],
         description="Which metric sections to include"
