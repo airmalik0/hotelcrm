@@ -147,13 +147,17 @@ class PDFReportService:
         )
         elements.append(period_text)
 
-        # Filters summary
+        # Filters summary with resolved names
         if filters is not None:
             filters_lines = []
             if filters.room_id and filters.room_id != "all":
-                filters_lines.append(f"Room: {filters.room_id}")
+                # Note: Room resolution needs session which dashboard_report doesn't have
+                # Just show ID for now - recommend using comprehensive_report instead
+                filters_lines.append(f"Room ID: {filters.room_id}")
             if filters.category_id:
-                filters_lines.append(f"Category: {filters.category_id}")
+                # Note: Category resolution needs session which dashboard_report doesn't have
+                # Just show ID for now - recommend using comprehensive_report instead
+                filters_lines.append(f"Category ID: {filters.category_id}")
             if filters.country_code:
                 filters_lines.append(f"Country: {filters.country_code}")
             if filters.region:
@@ -330,12 +334,22 @@ class PDFReportService:
         elements.append(generated_text)
         elements.append(Spacer(1, 20))
 
-        # Filters summary
+        # Filters summary with resolved names
         filters_lines = []
         if filters.room_id and filters.room_id != "all":
-            filters_lines.append(f"Room: {filters.room_id}")
+            # Resolve room number from room_id
+            from app.models import Room
+            from sqlmodel import select
+            room = session.exec(select(Room).where(Room.id == filters.room_id)).first()
+            room_label = f"Room {room.number}" if room else filters.room_id
+            filters_lines.append(f"Room: {room_label}")
         if filters.category_id:
-            filters_lines.append(f"Category: {filters.category_id}")
+            # Resolve category name from category_id
+            from app.models import RoomCategory
+            from sqlmodel import select
+            category = session.exec(select(RoomCategory).where(RoomCategory.id == filters.category_id)).first()
+            category_label = category.name if category else filters.category_id
+            filters_lines.append(f"Category: {category_label}")
         if filters.country_code:
             filters_lines.append(f"Country: {filters.country_code}")
         if filters.region:
