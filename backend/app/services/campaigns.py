@@ -387,7 +387,6 @@ class CampaignService:
         Evaluate criteria and return matching customers.
         All criteria are combined with AND logic.
         """
-        from sqlalchemy.orm import joinedload
 
         query = select(Customer)
         filters = []
@@ -407,7 +406,7 @@ class CampaignService:
         # District filtering
         if "districts" in criteria and criteria["districts"]:
             district_filters = [Customer.district == District(d) for d in criteria["districts"]]
-            filters.append(or_(*district_filters))
+            filters.append(or_(*district_filters))  # type: ignore[arg-type]
 
         # Spending filtering
         if "min_total_spent" in criteria:

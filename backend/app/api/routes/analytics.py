@@ -3,18 +3,22 @@ Analytics API routes.
 """
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Body
+from fastapi import APIRouter, Body, Query
 from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models.analytics import AnalyticsFilter, AnalyticsResponse, CustomerType, AnalyticsExportRequest
+from app.models.analytics import (
+    AnalyticsExportRequest,
+    AnalyticsFilter,
+    AnalyticsResponse,
+    CustomerType,
+)
 from app.services.analytics import AnalyticsService
-from app.services.pdf_report import PDFReportService
 from app.services.excel_report import ExcelReportService
+from app.services.pdf_report import PDFReportService
 
 router = APIRouter()
 

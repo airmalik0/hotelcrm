@@ -34,10 +34,11 @@ class RoomService:
             raise AlreadyExistsError("room_number", "Room number already exists")
 
         # If category_id is provided, verify it exists
-        if getattr(room_in, "category_id", None):
-            category = crud_room_category.get(self.session, id=room_in.category_id)  # type: ignore[attr-defined]
+        category_id = getattr(room_in, "category_id", None)
+        if category_id:
+            category = crud_room_category.get(self.session, id=category_id)  # type: ignore[arg-type]
             if not category:
-                raise NotFoundError("RoomCategory", str(room_in.category_id))
+                raise NotFoundError("RoomCategory", str(category_id))
 
         return self.crud.create(self.session, obj_in=room_in)
 
@@ -48,10 +49,11 @@ class RoomService:
                 raise AlreadyExistsError("room_number", "Room number already exists")
 
         # If category is being changed, verify it exists
-        if getattr(room_in, "category_id", None) and room_in.category_id != room.category_id:  # type: ignore[attr-defined]
-            category = crud_room_category.get(self.session, id=room_in.category_id)  # type: ignore[attr-defined]
+        category_id = getattr(room_in, "category_id", None)
+        if category_id and category_id != room.category_id:  # type: ignore[attr-defined]
+            category = crud_room_category.get(self.session, id=category_id)  # type: ignore[arg-type]
             if not category:
-                raise NotFoundError("RoomCategory", str(room_in.category_id))
+                raise NotFoundError("RoomCategory", str(category_id))
 
         return self.crud.update(self.session, db_obj=room, obj_in=room_in)
 

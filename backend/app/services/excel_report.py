@@ -782,7 +782,7 @@ class ExcelReportService:
         ws.column_dimensions["C"].width = 15
         ws.column_dimensions["D"].width = 15
 
-    def _create_hourly_patterns_sheet(self, wb: Workbook, hourly_checkins: dict[str, Any], hourly_checkouts: dict[str, Any], include_charts: bool = True) -> None:
+    def _create_hourly_patterns_sheet(self, wb: Workbook, hourly_checkins: list[dict[str, Any]], hourly_checkouts: list[dict[str, Any]], include_charts: bool = True) -> None:
         """Create hourly patterns analysis sheet."""
         ws = wb.create_sheet("Hourly Patterns")
 
@@ -806,11 +806,14 @@ class ExcelReportService:
             cell.fill = self.header_fill
             cell.border = self.border
 
-        for hour_data in hourly_checkins.get('hourly_data', []):
+        for hour_data in hourly_checkins:
             row += 1
             ws.cell(row=row, column=1, value=f"{hour_data.get('hour', 0):02d}:00").border = self.border
             ws.cell(row=row, column=2, value=hour_data.get('count', 0)).border = self.border
-            ws.cell(row=row, column=3, value=f"{hour_data.get('percentage', 0):.1f}%").border = self.border
+            # Calculate percentage if needed
+            total_checkins = sum(h.get('count', 0) for h in hourly_checkins)
+            percentage = (hour_data.get('count', 0) / total_checkins * 100) if total_checkins > 0 else 0
+            ws.cell(row=row, column=3, value=f"{percentage:.1f}%").border = self.border
 
         # Check-out patterns
         row += 3
@@ -826,11 +829,14 @@ class ExcelReportService:
             cell.fill = self.header_fill
             cell.border = self.border
 
-        for hour_data in hourly_checkouts.get('hourly_data', []):
+        for hour_data in hourly_checkouts:
             row += 1
             ws.cell(row=row, column=1, value=f"{hour_data.get('hour', 0):02d}:00").border = self.border
             ws.cell(row=row, column=2, value=hour_data.get('count', 0)).border = self.border
-            ws.cell(row=row, column=3, value=f"{hour_data.get('percentage', 0):.1f}%").border = self.border
+            # Calculate percentage if needed
+            total_checkouts = sum(h.get('count', 0) for h in hourly_checkouts)
+            percentage = (hour_data.get('count', 0) / total_checkouts * 100) if total_checkouts > 0 else 0
+            ws.cell(row=row, column=3, value=f"{percentage:.1f}%").border = self.border
 
         # Adjust column widths
         ws.column_dimensions["A"].width = 15

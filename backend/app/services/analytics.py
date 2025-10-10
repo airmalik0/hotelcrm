@@ -336,6 +336,7 @@ class AnalyticsService:
             filters.date_from,
             filters.date_to,
             top_n,
+            filters,
         )
 
     def get_quick_stats(self) -> dict[str, Any]:

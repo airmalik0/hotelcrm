@@ -5,13 +5,13 @@ All SQL queries for analytics data retrieval.
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from sqlmodel import Session, func, select, or_
 from sqlalchemy import cast
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Session, func, or_, select
 
 from app.models import Booking, BookingStatus, Customer, Room
+from app.models.analytics import AgeGroup, AnalyticsFilter
 from app.models.room_category import RoomCategory
-from app.models.analytics import AgeGroup
 
 
 def _ensure_timezone_aware(dt: datetime) -> datetime:
@@ -445,13 +445,13 @@ class CRUDAnalytics:
             Dictionary with customer counts, age distribution, district distribution
         """
         # Get unique customer IDs who made bookings in the period
-        # Use same date filtering logic as revenue metrics for consistency
+        # Use consistent date filtering logic (overlap condition)
         customer_ids_query = (
             select(Customer.id)
             .join(Booking, Customer.id == Booking.customer_id)
             .where(
-                Booking.check_out >= date_from,
-                Booking.check_in <= date_to,
+                Booking.check_in < date_to,
+                Booking.check_out > date_from,
                 Booking.status.in_([
                     BookingStatus.CONFIRMED,
                     BookingStatus.CHECKED_IN,
@@ -666,13 +666,15 @@ class CRUDAnalytics:
                 days_in_period = 1
             available_nights = days_in_period
 
-            # Get occupied nights for this room
+            # Get occupied nights for this room using EPOCH for accurate day count
             occupied_nights = session.exec(
                 select(
-                    func.sum(func.greatest(1, func.extract("day",
-                        func.least(Booking.check_out, date_to) -
-                        func.greatest(Booking.check_in, date_from)
-                    )))
+                    func.sum(func.greatest(1,
+                        func.extract("epoch",
+                            func.least(Booking.check_out, date_to) -
+                            func.greatest(Booking.check_in, date_from)
+                        ) / 86400
+                    ))
                 ).where(
                     Booking.room_id == result.id,
                     Booking.check_in < date_to,
@@ -713,13 +715,15 @@ class CRUDAnalytics:
                 days_in_period = 1
             available_nights = days_in_period
 
-            # Get occupied nights for this room
+            # Get occupied nights for this room using EPOCH for accurate day count
             occupied_nights = session.exec(
                 select(
-                    func.sum(func.greatest(1, func.extract("day",
-                        func.least(Booking.check_out, date_to) -
-                        func.greatest(Booking.check_in, date_from)
-                    )))
+                    func.sum(func.greatest(1,
+                        func.extract("epoch",
+                            func.least(Booking.check_out, date_to) -
+                            func.greatest(Booking.check_in, date_from)
+                        ) / 86400
+                    ))
                 ).where(
                     Booking.room_id == result.id,
                     Booking.check_in < date_to,
@@ -902,11 +906,13 @@ class CRUDAnalytics:
         else:  # day
             date_trunc = func.date_trunc("day", Booking.check_in)
 
-        # Proportional revenue calculation
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional revenue calculation using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
             date_trunc.label("period"),
@@ -956,7 +962,8 @@ class CRUDAnalytics:
                 if group_by == "month":
                     date_str = result.period.strftime("%Y-%m")
                 elif group_by == "week":
-                    date_str = result.period.strftime("%Y-W%U")
+                    # Use ISO week format (%V) to match chart service parser
+                    date_str = result.period.strftime("%Y-W%V")
                 else:  # day
                     date_str = result.period.strftime("%Y-%m-%d")
             else:
@@ -1013,6 +1020,8 @@ class CRUDAnalytics:
         # Add room filters
         if room_id:
             query = query.where(Booking.room_id == room_id)
+        if filters and getattr(filters, "category_id", None):
+            query = query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
 
         if filters and any([
             filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
@@ -1062,6 +1071,7 @@ class CRUDAnalytics:
         session: Session,
         years: int = 2,
         room_id: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
     ) -> dict[str, Any]:
         """
         Get seasonal trends analysis over multiple years.
@@ -1082,11 +1092,13 @@ class CRUDAnalytics:
         # NOTE: For monthly grouping, we use check_in month but apply proportional revenue
         month_col = func.date_trunc("month", Booking.check_in)
 
-        # Proportional revenue for the entire analysis period
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, end_date) - func.greatest(Booking.check_in, start_date)
+        # Proportional revenue for the entire analysis period using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, end_date) - func.greatest(Booking.check_in, start_date)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         monthly_query = select(
             month_col.label("month"),
@@ -1106,6 +1118,30 @@ class CRUDAnalytics:
         # Add room filters
         if room_id:
             monthly_query = monthly_query.where(Booking.room_id == room_id)
+        if filters and getattr(filters, "category_id", None):
+            monthly_query = monthly_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        # Add customer-based filters
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            monthly_query = monthly_query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                monthly_query = monthly_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                monthly_query = monthly_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                monthly_query = monthly_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    monthly_query = monthly_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    monthly_query = monthly_query.where(Customer.first_booking_date >= start_date)
+                elif filters.customer_type.value == "returning":
+                    monthly_query = monthly_query.where(Customer.first_booking_date < start_date)
 
         monthly_query = monthly_query.group_by(
             month_col
@@ -1152,6 +1188,30 @@ class CRUDAnalytics:
         # Add room filters to quarterly query
         if room_id:
             quarterly_query = quarterly_query.where(Booking.room_id == room_id)
+        if filters and getattr(filters, "category_id", None):
+            quarterly_query = quarterly_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+
+        # Add customer-based filters to quarterly query
+        if filters and any([
+            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
+        ]):
+            quarterly_query = quarterly_query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                quarterly_query = quarterly_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                quarterly_query = quarterly_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                quarterly_query = quarterly_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    quarterly_query = quarterly_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    quarterly_query = quarterly_query.where(Customer.first_booking_date >= start_date)
+                elif filters.customer_type.value == "returning":
+                    quarterly_query = quarterly_query.where(Customer.first_booking_date < start_date)
 
         quarterly_query = quarterly_query.group_by(
             year_col,
@@ -1304,11 +1364,13 @@ class CRUDAnalytics:
         if not date_from:
             date_from = date_to - timedelta(days=365)
 
-        # Proportional revenue for period
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional revenue for period using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         # Get all customers with stats in the period
         customer_query = select(
@@ -1423,11 +1485,13 @@ class CRUDAnalytics:
         if not date_from:
             date_from = date_to - timedelta(days=365)
 
-        # Proportional revenue for period
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional revenue for period using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         # Get all customers with booking stats in the period
         customer_stats_query = select(
@@ -1581,11 +1645,13 @@ class CRUDAnalytics:
         date_from = _ensure_timezone_aware(date_from)
         date_to = _ensure_timezone_aware(date_to)
 
-        # Proportional revenue calculation
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional revenue calculation using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         # Query bookings with customer district
         query = select(
@@ -1678,10 +1744,13 @@ class CRUDAnalytics:
         date_from = _ensure_timezone_aware(date_from)
         date_to = _ensure_timezone_aware(date_to)
 
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional revenue calculation using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
             Customer.country_code,
@@ -1741,10 +1810,13 @@ class CRUDAnalytics:
         date_from = _ensure_timezone_aware(date_from)
         date_to = _ensure_timezone_aware(date_to)
 
-        days_in_period = func.extract("day",
-            func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
+        # Proportional revenue calculation using EPOCH for accurate day count
+        days_in_period = func.greatest(1,
+            func.extract("epoch", func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)) / 86400
         )
-        total_booking_days = func.greatest(1, func.extract("day", Booking.check_out - Booking.check_in))
+        total_booking_days = func.greatest(1,
+            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
+        )
 
         query = select(
             Customer.region,

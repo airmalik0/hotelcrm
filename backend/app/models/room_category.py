@@ -1,8 +1,12 @@
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from app.models import Room
 
 
 class RoomCategoryBase(SQLModel):

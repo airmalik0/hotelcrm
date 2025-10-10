@@ -9,16 +9,16 @@ from app.crud.room import room as crud_room
 from app.crud.room import room_category as crud_room_category
 from app.models import (
     Message,
+    RoomCategoriesPublic,
+    RoomCategoryCreate,
+    RoomCategoryPublic,
     RoomCreate,
     RoomPublic,
     RoomsPublic,
     RoomStatus,
     RoomUpdate,
-    RoomCategoryCreate,
-    RoomCategoryPublic,
-    RoomCategoriesPublic,
 )
-from app.services.room import RoomService, RoomCategoryService
+from app.services.room import RoomCategoryService, RoomService
 
 router = APIRouter()
 

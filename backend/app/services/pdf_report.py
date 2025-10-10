@@ -1,6 +1,7 @@
 """
 PDF report generation service for analytics.
 """
+import logging
 from datetime import datetime, timezone
 from io import BytesIO
 from typing import Any
@@ -9,6 +10,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
@@ -20,12 +22,13 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from reportlab.lib.utils import ImageReader
 from sqlmodel import Session
 
 from app.models.analytics import AnalyticsFilter, DashboardMetrics
 from app.services.analytics import AnalyticsService
 from app.services.chart_service import ChartService
+
+logger = logging.getLogger(__name__)
 
 
 class PDFReportService:
@@ -35,7 +38,7 @@ class PDFReportService:
         """Initialize PDF report service."""
         self._register_unicode_fonts()
         self.styles = getSampleStyleSheet()
-        self.chart_service = ChartService()
+        self.chart_service = ChartService()  # type: ignore[no-untyped-call]
         self._setup_custom_styles()
 
     def _register_unicode_fonts(self) -> None:
@@ -440,8 +443,8 @@ class PDFReportService:
                 revenue_chart = Image(ImageReader(revenue_chart_buffer), width=6*inch, height=3.6*inch)
                 elements.append(revenue_chart)
                 elements.append(Spacer(1, 10))
-            except Exception:
-                pass  # Skip chart if generation fails
+            except Exception as e:
+                logger.error(f"Failed to generate revenue trend chart: {e}", exc_info=True)
 
         # Key Performance Indicators (KPIs) - unique metrics only
         kpi_data = [
@@ -464,8 +467,8 @@ class PDFReportService:
                 payment_chart = Image(ImageReader(payment_chart_buffer), width=4*inch, height=4*inch)
                 elements.append(payment_chart)
                 elements.append(Spacer(1, 10))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to generate payment distribution chart: {e}", exc_info=True)
 
         # Payment Distribution Table with amounts
         payment_data = [
@@ -492,8 +495,8 @@ class PDFReportService:
                 trend_chart = Image(ImageReader(trend_chart_buffer), width=7*inch, height=4.2*inch)
                 section_content.append(trend_chart)
                 section_content.append(Spacer(1, 10))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to generate revenue details chart: {e}", exc_info=True)
 
         # Detailed revenue metrics
         detailed_data = [
@@ -545,8 +548,8 @@ class PDFReportService:
                 demographics_chart = Image(ImageReader(demographics_chart_buffer), width=8*inch, height=4.8*inch)
                 section_content.append(demographics_chart)
                 section_content.append(Spacer(1, 10))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to generate customer demographics chart: {e}", exc_info=True)
 
         # Customer metrics
         customer_data = [
@@ -562,7 +565,7 @@ class PDFReportService:
 
         self._add_section_with_header(elements, "Customer Analytics", section_content)
 
-    def _add_hourly_patterns_section(self, elements: list[Any], checkins: list, checkouts: list, include_charts: bool) -> None:
+    def _add_hourly_patterns_section(self, elements: list[Any], checkins: list[dict[str, Any]], checkouts: list[dict[str, Any]], include_charts: bool) -> None:
         """Add hourly patterns section."""
         elements.append(PageBreak())
         elements.append(Paragraph("Operational Patterns", self.styles["SectionHeader"]))
@@ -574,8 +577,8 @@ class PDFReportService:
                 checkins_chart = Image(ImageReader(checkins_chart_buffer), width=7*inch, height=3*inch)
                 elements.append(checkins_chart)
                 elements.append(Spacer(1, 10))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to generate check-ins hourly chart: {e}", exc_info=True)
 
             # Check-outs hourly chart
             try:
@@ -583,8 +586,8 @@ class PDFReportService:
                 checkouts_chart = Image(ImageReader(checkouts_chart_buffer), width=7*inch, height=3*inch)
                 elements.append(checkouts_chart)
                 elements.append(Spacer(1, 10))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to generate check-outs hourly chart: {e}", exc_info=True)
 
         # Summary stats
         total_checkins = sum(item['count'] for item in checkins)
@@ -601,7 +604,7 @@ class PDFReportService:
         elements.append(pattern_table)
         elements.append(Spacer(1, 20))
 
-    def _add_seasonal_trends_section(self, elements: list, seasonal_data: dict[str, Any], include_charts: bool) -> None:
+    def _add_seasonal_trends_section(self, elements: list[Any], seasonal_data: dict[str, Any], include_charts: bool) -> None:
         """Add seasonal trends section."""
         monthly_trends = seasonal_data.get("monthly_trends", [])
         peak_months = seasonal_data.get("peak_months", [])
@@ -614,8 +617,8 @@ class PDFReportService:
                 seasonal_chart = Image(ImageReader(seasonal_chart_buffer), width=7*inch, height=4.8*inch)
                 section_content.append(seasonal_chart)
                 section_content.append(Spacer(1, 10))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to generate seasonal trends chart: {e}", exc_info=True)
 
         if peak_months:
             section_content.append(Paragraph("Peak Seasons", self.styles["Normal"]))
@@ -632,7 +635,7 @@ class PDFReportService:
 
         self._add_section_with_header(elements, "Seasonal Trends", section_content)
 
-    def _add_top_customers_section(self, elements: list, top_customers_data: dict[str, Any]) -> None:
+    def _add_top_customers_section(self, elements: list[Any], top_customers_data: dict[str, Any]) -> None:
         """Add top customers section."""
         elements.append(PageBreak())
         elements.append(Paragraph("Top Customers by Revenue", self.styles["SectionHeader"]))
@@ -661,7 +664,7 @@ class PDFReportService:
 
         elements.append(Spacer(1, 20))
 
-    def _add_district_revenue_section(self, elements: list, district_data: dict[str, Any]) -> None:
+    def _add_district_revenue_section(self, elements: list[Any], district_data: dict[str, Any]) -> None:
         """Add district revenue breakdown section."""
         elements.append(PageBreak())
         elements.append(Paragraph("Revenue by District", self.styles["SectionHeader"]))
@@ -831,7 +834,7 @@ class PDFReportService:
         table.setStyle(style)
         return table
 
-    def _add_section_with_header(self, elements: list, header_text: str, content_elements: list) -> None:
+    def _add_section_with_header(self, elements: list[Any], header_text: str, content_elements: list[Any]) -> None:
         """
         Add a section with header and content on a new page.
 

@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Any
 
 import pycountry  # type: ignore
 from fastapi import APIRouter, Query
