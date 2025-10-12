@@ -3,9 +3,9 @@ CRUD operations for analytics.
 All SQL queries for analytics data retrieval.
 """
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
-from sqlalchemy import cast
+from sqlalchemy import cast as sa_cast
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Session, func, or_, select
 
@@ -23,6 +23,89 @@ def _ensure_timezone_aware(dt: datetime) -> datetime:
 
 class CRUDAnalytics:
     """CRUD operations for analytics data."""
+
+    def _compute_occupancy(
+        self,
+        session: Session,
+        *,
+        period_start: datetime,
+        period_end: datetime,
+        room_id: str | None = None,
+        category_id: str | None = None,
+        filters: Optional["AnalyticsFilter"] = None,
+    ) -> tuple[int, int, float]:
+        """
+        Unified occupancy calculation.
+
+        Returns: (available_nights, occupied_nights, occupancy_rate_percent).
+
+        - available_nights = rooms_count * days_in_period (respecting filters)
+        - occupied_nights = sum of overlapping day-fractions per booking in [period_start, period_end)
+        - occupancy_rate = occupied_nights / available_nights * 100
+        May exceed 100% if в один день было несколько оплаченных заездов (разные брони).
+        """
+        rooms_query = select(func.count(Room.id))
+        if room_id and room_id != "all":
+            rooms_query = rooms_query.where(Room.id == room_id)
+        if category_id:
+            rooms_query = rooms_query.where(Room.category_id == category_id)
+        if filters and getattr(filters, "category_id", None) and not category_id:
+            rooms_query = rooms_query.where(Room.category_id == filters.category_id)
+        rooms_count = int(session.exec(rooms_query).first() or 0)
+
+        days_in_period = (period_end - period_start).days
+        if days_in_period <= 0:
+            days_in_period = 1
+        available_nights = rooms_count * days_in_period
+
+        days_in_period_expr = func.greatest(
+            1,
+            func.extract(
+                "epoch",
+                func.least(Booking.check_out, period_end) - func.greatest(Booking.check_in, period_start)
+            ) / 86400
+        )
+        occupied_query = select(func.sum(days_in_period_expr)).where(
+            Booking.check_in < period_end,
+            Booking.check_out > period_start,
+            Booking.status.in_([
+                BookingStatus.CONFIRMED,
+                BookingStatus.CHECKED_IN,
+                BookingStatus.CHECKED_OUT
+            ]),
+        )
+        if room_id and room_id != "all":
+            occupied_query = occupied_query.where(Booking.room_id == room_id)
+        if category_id or (filters and getattr(filters, "category_id", None)):
+            occupied_query = occupied_query.join(Room, Room.id == Booking.room_id)
+            if category_id:
+                occupied_query = occupied_query.where(Room.category_id == category_id)
+            else:
+                occupied_query = occupied_query.where(Room.category_id == filters.category_id)
+
+        if filters and any([filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type]):
+            occupied_query = occupied_query.join(Customer, Customer.id == Booking.customer_id)
+            if filters.country_code:
+                occupied_query = occupied_query.where(Customer.country_code == filters.country_code)
+            if filters.region:
+                occupied_query = occupied_query.where(Customer.region == filters.region)
+            if filters.district and filters.district != "all":
+                occupied_query = occupied_query.where(Customer.district == filters.district)
+            if filters.tags:
+                col = sa_cast(Customer.tags, JSONB)
+                tag_filters = [col.contains([tag]) for tag in filters.tags]
+                if tag_filters:
+                    occupied_query = occupied_query.where(or_(*tag_filters))
+            if filters.customer_type:
+                if filters.customer_type.value == "new":
+                    occupied_query = occupied_query.where(Customer.first_booking_date >= period_start)
+                elif filters.customer_type.value == "returning":
+                    occupied_query = occupied_query.where(Customer.first_booking_date < period_start)
+
+        occupied_nights = int(session.exec(occupied_query).first() or 0)
+        occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0.0
+
+        return available_nights, occupied_nights, float(occupancy_rate)
 
     def get_revenue_by_period(
         self,
@@ -96,7 +179,7 @@ class CRUDAnalytics:
             if filters.district and filters.district != "all":
                 query = query.where(Customer.district == filters.district)
             if filters.tags:
-                col = cast(Customer.tags, JSONB)
+                col = sa_cast(Customer.tags, JSONB)
                 tag_filters = [col.contains([tag]) for tag in filters.tags]
                 if tag_filters:
                     query = query.where(or_(*tag_filters))
@@ -140,7 +223,7 @@ class CRUDAnalytics:
             if filters.district and filters.district != "all":
                 refund_query = refund_query.where(Customer.district == filters.district)
             if filters.tags:
-                col = cast(Customer.tags, JSONB)
+                col = sa_cast(Customer.tags, JSONB)
                 tag_filters = [col.contains([tag]) for tag in filters.tags]
                 if tag_filters:
                     refund_query = refund_query.where(or_(*tag_filters))
@@ -183,37 +266,21 @@ class CRUDAnalytics:
         Returns:
             Dictionary with occupancy_rate, average_length_of_stay, check_ins, check_outs, cancellations
         """
-        # Get total rooms
-        room_query = select(func.count(Room.id))
-        if room_id and room_id != "all":
-            room_query = room_query.where(Room.id == room_id)
-        if filters and getattr(filters, "category_id", None):
-            room_query = room_query.where(Room.category_id == filters.category_id)
+        # Use unified occupancy calculator
+        total_available_nights, occupied_nights, occupancy_rate = self._compute_occupancy(
+            session,
+            period_start=date_from,
+            period_end=date_to,
+            room_id=room_id,
+            category_id=getattr(filters, "category_id", None) if filters else None,
+            filters=filters,
+        )
 
-        total_rooms = session.exec(room_query).first() or 1
-
-        # Calculate total available room nights
-        days_in_period = (date_to - date_from).days
-        if days_in_period <= 0:
-            # Handle same-day or invalid date ranges
-            days_in_period = 1
-        total_available_nights = total_rooms * days_in_period
-
-        # Get occupied nights - calculate intersection with analysis period
-        # For bookings that span the period boundaries, count only the days within the period
-        occupied_query = select(
-            func.sum(
-                func.greatest(1,
-                    func.extract("epoch",
-                        func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
-                    ) / 86400
-                )
-            ).label("occupied_nights"),
+        # Average length of stay (in nights) among bookings overlapping the period
+        avg_stay_query = select(
             func.avg(
-                func.greatest(1,
-                    func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
-                )
-            ).label("avg_stay"),
+                func.greatest(1, func.extract("epoch", Booking.check_out - Booking.check_in) / 86400)
+            )
         ).where(
             Booking.check_in < date_to,
             Booking.check_out > date_from,
@@ -223,36 +290,29 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_OUT
             ]),
         )
-
         if room_id and room_id != "all":
-            occupied_query = occupied_query.where(Booking.room_id == room_id)
+            avg_stay_query = avg_stay_query.where(Booking.room_id == room_id)
         if filters and getattr(filters, "category_id", None):
-            occupied_query = occupied_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
-
-        if filters and any([
-            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
-        ]):
-            occupied_query = occupied_query.join(Customer, Customer.id == Booking.customer_id)
+            avg_stay_query = avg_stay_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+        if filters and any([filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type]):
+            avg_stay_query = avg_stay_query.join(Customer, Customer.id == Booking.customer_id)
             if filters.country_code:
-                occupied_query = occupied_query.where(Customer.country_code == filters.country_code)
+                avg_stay_query = avg_stay_query.where(Customer.country_code == filters.country_code)
             if filters.region:
-                occupied_query = occupied_query.where(Customer.region == filters.region)
+                avg_stay_query = avg_stay_query.where(Customer.region == filters.region)
             if filters.district and filters.district != "all":
-                occupied_query = occupied_query.where(Customer.district == filters.district)
+                avg_stay_query = avg_stay_query.where(Customer.district == filters.district)
             if filters.tags:
-                col = cast(Customer.tags, JSONB)
+                col = sa_cast(Customer.tags, JSONB)
                 tag_filters = [col.contains([tag]) for tag in filters.tags]
                 if tag_filters:
-                    occupied_query = occupied_query.where(or_(*tag_filters))
+                    avg_stay_query = avg_stay_query.where(or_(*tag_filters))
             if filters.customer_type:
                 if filters.customer_type.value == "new":
-                    occupied_query = occupied_query.where(Customer.first_booking_date >= date_from)
+                    avg_stay_query = avg_stay_query.where(Customer.first_booking_date >= date_from)
                 elif filters.customer_type.value == "returning":
-                    occupied_query = occupied_query.where(Customer.first_booking_date < date_from)
-
-        occupied_result = session.exec(occupied_query).first()
-        occupied_nights = int(occupied_result.occupied_nights or 0)
-        avg_stay = float(occupied_result.avg_stay or 0)
+                    avg_stay_query = avg_stay_query.where(Customer.first_booking_date < date_from)
+        avg_stay = float(session.exec(avg_stay_query).first() or 0)
 
         # Count actual check-ins (by check_in date)
         # Include both CHECKED_IN and CHECKED_OUT statuses to count all arrivals
@@ -321,8 +381,6 @@ class CRUDAnalytics:
             cancellation_query = cancellation_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
 
         cancellations = session.exec(cancellation_query).first() or 0
-
-        occupancy_rate = (occupied_nights / total_available_nights * 100) if total_available_nights > 0 else 0
 
         return {
             "occupancy_rate": round(occupancy_rate, 2),
@@ -660,34 +718,14 @@ class CRUDAnalytics:
         # Get top N and bottom N
         top_performers = []
         for result in sorted_results[:top_n]:
-            # Calculate occupancy for this room
-            days_in_period = (date_to - date_from).days
-            if days_in_period <= 0:
-                days_in_period = 1
-            available_nights = days_in_period
-
-            # Get occupied nights for this room using EPOCH for accurate day count
-            occupied_nights = session.exec(
-                select(
-                    func.sum(func.greatest(1,
-                        func.extract("epoch",
-                            func.least(Booking.check_out, date_to) -
-                            func.greatest(Booking.check_in, date_from)
-                        ) / 86400
-                    ))
-                ).where(
-                    Booking.room_id == result.id,
-                    Booking.check_in < date_to,
-                    Booking.check_out > date_from,
-                    Booking.status.in_([
-                        BookingStatus.CONFIRMED,
-                        BookingStatus.CHECKED_IN,
-                        BookingStatus.CHECKED_OUT
-                    ]),
-                )
-            ).first() or 0
-
-            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
+            # Calculate occupancy for this room via unified method
+            available_nights, occupied_nights, occupancy_rate = self._compute_occupancy(
+                session,
+                period_start=date_from,
+                period_end=date_to,
+                room_id=str(result.id),
+                filters=filters,
+            )
 
             # Resolve category name lazily (small N)
             category_name = None
@@ -709,34 +747,14 @@ class CRUDAnalytics:
 
         bottom_performers = []
         for result in sorted_results[-top_n:]:
-            # Calculate occupancy for this room
-            days_in_period = (date_to - date_from).days
-            if days_in_period <= 0:
-                days_in_period = 1
-            available_nights = days_in_period
-
-            # Get occupied nights for this room using EPOCH for accurate day count
-            occupied_nights = session.exec(
-                select(
-                    func.sum(func.greatest(1,
-                        func.extract("epoch",
-                            func.least(Booking.check_out, date_to) -
-                            func.greatest(Booking.check_in, date_from)
-                        ) / 86400
-                    ))
-                ).where(
-                    Booking.room_id == result.id,
-                    Booking.check_in < date_to,
-                    Booking.check_out > date_from,
-                    Booking.status.in_([
-                        BookingStatus.CONFIRMED,
-                        BookingStatus.CHECKED_IN,
-                        BookingStatus.CHECKED_OUT
-                    ]),
-                )
-            ).first() or 0
-
-            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0
+            # Calculate occupancy for this room via unified method
+            available_nights, occupied_nights, occupancy_rate = self._compute_occupancy(
+                session,
+                period_start=date_from,
+                period_end=date_to,
+                room_id=str(result.id),
+                filters=filters,
+            )
 
             category_name = None
             if result.category_id:
@@ -836,37 +854,14 @@ class CRUDAnalytics:
         for r in rows:
             cat_id = str(r.category_id) if r.category_id else None
 
-            rooms_count = session.exec(
-                select(func.count(Room.id)).where(Room.category_id == r.category_id)
-            ).first() or 0
-
-            days = (date_to - date_from).days or 1
-            available_nights = max(1, rooms_count * days)
-
-            occupied_nights = session.exec(
-                select(
-                    func.sum(
-                        func.greatest(1,
-                            func.extract(
-                                "epoch",
-                                func.least(Booking.check_out, date_to) - func.greatest(Booking.check_in, date_from)
-                            ) / 86400
-                        )
-                    )
-                ).join(Room, Room.id == Booking.room_id)
-                .where(
-                    Booking.check_in < date_to,
-                    Booking.check_out > date_from,
-                    Booking.status.in_([
-                        BookingStatus.CONFIRMED,
-                        BookingStatus.CHECKED_IN,
-                        BookingStatus.CHECKED_OUT
-                    ]),
-                    Room.category_id == r.category_id,
-                )
-            ).first() or 0
-
-            occupancy_rate = (float(occupied_nights) / available_nights * 100) if available_nights > 0 else 0.0
+            # Use unified occupancy per category
+            available_nights, occupied_nights, occupancy_rate = self._compute_occupancy(
+                session,
+                period_start=date_from,
+                period_end=date_to,
+                category_id=str(r.category_id) if r.category_id else None,
+                filters=filters,
+            )
             avg_rate = float(r.revenue or 0) / max(1.0, float(occupied_nights))
 
             results.append({
@@ -1109,7 +1104,7 @@ class CRUDAnalytics:
             month_label = current_month_start.strftime("%Y-%m")
             month_name = current_month_start.strftime("%B %Y")
 
-            # Вычисление пропорциональной выручки/ночей за пределы месяца
+            # Выручка/броней/ночей по месяцу (revenue и nights через пересечение с месяцем)
             days_in_period = func.greatest(
                 1,
                 func.extract(
@@ -1164,27 +1159,24 @@ class CRUDAnalytics:
                         per_month_query = per_month_query.where(or_(*tag_filters))
                 if filters.customer_type:
                     if filters.customer_type.value == "new":
-                        # Новый клиент: первая бронь в анализируемый период или позже
                         per_month_query = per_month_query.where(Customer.first_booking_date >= start_date)
                     elif filters.customer_type.value == "returning":
                         per_month_query = per_month_query.where(Customer.first_booking_date < start_date)
 
             r = session.exec(per_month_query).first()
-            revenue = float((r.revenue if r and r.revenue is not None else 0))
-            bookings = int((r.bookings if r and r.bookings is not None else 0))
-            occupied_nights = int((r.nights if r and r.nights is not None else 0))
+            revenue = float(r.revenue if r and r.revenue is not None else 0)
+            bookings = int(r.bookings if r and r.bookings is not None else 0)
+            occupied_nights = int(r.nights if r and r.nights is not None else 0)
 
-            # Доступные ночи в месяце = количество номеров * число дней месяца (учитывая фильтры по room/category)
-            rooms_query = select(func.count(Room.id))
-            if room_id:
-                rooms_query = rooms_query.where(Room.id == room_id)
-            if filters and getattr(filters, "category_id", None):
-                rooms_query = rooms_query.where(Room.category_id == filters.category_id)
-            total_rooms = int(session.exec(rooms_query).first() or 0)
-
-            days_in_month = (month_end - current_month_start).days
-            available_nights = total_rooms * days_in_month
-            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0.0
+            # Единый расчёт occupancy для месяца
+            available_nights, _, occupancy_rate = self._compute_occupancy(
+                session,
+                period_start=current_month_start,
+                period_end=month_end,
+                room_id=room_id,
+                category_id=getattr(filters, "category_id", None) if filters else None,
+                filters=filters,
+            )
 
             monthly_trends.append({
                 "month": month_label,

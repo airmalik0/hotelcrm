@@ -106,7 +106,7 @@ class RevenueMetrics(SQLModel):
 
 class OccupancyMetrics(SQLModel):
     """Occupancy and utilization metrics."""
-    occupancy_rate: float = Field(ge=0, le=100, description="Percentage of rooms occupied")
+    occupancy_rate: float = Field(ge=0, description="Percentage of rooms occupied (can exceed 100%)")
     average_length_of_stay: float = Field(ge=0, description="Average nights per booking")
     total_available_room_nights: int = Field(ge=0, description="Total room nights available")
     total_occupied_room_nights: int = Field(ge=0, description="Total room nights occupied")
@@ -144,7 +144,7 @@ class CategoryMetrics(SQLModel):
     category_name: str | None = None
     revenue: float = Field(ge=0, description="Revenue for this category")
     bookings: int = Field(ge=0, description="Number of bookings for this category")
-    occupancy_rate: float = Field(ge=0, le=100, description="Occupancy rate for this category")
+    occupancy_rate: float = Field(ge=0, description="Occupancy rate for this category (can exceed 100%)")
     average_rate: float = Field(ge=0, description="Average rate for this category")
 
 
