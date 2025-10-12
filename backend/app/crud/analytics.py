@@ -3,6 +3,7 @@ CRUD operations for analytics.
 All SQL queries for analytics data retrieval.
 """
 from datetime import datetime, timedelta, timezone
+import math
 from typing import Any, Optional, cast
 
 from sqlalchemy import cast as sa_cast
@@ -10,6 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Session, func, or_, select
 
 from app.models import Booking, BookingStatus, Customer, Room
+from app.models.common import RoomStatus
 from app.models.analytics import AgeGroup, AnalyticsFilter
 from app.models.room_category import RoomCategory
 
@@ -51,11 +53,13 @@ class CRUDAnalytics:
             rooms_query = rooms_query.where(Room.category_id == category_id)
         if filters and getattr(filters, "category_id", None) and not category_id:
             rooms_query = rooms_query.where(Room.category_id == filters.category_id)
+        # Exclude maintenance rooms from denominator
+        rooms_query = rooms_query.where(Room.status != RoomStatus.MAINTENANCE)
         rooms_count = int(session.exec(rooms_query).first() or 0)
 
-        days_in_period = (period_end - period_start).days
-        if days_in_period <= 0:
-            days_in_period = 1
+        # Exclusive end semantics for days in period
+        total_seconds = max(0.0, (period_end - period_start).total_seconds())
+        days_in_period = max(1, math.ceil(total_seconds / 86400))
         available_nights = rooms_count * days_in_period
 
         days_in_period_expr = func.greatest(
@@ -74,10 +78,12 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_OUT
             ]),
         )
+        # Always join Room to filter by status and optional category/room
+        occupied_query = occupied_query.join(Room, Room.id == Booking.room_id)
+        occupied_query = occupied_query.where(Room.status != RoomStatus.MAINTENANCE)
         if room_id and room_id != "all":
-            occupied_query = occupied_query.where(Booking.room_id == room_id)
+            occupied_query = occupied_query.where(Room.id == room_id)
         if category_id or (filters and getattr(filters, "category_id", None)):
-            occupied_query = occupied_query.join(Room, Room.id == Booking.room_id)
             if category_id:
                 occupied_query = occupied_query.where(Room.category_id == category_id)
             else:
@@ -290,10 +296,13 @@ class CRUDAnalytics:
                 BookingStatus.CHECKED_OUT
             ]),
         )
+        # Join Room to filter status and category consistently
+        avg_stay_query = avg_stay_query.join(Room, Room.id == Booking.room_id)
+        avg_stay_query = avg_stay_query.where(Room.status != RoomStatus.MAINTENANCE)
         if room_id and room_id != "all":
-            avg_stay_query = avg_stay_query.where(Booking.room_id == room_id)
+            avg_stay_query = avg_stay_query.where(Room.id == room_id)
         if filters and getattr(filters, "category_id", None):
-            avg_stay_query = avg_stay_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+            avg_stay_query = avg_stay_query.where(Room.category_id == filters.category_id)
         if filters and any([filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type]):
             avg_stay_query = avg_stay_query.join(Customer, Customer.id == Booking.customer_id)
             if filters.country_code:
