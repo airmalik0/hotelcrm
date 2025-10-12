@@ -1087,81 +1087,115 @@ class CRUDAnalytics:
         end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=years * 365)
 
-        # Monthly revenue and occupancy trends
-        # Use a column reference for GROUP BY to avoid PostgreSQL grouping error
-        # NOTE: For monthly grouping, we use check_in month but apply proportional revenue
-        month_col = func.date_trunc("month", Booking.check_in)
+        # Monthly revenue and occupancy trends (accurate per-month allocation)
+        # Мы распределяем выручку и «занятые ночи» по каждому месяцу на основе
+        # фактического пересечения бронирования с границами месяца и считаем
+        # occupancy_rate как occupied_nights / available_nights.
 
-        # Proportional revenue for the entire analysis period using EPOCH for accurate day count
-        days_in_period = func.greatest(1,
-            func.extract("epoch", func.least(Booking.check_out, end_date) - func.greatest(Booking.check_in, start_date)) / 86400
-        )
-        total_booking_days = func.greatest(1,
-            func.extract("epoch", Booking.check_out - Booking.check_in) / 86400
-        )
+        # Подготовим список месяцев в анализируемом диапазоне
+        monthly_trends: list[dict[str, Any]] = []
+        current_month_start = datetime(start_date.year, start_date.month, 1, tzinfo=timezone.utc)
 
-        monthly_query = select(
-            month_col.label("month"),
-            func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
-            func.count(Booking.id).label("bookings"),
-            func.sum(days_in_period).label("nights"),
-        ).where(
-            Booking.check_in < end_date,  # Overlap condition
-            Booking.check_out > start_date,
-            Booking.status.in_([
-                BookingStatus.CONFIRMED,
-                BookingStatus.CHECKED_IN,
-                BookingStatus.CHECKED_OUT
-            ]),
-        )
+        # Начало следующего месяца
+        def _next_month(dt: datetime) -> datetime:
+            year = dt.year + (1 if dt.month == 12 else 0)
+            month = 1 if dt.month == 12 else dt.month + 1
+            return datetime(year, month, 1, tzinfo=timezone.utc)
 
-        # Add room filters
-        if room_id:
-            monthly_query = monthly_query.where(Booking.room_id == room_id)
-        if filters and getattr(filters, "category_id", None):
-            monthly_query = monthly_query.join(Room, Room.id == Booking.room_id).where(Room.category_id == filters.category_id)
+        while current_month_start < end_date:
+            month_end = _next_month(current_month_start)
 
-        # Add customer-based filters
-        if filters and any([
-            filters.country_code, filters.region, filters.district, filters.tags, filters.customer_type
-        ]):
-            monthly_query = monthly_query.join(Customer, Customer.id == Booking.customer_id)
-            if filters.country_code:
-                monthly_query = monthly_query.where(Customer.country_code == filters.country_code)
-            if filters.region:
-                monthly_query = monthly_query.where(Customer.region == filters.region)
-            if filters.district and filters.district != "all":
-                monthly_query = monthly_query.where(Customer.district == filters.district)
-            if filters.tags:
-                col = cast(Customer.tags, JSONB)
-                tag_filters = [col.contains([tag]) for tag in filters.tags]
-                if tag_filters:
-                    monthly_query = monthly_query.where(or_(*tag_filters))
-            if filters.customer_type:
-                if filters.customer_type.value == "new":
-                    monthly_query = monthly_query.where(Customer.first_booking_date >= start_date)
-                elif filters.customer_type.value == "returning":
-                    monthly_query = monthly_query.where(Customer.first_booking_date < start_date)
+            # Параметры месяца
+            month_label = current_month_start.strftime("%Y-%m")
+            month_name = current_month_start.strftime("%B %Y")
 
-        monthly_query = monthly_query.group_by(
-            month_col
-        ).order_by(
-            month_col
-        )
+            # Вычисление пропорциональной выручки/ночей за пределы месяца
+            days_in_period = func.greatest(
+                1,
+                func.extract(
+                    "epoch",
+                    func.least(Booking.check_out, month_end) - func.greatest(Booking.check_in, current_month_start),
+                ) / 86400,
+            )
+            total_booking_days = func.greatest(
+                1,
+                func.extract("epoch", Booking.check_out - Booking.check_in) / 86400,
+            )
 
-        monthly_results = session.exec(monthly_query).all()
+            per_month_query = select(
+                func.sum(Booking.total_amount * days_in_period / total_booking_days).label("revenue"),
+                func.count(Booking.id).label("bookings"),
+                func.sum(days_in_period).label("nights"),
+            ).where(
+                Booking.check_in < month_end,
+                Booking.check_out > current_month_start,
+                Booking.status.in_(
+                    [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT]
+                ),
+            )
 
-        # Process monthly data
-        monthly_trends = []
-        for result in monthly_results:
-            if result.month:
-                monthly_trends.append({
-                    "month": result.month.strftime("%Y-%m"),
-                    "month_name": result.month.strftime("%B %Y"),
-                    "revenue": float(result.revenue or 0),
-                    "bookings": int(result.bookings or 0),
-                    "nights": int(result.nights or 0),
-                })
+            # Фильтры по номеру/категории
+            if room_id:
+                per_month_query = per_month_query.where(Booking.room_id == room_id)
+            if filters and getattr(filters, "category_id", None):
+                per_month_query = per_month_query.join(Room, Room.id == Booking.room_id).where(
+                    Room.category_id == filters.category_id
+                )
+
+            # Клиентские фильтры
+            if filters and any([
+                filters.country_code,
+                filters.region,
+                filters.district,
+                filters.tags,
+                filters.customer_type,
+            ]):
+                per_month_query = per_month_query.join(Customer, Customer.id == Booking.customer_id)
+                if filters.country_code:
+                    per_month_query = per_month_query.where(Customer.country_code == filters.country_code)
+                if filters.region:
+                    per_month_query = per_month_query.where(Customer.region == filters.region)
+                if filters.district and filters.district != "all":
+                    per_month_query = per_month_query.where(Customer.district == filters.district)
+                if filters.tags:
+                    col = cast(Customer.tags, JSONB)
+                    tag_filters = [col.contains([tag]) for tag in filters.tags]
+                    if tag_filters:
+                        per_month_query = per_month_query.where(or_(*tag_filters))
+                if filters.customer_type:
+                    if filters.customer_type.value == "new":
+                        # Новый клиент: первая бронь в анализируемый период или позже
+                        per_month_query = per_month_query.where(Customer.first_booking_date >= start_date)
+                    elif filters.customer_type.value == "returning":
+                        per_month_query = per_month_query.where(Customer.first_booking_date < start_date)
+
+            r = session.exec(per_month_query).first()
+            revenue = float((r.revenue if r and r.revenue is not None else 0))
+            bookings = int((r.bookings if r and r.bookings is not None else 0))
+            occupied_nights = int((r.nights if r and r.nights is not None else 0))
+
+            # Доступные ночи в месяце = количество номеров * число дней месяца (учитывая фильтры по room/category)
+            rooms_query = select(func.count(Room.id))
+            if room_id:
+                rooms_query = rooms_query.where(Room.id == room_id)
+            if filters and getattr(filters, "category_id", None):
+                rooms_query = rooms_query.where(Room.category_id == filters.category_id)
+            total_rooms = int(session.exec(rooms_query).first() or 0)
+
+            days_in_month = (month_end - current_month_start).days
+            available_nights = total_rooms * days_in_month
+            occupancy_rate = (occupied_nights / available_nights * 100) if available_nights > 0 else 0.0
+
+            monthly_trends.append({
+                "month": month_label,
+                "month_name": month_name,
+                "revenue": revenue,
+                "bookings": bookings,
+                "nights": occupied_nights,
+                "occupancy_rate": round(float(occupancy_rate), 2),
+            })
+
+            current_month_start = month_end
 
         # Quarterly aggregation
         # Use column references for GROUP BY to avoid PostgreSQL grouping error
@@ -1283,10 +1317,7 @@ class CRUDAnalytics:
             peak_months = []
             low_months = []
 
-        # Calculate occupancy rate for each month
-        for month_data in monthly_trends:
-            # Estimate occupancy based on bookings
-            month_data["occupancy_rate"] = min(100, month_data["bookings"] * 3)  # Rough estimate
+        # occupancy_rate уже посчитан помесячно выше
 
         # Find peak season, highest revenue month, and best occupancy month
         peak_season = None
