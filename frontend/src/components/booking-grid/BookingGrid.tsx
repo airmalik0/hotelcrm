@@ -1,4 +1,5 @@
 import { getBookings } from "@/api/bookings"
+import { getOccupancyDetails } from "@/api/analytics"
 import { getRooms } from "@/api/rooms"
 import type {
   BookingPublic,
@@ -244,6 +245,49 @@ function BookingGridContent() {
     [allBookings, filteredBookings, filteredRooms, viewStart, viewEnd],
   )
 
+  // Backend-driven occupancy for current view (aggregated over selected categories)
+  const { data: backendOccupancyData } = useQuery({
+    queryKey: [
+      "grid",
+      "occupancy",
+      viewStart.toISOString(),
+      viewEnd.toISOString(),
+      (debouncedFilters.categoryFilters || []).slice().sort().join(","),
+    ],
+    queryFn: async () => {
+      const paramsBase = {
+        date_from: viewStart.toISOString(),
+        date_to: viewEnd.toISOString(),
+      }
+      const cats = debouncedFilters.categoryFilters || []
+      if (cats.length === 0) {
+        const res = await getOccupancyDetails(paramsBase)
+        return res.data as any
+      }
+      // Aggregate across multiple categories using backend metrics (same function)
+      const results = await Promise.all(
+        cats.map(async (catId) => {
+          const res = await getOccupancyDetails({ ...paramsBase, category_id: catId })
+          return res.data as any
+        }),
+      )
+      const totals = results.reduce(
+        (acc, r) => {
+          acc.available += r.total_available_room_nights || 0
+          acc.occupied += r.total_occupied_room_nights || 0
+          return acc
+        },
+        { available: 0, occupied: 0 },
+      )
+      const rate = totals.available > 0 ? (totals.occupied / totals.available) * 100 : 0
+      return { occupancy_rate: rate }
+    },
+  })
+
+  const backendOccupancyRate = backendOccupancyData?.occupancy_rate
+    ? Number(Number(backendOccupancyData.occupancy_rate).toFixed(1))
+    : 0
+
   // Drag & Drop functionality
   const { confirm, ConfirmDialog } = useConfirm()
   const {
@@ -437,7 +481,7 @@ function BookingGridContent() {
         viewMode={viewMode}
         viewStart={viewStart}
         viewEnd={viewEnd}
-        occupancyRate={filteredStats.occupancyRate}
+        occupancyRate={backendOccupancyRate}
         onPrevious={handlePrevious}
         onNext={handleNext}
         onToday={handleToday}
@@ -457,7 +501,7 @@ function BookingGridContent() {
             onCategoryFilterChange={handleCategoryFilterChange}
             availableCategories={availableCategories}
             totalBookings={filteredStats.totalBookings}
-            occupancyRate={filteredStats.occupancyRate}
+            occupancyRate={backendOccupancyRate}
             onClearAllFilters={handleClearAllFilters}
             currentGridState={currentGridState}
           />
