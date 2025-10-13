@@ -1,5 +1,13 @@
-import { createRoomCategory, deleteRoomCategory, getRoomCategories } from "@/api/rooms"
-import type { RoomCategoriesPublic, RoomCategoryCreate, RoomCategoryPublic } from "@/client/types.gen"
+import {
+  createRoomCategory,
+  deleteRoomCategory,
+  getRoomCategories,
+} from "@/api/rooms"
+import type {
+  RoomCategoriesPublic,
+  RoomCategoryCreate,
+  RoomCategoryPublic,
+} from "@/client/types.gen"
 import { handleFormError, showError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, Trash2, X } from "lucide-react"
@@ -9,7 +17,9 @@ interface RoomCategoryManagerModalProps {
   onClose: () => void
 }
 
-export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalProps) {
+export function RoomCategoryManagerModal({
+  onClose,
+}: RoomCategoryManagerModalProps) {
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -30,7 +40,11 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
       setErrors({})
     },
     onError: (error) => {
-      handleFormError(error, (validationErrors) => setErrors(validationErrors), "Failed to create category")
+      handleFormError(
+        error,
+        (validationErrors) => setErrors(validationErrors),
+        "Failed to create category",
+      )
     },
   })
 
@@ -49,13 +63,18 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
     e.preventDefault()
     const newErrors: Record<string, string> = {}
     if (!name.trim()) newErrors.name = "Name is required"
-    if (name.trim().length > 100) newErrors.name = "Name must be 100 characters or less"
-    if (description && description.length > 500) newErrors.description = "Description must be 500 characters or less"
+    if (name.trim().length > 100)
+      newErrors.name = "Name must be 100 characters or less"
+    if (description && description.length > 500)
+      newErrors.description = "Description must be 500 characters or less"
     if (Object.keys(newErrors).length) {
       setErrors(newErrors)
       return
     }
-    createMutation.mutate({ name: name.trim(), description: description || null })
+    createMutation.mutate({
+      name: name.trim(),
+      description: description || null,
+    })
   }
 
   const categories: RoomCategoryPublic[] = data?.data || []
@@ -63,7 +82,10 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
@@ -73,7 +95,11 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
               Manage Room Categories
             </h3>
-            <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -88,7 +114,9 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name *</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Name *
+                  </label>
                   <input
                     type="text"
                     value={name}
@@ -97,11 +125,15 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
                     placeholder="e.g. Deluxe, Economy"
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">{errors.name}</p>
+                    <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">
+                      {errors.name}
+                    </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Description
+                  </label>
                   <input
                     type="text"
                     value={description}
@@ -110,7 +142,9 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
                     placeholder="Optional"
                   />
                   {errors.description && (
-                    <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">{errors.description}</p>
+                    <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">
+                      {errors.description}
+                    </p>
                   )}
                 </div>
               </div>
@@ -126,21 +160,36 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
 
             {/* Category list */}
             <div>
-              <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">Existing Categories</h4>
+              <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                Existing Categories
+              </h4>
               {isLoading ? (
-                <div className="text-sm text-neutral-600 dark:text-neutral-400">Loading...</div>
+                <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Loading...
+                </div>
               ) : error ? (
-                <div className="text-sm text-danger-600 dark:text-danger-400">Failed to load categories</div>
+                <div className="text-sm text-danger-600 dark:text-danger-400">
+                  Failed to load categories
+                </div>
               ) : categories.length === 0 ? (
-                <div className="text-sm text-neutral-600 dark:text-neutral-400">No categories yet</div>
+                <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                  No categories yet
+                </div>
               ) : (
                 <ul className="divide-y divide-neutral-200 dark:divide-neutral-700">
                   {categories.map((cat) => (
-                    <li key={cat.id} className="py-2 flex items-center justify-between">
+                    <li
+                      key={cat.id}
+                      className="py-2 flex items-center justify-between"
+                    >
                       <div>
-                        <div className="text-sm text-neutral-900 dark:text-white font-medium">{cat.name}</div>
+                        <div className="text-sm text-neutral-900 dark:text-white font-medium">
+                          {cat.name}
+                        </div>
                         {cat.description && (
-                          <div className="text-xs text-neutral-500 dark:text-neutral-400">{cat.description}</div>
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {cat.description}
+                          </div>
                         )}
                       </div>
                       <button
@@ -162,4 +211,3 @@ export function RoomCategoryManagerModal({ onClose }: RoomCategoryManagerModalPr
     </div>
   )
 }
-

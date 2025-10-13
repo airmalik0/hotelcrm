@@ -1,5 +1,5 @@
+import { getCountries, getDistricts, getRegions } from "@/api/geo"
 import { useQuery } from "@tanstack/react-query"
-import { getCountries, getRegions, getDistricts } from "@/api/geo"
 import { useEffect, useMemo } from "react"
 
 export interface GeoValue {
@@ -16,7 +16,13 @@ interface GeoSelectProps {
   error?: string
 }
 
-export function GeoSelect({ label = "Location", value, onChange, required, error }: GeoSelectProps) {
+export function GeoSelect({
+  label = "Location",
+  value,
+  onChange,
+  required,
+  error,
+}: GeoSelectProps) {
   const { data: countries = [] } = useQuery({
     queryKey: ["geo", "countries"],
     queryFn: getCountries,
@@ -33,15 +39,25 @@ export function GeoSelect({ label = "Location", value, onChange, required, error
   const { data: districts = [] } = useQuery({
     queryKey: ["geo", "districts", value.region],
     queryFn: () => getDistricts(value.region || ""),
-    enabled: (value.country_code === "UZ" && value.region === "TASHKENT_CITY") || false,
+    enabled:
+      (value.country_code === "UZ" && value.region === "TASHKENT_CITY") ||
+      false,
     staleTime: 24 * 60 * 60 * 1000,
   })
 
   // Ensure cascade consistency on parent change
   useEffect(() => {
     // If country is not UZ → clear region/district
-    if (value.country_code && value.country_code !== "UZ" && (value.region || value.district)) {
-      onChange({ country_code: value.country_code, region: null, district: null })
+    if (
+      value.country_code &&
+      value.country_code !== "UZ" &&
+      (value.region || value.district)
+    ) {
+      onChange({
+        country_code: value.country_code,
+        region: null,
+        district: null,
+      })
     }
   }, [value.country_code])
 
@@ -141,6 +157,3 @@ export function GeoSelect({ label = "Location", value, onChange, required, error
     </div>
   )
 }
-
-
-

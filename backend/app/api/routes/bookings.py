@@ -10,6 +10,10 @@ from app.core.rate_limit import RateLimits, limiter
 from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
+    BookingGuestCreate,
+    BookingGuestPublic,
+    BookingGuestsPublic,
+    BookingGuestUpdate,
     BookingPublic,
     BookingsPublic,
     BookingStatus,
@@ -21,6 +25,7 @@ from app.models import (
     RoomChangeRequest,
 )
 from app.services.booking import BookingService
+from app.services.booking_guest import BookingGuestService
 from app.utils import parse_isoformat_date
 
 router = APIRouter()
@@ -501,3 +506,121 @@ def actual_check_out(
 
     # Reload with relationships
     return crud_booking.get_with_relations(session, booking_id=booking.id)
+
+
+# ==================== BOOKING GUESTS ENDPOINTS ====================
+
+@router.get("/{booking_id}/guests", response_model=BookingGuestsPublic)
+def get_booking_guests(
+    session: SessionDep,
+    current_user: CurrentUser,  # noqa: ARG001
+    booking_id: uuid.UUID,
+) -> Any:
+    """
+    Get all guests for a booking.
+    """
+    service = BookingGuestService(session)
+    guests = service.crud.get_by_booking(session, booking_id=booking_id)
+    return BookingGuestsPublic(data=guests, count=len(guests))
+
+
+@router.post("/{booking_id}/guests", response_model=BookingGuestPublic)
+def add_guest_to_booking(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,  # noqa: ARG001
+    booking_id: uuid.UUID,
+    guest_in: BookingGuestCreate,
+) -> Any:
+    """
+    Add a guest to a booking.
+
+    - **customer_id**: Optional - link to existing customer
+    - **full_name**: Required if not linking to customer
+    - **passport_photo_path**: Required - upload via /api/v1/files/upload/passport first
+    - **origin_city**: Required - where the guest is from
+    - **save_to_customers**: If true, creates/links customer in database
+    """
+    service = BookingGuestService(session)
+    guest = service.add_guest_to_booking(booking_id, guest_in)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="added_guest",
+        entity_type="booking",
+        entity_id=booking_id,
+        description=f"Added guest: {guest.full_name or 'N/A'}",
+    )
+
+    session.commit()
+    session.refresh(guest)
+    return guest
+
+
+@router.put("/{booking_id}/guests/{guest_id}", response_model=BookingGuestPublic)
+def update_booking_guest(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,  # noqa: ARG001
+    booking_id: uuid.UUID,  # noqa: ARG001
+    guest_id: uuid.UUID,
+    guest_in: BookingGuestUpdate,
+) -> Any:
+    """
+    Update guest information.
+
+    Note: Cannot update primary guest (booking holder).
+    """
+    service = BookingGuestService(session)
+    guest = service.update_guest(guest_id, guest_in)
+
+    # Log audit
+    log_audit(
+        session=session,
+        user=current_user,
+        action="updated_guest",
+        entity_type="booking_guest",
+        entity_id=guest_id,
+        description=f"Updated guest: {guest.full_name or 'N/A'}",
+    )
+
+    session.commit()
+    session.refresh(guest)
+    return guest
+
+
+@router.delete(
+    "/{booking_id}/guests/{guest_id}",
+    dependencies=[Depends(require_admin_or_manager)],
+)
+def remove_guest_from_booking(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    booking_id: uuid.UUID,  # noqa: ARG001
+    guest_id: uuid.UUID,
+) -> Message:
+    """
+    Remove a guest from a booking.
+
+    Note: Cannot remove primary guest (booking holder).
+    Only admins and managers can remove guests.
+    """
+    service = BookingGuestService(session)
+    guest = service.get_guest_or_404(guest_id)
+
+    # Log audit before deletion
+    log_audit(
+        session=session,
+        user=current_user,
+        action="removed_guest",
+        entity_type="booking",
+        entity_id=booking_id,
+        description=f"Removed guest: {guest.full_name or 'N/A'}",
+    )
+
+    service.remove_guest_from_booking(guest_id)
+    session.commit()
+    return Message(message="Guest removed successfully")

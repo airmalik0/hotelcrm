@@ -65,8 +65,8 @@ export function Expenses() {
     : 0
 
   // Debug: log data structure
-  console.log('[Expenses] categoriesData:', categoriesData)
-  console.log('[Expenses] expensesData:', expensesData)
+  console.log("[Expenses] categoriesData:", categoriesData)
+  console.log("[Expenses] expensesData:", expensesData)
 
   return (
     <>
@@ -176,9 +176,9 @@ export function Expenses() {
             }}
             onDelete={async (category) => {
               const confirmed = await confirm({
-              title: "Delete category",
-              message: "Are you sure you want to delete this category?",
-              confirmText: "Delete",
+                title: "Delete category",
+                message: "Are you sure you want to delete this category?",
+                confirmText: "Delete",
                 variant: "danger",
               })
               if (confirmed) {
@@ -312,11 +312,21 @@ function ExpensesTab({
           <table className="w-full">
             <thead>
               <tr className="border-b border-neutral-200 dark:border-neutral-600">
-                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">Category</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">Description</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">Amount</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">Actions</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -553,7 +563,9 @@ function ExpenseModal({
                 Category *
               </label>
               <select
-                {...register("category_id", { required: "Please select a category" })}
+                {...register("category_id", {
+                  required: "Please select a category",
+                })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
               >
                 <option value="">Select a category</option>
@@ -579,7 +591,10 @@ function ExpenseModal({
                 step="0.01"
                 {...register("amount", {
                   required: "Enter an amount",
-                  min: { value: 0.01, message: "Amount must be greater than 0" },
+                  min: {
+                    value: 0.01,
+                    message: "Amount must be greater than 0",
+                  },
                 })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
                 placeholder="0.00"

@@ -1,5 +1,5 @@
-import { getBookings } from "@/api/bookings"
 import { getOccupancyDetails } from "@/api/analytics"
+import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
 import type {
   BookingPublic,
@@ -267,7 +267,10 @@ function BookingGridContent() {
       // Aggregate across multiple categories using backend metrics (same function)
       const results = await Promise.all(
         cats.map(async (catId) => {
-          const res = await getOccupancyDetails({ ...paramsBase, category_id: catId })
+          const res = await getOccupancyDetails({
+            ...paramsBase,
+            category_id: catId,
+          })
           return res.data as any
         }),
       )
@@ -279,7 +282,8 @@ function BookingGridContent() {
         },
         { available: 0, occupied: 0 },
       )
-      const rate = totals.available > 0 ? (totals.occupied / totals.available) * 100 : 0
+      const rate =
+        totals.available > 0 ? (totals.occupied / totals.available) * 100 : 0
       return { occupancy_rate: rate }
     },
   })

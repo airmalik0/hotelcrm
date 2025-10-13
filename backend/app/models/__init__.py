@@ -58,6 +58,14 @@ from .booking import (
     RoomChangeRequest,
     PaymentAdjustmentResponse,
 )
+from .booking_guest import (
+    BookingGuestBase,
+    BookingGuest,
+    BookingGuestCreate,
+    BookingGuestUpdate,
+    BookingGuestPublic,
+    BookingGuestsPublic,
+)
 from .audit import (
     AuditLog,
     AuditLogPublic,

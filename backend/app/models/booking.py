@@ -12,8 +12,12 @@ from .customer import CustomerPublic
 from .room import RoomPublic
 
 if TYPE_CHECKING:
+    from .booking_guest import BookingGuest
     from .customer import Customer
     from .room import Room
+else:
+    # Import for Pydantic schema (needed at runtime)
+    from .booking_guest import BookingGuestPublic
 
 
 class PaymentCalculationMixin:
@@ -75,6 +79,7 @@ class Booking(BookingBase, PaymentCalculationMixin, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     customer: Optional["Customer"] = Relationship(back_populates="bookings")
     room: Optional["Room"] = Relationship(back_populates="bookings")
+    guests: list["BookingGuest"] = Relationship(back_populates="booking", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     booking_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
@@ -139,6 +144,7 @@ class BookingPublic(BookingBase):
     actual_check_in: datetime | None = None
     actual_check_out: datetime | None = None
     payment_adjustments: list[dict[str, Any]] = Field(default_factory=list)
+    guests: list[BookingGuestPublic] = Field(default_factory=list, description="List of guests in this booking")
 
     @field_validator("payment_adjustments", mode="before")
     @classmethod

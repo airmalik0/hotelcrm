@@ -97,6 +97,74 @@ export type BookingCreate = {
 };
 
 /**
+ * Schema for creating a booking guest.
+ */
+export type BookingGuestCreate = {
+    customer_id?: (string | null);
+    full_name?: (string | null);
+    passport_photo_path: string;
+    origin_city: string;
+    phone?: (string | null);
+    email?: (string | null);
+    is_primary?: boolean;
+    /**
+     * If true, create/link customer in database
+     */
+    save_to_customers?: boolean;
+};
+
+/**
+ * Public schema for booking guest (API responses).
+ */
+export type BookingGuestPublic = {
+    /**
+     * Reference to customer if saved to database
+     */
+    customer_id?: (string | null);
+    /**
+     * Guest full name (required if not linked to customer)
+     */
+    full_name?: (string | null);
+    /**
+     * Path to passport photo (required for all guests)
+     */
+    passport_photo_path: string;
+    /**
+     * City/country where guest is from (required)
+     */
+    origin_city: string;
+    phone?: (string | null);
+    email?: (string | null);
+    /**
+     * True if this is the primary guest (booking holder)
+     */
+    is_primary?: boolean;
+    id: string;
+    booking_id: string;
+    added_at: string;
+    customer_name?: (string | null);
+};
+
+/**
+ * List of booking guests.
+ */
+export type BookingGuestsPublic = {
+    data: Array<BookingGuestPublic>;
+    count: number;
+};
+
+/**
+ * Schema for updating a booking guest.
+ */
+export type BookingGuestUpdate = {
+    full_name?: (string | null);
+    passport_photo_path?: (string | null);
+    origin_city?: (string | null);
+    phone?: (string | null);
+    email?: (string | null);
+};
+
+/**
  * Public booking schema for API responses.
  *
  * Note: refund_amount and additional_payment are computed properties
@@ -124,6 +192,10 @@ export type BookingPublic = {
     payment_adjustments?: Array<{
         [key: string]: unknown;
     }>;
+    /**
+     * List of guests in this booking
+     */
+    guests?: Array<BookingGuestPublic>;
 };
 
 export type BookingsPublic = {
@@ -466,6 +538,10 @@ export type RoomCreate = {
     floor: number;
     category_id?: (string | null);
     price_per_night: number;
+    /**
+     * Maximum number of guests allowed in the room
+     */
+    max_occupancy?: number;
     status?: RoomStatus;
     description?: (string | null);
     room_photo_paths?: Array<(string)>;
@@ -476,6 +552,10 @@ export type RoomPublic = {
     floor: number;
     category_id?: (string | null);
     price_per_night: number;
+    /**
+     * Maximum number of guests allowed in the room
+     */
+    max_occupancy?: number;
     status?: RoomStatus;
     description?: (string | null);
     room_photo_paths?: Array<(string)>;
@@ -496,6 +576,7 @@ export type RoomUpdate = {
     floor?: (number | null);
     category_id?: (string | null);
     price_per_night?: (number | null);
+    max_occupancy?: (number | null);
     status?: (RoomStatus | null);
     description?: (string | null);
     room_photo_paths?: (Array<(string)> | null);
@@ -984,6 +1065,50 @@ export type BookingsActualCheckOutData = {
 export type BookingsActualCheckOutResponse = (BookingPublic);
 
 export type BookingsActualCheckOutError = (HTTPValidationError);
+
+export type BookingsGetBookingGuestsData = {
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsGetBookingGuestsResponse = (BookingGuestsPublic);
+
+export type BookingsGetBookingGuestsError = (HTTPValidationError);
+
+export type BookingsAddGuestToBookingData = {
+    body: BookingGuestCreate;
+    path: {
+        booking_id: string;
+    };
+};
+
+export type BookingsAddGuestToBookingResponse = (BookingGuestPublic);
+
+export type BookingsAddGuestToBookingError = (HTTPValidationError);
+
+export type BookingsUpdateBookingGuestData = {
+    body: BookingGuestUpdate;
+    path: {
+        booking_id: string;
+        guest_id: string;
+    };
+};
+
+export type BookingsUpdateBookingGuestResponse = (BookingGuestPublic);
+
+export type BookingsUpdateBookingGuestError = (HTTPValidationError);
+
+export type BookingsRemoveGuestFromBookingData = {
+    path: {
+        booking_id: string;
+        guest_id: string;
+    };
+};
+
+export type BookingsRemoveGuestFromBookingResponse = (Message);
+
+export type BookingsRemoveGuestFromBookingError = (HTTPValidationError);
 
 export type CampaignsReadCampaignsData = {
     query?: {

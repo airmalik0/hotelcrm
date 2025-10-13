@@ -14,7 +14,7 @@ interface AnalyticsParams {
   district?: string
   include_cancelled?: boolean
   group_by?: string
-  customer_type?: 'new' | 'returning'
+  customer_type?: "new" | "returning"
   tags?: string[]
 }
 
@@ -27,7 +27,7 @@ export async function getDashboardMetrics(params: AnalyticsParams) {
         serialize: (p: Record<string, any>) => {
           const usp = new URLSearchParams()
           Object.entries(p).forEach(([key, value]) => {
-            if (value === undefined || value === null || value === '') return
+            if (value === undefined || value === null || value === "") return
             if (Array.isArray(value)) {
               value.forEach((v) => usp.append(key, String(v)))
             } else {
@@ -51,7 +51,7 @@ export async function getRevenueDetails(params: AnalyticsParams) {
         serialize: (p: Record<string, any>) => {
           const usp = new URLSearchParams()
           Object.entries(p).forEach(([key, value]) => {
-            if (value === undefined || value === null || value === '') return
+            if (value === undefined || value === null || value === "") return
             if (Array.isArray(value)) {
               value.forEach((v) => usp.append(key, String(v)))
             } else {
@@ -75,7 +75,7 @@ export async function getOccupancyDetails(params: AnalyticsParams) {
         serialize: (p: Record<string, any>) => {
           const usp = new URLSearchParams()
           Object.entries(p).forEach(([key, value]) => {
-            if (value === undefined || value === null || value === '') return
+            if (value === undefined || value === null || value === "") return
             if (Array.isArray(value)) {
               value.forEach((v) => usp.append(key, String(v)))
             } else {
@@ -99,7 +99,7 @@ export async function getCustomerAnalytics(params: AnalyticsParams) {
         serialize: (p: Record<string, any>) => {
           const usp = new URLSearchParams()
           Object.entries(p).forEach(([key, value]) => {
-            if (value === undefined || value === null || value === '') return
+            if (value === undefined || value === null || value === "") return
             if (Array.isArray(value)) {
               value.forEach((v) => usp.append(key, String(v)))
             } else {
@@ -191,7 +191,10 @@ export async function getSeasonalTrends(years = 2) {
   return data
 }
 
-export async function getDistrictRevenue(params: { date_from: string; date_to: string }) {
+export async function getDistrictRevenue(params: {
+  date_from: string
+  date_to: string
+}) {
   const { data } = await apiClient.get<AnalyticsResponse>(
     "/api/v1/analytics/geo_revenue",
     {

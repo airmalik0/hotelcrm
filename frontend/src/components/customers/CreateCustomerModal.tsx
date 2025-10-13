@@ -1,5 +1,9 @@
 import { createCustomer } from "@/api/customers"
-import type { CustomerCreate, CustomerPublic, District } from "@/client/types.gen"
+import type {
+  CustomerCreate,
+  CustomerPublic,
+  District,
+} from "@/client/types.gen"
 import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { ImageUpload } from "@/components/ui/ImageUpload"
 import { handleFormError, showSuccess } from "@/utils/error-handling"

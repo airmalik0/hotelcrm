@@ -1,8 +1,8 @@
 import { deleteRoom, getRooms } from "@/api/rooms"
 import type { RoomPublic, RoomStatus } from "@/client/types.gen"
 import { RoomCard } from "@/components/room/RoomCard"
-import { RoomCreateModal } from "@/components/room/RoomCreateModal"
 import { RoomCategoryManagerModal } from "@/components/room/RoomCategoryManagerModal"
+import { RoomCreateModal } from "@/components/room/RoomCreateModal"
 import { RoomEditModal } from "@/components/room/RoomEditModal"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
@@ -272,7 +272,10 @@ export function RoomList() {
                   new Map(
                     (data?.data || [])
                       .filter((r) => r.category?.id)
-                      .map((r) => [r.category!.id, r.category!.name || "Unnamed"]),
+                      .map((r) => [
+                        r.category!.id,
+                        r.category!.name || "Unnamed",
+                      ]),
                   ).entries(),
                 ).map(([id, name]) => (
                   <option key={id} value={id}>

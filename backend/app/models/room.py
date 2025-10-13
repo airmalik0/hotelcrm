@@ -20,6 +20,7 @@ class RoomBase(SQLModel):
     floor: int = Field(ge=1, le=20)
     category_id: uuid.UUID | None = Field(default=None, foreign_key="roomcategory.id", index=True)
     price_per_night: float = Field(gt=0, le=100000)
+    max_occupancy: int = Field(default=2, ge=1, le=10, description="Maximum number of guests allowed in the room")
     status: RoomStatus = Field(default=RoomStatus.AVAILABLE)
     description: str | None = Field(default=None, max_length=500)
     room_photo_paths: list[str] = Field(default_factory=list, sa_column=Column(JSON))
@@ -63,6 +64,7 @@ class RoomUpdate(SQLModel):
     floor: int | None = None
     category_id: uuid.UUID | None = None
     price_per_night: float | None = None
+    max_occupancy: int | None = Field(default=None, ge=1, le=10)
     status: RoomStatus | None = None
     description: str | None = None
     room_photo_paths: list[str] | None = None

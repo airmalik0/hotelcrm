@@ -1,13 +1,13 @@
 import type {
   Message,
+  RoomCategoriesPublic,
+  RoomCategoryCreate,
+  RoomCategoryPublic,
   RoomCreate,
   RoomPublic,
   RoomStatus,
   RoomUpdate,
   RoomsPublic,
-  RoomCategoriesPublic,
-  RoomCategoryCreate,
-  RoomCategoryPublic,
 } from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
@@ -98,7 +98,9 @@ export async function updateRoomStatus(
 }
 
 // Room Categories API
-export async function getRoomCategories(params?: RoomParams): Promise<RoomCategoriesPublic> {
+export async function getRoomCategories(
+  params?: RoomParams,
+): Promise<RoomCategoriesPublic> {
   const response = await apiClient.get<RoomCategoriesPublic>(
     "/api/v1/rooms/categories",
     {

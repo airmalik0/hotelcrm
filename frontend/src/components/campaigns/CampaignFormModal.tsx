@@ -383,13 +383,18 @@ export function CampaignFormModal({
                     className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="30"
                   />
-                  <span className="text-sm text-neutral-500">min: 5, max: 1440 (24h)</span>
+                  <span className="text-sm text-neutral-500">
+                    min: 5, max: 1440 (24h)
+                  </span>
                 </div>
                 {errors.trigger_frequency_minutes && (
-                  <p className="text-red-500 text-sm mt-1">{errors.trigger_frequency_minutes}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.trigger_frequency_minutes}
+                  </p>
                 )}
                 <p className="text-sm text-neutral-500 mt-1">
-                  Campaign will check for new matching customers every {formData.trigger_frequency_minutes || 30} minutes
+                  Campaign will check for new matching customers every{" "}
+                  {formData.trigger_frequency_minutes || 30} minutes
                 </p>
               </div>
             )}
@@ -414,12 +419,17 @@ export function CampaignFormModal({
               />
               <div className="flex justify-between mt-1">
                 <p className="text-xs text-neutral-500">
-                  Available variables: {"{first_name}"}, {"{last_name}"}, {"{full_name}"}
+                  Available variables: {"{first_name}"}, {"{last_name}"},{" "}
+                  {"{full_name}"}
                 </p>
-                <p className="text-xs text-neutral-500">{formData.message_template.length}/1000</p>
+                <p className="text-xs text-neutral-500">
+                  {formData.message_template.length}/1000
+                </p>
               </div>
               {errors.message_template && (
-                <p className="text-red-500 text-sm mt-1">{errors.message_template}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.message_template}
+                </p>
               )}
             </div>
           </div>
@@ -455,7 +465,9 @@ export function CampaignFormModal({
                         onChange={(e) =>
                           handleCriteriaChange(
                             "min_age",
-                            e.target.value ? Number.parseInt(e.target.value) : undefined,
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : undefined,
                           )
                         }
                         min={0}
@@ -471,7 +483,9 @@ export function CampaignFormModal({
                         onChange={(e) =>
                           handleCriteriaChange(
                             "max_age",
-                            e.target.value ? Number.parseInt(e.target.value) : undefined,
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : undefined,
                           )
                         }
                         min={0}
@@ -481,22 +495,33 @@ export function CampaignFormModal({
                       />
                     </div>
                   </div>
-                  {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
+                  {errors.age && (
+                    <p className="text-red-500 text-sm mt-1">{errors.age}</p>
+                  )}
                 </div>
 
                 {/* Districts */}
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Districts</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Districts
+                  </label>
                   <div className="grid grid-cols-3 gap-2">
                     {DISTRICTS.map((district) => (
-                      <label key={district} className="flex items-center gap-2 cursor-pointer">
+                      <label
+                        key={district}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                         <input
                           type="checkbox"
-                          checked={criteria.districts?.includes(district) || false}
+                          checked={
+                            criteria.districts?.includes(district) || false
+                          }
                           onChange={() => handleDistrictToggle(district)}
                           className="rounded border-neutral-300 dark:border-neutral-500"
                         />
-                        <span className="text-sm text-neutral-700 dark:text-neutral-300">{formatDistrictDisplay(district)}</span>
+                        <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                          {formatDistrictDisplay(district)}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -505,14 +530,18 @@ export function CampaignFormModal({
                 {/* Spending and Visit */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Minimum Total Spent</label>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Minimum Total Spent
+                    </label>
                     <input
                       type="number"
                       value={criteria.min_total_spent || ""}
                       onChange={(e) =>
                         handleCriteriaChange(
                           "min_total_spent",
-                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
+                          e.target.value
+                            ? Number.parseFloat(e.target.value)
+                            : undefined,
                         )
                       }
                       min={0}
@@ -521,14 +550,18 @@ export function CampaignFormModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Days Since Last Visit</label>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Days Since Last Visit
+                    </label>
                     <input
                       type="number"
                       value={criteria.days_since_last_visit || ""}
                       onChange={(e) =>
                         handleCriteriaChange(
                           "days_since_last_visit",
-                          e.target.value ? Number.parseInt(e.target.value) : undefined,
+                          e.target.value
+                            ? Number.parseInt(e.target.value)
+                            : undefined,
                         )
                       }
                       min={0}
@@ -546,18 +579,36 @@ export function CampaignFormModal({
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Active Filters</p>
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Active Filters
+                        </p>
                         <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-0.5">
-                          {criteria.min_age && <li>• Minimum age: {criteria.min_age}</li>}
-                          {criteria.max_age && <li>• Maximum age: {criteria.max_age}</li>}
-                          {criteria.districts && criteria.districts.length > 0 && (
-                            <li>• Districts: {criteria.districts.map((d) => formatDistrictDisplay(d)).join(", ")}</li>
+                          {criteria.min_age && (
+                            <li>• Minimum age: {criteria.min_age}</li>
                           )}
+                          {criteria.max_age && (
+                            <li>• Maximum age: {criteria.max_age}</li>
+                          )}
+                          {criteria.districts &&
+                            criteria.districts.length > 0 && (
+                              <li>
+                                • Districts:{" "}
+                                {criteria.districts
+                                  .map((d) => formatDistrictDisplay(d))
+                                  .join(", ")}
+                              </li>
+                            )}
                           {criteria.min_total_spent && (
-                            <li>• Minimum spent: {criteria.min_total_spent.toLocaleString()}</li>
+                            <li>
+                              • Minimum spent:{" "}
+                              {criteria.min_total_spent.toLocaleString()}
+                            </li>
                           )}
                           {criteria.days_since_last_visit && (
-                            <li>• Not visited for: {criteria.days_since_last_visit} days</li>
+                            <li>
+                              • Not visited for:{" "}
+                              {criteria.days_since_last_visit} days
+                            </li>
                           )}
                           {/* Room types summary removed */}
                         </ul>

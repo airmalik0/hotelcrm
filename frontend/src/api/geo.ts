@@ -18,7 +18,7 @@ export async function getRegions(countryCode: string): Promise<RegionOption[]> {
 
 export async function getDistricts(
   regionCode: string,
-  coreOnly: boolean = true,
+  coreOnly = true,
 ): Promise<DistrictOption[]> {
   const { data } = await apiClient.get<DistrictOption[]>(
     "/api/v1/geo/districts",
@@ -26,6 +26,3 @@ export async function getDistricts(
   )
   return data
 }
-
-
-

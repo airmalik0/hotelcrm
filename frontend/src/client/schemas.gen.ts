@@ -419,6 +419,265 @@ export const BookingCreateSchema = {
     title: 'BookingCreate'
 } as const;
 
+export const BookingGuestCreateSchema = {
+    properties: {
+        customer_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Id'
+        },
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        passport_photo_path: {
+            type: 'string',
+            title: 'Passport Photo Path'
+        },
+        origin_city: {
+            type: 'string',
+            title: 'Origin City'
+        },
+        phone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Phone'
+        },
+        email: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email'
+        },
+        is_primary: {
+            type: 'boolean',
+            title: 'Is Primary',
+            default: false
+        },
+        save_to_customers: {
+            type: 'boolean',
+            title: 'Save To Customers',
+            description: 'If true, create/link customer in database',
+            default: false
+        }
+    },
+    type: 'object',
+    required: ['passport_photo_path', 'origin_city'],
+    title: 'BookingGuestCreate',
+    description: 'Schema for creating a booking guest.'
+} as const;
+
+export const BookingGuestPublicSchema = {
+    properties: {
+        customer_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Id',
+            description: 'Reference to customer if saved to database'
+        },
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name',
+            description: 'Guest full name (required if not linked to customer)'
+        },
+        passport_photo_path: {
+            type: 'string',
+            maxLength: 500,
+            title: 'Passport Photo Path',
+            description: 'Path to passport photo (required for all guests)'
+        },
+        origin_city: {
+            type: 'string',
+            maxLength: 100,
+            title: 'Origin City',
+            description: 'City/country where guest is from (required)'
+        },
+        phone: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Phone'
+        },
+        email: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email'
+        },
+        is_primary: {
+            type: 'boolean',
+            title: 'Is Primary',
+            description: 'True if this is the primary guest (booking holder)',
+            default: false
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        booking_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Booking Id'
+        },
+        added_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Added At'
+        },
+        customer_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Name'
+        }
+    },
+    type: 'object',
+    required: ['passport_photo_path', 'origin_city', 'id', 'booking_id', 'added_at'],
+    title: 'BookingGuestPublic',
+    description: 'Public schema for booking guest (API responses).'
+} as const;
+
+export const BookingGuestUpdateSchema = {
+    properties: {
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        passport_photo_path: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Passport Photo Path'
+        },
+        origin_city: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Origin City'
+        },
+        phone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Phone'
+        },
+        email: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    title: 'BookingGuestUpdate',
+    description: 'Schema for updating a booking guest.'
+} as const;
+
+export const BookingGuestsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/BookingGuestPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'BookingGuestsPublic',
+    description: 'List of booking guests.'
+} as const;
+
 export const BookingPublicSchema = {
     properties: {
         customer_id: {
@@ -544,6 +803,14 @@ export const BookingPublicSchema = {
             },
             type: 'array',
             title: 'Payment Adjustments'
+        },
+        guests: {
+            items: {
+                '$ref': '#/components/schemas/BookingGuestPublic'
+            },
+            type: 'array',
+            title: 'Guests',
+            description: 'List of guests in this booking'
         }
     },
     type: 'object',
@@ -1987,6 +2254,14 @@ export const RoomCreateSchema = {
             exclusiveMinimum: 0,
             title: 'Price Per Night'
         },
+        max_occupancy: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 1,
+            title: 'Max Occupancy',
+            description: 'Maximum number of guests allowed in the room',
+            default: 2
+        },
         status: {
             '$ref': '#/components/schemas/RoomStatus',
             default: 'available'
@@ -2047,6 +2322,14 @@ export const RoomPublicSchema = {
             maximum: 100000,
             exclusiveMinimum: 0,
             title: 'Price Per Night'
+        },
+        max_occupancy: {
+            type: 'integer',
+            maximum: 10,
+            minimum: 1,
+            title: 'Max Occupancy',
+            description: 'Maximum number of guests allowed in the room',
+            default: 2
         },
         status: {
             '$ref': '#/components/schemas/RoomStatus',
@@ -2149,6 +2432,19 @@ export const RoomUpdateSchema = {
                 }
             ],
             title: 'Price Per Night'
+        },
+        max_occupancy: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 10,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Occupancy'
         },
         status: {
             anyOf: [

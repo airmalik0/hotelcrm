@@ -337,15 +337,17 @@ class PDFReportService:
         filters_lines = []
         if filters.room_id and filters.room_id != "all":
             # Resolve room number from room_id
-            from app.models import Room
             from sqlmodel import select
+
+            from app.models import Room
             room = session.exec(select(Room).where(Room.id == filters.room_id)).first()
             room_label = f"Room {room.number}" if room else filters.room_id
             filters_lines.append(f"Room: {room_label}")
         if filters.category_id:
             # Resolve category name from category_id
-            from app.models import RoomCategory
             from sqlmodel import select
+
+            from app.models import RoomCategory
             category = session.exec(select(RoomCategory).where(RoomCategory.id == filters.category_id)).first()
             category_label = category.name if category else filters.category_id
             filters_lines.append(f"Category: {category_label}")

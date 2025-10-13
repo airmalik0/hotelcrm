@@ -7,6 +7,7 @@ import {
   getBookings,
   modifyBookingDates,
   modifyBookingDiscount,
+  removeGuestFromBooking,
   updateBooking,
 } from "@/api/bookings"
 import { getRooms, updateRoomStatus } from "@/api/rooms"
@@ -16,6 +17,8 @@ import type {
   DateModificationRequest,
   RoomChangeRequest,
 } from "@/client/types.gen"
+import { AddGuestModal } from "@/components/guests/AddGuestModal"
+import { GuestList } from "@/components/guests/GuestList"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
 import { isRoomAvailable } from "@/utils/booking-grid"
@@ -82,6 +85,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   const [dateModification, setDateModification] =
     useState<DateModificationRequest>({})
   const [selectedNewRoom, setSelectedNewRoom] = useState<string>("")
+  const [showAddGuestModal, setShowAddGuestModal] = useState(false)
+  const [removingGuestId, setRemovingGuestId] = useState<string | null>(null)
 
   // Form state for editing
   const [formData, setFormData] = useState<{
@@ -643,6 +648,41 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     checkOutMutation.mutate(booking.id)
   }
 
+  // Remove guest mutation
+  const removeGuestMutation = useMutation({
+    mutationFn: ({
+      bookingId,
+      guestId,
+    }: { bookingId: string; guestId: string }) =>
+      removeGuestFromBooking(bookingId, guestId),
+    onSuccess: () => {
+      // Invalidate booking to refresh guests list
+      queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+      showSuccess("Guest removed successfully!")
+      setRemovingGuestId(null)
+    },
+    onError: (error) => {
+      showError(error, "Failed to remove guest")
+      setRemovingGuestId(null)
+    },
+  })
+
+  const handleRemoveGuest = async (guestId: string) => {
+    if (!booking) return
+
+    const confirmed = await confirm({
+      title: "Remove Guest",
+      message: "Are you sure you want to remove this guest from the booking?",
+      confirmText: "Remove Guest",
+      variant: "danger",
+    })
+
+    if (confirmed) {
+      setRemovingGuestId(guestId)
+      removeGuestMutation.mutate({ bookingId: booking.id, guestId })
+    }
+  }
+
   if (!isOpen || !bookingId) return null
 
   const getStatusBadge = (status?: string) => {
@@ -833,7 +873,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
                             return filteredRooms.map((room) => (
                               <option key={room.id} value={room.id}>
-                                {room.room_number} - {room.category?.name || "Uncategorized"} ($
+                                {room.room_number} -{" "}
+                                {room.category?.name || "Uncategorized"} ($
                                 {room.price_per_night}/night)
                                 {room.status !== "available" &&
                                   ` [${room.status}]`}
@@ -917,7 +958,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         Room:
                       </span>
                       <span className="ml-2 font-medium text-neutral-900 dark:text-white">
-                        {booking.room?.room_number} - {booking.room?.category?.name || "Uncategorized"}
+                        {booking.room?.room_number} -{" "}
+                        {booking.room?.category?.name || "Uncategorized"}
                       </span>
                     </div>
                     <div>
@@ -1356,6 +1398,27 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               )}
             </div>
 
+            {/* Guests in Room */}
+            {booking.guests && (
+              <div className="mb-6">
+                <GuestList
+                  guests={booking.guests}
+                  onAddGuest={() => setShowAddGuestModal(true)}
+                  onRemoveGuest={handleRemoveGuest}
+                  removingGuestId={removingGuestId}
+                  maxOccupancy={booking.room?.max_occupancy}
+                  showAddButton={
+                    booking.status !== "checked_out" &&
+                    booking.status !== "cancelled"
+                  }
+                  showRemoveButtons={
+                    booking.status !== "checked_out" &&
+                    booking.status !== "cancelled"
+                  }
+                />
+              </div>
+            )}
+
             {/* Payment Info */}
             <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4 mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -1788,6 +1851,21 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           </div>
         )}
       </div>
+
+      {/* Add Guest Modal */}
+      {showAddGuestModal && booking && (
+        <AddGuestModal
+          isOpen={showAddGuestModal}
+          onClose={() => setShowAddGuestModal(false)}
+          bookingId={booking.id}
+          onSuccess={() => {
+            setShowAddGuestModal(false)
+            // Invalidate booking to refresh guests list
+            queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
+          }}
+        />
+      )}
+
       {ConfirmDialog}
     </div>
   )

@@ -2,8 +2,8 @@
 CRUD operations for analytics.
 All SQL queries for analytics data retrieval.
 """
-from datetime import datetime, timedelta, timezone
 import math
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, cast
 
 from sqlalchemy import cast as sa_cast
@@ -11,8 +11,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Session, func, or_, select
 
 from app.models import Booking, BookingStatus, Customer, Room
-from app.models.common import RoomStatus
 from app.models.analytics import AgeGroup, AnalyticsFilter
+from app.models.common import RoomStatus
 from app.models.room_category import RoomCategory
 
 

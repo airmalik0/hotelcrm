@@ -1,11 +1,16 @@
 import type {
   BookingCreate,
+  BookingGuestCreate,
+  BookingGuestPublic,
+  BookingGuestUpdate,
+  BookingGuestsPublic,
   BookingPublic,
   BookingStatus,
   BookingUpdate,
   BookingsPublic,
   DateModificationRequest,
   DiscountModificationRequest,
+  Message,
   PaymentAdjustmentResponse,
   RoomChangeRequest,
 } from "@/client/types.gen"
@@ -119,6 +124,49 @@ export async function modifyBookingDiscount(
   const response = await apiClient.put<PaymentAdjustmentResponse>(
     `/api/v1/bookings/${id}/modify-discount`,
     data,
+  )
+  return response.data
+}
+
+// Booking Guests API
+export async function getBookingGuests(
+  bookingId: string,
+): Promise<BookingGuestsPublic> {
+  const response = await apiClient.get<BookingGuestsPublic>(
+    `/api/v1/bookings/${bookingId}/guests`,
+  )
+  return response.data
+}
+
+export async function addGuestToBooking(
+  bookingId: string,
+  data: BookingGuestCreate,
+): Promise<BookingGuestPublic> {
+  const response = await apiClient.post<BookingGuestPublic>(
+    `/api/v1/bookings/${bookingId}/guests`,
+    data,
+  )
+  return response.data
+}
+
+export async function updateBookingGuest(
+  bookingId: string,
+  guestId: string,
+  data: BookingGuestUpdate,
+): Promise<BookingGuestPublic> {
+  const response = await apiClient.put<BookingGuestPublic>(
+    `/api/v1/bookings/${bookingId}/guests/${guestId}`,
+    data,
+  )
+  return response.data
+}
+
+export async function removeGuestFromBooking(
+  bookingId: string,
+  guestId: string,
+): Promise<Message> {
+  const response = await apiClient.delete<Message>(
+    `/api/v1/bookings/${bookingId}/guests/${guestId}`,
   )
   return response.data
 }

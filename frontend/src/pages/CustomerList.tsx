@@ -197,7 +197,8 @@ export function CustomerList() {
                         <td className="py-3 px-2 text-neutral-600 dark:text-neutral-300">
                           {(() => {
                             const parts: string[] = []
-                            if (customer.country_code) parts.push(customer.country_code)
+                            if (customer.country_code)
+                              parts.push(customer.country_code)
                             if (customer.region) parts.push(customer.region)
                             if (customer.district) parts.push(customer.district)
                             return parts.length ? parts.join(" · ") : "N/A"

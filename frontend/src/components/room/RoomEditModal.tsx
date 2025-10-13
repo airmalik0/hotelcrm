@@ -1,10 +1,10 @@
 import { getRoomCategories, updateRoom } from "@/api/rooms"
 import type {
+  RoomCategoriesPublic,
+  RoomCategoryPublic,
   RoomPublic,
   RoomStatus,
   RoomUpdate,
-  RoomCategoriesPublic,
-  RoomCategoryPublic,
 } from "@/client/types.gen"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
@@ -241,7 +241,9 @@ export function RoomEditModal({
                 </div>
                 <select
                   id="category_id"
-                  value={(formData as any).category_id ?? room.category?.id ?? ""}
+                  value={
+                    (formData as any).category_id ?? room.category?.id ?? ""
+                  }
                   onChange={(e) =>
                     setFormData({
                       ...formData,

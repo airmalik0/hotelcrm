@@ -1,5 +1,9 @@
 import { updateCustomer } from "@/api/customers"
-import type { CustomerPublic, CustomerUpdate, District } from "@/client/types.gen"
+import type {
+  CustomerPublic,
+  CustomerUpdate,
+  District,
+} from "@/client/types.gen"
 import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { TagsInput } from "@/components/ui/TagsInput"
 import { safeParseDate } from "@/utils/date-helpers"
@@ -33,8 +37,10 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     date_of_birth: customer.date_of_birth
       ? safeParseDate(customer.date_of_birth).toISOString().split("T")[0]
       : "",
-    country_code: customer.country_code || (customer.district ? "UZ" : undefined),
-    region: customer.region || (customer.district ? "TASHKENT_CITY" : undefined),
+    country_code:
+      customer.country_code || (customer.district ? "UZ" : undefined),
+    region:
+      customer.region || (customer.district ? "TASHKENT_CITY" : undefined),
     district: customer.district || undefined,
     notes: customer.notes || "",
     tags: customer.tags || [],
@@ -263,11 +269,16 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
                   // Keep undefined for untouched, but allow nulls for clearing
                   country_code: geo.country_code,
                   region: geo.region,
-                  district: (geo.district as District | null),
+                  district: geo.district as District | null,
                 }))
                 // Clear field error linkage if any
                 if (errors.district || errors.region || errors.country_code) {
-                  setErrors((prev) => ({ ...prev, district: undefined, region: undefined, country_code: undefined }))
+                  setErrors((prev) => ({
+                    ...prev,
+                    district: undefined,
+                    region: undefined,
+                    country_code: undefined,
+                  }))
                 }
               }}
             />

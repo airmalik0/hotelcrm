@@ -169,7 +169,7 @@ export function MarketingCampaigns() {
 
   const getStatusBadge = (status?: CampaignStatus) => {
     if (!status) {
-      console.log('[getStatusBadge] returning null badge')
+      console.log("[getStatusBadge] returning null badge")
       return <span className="text-neutral-400">-</span>
     }
 
@@ -183,8 +183,6 @@ export function MarketingCampaigns() {
         "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200",
       archived: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
     }
-
-  
 
     return (
       <span
@@ -239,8 +237,6 @@ export function MarketingCampaigns() {
 
   const campaigns = data?.data || []
   const totalCount = data?.count || 0
-
-  
 
   return (
     <div className="space-y-6">
@@ -363,8 +359,10 @@ export function MarketingCampaigns() {
                         </div>
                       </div>
                     </td>
-                  <td className="px-6 py-4">{getTypeBadge(campaign.type)}</td>
-                    <td className="px-6 py-4">{getStatusBadge(campaign.status)}</td>
+                    <td className="px-6 py-4">{getTypeBadge(campaign.type)}</td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(campaign.status)}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-neutral-900 dark:text-white">
                         <div>Sent: {campaign.total_sent ?? 0}</div>

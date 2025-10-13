@@ -8,7 +8,7 @@ import {
   getRevenueDetails,
   getSeasonalTrends,
 } from "@/api/analytics"
-import { getRooms, getRoomCategories } from "@/api/rooms"
+import { getRoomCategories, getRooms } from "@/api/rooms"
 import type {
   AnalyticsExportRequest,
   DashboardMetrics,
@@ -20,6 +20,7 @@ import {
   RoomPerformanceChart,
   SeasonalTrendsChart,
 } from "@/components/analytics/AnalyticsCharts"
+import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { useAuth } from "@/contexts/AuthContext"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
@@ -40,7 +41,6 @@ import {
   XCircle,
 } from "lucide-react"
 import { useState } from "react"
-import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 
 type AnalyticsTab =
   | "overview"
@@ -64,7 +64,11 @@ export function Analytics() {
   const [selectedRoomId, setSelectedRoomId] = useState<string>("all")
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all")
   // New filters: location, customer type, tags
-  const [geoFilter, setGeoFilter] = useState<GeoValue>({ country_code: null, region: null, district: null })
+  const [geoFilter, setGeoFilter] = useState<GeoValue>({
+    country_code: null,
+    region: null,
+    district: null,
+  })
   const [customerType, setCustomerType] = useState<"" | "new" | "returning">("")
   const [tags, setTags] = useState<string[]>([])
 
@@ -119,7 +123,8 @@ export function Analytics() {
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        category_id:
+          selectedCategoryId !== "all" ? selectedCategoryId : undefined,
         country_code: geoFilter.country_code || undefined,
         region: geoFilter.region || undefined,
         district: geoFilter.district || undefined,
@@ -154,7 +159,8 @@ export function Analytics() {
         date_to: `${dateRange.to}T23:59:59`,
         group_by: "day",
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        category_id:
+          selectedCategoryId !== "all" ? selectedCategoryId : undefined,
         country_code: geoFilter.country_code || undefined,
         region: geoFilter.region || undefined,
         district: geoFilter.district || undefined,
@@ -183,7 +189,8 @@ export function Analytics() {
         date_from: `${dateRange.from}T00:00:00`,
         date_to: `${dateRange.to}T23:59:59`,
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        category_id:
+          selectedCategoryId !== "all" ? selectedCategoryId : undefined,
         country_code: geoFilter.country_code || undefined,
         region: geoFilter.region || undefined,
         district: geoFilter.district || undefined,
@@ -254,7 +261,8 @@ export function Analytics() {
         date_from: new Date(`${dateRange.from}T00:00:00`),
         date_to: new Date(`${dateRange.to}T23:59:59`),
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        category_id:
+          selectedCategoryId !== "all" ? selectedCategoryId : undefined,
         country_code: geoFilter.country_code || undefined,
         region: geoFilter.region || undefined,
         district: geoFilter.district || undefined,
@@ -272,7 +280,8 @@ export function Analytics() {
         date_from: new Date(`${dateRange.from}T00:00:00`),
         date_to: new Date(`${dateRange.to}T23:59:59`),
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
-        category_id: selectedCategoryId !== "all" ? selectedCategoryId : undefined,
+        category_id:
+          selectedCategoryId !== "all" ? selectedCategoryId : undefined,
         country_code: geoFilter.country_code || undefined,
         region: geoFilter.region || undefined,
         district: geoFilter.district || undefined,
@@ -511,7 +520,7 @@ export function Analytics() {
                 <option value="all">All Rooms</option>
                 {roomsData?.data.map((room) => (
                   <option key={room.id} value={room.id}>
-                    Room {room.room_number} ({room.category?.name || '-'})
+                    Room {room.room_number} ({room.category?.name || "-"})
                   </option>
                 ))}
               </select>
@@ -529,8 +538,14 @@ export function Analytics() {
             </div>
             {/* Customer type */}
             <div className="flex-1 min-w-[160px]">
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Customer Type</label>
-              <select value={customerType} onChange={(e) => setCustomerType(e.target.value as any)} className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Customer Type
+              </label>
+              <select
+                value={customerType}
+                onChange={(e) => setCustomerType(e.target.value as any)}
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
                 <option value="">All</option>
                 <option value="new">New</option>
                 <option value="returning">Returning</option>
@@ -538,14 +553,32 @@ export function Analytics() {
             </div>
             {/* Tags (comma-separated) */}
             <div className="flex-1 min-w-[220px]">
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Tags</label>
-              <input value={tags.join(',')} onChange={(e) => setTags(e.target.value.split(',').map(t => t.trim()).filter(Boolean))} placeholder="vip,loyal" className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Tags
+              </label>
+              <input
+                value={tags.join(",")}
+                onChange={(e) =>
+                  setTags(
+                    e.target.value
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean),
+                  )
+                }
+                placeholder="vip,loyal"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
             </div>
             <button
               onClick={() => {
                 setSelectedRoomId("all")
                 setSelectedCategoryId("all")
-                setGeoFilter({ country_code: null, region: null, district: null })
+                setGeoFilter({
+                  country_code: null,
+                  region: null,
+                  district: null,
+                })
                 setCustomerType("")
                 setTags([])
               }}

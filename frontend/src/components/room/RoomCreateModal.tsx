@@ -183,35 +183,35 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
 
               {/* Room Type removed */}
 
-          {/* Category */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label
-                htmlFor="category_id"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-              >
-                Category
-              </label>
-            </div>
-            <select
-              id="category_id"
-              value={formData.category_id || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  category_id: e.target.value ? e.target.value : null,
-                })
-              }
-              className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-            >
-              <option value="">No category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              {/* Category */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    htmlFor="category_id"
+                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  >
+                    Category
+                  </label>
+                </div>
+                <select
+                  id="category_id"
+                  value={formData.category_id || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      category_id: e.target.value ? e.target.value : null,
+                    })
+                  }
+                  className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
+                >
+                  <option value="">No category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* Price per Night */}
               <div>
