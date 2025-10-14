@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
 from sqlmodel import Session, and_, or_, select
+from app.core.config import settings
+from app.services.sms_provider import EskizSendError, get_eskiz_client
 
 from app.core.exceptions import (
     AlreadyExistsError,
@@ -485,24 +487,77 @@ class CampaignService:
         # Personalize message template
         message = self._personalize_message(campaign.message_template, customer)
 
-        # Mock SMS sending (real SMS integration would go here)
+        # Test mode: create mock record
         if test_mode:
-            status = SMSStatus.MOCK
-            error_message = None
-        else:
-            # In real implementation, integrate with SMS provider here
-            # For now, simulate successful sending
-            status = SMSStatus.SENT
-            error_message = None
+            return self._create_sms_history_record(
+                campaign=campaign,
+                customer=customer,
+                message=message,
+                status=SMSStatus.MOCK,
+                error_message=None,
+                test_mode=True,
+            )
 
-        # Create SMS history record
+        # Real provider flow when enabled
+        if settings.ESKIZ_ENABLED:
+            # Create initial PENDING record to get user_sms_id
+            sms_record = self._create_sms_history_record(
+                campaign=campaign,
+                customer=customer,
+                message=message,
+                status=SMSStatus.PENDING,
+                error_message=None,
+                test_mode=False,
+            )
+
+            # Use our record id as correlation id for webhook
+            sms_record.user_sms_id = str(sms_record.id)
+            self.session.add(sms_record)
+            self.session.flush()
+
+            try:
+                client = get_eskiz_client()
+                callback_url = str(settings.ESKIZ_CALLBACK_URL) if settings.ESKIZ_CALLBACK_URL else None
+                response = client.send_sms(
+                    mobile_phone=customer.phone,
+                    message=message,
+                    from_sender=settings.ESKIZ_FROM,
+                    user_sms_id=sms_record.user_sms_id,
+                    callback_url=callback_url,
+                )
+
+                # Best-effort extraction of provider message id
+                provider_message_id = (
+                    response.get("message_id")
+                    or response.get("id")
+                    or (response.get("data", {}) if isinstance(response.get("data"), dict) else {}).get("message_id")
+                )
+
+                sms_record.provider = "eskiz"
+                sms_record.provider_message_id = str(provider_message_id) if provider_message_id else None
+                sms_record.provider_status = "ACCEPTED"
+                sms_record.status = SMSStatus.SENT
+
+                self.session.add(sms_record)
+                self.session.flush()
+                return sms_record
+            except Exception as e:  # noqa: BLE001
+                sms_record.provider = "eskiz"
+                sms_record.provider_status = "FAILED"
+                sms_record.status = SMSStatus.FAILED
+                sms_record.error_message = str(e)
+                self.session.add(sms_record)
+                self.session.flush()
+                return sms_record
+
+        # Fallback: simulate sent when provider disabled
         return self._create_sms_history_record(
             campaign=campaign,
             customer=customer,
             message=message,
-            status=status,
-            error_message=error_message,
-            test_mode=test_mode
+            status=SMSStatus.SENT,
+            error_message=None,
+            test_mode=False,
         )
 
     def _create_sms_history_record(

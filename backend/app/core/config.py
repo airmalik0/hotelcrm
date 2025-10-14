@@ -71,6 +71,15 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_USERNAME: str = "admin"
     FIRST_SUPERUSER_PASSWORD: str
 
+    # Eskiz SMS provider configuration
+    ESKIZ_ENABLED: bool = False
+    ESKIZ_BASE_URL: AnyUrl | None = None  # e.g., https://notify.eskiz.uz
+    ESKIZ_EMAIL: str | None = None
+    ESKIZ_PASSWORD: str | None = None
+    ESKIZ_FROM: str | None = None  # Short code/sender id
+    ESKIZ_CALLBACK_URL: AnyUrl | None = None  # Public webhook endpoint
+    ESKIZ_WEBHOOK_SECRET: str | None = None  # Shared secret for webhook validation
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

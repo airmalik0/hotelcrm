@@ -234,6 +234,24 @@ class CRUDSMSHistory(CRUDBase[SMSHistory, dict, dict]):  # Using dict for Create
 
         return list(session.exec(statement).all())
 
+    def get_by_provider_message_id(
+        self,
+        session: Session,
+        *,
+        provider_message_id: str
+    ) -> SMSHistory | None:
+        statement = select(SMSHistory).where(SMSHistory.provider_message_id == provider_message_id)
+        return session.exec(statement).first()
+
+    def get_by_user_sms_id(
+        self,
+        session: Session,
+        *,
+        user_sms_id: str
+    ) -> SMSHistory | None:
+        statement = select(SMSHistory).where(SMSHistory.user_sms_id == user_sms_id)
+        return session.exec(statement).first()
+
     def get_recent_sms(
         self,
         session: Session,

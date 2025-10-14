@@ -209,7 +209,7 @@ class AuditService:
             audit_log_public = AuditLogPublic(
                 id=audit_log.id,
                 user_id=audit_log.user_id,
-                user_name=user.username,
+                username=user.username,
                 action=audit_log.action,
                 entity_type=audit_log.entity_type,
                 entity_id=audit_log.entity_id,
@@ -247,7 +247,7 @@ class AuditService:
         return AuditLogPublic(
             id=audit_log.id,
             user_id=audit_log.user_id,
-            user_name=user.username,
+            username=user.username,
             action=audit_log.action,
             entity_type=audit_log.entity_type,
             entity_id=audit_log.entity_id,

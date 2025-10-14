@@ -119,6 +119,13 @@ class SMSHistory(SQLModel, table=True):
     # Error details
     error_message: str | None = Field(default=None, max_length=500)
 
+    # Provider metadata
+    provider: str | None = Field(default="eskiz", max_length=50, index=True)
+    provider_message_id: str | None = Field(default=None, max_length=100, index=True)
+    provider_status: str | None = Field(default=None, max_length=50)
+    error_code: str | None = Field(default=None, max_length=50)
+    user_sms_id: str | None = Field(default=None, max_length=100, index=True)
+
     # Relationships
     campaign: Optional["Campaign"] = Relationship(back_populates="sms_history")
     customer: Optional["Customer"] = Relationship()

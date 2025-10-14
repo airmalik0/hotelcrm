@@ -113,6 +113,25 @@ from .expense import (
     ExpensePublic,
     ExpensesPublic,
 )
+from .bot_user import (
+    BotUserBase,
+    BotUser,
+    BotUserCreate,
+    BotUserUpdate,
+    BotUserPublic,
+    BotUsersPublic,
+)
+from .customer_inquiry import (
+    InquiryType,
+    InquiryStatus,
+    InquiryPriority,
+    CustomerInquiryBase,
+    CustomerInquiry,
+    CustomerInquiryCreate,
+    CustomerInquiryUpdate,
+    CustomerInquiryPublic,
+    CustomerInquiriesPublic,
+)
 
 from sqlmodel import SQLModel  # re-export for Alembic
 
