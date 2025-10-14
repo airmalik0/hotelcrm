@@ -5,6 +5,7 @@ import type {
   BookingGuestPublic,
   CustomerPublic,
 } from "@/client/types.gen"
+import { GeoSelect } from "@/components/ui/GeoSelect"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Check, Search, UserPlus, X } from "lucide-react"
@@ -33,19 +34,21 @@ export const AddGuestModal = memo(function AddGuestModal({
     useState<CustomerPublic | null>(null)
 
   const [formData, setFormData] = useState<{
-    full_name: string
+    first_name: string
+    last_name: string
     passport_photo_path: string | null
-    origin_city: string
     phone: string
-    email: string
-    save_to_customers: boolean
+    country_code: string | null
+    region: string | null
+    district: string | null
   }>({
-    full_name: "",
+    first_name: "",
+    last_name: "",
     passport_photo_path: null,
-    origin_city: "",
     phone: "",
-    email: "",
-    save_to_customers: true,
+    country_code: null,
+    region: null,
+    district: null,
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -99,12 +102,13 @@ export const AddGuestModal = memo(function AddGuestModal({
     setSearchQuery("")
     setSelectedCustomer(null)
     setFormData({
-      full_name: "",
+      first_name: "",
+      last_name: "",
       passport_photo_path: null,
-      origin_city: "",
       phone: "",
-      email: "",
-      save_to_customers: true,
+      country_code: null,
+      region: null,
+      district: null,
     })
     setErrors({})
   }
@@ -112,12 +116,13 @@ export const AddGuestModal = memo(function AddGuestModal({
   const handleSelectCustomer = (customer: CustomerPublic) => {
     setSelectedCustomer(customer)
     setFormData({
-      full_name: `${customer.first_name} ${customer.last_name}`,
+      first_name: "",
+      last_name: "",
       passport_photo_path: customer.passport_photo_path,
-      origin_city: customer.region || "",
       phone: customer.phone || "",
-      email: "",
-      save_to_customers: false, // Already in database
+      country_code: customer.country_code || null,
+      region: customer.region || null,
+      district: customer.district || null,
     })
   }
 
@@ -128,17 +133,21 @@ export const AddGuestModal = memo(function AddGuestModal({
     // Validation
     const newErrors: Record<string, string> = {}
 
-    if (mode === "new" && !formData.full_name.trim()) {
-      newErrors.full_name = "Full name is required"
+    if (
+      mode === "new" &&
+      (!formData.first_name.trim() || !formData.last_name.trim())
+    ) {
+      if (!formData.first_name.trim())
+        newErrors.first_name = "First name is required"
+      if (!formData.last_name.trim())
+        newErrors.last_name = "Last name is required"
     }
 
     if (!formData.passport_photo_path) {
       newErrors.passport_photo_path = "Passport photo is required"
     }
 
-    if (!formData.origin_city.trim()) {
-      newErrors.origin_city = "Origin city is required"
-    }
+    // Geo validation: allow empty overall, but if country is non-UZ, region/district must be empty (handled in backend)
 
     if (formData.phone?.trim()) {
       const digitsOnly = formData.phone.replace(/\D/g, "")
@@ -154,14 +163,15 @@ export const AddGuestModal = memo(function AddGuestModal({
 
     const guestData: BookingGuestCreate = {
       customer_id: selectedCustomer?.id || null,
-      full_name: formData.full_name.trim() || null,
+      first_name: selectedCustomer ? null : formData.first_name.trim() || null,
+      last_name: selectedCustomer ? null : formData.last_name.trim() || null,
       passport_photo_path: formData.passport_photo_path!,
-      origin_city: formData.origin_city.trim(),
       phone: formData.phone.trim() || null,
-      email: formData.email.trim() || null,
-      save_to_customers: mode === "new" && formData.save_to_customers,
+      country_code: formData.country_code,
+      region: formData.region,
+      district: formData.district as any,
       is_primary: false,
-    }
+    } as any
 
     addGuestMutation.mutate(guestData)
   }
@@ -298,33 +308,61 @@ export const AddGuestModal = memo(function AddGuestModal({
           {/* Guest Details Form (shown when customer selected or in new mode) */}
           {(mode === "new" || selectedCustomer) && (
             <div className="space-y-4">
-              {/* Full Name */}
-              {mode === "new" && (
-                <div>
-                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                    Full Name <span className="text-danger-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        full_name: e.target.value,
-                      }))
-                    }
-                    className={`w-full px-3 py-2 border ${
-                      errors.full_name
-                        ? "border-danger-500 focus:ring-danger-500"
-                        : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
-                    } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                    placeholder="Enter full name"
-                  />
-                  {errors.full_name && (
-                    <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-                      {errors.full_name}
-                    </p>
-                  )}
+              {/* First/Last Name */}
+              {mode === "new" && !selectedCustomer && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
+                      First Name <span className="text-danger-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.first_name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          first_name: e.target.value,
+                        }))
+                      }
+                      className={`w-full px-3 py-2 border ${
+                        errors.first_name
+                          ? "border-danger-500 focus:ring-danger-500"
+                          : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
+                      } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                      placeholder="Enter first name"
+                    />
+                    {errors.first_name && (
+                      <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                        {errors.first_name}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
+                      Last Name <span className="text-danger-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.last_name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          last_name: e.target.value,
+                        }))
+                      }
+                      className={`w-full px-3 py-2 border ${
+                        errors.last_name
+                          ? "border-danger-500 focus:ring-danger-500"
+                          : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
+                      } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                      placeholder="Enter last name"
+                    />
+                    {errors.last_name && (
+                      <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                        {errors.last_name}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -352,33 +390,22 @@ export const AddGuestModal = memo(function AddGuestModal({
                 error={errors.passport_photo_path}
               />
 
-              {/* Origin City */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                  Origin City <span className="text-danger-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.origin_city}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      origin_city: e.target.value,
-                    }))
-                  }
-                  className={`w-full px-3 py-2 border ${
-                    errors.origin_city
-                      ? "border-danger-500 focus:ring-danger-500"
-                      : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
-                  } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                  placeholder="e.g., Tashkent, Moscow, Dubai"
-                />
-                {errors.origin_city && (
-                  <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-                    {errors.origin_city}
-                  </p>
-                )}
-              </div>
+              {/* Location (Geo) */}
+              <GeoSelect
+                value={{
+                  country_code: formData.country_code,
+                  region: formData.region,
+                  district: formData.district,
+                }}
+                onChange={(geo) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    country_code: geo.country_code,
+                    region: geo.region,
+                    district: geo.district,
+                  }))
+                }
+              />
 
               {/* Phone */}
               <div>
@@ -405,49 +432,9 @@ export const AddGuestModal = memo(function AddGuestModal({
                 )}
               </div>
 
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="guest@example.com"
-                />
-              </div>
+              {/* Email removed by requirement */}
 
-              {/* Save to Customers Checkbox */}
-              {mode === "new" && (
-                <div className="flex items-start gap-3 p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="save_to_customers"
-                    checked={formData.save_to_customers}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        save_to_customers: e.target.checked,
-                      }))
-                    }
-                    className="mt-0.5 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
-                  />
-                  <label
-                    htmlFor="save_to_customers"
-                    className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer"
-                  >
-                    Save to customer database for future bookings
-                    <span className="block text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                      If checked, this guest will be added to your customer list
-                      and can be selected for future bookings
-                    </span>
-                  </label>
-                </div>
-              )}
+              {/* Save to Customers removed by requirement */}
             </div>
           )}
 

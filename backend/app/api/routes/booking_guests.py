@@ -41,11 +41,10 @@ def add_guest_to_booking(
     """
     Add a guest to a booking.
 
-    - **customer_id**: Optional - link to existing customer
-    - **full_name**: Required if not linking to customer
-    - **passport_photo_path**: Required - upload via /api/v1/files/upload/passport first
-    - **origin_city**: Required - where the guest is from
-    - **save_to_customers**: If true, creates/links customer in database
+    - **customer_id**: Optional — link to existing customer
+    - **first_name/last_name**: Required if not linking to customer
+    - **passport_photo_path**: Required — upload via /api/v1/files/upload/passport first
+    - **location**: Uses the same geo fields as customers (`country_code`, `region`, `district`)
     """
     service = BookingGuestService(session)
     guest = service.add_guest_to_booking(booking_id, guest_in)

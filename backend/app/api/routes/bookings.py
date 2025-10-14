@@ -535,11 +535,10 @@ def add_guest_to_booking(
     """
     Add a guest to a booking.
 
-    - **customer_id**: Optional - link to existing customer
-    - **full_name**: Required if not linking to customer
-    - **passport_photo_path**: Required - upload via /api/v1/files/upload/passport first
-    - **origin_city**: Required - where the guest is from
-    - **save_to_customers**: If true, creates/links customer in database
+    - **customer_id**: Optional — link to existing customer
+    - **first_name/last_name**: Required if not linking to customer
+    - **passport_photo_path**: Required — upload via /api/v1/files/upload/passport first
+    - **location**: Uses the same geo fields as customers (`country_code`, `region`, `district`)
     """
     service = BookingGuestService(session)
     guest = service.add_guest_to_booking(booking_id, guest_in)
@@ -551,7 +550,8 @@ def add_guest_to_booking(
         action="added_guest",
         entity_type="booking",
         entity_id=booking_id,
-        description=f"Added guest: {guest.full_name or 'N/A'}",
+        entity_name=get_entity_name("booking", crud_booking.get(session, id=booking_id)),
+        description=f"Added guest: {(guest.first_name + ' ' + guest.last_name) if (guest.first_name and guest.last_name) else (guest.first_name or guest.last_name or 'N/A')}",
     )
 
     session.commit()
@@ -583,7 +583,8 @@ def update_booking_guest(
         action="updated_guest",
         entity_type="booking_guest",
         entity_id=guest_id,
-        description=f"Updated guest: {guest.full_name or 'N/A'}",
+        entity_name=(guest.first_name or "") + (" " if guest.first_name and guest.last_name else "") + (guest.last_name or ""),
+        description=f"Updated guest: {(guest.first_name + ' ' + guest.last_name) if (guest.first_name and guest.last_name) else (guest.first_name or guest.last_name or 'N/A')}",
     )
 
     session.commit()
@@ -618,7 +619,8 @@ def remove_guest_from_booking(
         action="removed_guest",
         entity_type="booking",
         entity_id=booking_id,
-        description=f"Removed guest: {guest.full_name or 'N/A'}",
+        entity_name=get_entity_name("booking", crud_booking.get(session, id=booking_id)),
+        description=f"Removed guest: {(guest.first_name + ' ' + guest.last_name) if (guest.first_name and guest.last_name) else (guest.first_name or guest.last_name or 'N/A')}",
     )
 
     service.remove_guest_from_booking(guest_id)

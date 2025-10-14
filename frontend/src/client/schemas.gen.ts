@@ -433,7 +433,7 @@ export const BookingGuestCreateSchema = {
             ],
             title: 'Customer Id'
         },
-        full_name: {
+        first_name: {
             anyOf: [
                 {
                     type: 'string'
@@ -442,15 +442,54 @@ export const BookingGuestCreateSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Full Name'
+            title: 'First Name'
+        },
+        last_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Name'
         },
         passport_photo_path: {
             type: 'string',
             title: 'Passport Photo Path'
         },
-        origin_city: {
-            type: 'string',
-            title: 'Origin City'
+        country_code: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Country Code'
+        },
+        region: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Region'
+        },
+        district: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/District'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         phone: {
             anyOf: [
@@ -463,31 +502,14 @@ export const BookingGuestCreateSchema = {
             ],
             title: 'Phone'
         },
-        email: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Email'
-        },
         is_primary: {
             type: 'boolean',
             title: 'Is Primary',
             default: false
-        },
-        save_to_customers: {
-            type: 'boolean',
-            title: 'Save To Customers',
-            description: 'If true, create/link customer in database',
-            default: false
         }
     },
     type: 'object',
-    required: ['passport_photo_path', 'origin_city'],
+    required: ['passport_photo_path'],
     title: 'BookingGuestCreate',
     description: 'Schema for creating a booking guest.'
 } as const;
@@ -507,18 +529,29 @@ export const BookingGuestPublicSchema = {
             title: 'Customer Id',
             description: 'Reference to customer if saved to database'
         },
-        full_name: {
+        first_name: {
             anyOf: [
                 {
                     type: 'string',
-                    maxLength: 200
+                    maxLength: 100
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Full Name',
-            description: 'Guest full name (required if not linked to customer)'
+            title: 'First Name'
+        },
+        last_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Name'
         },
         passport_photo_path: {
             type: 'string',
@@ -526,11 +559,40 @@ export const BookingGuestPublicSchema = {
             title: 'Passport Photo Path',
             description: 'Path to passport photo (required for all guests)'
         },
-        origin_city: {
-            type: 'string',
-            maxLength: 100,
-            title: 'Origin City',
-            description: 'City/country where guest is from (required)'
+        country_code: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Country Code',
+            description: 'ISO-3166 alpha-2 code (e.g., UZ)'
+        },
+        region: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Region'
+        },
+        district: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/District'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         phone: {
             anyOf: [
@@ -543,18 +605,6 @@ export const BookingGuestPublicSchema = {
                 }
             ],
             title: 'Phone'
-        },
-        email: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Email'
         },
         is_primary: {
             type: 'boolean',
@@ -590,14 +640,14 @@ export const BookingGuestPublicSchema = {
         }
     },
     type: 'object',
-    required: ['passport_photo_path', 'origin_city', 'id', 'booking_id', 'added_at'],
+    required: ['passport_photo_path', 'id', 'booking_id', 'added_at'],
     title: 'BookingGuestPublic',
     description: 'Public schema for booking guest (API responses).'
 } as const;
 
 export const BookingGuestUpdateSchema = {
     properties: {
-        full_name: {
+        first_name: {
             anyOf: [
                 {
                     type: 'string'
@@ -606,7 +656,18 @@ export const BookingGuestUpdateSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Full Name'
+            title: 'First Name'
+        },
+        last_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Name'
         },
         passport_photo_path: {
             anyOf: [
@@ -619,7 +680,7 @@ export const BookingGuestUpdateSchema = {
             ],
             title: 'Passport Photo Path'
         },
-        origin_city: {
+        country_code: {
             anyOf: [
                 {
                     type: 'string'
@@ -628,7 +689,28 @@ export const BookingGuestUpdateSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Origin City'
+            title: 'Country Code'
+        },
+        region: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Region'
+        },
+        district: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/District'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         phone: {
             anyOf: [
@@ -640,17 +722,6 @@ export const BookingGuestUpdateSchema = {
                 }
             ],
             title: 'Phone'
-        },
-        email: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Email'
         }
     },
     type: 'object',

@@ -1,6 +1,6 @@
 import type { BookingGuestPublic } from "@/client/types.gen"
 import { getFileUrl } from "@/utils/file-urls"
-import { Crown, Mail, MapPin, Phone, Trash2 } from "lucide-react"
+import { Crown, MapPin, Phone, Trash2 } from "lucide-react"
 
 interface GuestCardProps {
   guest: BookingGuestPublic
@@ -44,7 +44,9 @@ export function GuestCard({
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-50 truncate">
-                {guest.full_name || "Guest"}
+                {guest.first_name || guest.last_name
+                  ? `${guest.first_name ?? ""}${guest.first_name && guest.last_name ? " " : ""}${guest.last_name ?? ""}`
+                  : "Guest"}
               </h3>
               {guest.is_primary && (
                 <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-50 dark:bg-warning-600/20 text-warning-600 dark:text-warning-400">
@@ -68,11 +70,15 @@ export function GuestCard({
           </div>
 
           <div className="space-y-2">
-            {/* Origin City */}
+            {/* Location */}
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="w-4 h-4 text-neutral-500 dark:text-neutral-400 flex-shrink-0" />
               <span className="text-neutral-700 dark:text-neutral-300 truncate">
-                {guest.origin_city}
+                {guest.country_code || guest.region || guest.district
+                  ? [guest.country_code, guest.region, guest.district]
+                      .filter(Boolean)
+                      .join(" • ")
+                  : ""}
               </span>
             </div>
 
@@ -86,15 +92,7 @@ export function GuestCard({
               </div>
             )}
 
-            {/* Email */}
-            {guest.email && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="w-4 h-4 text-neutral-500 dark:text-neutral-400 flex-shrink-0" />
-                <span className="text-neutral-700 dark:text-neutral-300 truncate">
-                  {guest.email}
-                </span>
-              </div>
-            )}
+            {/* Email removed by requirement */}
           </div>
         </div>
       </div>

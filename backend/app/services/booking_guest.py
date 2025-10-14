@@ -5,14 +5,12 @@ from sqlmodel import Session
 from app.core.exceptions import BusinessRuleViolation, NotFoundError
 from app.crud.booking import booking as crud_booking
 from app.crud.booking_guest import booking_guest as crud_booking_guest
-from app.crud.customer import customer as crud_customer
 from app.crud.room import room as crud_room
 from app.models.booking_guest import (
     BookingGuest,
     BookingGuestCreate,
     BookingGuestUpdate,
 )
-from app.models.customer import CustomerCreate
 
 
 class BookingGuestService:
@@ -56,62 +54,25 @@ class BookingGuestService:
                 f"current guests: {current_guest_count}"
             )
 
-        # Handle customer creation/linking if save_to_customers is True
+        # Determine linkage to existing customer if provided
         customer_id = guest_data.customer_id
-        if guest_data.save_to_customers and not customer_id:
-            # Create new customer from guest data
-            if not guest_data.full_name:
-                raise BusinessRuleViolation(
-                    "Full name is required when saving guest to customers database"
-                )
 
-            # Split full name into first and last
-            name_parts = guest_data.full_name.strip().split(maxsplit=1)
-            first_name = name_parts[0]
-            last_name = name_parts[1] if len(name_parts) > 1 else ""
+        # If no customer_id, require inline first_name and last_name (validated at schema level as well)
+        if not customer_id and (not guest_data.first_name or not guest_data.last_name):
+            raise BusinessRuleViolation("first_name and last_name are required when customer_id is not provided")
 
-            # Check if customer with this phone already exists
-            existing_customer = None
-            if guest_data.phone:
-                existing_customer = crud_customer.get_by_phone(
-                    self.session, phone=guest_data.phone
-                )
-
-            if existing_customer:
-                customer_id = existing_customer.id
-            else:
-                # Create new customer
-                customer_create = CustomerCreate(
-                    first_name=first_name,
-                    last_name=last_name,
-                    phone=guest_data.phone,
-                    passport_photo_path=guest_data.passport_photo_path,
-                    region=guest_data.origin_city,  # Store origin_city as region
-                )
-                new_customer = crud_customer.create(self.session, obj_in=customer_create)
-                self.session.flush()
-                customer_id = new_customer.id
-
-        # Create booking guest
-        guest_db_data = {
-            "booking_id": booking_id,
-            "customer_id": customer_id,
-            "full_name": guest_data.full_name,
-            "passport_photo_path": guest_data.passport_photo_path,
-            "origin_city": guest_data.origin_city,
-            "phone": guest_data.phone,
-            "email": guest_data.email,
-            "is_primary": guest_data.is_primary,
-        }
-
-        # Use model_validate to create the model properly
-        from app.models.booking_guest import BookingGuestBase
-        guest_base = BookingGuestBase(**{k: v for k, v in guest_db_data.items() if k not in ["booking_id", "customer_id"]})
-
+        # Create booking guest directly to avoid duplicate kwargs (customer_id)
         guest = BookingGuest(
             booking_id=booking_id,
             customer_id=customer_id,
-            **guest_base.model_dump()
+            first_name=guest_data.first_name,
+            last_name=guest_data.last_name,
+            passport_photo_path=guest_data.passport_photo_path,
+            country_code=guest_data.country_code,
+            region=guest_data.region,
+            district=guest_data.district,
+            phone=guest_data.phone,
+            is_primary=guest_data.is_primary,
         )
 
         self.session.add(guest)

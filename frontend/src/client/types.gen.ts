@@ -101,16 +101,14 @@ export type BookingCreate = {
  */
 export type BookingGuestCreate = {
     customer_id?: (string | null);
-    full_name?: (string | null);
+    first_name?: (string | null);
+    last_name?: (string | null);
     passport_photo_path: string;
-    origin_city: string;
+    country_code?: (string | null);
+    region?: (string | null);
+    district?: (District | null);
     phone?: (string | null);
-    email?: (string | null);
     is_primary?: boolean;
-    /**
-     * If true, create/link customer in database
-     */
-    save_to_customers?: boolean;
 };
 
 /**
@@ -121,20 +119,19 @@ export type BookingGuestPublic = {
      * Reference to customer if saved to database
      */
     customer_id?: (string | null);
-    /**
-     * Guest full name (required if not linked to customer)
-     */
-    full_name?: (string | null);
+    first_name?: (string | null);
+    last_name?: (string | null);
     /**
      * Path to passport photo (required for all guests)
      */
     passport_photo_path: string;
     /**
-     * City/country where guest is from (required)
+     * ISO-3166 alpha-2 code (e.g., UZ)
      */
-    origin_city: string;
+    country_code?: (string | null);
+    region?: (string | null);
+    district?: (District | null);
     phone?: (string | null);
-    email?: (string | null);
     /**
      * True if this is the primary guest (booking holder)
      */
@@ -157,11 +154,13 @@ export type BookingGuestsPublic = {
  * Schema for updating a booking guest.
  */
 export type BookingGuestUpdate = {
-    full_name?: (string | null);
+    first_name?: (string | null);
+    last_name?: (string | null);
     passport_photo_path?: (string | null);
-    origin_city?: (string | null);
+    country_code?: (string | null);
+    region?: (string | null);
+    district?: (District | null);
     phone?: (string | null);
-    email?: (string | null);
 };
 
 /**

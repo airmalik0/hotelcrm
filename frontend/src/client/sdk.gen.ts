@@ -483,11 +483,10 @@ export const bookingsGetBookingGuests = <ThrowOnError extends boolean = false>(o
  * Add Guest To Booking
  * Add a guest to a booking.
  *
- * - **customer_id**: Optional - link to existing customer
- * - **full_name**: Required if not linking to customer
- * - **passport_photo_path**: Required - upload via /api/v1/files/upload/passport first
- * - **origin_city**: Required - where the guest is from
- * - **save_to_customers**: If true, creates/links customer in database
+ * - **customer_id**: Optional — link to existing customer
+ * - **first_name/last_name**: Required if not linking to customer
+ * - **passport_photo_path**: Required — upload via /api/v1/files/upload/passport first
+ * - **location**: Uses the same geo fields as customers (`country_code`, `region`, `district`)
  */
 export const bookingsAddGuestToBooking = <ThrowOnError extends boolean = false>(options: OptionsLegacyParser<BookingsAddGuestToBookingData, ThrowOnError>) => {
     return (options?.client ?? client).post<BookingsAddGuestToBookingResponse, BookingsAddGuestToBookingError, ThrowOnError>({

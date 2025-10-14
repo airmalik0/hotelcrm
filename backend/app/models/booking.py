@@ -12,7 +12,7 @@ from .customer import CustomerPublic
 from .room import RoomPublic
 
 if TYPE_CHECKING:
-    from .booking_guest import BookingGuest
+    from .booking_guest import BookingGuest, BookingGuestPublic
     from .customer import Customer
     from .room import Room
 else:

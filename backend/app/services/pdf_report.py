@@ -341,7 +341,7 @@ class PDFReportService:
 
             from app.models import Room
             room = session.exec(select(Room).where(Room.id == filters.room_id)).first()
-            room_label = f"Room {room.number}" if room else filters.room_id
+            room_label = f"Room {room.room_number}" if room else filters.room_id
             filters_lines.append(f"Room: {room_label}")
         if filters.category_id:
             # Resolve category name from category_id
