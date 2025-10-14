@@ -143,8 +143,16 @@ export const AddGuestModal = memo(function AddGuestModal({
         newErrors.last_name = "Last name is required"
     }
 
-    if (!formData.passport_photo_path) {
-      newErrors.passport_photo_path = "Passport photo is required"
+    // Passport requirement:
+    // - For new guest: require uploaded passport (form field)
+    // - For existing customer: require that customer already has passport on file
+    if (!selectedCustomer) {
+      if (!formData.passport_photo_path) {
+        newErrors.passport_photo_path = "Passport photo is required"
+      }
+    } else if (!selectedCustomer.passport_photo_path) {
+      newErrors.general =
+        "Selected customer has no passport photo. Please add it to the customer profile or switch to 'Add New Guest' to upload."
     }
 
     // Geo validation: allow empty overall, but if country is non-UZ, region/district must be empty (handled in backend)
@@ -165,7 +173,9 @@ export const AddGuestModal = memo(function AddGuestModal({
       customer_id: selectedCustomer?.id || null,
       first_name: selectedCustomer ? null : formData.first_name.trim() || null,
       last_name: selectedCustomer ? null : formData.last_name.trim() || null,
-      passport_photo_path: formData.passport_photo_path!,
+      passport_photo_path: selectedCustomer
+        ? (selectedCustomer.passport_photo_path as string)
+        : (formData.passport_photo_path as string),
       phone: formData.phone.trim() || null,
       country_code: formData.country_code,
       region: formData.region,
@@ -305,77 +315,76 @@ export const AddGuestModal = memo(function AddGuestModal({
             </div>
           )}
 
-          {/* Guest Details Form (shown when customer selected or in new mode) */}
-          {(mode === "new" || selectedCustomer) && (
+          {/* Selected customer info (no extra fields needed) */}
+          {selectedCustomer && (
+            <div className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg mb-6">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Selected customer:{" "}
+                <span className="font-medium text-neutral-900 dark:text-neutral-50">
+                  {selectedCustomer.first_name} {selectedCustomer.last_name}
+                </span>
+              </p>
+            </div>
+          )}
+
+          {/* Guest Details Form (new guest only) */}
+          {mode === "new" && (
             <div className="space-y-4">
               {/* First/Last Name */}
-              {mode === "new" && !selectedCustomer && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                      First Name <span className="text-danger-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.first_name}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          first_name: e.target.value,
-                        }))
-                      }
-                      className={`w-full px-3 py-2 border ${
-                        errors.first_name
-                          ? "border-danger-500 focus:ring-danger-500"
-                          : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
-                      } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                      placeholder="Enter first name"
-                    />
-                    {errors.first_name && (
-                      <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-                        {errors.first_name}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                      Last Name <span className="text-danger-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.last_name}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          last_name: e.target.value,
-                        }))
-                      }
-                      className={`w-full px-3 py-2 border ${
-                        errors.last_name
-                          ? "border-danger-500 focus:ring-danger-500"
-                          : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
-                      } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                      placeholder="Enter last name"
-                    />
-                    {errors.last_name && (
-                      <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
-                        {errors.last_name}
-                      </p>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
+                    First Name <span className="text-danger-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.first_name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        first_name: e.target.value,
+                      }))
+                    }
+                    className={`w-full px-3 py-2 border ${
+                      errors.first_name
+                        ? "border-danger-500 focus:ring-danger-500"
+                        : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
+                    } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                    placeholder="Enter first name"
+                  />
+                  {errors.first_name && (
+                    <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                      {errors.first_name}
+                    </p>
+                  )}
                 </div>
-              )}
-
-              {selectedCustomer && (
-                <div className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Selected customer:{" "}
-                    <span className="font-medium text-neutral-900 dark:text-neutral-50">
-                      {selectedCustomer.first_name} {selectedCustomer.last_name}
-                    </span>
-                  </p>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
+                    Last Name <span className="text-danger-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.last_name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        last_name: e.target.value,
+                      }))
+                    }
+                    className={`w-full px-3 py-2 border ${
+                      errors.last_name
+                        ? "border-danger-500 focus:ring-danger-500"
+                        : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
+                    } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
+                    placeholder="Enter last name"
+                  />
+                  {errors.last_name && (
+                    <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
+                      {errors.last_name}
+                    </p>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Passport Photo */}
               <PassportUploadInput
@@ -431,10 +440,6 @@ export const AddGuestModal = memo(function AddGuestModal({
                   </p>
                 )}
               </div>
-
-              {/* Email removed by requirement */}
-
-              {/* Save to Customers removed by requirement */}
             </div>
           )}
 

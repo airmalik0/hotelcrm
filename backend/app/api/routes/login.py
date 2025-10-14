@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core import security
+from app.core.audit import log_audit
 from app.core.config import settings
 from app.core.exceptions import AuthenticationError
 from app.core.rate_limit import RateLimits, limiter
@@ -32,6 +33,18 @@ def login_access_token(
         raise AuthenticationError("Incorrect username or password")
     elif not user.is_active:
         raise AuthenticationError("Incorrect username or password")
+
+    # Log successful login
+    log_audit(
+        session=session,
+        user=user,
+        action="logged_in",
+        entity_type="user",
+        entity_id=user.id,
+        entity_name=f"User {user.username}",
+    )
+    session.commit()
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(

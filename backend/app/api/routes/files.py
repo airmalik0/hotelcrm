@@ -7,7 +7,8 @@ from typing import Any
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
-from app.api.deps import CurrentUser
+from app.api.deps import CurrentUser, SessionDep
+from app.core.audit import log_audit
 from app.core.exceptions import (
     BusinessRuleViolation,
     ConfigurationError,
@@ -62,7 +63,8 @@ def generate_unique_filename(original_filename: str) -> str:
 @router.post("/upload/passport")
 async def upload_passport(
     *,
-    current_user: CurrentUser,  # noqa: ARG001
+    session: SessionDep,
+    current_user: CurrentUser,
     file: UploadFile = File(...),
 ) -> JSONResponse:
     """
@@ -107,6 +109,25 @@ async def upload_passport(
 
     # Return the relative path that should be saved in the database
     relative_path = f"passports/{unique_filename}"
+
+    # Log audit for file upload
+    # Create a pseudo-UUID for the file (since files don't have database IDs)
+    file_pseudo_id = uuid.uuid5(uuid.NAMESPACE_URL, relative_path)
+
+    log_audit(
+        session=session,
+        user=current_user,
+        action="uploaded_file",
+        entity_type="file",
+        entity_id=file_pseudo_id,
+        entity_name=f"Passport: {unique_filename}",
+        new_values={
+            "path": relative_path,
+            "filename": unique_filename,
+            "size_bytes": len(content),
+        }
+    )
+    session.commit()
 
     return JSONResponse(
         content={
@@ -174,7 +195,8 @@ async def get_file(
 @router.delete("/{file_type}/{filename}")
 async def delete_file(
     *,
-    current_user: CurrentUser,  # noqa: ARG001
+    session: SessionDep,
+    current_user: CurrentUser,
     file_type: str,
     filename: str,
 ) -> JSONResponse:
@@ -205,7 +227,30 @@ async def delete_file(
         if not file_path.exists() or not file_path.is_file():
             raise NotFoundError("File", "File not found")
 
+        # Get file size before deletion
+        file_size = file_path.stat().st_size
+
+        # Delete the file
         file_path.unlink()
+
+        # Log audit for file deletion
+        relative_path = f"{file_type}/{filename}"
+        file_pseudo_id = uuid.uuid5(uuid.NAMESPACE_URL, relative_path)
+
+        log_audit(
+            session=session,
+            user=current_user,
+            action="deleted_file",
+            entity_type="file",
+            entity_id=file_pseudo_id,
+            entity_name=f"{file_type.title()}: {filename}",
+            old_values={
+                "path": relative_path,
+                "filename": filename,
+                "size_bytes": file_size,
+            }
+        )
+        session.commit()
 
         return JSONResponse(
             content={"message": "File deleted successfully"}

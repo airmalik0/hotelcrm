@@ -75,6 +75,11 @@ def log_audit(
 
 def get_entity_name(entity_type: str, entity: Any) -> str:
     """Get human-readable name for an entity"""
+    # Handle None entity
+    if entity is None:
+        return f"{entity_type} (Unknown)"
+
+    # Handle specific entity types
     if entity_type == "booking":
         return f"Booking #{entity.id.hex[:8]} (Room {entity.room.room_number if entity.room else 'Unknown'})"
     elif entity_type == "customer":
@@ -83,8 +88,26 @@ def get_entity_name(entity_type: str, entity: Any) -> str:
         return f"Room {entity.room_number}"
     elif entity_type == "user":
         return f"User {entity.username}"
+    elif entity_type == "campaign":
+        return f"Campaign: {entity.name}" if hasattr(entity, 'name') else f"Campaign #{str(entity.id)[:8]}"
+    elif entity_type == "expense":
+        if hasattr(entity, 'description') and entity.description:
+            desc = entity.description[:50]
+            return f"Expense: {desc}{'...' if len(entity.description) > 50 else ''}"
+        return f"Expense #{str(entity.id)[:8]}"
+    elif entity_type == "expense_category":
+        return f"Expense Category: {entity.name}" if hasattr(entity, 'name') else f"Category #{str(entity.id)[:8]}"
+    elif entity_type == "room_category":
+        return f"Room Category: {entity.name}" if hasattr(entity, 'name') else f"Category #{str(entity.id)[:8]}"
+    elif entity_type == "booking_guest":
+        # Booking guests may not have both first_name and last_name
+        if hasattr(entity, 'first_name') or hasattr(entity, 'last_name'):
+            name = f"{getattr(entity, 'first_name', '') or ''} {getattr(entity, 'last_name', '') or ''}".strip()
+            return f"Guest: {name}" if name else f"Guest #{str(entity.id)[:8]}"
+        return f"Guest #{str(entity.id)[:8]}"
     else:
-        return f"{entity_type} {str(entity.id)[:8]}"
+        # Generic fallback for unknown entity types
+        return f"{entity_type.replace('_', ' ').title()} #{str(entity.id)[:8]}"
 
 
 def get_change_values(old_entity: Any, new_data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:

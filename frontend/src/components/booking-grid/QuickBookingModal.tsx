@@ -246,6 +246,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       return
     }
 
+    // Prevent booking when selected customer has no passport photo on file
+    if (!selectedCustomer.passport_photo_path) {
+      setErrors({ customer: "Selected customer has no passport photo" })
+      return
+    }
+
     // Room status validation - only MAINTENANCE prevents booking
     // OCCUPIED and CLEANING rooms can be booked for future dates
     if (activeRoom.status === "maintenance") {
@@ -397,7 +403,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               Guest
             </label>
 
-            {selectedCustomer ? (
+          {selectedCustomer ? (
               // Selected customer display
               <div className="flex items-center gap-2 p-3 border border-primary-500 dark:border-primary-600 rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <div className="flex-1">
@@ -415,6 +421,13 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       </span>
                     </div>
                   )}
+                {!selectedCustomer.passport_photo_path && (
+                  <div className="mt-2 p-2 rounded-lg bg-danger-100 dark:bg-danger-600/30 border border-danger-300 dark:border-danger-600">
+                    <p className="text-xs text-danger-700 dark:text-danger-400 font-medium">
+                      Passport photo is required to create a booking for this customer.
+                    </p>
+                  </div>
+                )}
                 </div>
                 <button
                   type="button"
@@ -807,6 +820,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               type="submit"
               disabled={
                 !selectedCustomer ||
+                !selectedCustomer?.passport_photo_path ||
                 createBookingMutation.isPending ||
                 (room || selectedRoom)?.status === "maintenance"
               }
