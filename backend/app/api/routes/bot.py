@@ -12,6 +12,7 @@ from app.crud.bot_user import bot_user as crud_bot_user
 from app.models import (
     BotUserPublic,
     BotUsersPublic,
+    BotUserUpdate,
     CustomerInquiryCreate,
     CustomerInquiryPublic,
 )
@@ -79,6 +80,21 @@ def get_session(session: SessionDep, telegram_id: int) -> Any:
     """Get bot user for active session by telegram_id"""
     service = BotUserService(session)
     return service.get_bot_user_or_404(telegram_id)
+
+
+@router.put("/sessions/{telegram_id}", response_model=BotUserPublic)
+def update_session_user(session: SessionDep, telegram_id: int, user_update: BotUserUpdate) -> Any:
+    """Update bot user for active session"""
+    service = BotUserService(session)
+
+    # Get bot_user via session
+    bot_user = service.get_bot_user_or_404(telegram_id)
+
+    # Update bot_user
+    updated_user = crud_bot_user.update(session, db_obj=bot_user, obj_in=user_update)
+    session.commit()
+    session.refresh(updated_user)
+    return updated_user
 
 
 @router.get("/users/{telegram_id}", response_model=BotUserWithContext)

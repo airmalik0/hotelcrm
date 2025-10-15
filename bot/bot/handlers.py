@@ -810,7 +810,7 @@ async def back_from_settings(message: Message, state: FSMContext):
     """Возврат из настроек в главное меню"""
     try:
         _cancel_pending_task(message.from_user.id)
-        user = await db_service.get_user_by_telegram_id(message.from_user.id)
+        user = await db_service.get_session(message.from_user.id)
         if user:
             lang = user.language
             await message.answer(
@@ -839,12 +839,20 @@ async def process_language_change(message: Message, state: FSMContext):
         selected_lang = language_map.get(text)
 
         if selected_lang:
-            # TODO: Implement language change via backend API (need update endpoint for bot_user)
-            await message.answer(
-                "⚠️ Смена языка временно недоступна. Используйте /quit и войдите заново с нужным языком.",
-                reply_markup=get_settings_keyboard(selected_lang)
-            )
-            await state.set_state(SettingsStates.in_settings)
+            # Update language via backend API
+            success = await db_service.update_user_language(message.from_user.id, selected_lang)
+            if success:
+                await message.answer(
+                    get_text('settings.language_changed', selected_lang),
+                    reply_markup=get_settings_keyboard(selected_lang)
+                )
+                await state.set_state(SettingsStates.in_settings)
+            else:
+                await message.answer(
+                    "⚠️ Ошибка при смене языка. Попробуйте позже.",
+                    reply_markup=get_settings_keyboard(selected_lang)
+                )
+                await state.set_state(SettingsStates.in_settings)
         else:
             # Если это кнопка "Изменить язык", показываем языки
             user = await db_service.get_session(message.from_user.id)

@@ -98,6 +98,17 @@ class BackendAPI:
             logger.error(f"Ошибка при logout {telegram_id}: {e}")
             return False
 
+    async def update_user_language(self, telegram_id: int, language: str) -> bool:
+        """Update language for current session's bot user"""
+        try:
+            payload = {"language": language}
+            resp = await self._request("PUT", f"/bot/sessions/{telegram_id}", json=payload)
+            logger.info(f"Language updated successfully for telegram_id {telegram_id} to {language}")
+            return 200 <= resp.status_code < 300
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении языка для telegram_id {telegram_id}: {e}")
+            return False
+
     async def create_inquiry(self, inquiry: CustomerInquiryCreate) -> bool:
         """Создать обращение от бота через API."""
         try:
