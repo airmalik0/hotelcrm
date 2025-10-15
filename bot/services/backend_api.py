@@ -114,8 +114,14 @@ class BackendAPI:
             return False
 
     async def delete_user(self, telegram_id: int) -> bool:
-        """Удаление через API пока не требуется; всегда False"""
-        return False
+        """Удалить пользователя бота через API"""
+        try:
+            resp = await self._request("DELETE", f"/bot/users/{telegram_id}")
+            logger.info(f"Удалён пользователь бота с telegram_id {telegram_id}")
+            return 200 <= resp.status_code < 300
+        except Exception as e:
+            logger.error(f"Ошибка при удалении пользователя {telegram_id}: {e}")
+            return False
 
     async def create_inquiry(self, inquiry: CustomerInquiryCreate) -> bool:
         """Создать обращение от бота через API."""
