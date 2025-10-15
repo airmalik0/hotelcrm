@@ -1,5 +1,5 @@
 """
-HTTP-клиент для работы с API бэкенда.
+HTTP-клиент для работы с API бэкенда (session-based authentication).
 """
 import logging
 from datetime import datetime
@@ -8,7 +8,7 @@ from typing import Optional
 import httpx
 
 from config import settings
-from schemas import BotUserCreate, BotUserPublic
+from schemas import BotUserPublic, SessionLoginRequest
 from schemas import CustomerInquiryCreate
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class BackendAPI:
                 else:
                     raise
 
-    async def create_or_update_user(
+    async def login(
         self,
         telegram_id: int,
         phone: str,
@@ -51,34 +51,32 @@ class BackendAPI:
         surname: Optional[str] = None,
         birthdate: Optional[datetime] = None,
         language: str = "ru",
-        business_type: str = "hotel",
     ) -> Optional[BotUserPublic]:
-        """Создать/обновить пользователя бота через API"""
+        """Login: create or get bot user + create session"""
         try:
-            user_data = BotUserCreate(
+            login_request = SessionLoginRequest(
                 telegram_id=telegram_id,
                 phone=phone,
                 name=name,
                 surname=surname,
                 birthdate=birthdate,
                 language=language,
-                business_type=business_type,
             )
-            payload = user_data.model_dump(mode="json")
-            resp = await self._request("POST", "/bot/users/upsert", json=payload)
-            logger.info("Создан/обновлён пользователь бота через API")
+            payload = login_request.model_dump(mode="json")
+            resp = await self._request("POST", "/bot/sessions/login", json=payload)
+            logger.info(f"Login successful for telegram_id {telegram_id} with phone {phone}")
             return BotUserPublic.model_validate(resp.json())
         except Exception as e:
-            logger.error(f"Ошибка при создании/обновлении пользователя: {e}")
+            logger.error(f"Ошибка при login: {e}")
             return None
 
-    async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[BotUserPublic]:
-        """Получить пользователя по Telegram ID"""
+    async def get_session(self, telegram_id: int) -> Optional[BotUserPublic]:
+        """Получить активную сессию (bot user) по telegram_id"""
         try:
-            resp = await self._request("GET", f"/bot/users/by-telegram-id", params={"telegram_id": telegram_id})
+            resp = await self._request("GET", f"/bot/sessions/{telegram_id}")
             return BotUserPublic.model_validate(resp.json())
         except Exception as e:
-            logger.error(f"Ошибка при получении пользователя по telegram_id {telegram_id}: {e}")
+            logger.error(f"Ошибка при получении сессии для telegram_id {telegram_id}: {e}")
             return None
 
     async def get_user_with_context(self, telegram_id: int) -> Optional[dict]:
@@ -90,37 +88,14 @@ class BackendAPI:
             logger.error(f"Ошибка при получении пользователя с контекстом для telegram_id {telegram_id}: {e}")
             return None
 
-    async def get_user_by_phone(self, phone: str) -> Optional[BotUserPublic]:
-        """Получить пользователя по номеру телефона (временно через список и фильтр)"""
+    async def logout(self, telegram_id: int) -> bool:
+        """Logout: delete session for telegram_id"""
         try:
-            resp = await self._request("GET", "/bot/users", params={"skip": 0, "limit": 100})
-            users = [BotUserPublic.model_validate(u) for u in resp.json().get("data", [])]
-            for u in users:
-                if u.phone == phone:
-                    return u
-            return None
-        except Exception as e:
-            logger.error(f"Ошибка при получении пользователя по телефону {phone}: {e}")
-            return None
-
-    async def update_user_language(self, telegram_id: int, language: str) -> bool:
-        """Обновить язык пользователя (через upsert)"""
-        try:
-            payload = {"telegram_id": telegram_id, "language": language}
-            resp = await self._request("POST", "/bot/users/upsert", json=payload)
-            return resp.status_code == 200
-        except Exception as e:
-            logger.error(f"Ошибка при обновлении языка пользователя {telegram_id}: {e}")
-            return False
-
-    async def delete_user(self, telegram_id: int) -> bool:
-        """Удалить пользователя бота через API"""
-        try:
-            resp = await self._request("DELETE", f"/bot/users/{telegram_id}")
-            logger.info(f"Удалён пользователь бота с telegram_id {telegram_id}")
+            resp = await self._request("DELETE", f"/bot/sessions/{telegram_id}")
+            logger.info(f"Logout successful for telegram_id {telegram_id}")
             return 200 <= resp.status_code < 300
         except Exception as e:
-            logger.error(f"Ошибка при удалении пользователя {telegram_id}: {e}")
+            logger.error(f"Ошибка при logout {telegram_id}: {e}")
             return False
 
     async def create_inquiry(self, inquiry: CustomerInquiryCreate) -> bool:

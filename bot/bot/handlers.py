@@ -467,7 +467,7 @@ async def cmd_clear(message: Message, state: FSMContext):
     try:
         user_id = message.from_user.id
         _cancel_pending_task(user_id)
-        user = await db_service.get_user_by_telegram_id(user_id)
+        user = await db_service.get_session(user_id)
 
         if not user:
             await message.answer("Вы не зарегистрированы. Используйте /start для регистрации.")
@@ -498,7 +498,7 @@ async def cmd_quit(message: Message, state: FSMContext):
     try:
         user_id = message.from_user.id
         _cancel_pending_task(user_id)
-        user = await db_service.get_user_by_telegram_id(user_id)
+        user = await db_service.get_session(user_id)
 
         if not user:
             await message.answer("Вы не зарегистрированы.")
@@ -510,15 +510,14 @@ async def cmd_quit(message: Message, state: FSMContext):
         pending_user_images.pop(user_id, None)
         _reset_photo_indices_and_counters(message.chat.id, user_id)
 
-        # Удаляем пользователя из БД
-        success = await db_service.delete_user(user_id)
+        # Logout: delete session
+        success = await db_service.logout(user_id)
 
         if success:
             await state.clear()
             await message.answer(
                 "👋 Вы успешно вышли из аккаунта.\n"
-                "Все ваши данные были удалены.\n"
-                "Используйте /start для новой регистрации.",
+                "Ваша сессия завершена. Используйте /start для входа под другим номером.",
                 reply_markup=ReplyKeyboardRemove()
             )
         else:
@@ -534,8 +533,8 @@ async def cmd_start(message: Message, state: FSMContext):
     try:
         user_id = message.from_user.id
 
-        # Проверяем, зарегистрирован ли пользователь
-        user = await db_service.get_user_by_telegram_id(user_id)
+        # Проверяем, есть ли активная сессия
+        user = await db_service.get_session(user_id)
 
         if user:
             # Пользователь уже зарегистрирован
@@ -643,14 +642,8 @@ async def process_phone_number(message: Message, state: FSMContext, phone: str):
         data = await state.get_data()
         lang = data.get('language', 'ru')
 
-        # Проверяем, не зарегистрирован ли уже пользователь с таким номером
-        existing_user = await db_service.get_user_by_phone(normalized_phone)
-        if existing_user:
-            await message.answer(
-                get_text('registration.phone_exists', lang).format(phone=normalized_phone)
-            )
-            await state.clear()
-            return
+        # Примечание: с новой архитектурой несколько telegram аккаунтов могут логиниться под одним номером
+        # Так что check на existing_user больше не нужен - просто логинимся
 
         # Сохраняем номер и отправляем SMS
         await state.update_data(phone=normalized_phone)
@@ -769,15 +762,14 @@ async def process_name(message: Message, state: FSMContext):
         # Всегда используем hotel (единственный доступный тип бизнеса)
         business_type = get_business_type('hotel')
 
-        # Создаем пользователя в БД (контекст теперь генерируется backend API)
-        user = await db_service.create_or_update_user(
+        # Login: create or get bot user + create session
+        user = await db_service.login(
             telegram_id=message.from_user.id,
             phone=data['phone'],
             name=data['name'],
             surname=None,
             birthdate=None,
-            language=lang,
-            business_type='hotel'
+            language=lang
         )
 
         if user:
@@ -847,20 +839,15 @@ async def process_language_change(message: Message, state: FSMContext):
         selected_lang = language_map.get(text)
 
         if selected_lang:
-            # Обновляем язык в БД
-            success = await db_service.update_user_language(message.from_user.id, selected_lang)
-
-            if success:
-                await message.answer(
-                    get_text('settings.language_changed', selected_lang),
-                    reply_markup=get_settings_keyboard(selected_lang)
-                )
-                await state.set_state(SettingsStates.in_settings)
-
-                # Статлес-режим: язык подхватывается при каждом вызове generate_reply
+            # TODO: Implement language change via backend API (need update endpoint for bot_user)
+            await message.answer(
+                "⚠️ Смена языка временно недоступна. Используйте /quit и войдите заново с нужным языком.",
+                reply_markup=get_settings_keyboard(selected_lang)
+            )
+            await state.set_state(SettingsStates.in_settings)
         else:
             # Если это кнопка "Изменить язык", показываем языки
-            user = await db_service.get_user_by_telegram_id(message.from_user.id)
+            user = await db_service.get_session(message.from_user.id)
             if user:
                 lang = user.language
                 # Проверяем различные версии текста кнопки на разных языках
@@ -889,7 +876,7 @@ async def process_chat_message(message: Message, state: FSMContext):
         user_id = message.from_user.id
 
         # Проверяем, не нажата ли кнопка настроек
-        user = await db_service.get_user_by_telegram_id(user_id)
+        user = await db_service.get_session(user_id)
         if user:
             lang = user.language
 
@@ -965,7 +952,7 @@ async def process_other_messages(message: Message, state: FSMContext):
 
         if current_state is None:
             # Пользователь не в процессе регистрации и не в чате
-            user = await db_service.get_user_by_telegram_id(message.from_user.id)
+            user = await db_service.get_session(message.from_user.id)
 
             if user:
                 # Пользователь зарегистрирован, переводим в режим чата
