@@ -11,7 +11,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import settings
-from core.db import init_db, close_db
 from bot.handlers import router
 from bot.notifier import init_notifier, get_notifier
 from services.sms import SMSService
@@ -84,15 +83,12 @@ async def on_startup(bot: Bot):
 async def on_shutdown(bot: Bot):
     """Действия при остановке бота"""
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Уведомляем администратора об остановке
         notifier = get_notifier()
         if notifier:
             await notifier.notify_system("🛑 Бот остановлен")
-
-        # Закрываем соединения
-        close_db()
 
         # Закрываем SMS сервис
         sms_service = SMSService()
