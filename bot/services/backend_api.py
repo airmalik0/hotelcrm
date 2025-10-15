@@ -24,7 +24,7 @@ class BackendAPI:
     async def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
         headers = kwargs.pop("headers", {})
         headers.update(self._headers)
-        max_attempts = 5
+        max_attempts = 3
         backoff = 0.5
         last_exc: Exception | None = None
         for attempt in range(1, max_attempts + 1):
@@ -33,14 +33,31 @@ class BackendAPI:
                     response = await client.request(method, url, **kwargs)
                     response.raise_for_status()
                     return response
-            except Exception as e:
+            except httpx.HTTPStatusError as e:
+                # Don't retry on client errors (4xx) - these are not transient
+                if 400 <= e.response.status_code < 500:
+                    logger.debug(f"HTTP {method} {url} returned {e.response.status_code}, not retrying")
+                    raise
+                # Retry on server errors (5xx)
                 last_exc = e
-                logger.warning(f"HTTP {method} {url} failed on attempt {attempt}/{max_attempts}: {e}")
                 if attempt < max_attempts:
+                    logger.warning(f"HTTP {method} {url} failed on attempt {attempt}/{max_attempts} (server error), retrying: {e}")
                     import asyncio
                     await asyncio.sleep(backoff)
                     backoff *= 2
                 else:
+                    logger.error(f"HTTP {method} {url} failed after {max_attempts} attempts: {e}")
+                    raise
+            except Exception as e:
+                # Retry on network errors (connection, timeout, etc.)
+                last_exc = e
+                if attempt < max_attempts:
+                    logger.warning(f"HTTP {method} {url} failed on attempt {attempt}/{max_attempts} (network error), retrying: {e}")
+                    import asyncio
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                else:
+                    logger.error(f"HTTP {method} {url} failed after {max_attempts} attempts: {e}")
                     raise
 
     async def login(
