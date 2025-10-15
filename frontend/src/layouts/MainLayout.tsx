@@ -17,6 +17,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  MessageSquare,
   Moon,
   Settings,
   Sun,
@@ -94,6 +95,13 @@ const menuItems: MenuItem[] = [
     label: "Expenses",
     icon: DollarSign,
     href: "/expenses",
+    roles: ["admin", "manager"],
+  },
+  {
+    key: "inquiries",
+    label: "Customer Inquiries",
+    icon: MessageSquare,
+    href: "/inquiries",
     roles: ["admin", "manager"],
   },
   {

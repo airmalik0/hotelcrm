@@ -6,14 +6,14 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
 from sqlmodel import Session, and_, or_, select
-from app.core.config import settings
-from app.services.sms_provider import EskizSendError, get_eskiz_client
 
+from app.core.config import settings
 from app.core.exceptions import (
     AlreadyExistsError,
     BusinessRuleViolation,
     NotFoundError,
 )
+from app.services.sms_provider import get_eskiz_client
 
 if TYPE_CHECKING:
     pass
@@ -516,13 +516,15 @@ class CampaignService:
             self.session.flush()
 
             try:
+                if not customer.phone:
+                    raise ValueError("Customer phone number is missing")
+
                 client = get_eskiz_client()
                 callback_url = str(settings.ESKIZ_CALLBACK_URL) if settings.ESKIZ_CALLBACK_URL else None
                 response = client.send_sms(
                     mobile_phone=customer.phone,
                     message=message,
                     from_sender=settings.ESKIZ_FROM,
-                    user_sms_id=sms_record.user_sms_id,
                     callback_url=callback_url,
                 )
 
@@ -543,9 +545,24 @@ class CampaignService:
                 return sms_record
             except Exception as e:  # noqa: BLE001
                 sms_record.provider = "eskiz"
-                sms_record.provider_status = "FAILED"
                 sms_record.status = SMSStatus.FAILED
-                sms_record.error_message = str(e)
+                # Preserve provider error details when available
+                try:
+                    from app.services.sms_provider import (
+                        EskizSendError,  # local import to avoid cycle at module load
+                    )
+                    if isinstance(e, EskizSendError):
+                        code = f"HTTP {e.status_code}" if e.status_code is not None else "ERROR"
+                        sms_record.provider_status = code
+                        # Truncate long error bodies
+                        detail = str(e.detail) if e.detail is not None else str(e)
+                        sms_record.error_message = (detail[:480] + "…") if len(detail) > 480 else detail
+                    else:
+                        sms_record.provider_status = "ERROR"
+                        sms_record.error_message = str(e)
+                except Exception:
+                    sms_record.provider_status = "ERROR"
+                    sms_record.error_message = str(e)
                 self.session.add(sms_record)
                 self.session.flush()
                 return sms_record

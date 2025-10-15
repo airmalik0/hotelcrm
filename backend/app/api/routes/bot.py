@@ -10,10 +10,8 @@ from pydantic import BaseModel
 from app.api.deps import SessionDep, telegram_bot_auth
 from app.crud.bot_user import bot_user as crud_bot_user
 from app.models import (
-    BotUserCreate,
     BotUserPublic,
     BotUsersPublic,
-    BotUserUpdate,
     CustomerInquiryCreate,
     CustomerInquiryPublic,
 )
@@ -37,19 +35,36 @@ class CustomerIdResponse(BaseModel):
 router = APIRouter(tags=["bot"], dependencies=[Depends(telegram_bot_auth)])
 
 
-@router.post("/users/upsert", response_model=BotUserPublic)
-def upsert_bot_user(session: SessionDep, bot_user_in: BotUserCreate) -> Any:
-    """Create or update BotUser by unique keys (telegram_id/phone)."""
-    existing = crud_bot_user.get_by_telegram_or_phone(session, telegram_id=bot_user_in.telegram_id, phone=bot_user_in.phone)
-    if existing:
-        updated = crud_bot_user.update(session, db_obj=existing, obj_in=BotUserUpdate(**bot_user_in.model_dump()))
-        session.commit()
-        session.refresh(updated)
-        return updated
-    user = crud_bot_user.create(session, obj_in=bot_user_in)
+class SessionCreateRequest(BaseModel):
+    """Request to create session (login)"""
+    telegram_id: int
+    phone: str
+    name: str
+    surname: str | None = None
+    birthdate: Any | None = None
+    language: str = "ru"
+
+
+@router.post("/sessions/login", response_model=BotUserPublic)
+def login_session(session: SessionDep, request: SessionCreateRequest) -> Any:
+    """Login: create or get bot user by phone, create session for telegram_id"""
+    service = BotUserService(session)
+
+    # Create or get bot user
+    bot_user = service.create_or_get_bot_user(
+        phone=request.phone,
+        name=request.name,
+        surname=request.surname,
+        birthdate=request.birthdate,
+        language=request.language
+    )
+
+    # Create session
+    service.create_session(telegram_id=request.telegram_id, bot_user_id=bot_user.id)
+
     session.commit()
-    session.refresh(user)
-    return user
+    session.refresh(bot_user)
+    return bot_user
 
 
 @router.get("/users", response_model=BotUsersPublic)
@@ -59,9 +74,9 @@ def list_bot_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     return BotUsersPublic(data=data, count=count)
 
 
-@router.get("/users/by-telegram-id", response_model=BotUserPublic)
-def get_user_by_telegram_id(session: SessionDep, telegram_id: int) -> Any:
-    """Get a single BotUser by telegram_id (deprecated - use /users/{telegram_id})."""
+@router.get("/sessions/{telegram_id}", response_model=BotUserPublic)
+def get_session(session: SessionDep, telegram_id: int) -> Any:
+    """Get bot user for active session by telegram_id"""
     service = BotUserService(session)
     return service.get_bot_user_or_404(telegram_id)
 
@@ -87,18 +102,18 @@ def get_customer_id_by_telegram(session: SessionDep, telegram_id: int) -> Any:
     return CustomerIdResponse(customer_id=None, found=False)
 
 
-@router.delete("/users/{telegram_id}")
-def delete_bot_user(session: SessionDep, telegram_id: int) -> Any:
-    """Delete bot user by telegram_id."""
+@router.delete("/sessions/{telegram_id}")
+def logout_session(session: SessionDep, telegram_id: int) -> Any:
+    """Logout: delete session for telegram_id"""
     service = BotUserService(session)
-    success = service.delete_bot_user(telegram_id)
+    success = service.delete_session(telegram_id)
     if not success:
         from app.core.exceptions import NotFoundError
-        raise NotFoundError("BotUser", str(telegram_id))
+        raise NotFoundError("BotSession", str(telegram_id))
 
     session.commit()
     from app.models import Message
-    return Message(message="Bot user deleted successfully")
+    return Message(message="Session deleted successfully")
 
 
 @router.post("/inquiries", response_model=CustomerInquiryPublic)

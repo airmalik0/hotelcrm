@@ -1,12 +1,16 @@
 """CRUD operations for customer inquiries"""
-from datetime import datetime
-from typing import Any
 import uuid
+from datetime import datetime
 
-from sqlmodel import Session, select, col, func
+from sqlmodel import Session, col, func, select
 
 from app.crud.base import CRUDBase
-from app.models import CustomerInquiry, CustomerInquiryCreate, CustomerInquiryUpdate, InquiryStatus
+from app.models import (
+    CustomerInquiry,
+    CustomerInquiryCreate,
+    CustomerInquiryUpdate,
+    InquiryStatus,
+)
 
 
 class CRUDCustomerInquiry(CRUDBase[CustomerInquiry, CustomerInquiryCreate, CustomerInquiryUpdate]):

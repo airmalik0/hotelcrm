@@ -1076,6 +1076,174 @@ export const BookingsPublicSchema = {
     title: 'BookingsPublic'
 } as const;
 
+export const BotUserCreateSchema = {
+    properties: {
+        phone: {
+            type: 'string',
+            maxLength: 20,
+            title: 'Phone'
+        },
+        name: {
+            type: 'string',
+            maxLength: 100,
+            title: 'Name'
+        },
+        surname: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Surname'
+        },
+        birthdate: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birthdate'
+        },
+        language: {
+            type: 'string',
+            title: 'Language',
+            default: 'ru'
+        },
+        business_type: {
+            type: 'string',
+            title: 'Business Type',
+            default: 'hotel'
+        }
+    },
+    type: 'object',
+    required: ['phone', 'name'],
+    title: 'BotUserCreate',
+    description: 'Create bot user (phone-based account)'
+} as const;
+
+export const BotUserPublicSchema = {
+    properties: {
+        phone: {
+            type: 'string',
+            maxLength: 20,
+            title: 'Phone',
+            description: 'Normalized phone (digits only)'
+        },
+        name: {
+            type: 'string',
+            maxLength: 100,
+            title: 'Name',
+            description: 'User first name'
+        },
+        surname: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Surname',
+            description: 'User last name'
+        },
+        birthdate: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birthdate',
+            description: 'Date of birth'
+        },
+        language: {
+            type: 'string',
+            maxLength: 2,
+            title: 'Language',
+            description: 'Interface language code (ru, uz, en, zh)',
+            default: 'ru'
+        },
+        business_type: {
+            type: 'string',
+            maxLength: 20,
+            title: 'Business Type',
+            description: 'Business type (always hotel)',
+            default: 'hotel'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            description: 'Whether user is active',
+            default: true
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['phone', 'name', 'id', 'created_at', 'updated_at'],
+    title: 'BotUserPublic'
+} as const;
+
+export const BotUserWithContextSchema = {
+    properties: {
+        user: {
+            '$ref': '#/components/schemas/BotUserPublic'
+        },
+        context: {
+            type: 'object',
+            title: 'Context'
+        }
+    },
+    type: 'object',
+    required: ['user', 'context'],
+    title: 'BotUserWithContext',
+    description: 'Bot user with generated context for AI'
+} as const;
+
+export const BotUsersPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/BotUserPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'BotUsersPublic'
+} as const;
+
 export const CampaignCreateSchema = {
     properties: {
         name: {
@@ -1472,6 +1640,356 @@ export const CustomerCreateSchema = {
     type: 'object',
     required: ['first_name', 'last_name'],
     title: 'CustomerCreate'
+} as const;
+
+export const CustomerIdResponseSchema = {
+    properties: {
+        customer_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Id'
+        },
+        found: {
+            type: 'boolean',
+            title: 'Found'
+        }
+    },
+    type: 'object',
+    required: ['customer_id', 'found'],
+    title: 'CustomerIdResponse',
+    description: 'Customer ID lookup response'
+} as const;
+
+export const CustomerInquiriesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/CustomerInquiryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'CustomerInquiriesPublic'
+} as const;
+
+export const CustomerInquiryCreateSchema = {
+    properties: {
+        bot_user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Bot User Id'
+        },
+        customer_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Id'
+        },
+        booking_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Booking Id'
+        },
+        inquiry_type: {
+            '$ref': '#/components/schemas/InquiryType'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        },
+        status: {
+            '$ref': '#/components/schemas/InquiryStatus',
+            default: 'new'
+        },
+        priority: {
+            '$ref': '#/components/schemas/InquiryPriority',
+            default: 'medium'
+        },
+        inquiry_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Inquiry Date'
+        },
+        related_booking_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Related Booking Date'
+        }
+    },
+    type: 'object',
+    required: ['bot_user_id', 'inquiry_type', 'message', 'inquiry_date'],
+    title: 'CustomerInquiryCreate'
+} as const;
+
+export const CustomerInquiryPublicSchema = {
+    properties: {
+        bot_user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Bot User Id',
+            description: 'Bot user who created inquiry'
+        },
+        customer_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Id',
+            description: 'Linked CRM customer (if found by phone)'
+        },
+        booking_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Booking Id',
+            description: 'Related booking (if specified)'
+        },
+        inquiry_type: {
+            '$ref': '#/components/schemas/InquiryType',
+            description: 'Type of inquiry'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            description: 'Inquiry message text'
+        },
+        status: {
+            '$ref': '#/components/schemas/InquiryStatus',
+            description: 'Processing status',
+            default: 'new'
+        },
+        priority: {
+            '$ref': '#/components/schemas/InquiryPriority',
+            description: 'Priority level',
+            default: 'medium'
+        },
+        inquiry_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Inquiry Date',
+            description: 'Date when inquiry was made'
+        },
+        related_booking_date: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Related Booking Date',
+            description: 'Date of booking being discussed'
+        },
+        assigned_to: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Assigned To',
+            description: 'Staff member assigned to handle inquiry'
+        },
+        resolved_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resolved At',
+            description: 'When inquiry was resolved'
+        },
+        resolution_notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resolution Notes',
+            description: 'Notes about resolution'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        },
+        bot_user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Bot User Name'
+        },
+        customer_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Customer Name'
+        },
+        assigned_user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Assigned User Name'
+        }
+    },
+    type: 'object',
+    required: ['bot_user_id', 'inquiry_type', 'message', 'inquiry_date', 'id', 'created_at', 'updated_at'],
+    title: 'CustomerInquiryPublic'
+} as const;
+
+export const CustomerInquiryUpdateSchema = {
+    properties: {
+        status: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/InquiryStatus'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        priority: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/InquiryPriority'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        assigned_to: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Assigned To'
+        },
+        resolved_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resolved At'
+        },
+        resolution_notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resolution Notes'
+        },
+        booking_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Booking Id'
+        }
+    },
+    type: 'object',
+    title: 'CustomerInquiryUpdate'
 } as const;
 
 export const CustomerPreviewResponseSchema = {
@@ -2162,6 +2680,27 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const InquiryPrioritySchema = {
+    type: 'string',
+    enum: ['low', 'medium', 'high', 'urgent'],
+    title: 'InquiryPriority',
+    description: 'Priority level of inquiry.'
+} as const;
+
+export const InquiryStatusSchema = {
+    type: 'string',
+    enum: ['new', 'in_progress', 'resolved', 'closed'],
+    title: 'InquiryStatus',
+    description: 'Status of inquiry processing.'
+} as const;
+
+export const InquiryTypeSchema = {
+    type: 'string',
+    enum: ['complaint', 'suggestion', 'question'],
+    title: 'InquiryType',
+    description: 'Type of customer inquiry.'
 } as const;
 
 export const MessageSchema = {

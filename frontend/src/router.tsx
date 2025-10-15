@@ -3,6 +3,7 @@ import { MainLayout } from "@/layouts/MainLayout"
 import { Analytics } from "@/pages/Analytics"
 import { AuditLogs } from "@/pages/AuditLogs"
 import { BookingGridPage } from "@/pages/BookingGrid"
+import { CustomerInquiries } from "@/pages/CustomerInquiries"
 import { CustomerList } from "@/pages/CustomerList"
 import { CustomerProfile } from "@/pages/CustomerProfile"
 import { Dashboard } from "@/pages/Dashboard"
@@ -124,6 +125,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={["admin", "manager"]}>
         <MainLayout>
           <Expenses />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/inquiries",
+    element: (
+      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+        <MainLayout>
+          <CustomerInquiries />
         </MainLayout>
       </ProtectedRoute>
     ),

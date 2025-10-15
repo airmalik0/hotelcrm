@@ -121,6 +121,13 @@ from .bot_user import (
     BotUserPublic,
     BotUsersPublic,
 )
+from .bot_session import (
+    BotSessionBase,
+    BotSession,
+    BotSessionCreate,
+    BotSessionPublic,
+    BotSessionsPublic,
+)
 from .customer_inquiry import (
     InquiryType,
     InquiryStatus,

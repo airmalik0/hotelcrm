@@ -5,8 +5,8 @@ from app.api.routes import (
     audit,
     booking_guests,
     bookings,
+    bot,
     campaigns,
-    sms_webhook,
     customer_inquiries,
     customers,
     expenses,
@@ -14,6 +14,7 @@ from app.api.routes import (
     geo,
     login,
     rooms,
+    sms_webhook,
     users,
     utils,
 )
@@ -30,6 +31,7 @@ api_router.include_router(campaigns.router, prefix="/campaigns", tags=["campaign
 api_router.include_router(sms_webhook.router, prefix="/sms-webhook", tags=["sms-webhook"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 api_router.include_router(files.router, prefix="/files", tags=["files"])
+api_router.include_router(bot.router, prefix="/bot", tags=["bot"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 api_router.include_router(expenses.router, prefix="/expenses", tags=["expenses"])
 api_router.include_router(geo.router, prefix="/geo", tags=["geo"])

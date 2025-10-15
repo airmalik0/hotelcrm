@@ -1,13 +1,12 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, Form, Header, HTTPException, Request
+from fastapi import APIRouter, Form, Header, HTTPException, Request
 
 from app.api.deps import SessionDep
 from app.core.config import settings
 from app.crud.campaigns import sms_history as crud_sms_history
 from app.models import SMSStatus
-
 
 router = APIRouter()
 
@@ -27,13 +26,13 @@ def _map_provider_status(status: str) -> SMSStatus:
 def eskiz_webhook(
     request: Request,  # noqa: ARG001
     session: SessionDep,
-    # Eskiz sends form-urlencoded
-    callback_url: str | None = Form(default=None),
-    country: str | None = Form(default=None),
+    # Eskiz sends form-urlencoded - unused parameters accepted to match webhook signature
+    callback_url: str | None = Form(default=None),  # noqa: ARG001
+    country: str | None = Form(default=None),  # noqa: ARG001
     message_id: str | None = Form(default=None),
-    phone_number: str | None = Form(default=None),
-    request_id: str | None = Form(default=None),
-    sms_count: str | None = Form(default=None),
+    phone_number: str | None = Form(default=None),  # noqa: ARG001
+    request_id: str | None = Form(default=None),  # noqa: ARG001
+    sms_count: str | None = Form(default=None),  # noqa: ARG001
     status: str | None = Form(default=None),
     status_date: str | None = Form(default=None),
     user_sms_id: str | None = Form(default=None),

@@ -6,6 +6,7 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.exceptions import NotFoundError
+from app.crud.bot_session import bot_session as crud_bot_session
 from app.crud.bot_user import bot_user as crud_bot_user
 from app.crud.customer import customer as crud_customer
 from app.models import Booking, BookingGuest, BotUser, Customer
@@ -19,12 +20,20 @@ class BotUserService:
     def __init__(self, session: Session):
         self.session = session
         self.crud = crud_bot_user
+        self.crud_session = crud_bot_session
+
+    def get_bot_user_by_telegram_id(self, telegram_id: int) -> BotUser | None:
+        """Get bot user by telegram_id (via active session)"""
+        session_obj = self.crud_session.get_by_telegram_id(self.session, telegram_id=telegram_id)
+        if not session_obj:
+            return None
+        return self.crud.get(self.session, id=session_obj.bot_user_id)
 
     def get_bot_user_or_404(self, telegram_id: int) -> BotUser:
         """Get bot user by telegram_id or raise NotFoundError."""
-        user = self.crud.get_by_telegram(self.session, telegram_id=telegram_id)
+        user = self.get_bot_user_by_telegram_id(telegram_id)
         if not user:
-            raise NotFoundError("BotUser", str(telegram_id))
+            raise NotFoundError("BotUser session", str(telegram_id))
         return user
 
     def get_customer_by_phone(self, phone: str) -> Customer | None:
@@ -160,19 +169,51 @@ class BotUserService:
             logger.error(f"Error generating context for phone {phone}: {e}")
             return {"booking_dates": [], "bookings_info": []}
 
-    def delete_bot_user(self, telegram_id: int) -> bool:
-        """Delete bot user by telegram_id.
+    def create_or_get_bot_user(self, phone: str, name: str, surname: str | None = None,
+                                birthdate: Any | None = None, language: str = "ru") -> BotUser:
+        """Create or get bot user by phone"""
+        from app.models import BotUserCreate
 
-        Args:
-            telegram_id: Telegram user ID
+        user = self.crud.get_by_phone(self.session, phone=phone)
+        if user:
+            # Update existing user
+            user.name = name
+            user.surname = surname
+            user.birthdate = birthdate
+            user.language = language
+            self.session.add(user)
+            self.session.flush()
+            logger.info(f"Updated existing bot user for phone {phone}")
+            return user
 
-        Returns:
-            True if deleted, False if not found
-        """
-        user = self.crud.get_by_telegram(self.session, telegram_id=telegram_id)
-        if not user:
-            return False
+        # Create new user
+        user_in = BotUserCreate(
+            phone=phone,
+            name=name,
+            surname=surname,
+            birthdate=birthdate,
+            language=language,
+            business_type="hotel"
+        )
+        user = self.crud.create(self.session, obj_in=user_in)
+        logger.info(f"Created new bot user for phone {phone}")
+        return user
 
-        self.crud.delete(self.session, id=user.id)
-        logger.info(f"Deleted bot user with telegram_id {telegram_id}")
-        return True
+    def create_session(self, telegram_id: int, bot_user_id: uuid.UUID) -> None:
+        """Create or update session for telegram_id"""
+        from app.models import BotSessionCreate
+
+        # Delete existing session for this telegram_id
+        self.crud_session.delete_by_telegram_id(self.session, telegram_id=telegram_id)
+
+        # Create new session
+        session_in = BotSessionCreate(telegram_id=telegram_id, bot_user_id=bot_user_id)
+        self.crud_session.create(self.session, obj_in=session_in)
+        logger.info(f"Created session for telegram_id {telegram_id} → bot_user_id {bot_user_id}")
+
+    def delete_session(self, telegram_id: int) -> bool:
+        """Delete session (logout)"""
+        success = self.crud_session.delete_by_telegram_id(self.session, telegram_id=telegram_id)
+        if success:
+            logger.info(f"Deleted session for telegram_id {telegram_id}")
+        return success

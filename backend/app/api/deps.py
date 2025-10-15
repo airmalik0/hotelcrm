@@ -82,3 +82,15 @@ def require_admin_or_manager(current_user: CurrentUser) -> User:
     if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and not current_user.is_superuser:
         raise AuthorizationError("Admin or manager access required")
     return current_user
+
+
+def telegram_bot_auth(request: Request) -> None:
+    """Allow requests authenticated with Telegram Bot token via header.
+
+    Clients (bot) must send header: X-Telegram-Bot-Token: <token>
+    """
+    token = request.headers.get("X-Telegram-Bot-Token")
+    expected = settings.TELEGRAM_TOKEN
+    if not token or not expected or token != expected:
+        # Reuse AuthenticationError for unified error handling
+        raise AuthenticationError("Invalid or missing Telegram bot token")

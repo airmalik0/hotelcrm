@@ -1,6 +1,6 @@
 """API routes for customer inquiries"""
-from typing import Any
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends
 
@@ -8,17 +8,17 @@ from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.crud.customer_inquiry import customer_inquiry as crud_inquiry
 from app.models import (
     CustomerInquiriesPublic,
+    CustomerInquiryCreate,
     CustomerInquiryPublic,
     CustomerInquiryUpdate,
     InquiryStatus,
-    Message,
 )
 from app.services.customer_inquiry import CustomerInquiryService
 
 router = APIRouter()
 
 
-@router.get("/", response_model=CustomerInquiriesPublic)
+@router.get("/", response_model=CustomerInquiriesPublic, dependencies=[Depends(require_admin_or_manager)])
 def read_inquiries(
     session: SessionDep,
     skip: int = 0,
@@ -50,7 +50,21 @@ def read_inquiries(
     return CustomerInquiriesPublic(data=inquiry_publics, count=count)
 
 
-@router.get("/{inquiry_id}", response_model=CustomerInquiryPublic)
+@router.post("/", response_model=CustomerInquiryPublic)
+def create_inquiry_api(
+    session: SessionDep,
+    _current_user: CurrentUser,
+    inquiry_in: CustomerInquiryCreate,
+) -> Any:
+    """Create inquiry via standard user-authenticated API."""
+    service = CustomerInquiryService(session)
+    inquiry = service.create_inquiry(inquiry_in)
+    session.commit()
+    session.refresh(inquiry)
+    return inquiry
+
+
+@router.get("/{inquiry_id}", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
 def read_inquiry(session: SessionDep, inquiry_id: uuid.UUID) -> Any:
     """Get inquiry by ID (admin/manager only)"""
     service = CustomerInquiryService(session)
@@ -68,10 +82,10 @@ def read_inquiry(session: SessionDep, inquiry_id: uuid.UUID) -> Any:
     return inquiry_public
 
 
-@router.patch("/{inquiry_id}", response_model=CustomerInquiryPublic)
+@router.patch("/{inquiry_id}", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
 def update_inquiry(
     session: SessionDep,
-    current_user: CurrentUser,
+    _current_user: CurrentUser,
     inquiry_id: uuid.UUID,
     inquiry_in: CustomerInquiryUpdate,
 ) -> Any:
@@ -83,10 +97,10 @@ def update_inquiry(
     return inquiry
 
 
-@router.post("/{inquiry_id}/assign", response_model=CustomerInquiryPublic)
+@router.post("/{inquiry_id}/assign", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
 def assign_inquiry(
     session: SessionDep,
-    current_user: CurrentUser,
+    _current_user: CurrentUser,
     inquiry_id: uuid.UUID,
     assigned_to: uuid.UUID,
 ) -> Any:
@@ -99,10 +113,10 @@ def assign_inquiry(
     return inquiry
 
 
-@router.post("/{inquiry_id}/resolve", response_model=CustomerInquiryPublic)
+@router.post("/{inquiry_id}/resolve", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
 def resolve_inquiry(
     session: SessionDep,
-    current_user: CurrentUser,
+    _current_user: CurrentUser,
     inquiry_id: uuid.UUID,
     resolution_notes: str | None = None,
 ) -> Any:

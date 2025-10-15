@@ -1,9 +1,8 @@
-"""Bot models - pure Pydantic DTOs for API communication"""
+"""Bot schemas - pure Pydantic DTOs for API communication"""
 from .bot_user import (
-    BotUserCreate,
     BotUserPublic,
     BotUsersPublic,
-    BotUserUpdate,
+    SessionLoginRequest,
 )
 from .customer_inquiry import (
     CustomerInquiriesPublic,
@@ -16,10 +15,9 @@ from .customer_inquiry import (
 
 __all__ = [
     # Bot User models
-    "BotUserCreate",
     "BotUserPublic",
     "BotUsersPublic",
-    "BotUserUpdate",
+    "SessionLoginRequest",
     # Customer Inquiry models
     "CustomerInquiriesPublic",
     "CustomerInquiryCreate",

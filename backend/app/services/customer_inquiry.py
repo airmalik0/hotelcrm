@@ -5,7 +5,12 @@ from sqlmodel import Session
 
 from app.core.exceptions import NotFoundError
 from app.crud.customer_inquiry import customer_inquiry as crud_inquiry
-from app.models import CustomerInquiry, CustomerInquiryCreate, CustomerInquiryUpdate, InquiryStatus
+from app.models import (
+    CustomerInquiry,
+    CustomerInquiryCreate,
+    CustomerInquiryUpdate,
+    InquiryStatus,
+)
 
 
 class CustomerInquiryService:

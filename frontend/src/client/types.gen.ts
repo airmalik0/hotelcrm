@@ -223,6 +223,67 @@ export type BookingUpdate = {
 };
 
 /**
+ * Create bot user (phone-based account)
+ */
+export type BotUserCreate = {
+    phone: string;
+    name: string;
+    surname?: (string | null);
+    birthdate?: (string | null);
+    language?: string;
+    business_type?: string;
+};
+
+export type BotUserPublic = {
+    /**
+     * Normalized phone (digits only)
+     */
+    phone: string;
+    /**
+     * User first name
+     */
+    name: string;
+    /**
+     * User last name
+     */
+    surname?: (string | null);
+    /**
+     * Date of birth
+     */
+    birthdate?: (string | null);
+    /**
+     * Interface language code (ru, uz, en, zh)
+     */
+    language?: string;
+    /**
+     * Business type (always hotel)
+     */
+    business_type?: string;
+    /**
+     * Whether user is active
+     */
+    is_active?: boolean;
+    id: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type BotUsersPublic = {
+    data: Array<BotUserPublic>;
+    count: number;
+};
+
+/**
+ * Bot user with generated context for AI
+ */
+export type BotUserWithContext = {
+    user: BotUserPublic;
+    context: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * Schema for creating new campaigns
  */
 export type CampaignCreate = {
@@ -339,6 +400,97 @@ export type CustomerCreate = {
     district?: (District | null);
     passport_photo_path?: (string | null);
     notes?: (string | null);
+};
+
+/**
+ * Customer ID lookup response
+ */
+export type CustomerIdResponse = {
+    customer_id: (string | null);
+    found: boolean;
+};
+
+export type CustomerInquiriesPublic = {
+    data: Array<CustomerInquiryPublic>;
+    count: number;
+};
+
+export type CustomerInquiryCreate = {
+    bot_user_id: string;
+    customer_id?: (string | null);
+    booking_id?: (string | null);
+    inquiry_type: InquiryType;
+    message: string;
+    status?: InquiryStatus;
+    priority?: InquiryPriority;
+    inquiry_date: string;
+    related_booking_date?: (string | null);
+};
+
+export type CustomerInquiryPublic = {
+    /**
+     * Bot user who created inquiry
+     */
+    bot_user_id: string;
+    /**
+     * Linked CRM customer (if found by phone)
+     */
+    customer_id?: (string | null);
+    /**
+     * Related booking (if specified)
+     */
+    booking_id?: (string | null);
+    /**
+     * Type of inquiry
+     */
+    inquiry_type: InquiryType;
+    /**
+     * Inquiry message text
+     */
+    message: string;
+    /**
+     * Processing status
+     */
+    status?: InquiryStatus;
+    /**
+     * Priority level
+     */
+    priority?: InquiryPriority;
+    /**
+     * Date when inquiry was made
+     */
+    inquiry_date: string;
+    /**
+     * Date of booking being discussed
+     */
+    related_booking_date?: (string | null);
+    /**
+     * Staff member assigned to handle inquiry
+     */
+    assigned_to?: (string | null);
+    /**
+     * When inquiry was resolved
+     */
+    resolved_at?: (string | null);
+    /**
+     * Notes about resolution
+     */
+    resolution_notes?: (string | null);
+    id: string;
+    created_at: string;
+    updated_at: string;
+    bot_user_name?: (string | null);
+    customer_name?: (string | null);
+    assigned_user_name?: (string | null);
+};
+
+export type CustomerInquiryUpdate = {
+    status?: (InquiryStatus | null);
+    priority?: (InquiryPriority | null);
+    assigned_to?: (string | null);
+    resolved_at?: (string | null);
+    resolution_notes?: (string | null);
+    booking_id?: (string | null);
 };
 
 /**
@@ -493,6 +645,21 @@ export type GroupBy = 'day' | 'week' | 'month' | 'room' | 'payment_method' | 'co
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
+
+/**
+ * Priority level of inquiry.
+ */
+export type InquiryPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+/**
+ * Status of inquiry processing.
+ */
+export type InquiryStatus = 'new' | 'in_progress' | 'resolved' | 'closed';
+
+/**
+ * Type of customer inquiry.
+ */
+export type InquiryType = 'complaint' | 'suggestion' | 'question';
 
 export type Message = {
     message: string;
@@ -1065,28 +1232,28 @@ export type BookingsActualCheckOutResponse = (BookingPublic);
 
 export type BookingsActualCheckOutError = (HTTPValidationError);
 
-export type BookingsGetBookingGuestsData = {
+export type BookingGuestsGetBookingGuestsData = {
     path: {
         booking_id: string;
     };
 };
 
-export type BookingsGetBookingGuestsResponse = (BookingGuestsPublic);
+export type BookingGuestsGetBookingGuestsResponse = (BookingGuestsPublic);
 
-export type BookingsGetBookingGuestsError = (HTTPValidationError);
+export type BookingGuestsGetBookingGuestsError = (HTTPValidationError);
 
-export type BookingsAddGuestToBookingData = {
+export type BookingGuestsAddGuestToBookingData = {
     body: BookingGuestCreate;
     path: {
         booking_id: string;
     };
 };
 
-export type BookingsAddGuestToBookingResponse = (BookingGuestPublic);
+export type BookingGuestsAddGuestToBookingResponse = (BookingGuestPublic);
 
-export type BookingsAddGuestToBookingError = (HTTPValidationError);
+export type BookingGuestsAddGuestToBookingError = (HTTPValidationError);
 
-export type BookingsUpdateBookingGuestData = {
+export type BookingGuestsUpdateBookingGuestData = {
     body: BookingGuestUpdate;
     path: {
         booking_id: string;
@@ -1094,20 +1261,20 @@ export type BookingsUpdateBookingGuestData = {
     };
 };
 
-export type BookingsUpdateBookingGuestResponse = (BookingGuestPublic);
+export type BookingGuestsUpdateBookingGuestResponse = (BookingGuestPublic);
 
-export type BookingsUpdateBookingGuestError = (HTTPValidationError);
+export type BookingGuestsUpdateBookingGuestError = (HTTPValidationError);
 
-export type BookingsRemoveGuestFromBookingData = {
+export type BookingGuestsRemoveGuestFromBookingData = {
     path: {
         booking_id: string;
         guest_id: string;
     };
 };
 
-export type BookingsRemoveGuestFromBookingResponse = (Message);
+export type BookingGuestsRemoveGuestFromBookingResponse = (Message);
 
-export type BookingsRemoveGuestFromBookingError = (HTTPValidationError);
+export type BookingGuestsRemoveGuestFromBookingError = (HTTPValidationError);
 
 export type CampaignsReadCampaignsData = {
     query?: {
@@ -1259,6 +1426,73 @@ export type FilesDeleteFileData = {
 export type FilesDeleteFileResponse = (unknown);
 
 export type FilesDeleteFileError = (HTTPValidationError);
+
+export type BotUpsertBotUserData = {
+    body: BotUserCreate;
+};
+
+export type BotUpsertBotUserResponse = (BotUserPublic);
+
+export type BotUpsertBotUserError = (HTTPValidationError);
+
+export type BotListBotUsersData = {
+    query?: {
+        limit?: number;
+        skip?: number;
+    };
+};
+
+export type BotListBotUsersResponse = (BotUsersPublic);
+
+export type BotListBotUsersError = (HTTPValidationError);
+
+export type BotGetUserByTelegramIdData = {
+    query: {
+        telegram_id: number;
+    };
+};
+
+export type BotGetUserByTelegramIdResponse = (BotUserPublic);
+
+export type BotGetUserByTelegramIdError = (HTTPValidationError);
+
+export type BotGetUserWithContextData = {
+    path: {
+        telegram_id: number;
+    };
+};
+
+export type BotGetUserWithContextResponse = (BotUserWithContext);
+
+export type BotGetUserWithContextError = (HTTPValidationError);
+
+export type BotDeleteBotUserData = {
+    path: {
+        telegram_id: number;
+    };
+};
+
+export type BotDeleteBotUserResponse = (unknown);
+
+export type BotDeleteBotUserError = (HTTPValidationError);
+
+export type BotGetCustomerIdByTelegramData = {
+    path: {
+        telegram_id: number;
+    };
+};
+
+export type BotGetCustomerIdByTelegramResponse = (CustomerIdResponse);
+
+export type BotGetCustomerIdByTelegramError = (HTTPValidationError);
+
+export type BotCreateInquiryData = {
+    body: CustomerInquiryCreate;
+};
+
+export type BotCreateInquiryResponse = (CustomerInquiryPublic);
+
+export type BotCreateInquiryError = (HTTPValidationError);
 
 export type AnalyticsGetDashboardMetricsData = {
     query: {
@@ -1572,3 +1806,71 @@ export type GeoGetDistrictsResponse = (Array<{
 }>);
 
 export type GeoGetDistrictsError = (HTTPValidationError);
+
+export type InquiriesReadInquiriesData = {
+    query?: {
+        customer_id?: (string | null);
+        limit?: number;
+        skip?: number;
+        status?: (InquiryStatus | null);
+    };
+};
+
+export type InquiriesReadInquiriesResponse = (CustomerInquiriesPublic);
+
+export type InquiriesReadInquiriesError = (HTTPValidationError);
+
+export type InquiriesCreateInquiryApiData = {
+    body: CustomerInquiryCreate;
+};
+
+export type InquiriesCreateInquiryApiResponse = (CustomerInquiryPublic);
+
+export type InquiriesCreateInquiryApiError = (HTTPValidationError);
+
+export type InquiriesReadInquiryData = {
+    path: {
+        inquiry_id: string;
+    };
+};
+
+export type InquiriesReadInquiryResponse = (CustomerInquiryPublic);
+
+export type InquiriesReadInquiryError = (HTTPValidationError);
+
+export type InquiriesUpdateInquiryData = {
+    body: CustomerInquiryUpdate;
+    path: {
+        inquiry_id: string;
+    };
+};
+
+export type InquiriesUpdateInquiryResponse = (CustomerInquiryPublic);
+
+export type InquiriesUpdateInquiryError = (HTTPValidationError);
+
+export type InquiriesAssignInquiryData = {
+    path: {
+        inquiry_id: string;
+    };
+    query: {
+        assigned_to: string;
+    };
+};
+
+export type InquiriesAssignInquiryResponse = (CustomerInquiryPublic);
+
+export type InquiriesAssignInquiryError = (HTTPValidationError);
+
+export type InquiriesResolveInquiryData = {
+    path: {
+        inquiry_id: string;
+    };
+    query?: {
+        resolution_notes?: (string | null);
+    };
+};
+
+export type InquiriesResolveInquiryResponse = (CustomerInquiryPublic);
+
+export type InquiriesResolveInquiryError = (HTTPValidationError);

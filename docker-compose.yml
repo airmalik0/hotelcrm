@@ -101,6 +101,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN?Variable not set}
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
@@ -160,6 +161,36 @@ services:
 
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
+
+  bot:
+    build:
+      context: ./bot
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      backend:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN?Variable not set}
+      - ADMIN_ID=${TELEGRAM_ADMIN_ID?Variable not set}
+      - BACKEND_API_URL=http://backend:8000/api/v1
+      - POSTGRES_DSN=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY?Variable not set}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY?Variable not set}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-hotel-bot}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LOG_LEVEL=${BOT_LOG_LEVEL:-INFO}
+      - LOG_FILE=logs/bot.log
+    volumes:
+      - ./bot/logs:/app/logs
+    networks:
+      - default
+
 volumes:
   app-db-data:
 

@@ -403,7 +403,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               Guest
             </label>
 
-          {selectedCustomer ? (
+            {selectedCustomer ? (
               // Selected customer display
               <div className="flex items-center gap-2 p-3 border border-primary-500 dark:border-primary-600 rounded-lg bg-primary-50 dark:bg-primary-900/30">
                 <div className="flex-1">
@@ -421,13 +421,14 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       </span>
                     </div>
                   )}
-                {!selectedCustomer.passport_photo_path && (
-                  <div className="mt-2 p-2 rounded-lg bg-danger-100 dark:bg-danger-600/30 border border-danger-300 dark:border-danger-600">
-                    <p className="text-xs text-danger-700 dark:text-danger-400 font-medium">
-                      Passport photo is required to create a booking for this customer.
-                    </p>
-                  </div>
-                )}
+                  {!selectedCustomer.passport_photo_path && (
+                    <div className="mt-2 p-2 rounded-lg bg-danger-100 dark:bg-danger-600/30 border border-danger-300 dark:border-danger-600">
+                      <p className="text-xs text-danger-700 dark:text-danger-400 font-medium">
+                        Passport photo is required to create a booking for this
+                        customer.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"

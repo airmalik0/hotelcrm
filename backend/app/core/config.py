@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_USERNAME: str = "admin"
     FIRST_SUPERUSER_PASSWORD: str
 
+    # Telegram bot integration
+    TELEGRAM_TOKEN: str | None = None
+
     # Eskiz SMS provider configuration
     ESKIZ_ENABLED: bool = False
     ESKIZ_BASE_URL: AnyUrl | None = None  # e.g., https://notify.eskiz.uz
