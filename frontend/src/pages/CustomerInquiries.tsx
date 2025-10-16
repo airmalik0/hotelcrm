@@ -546,60 +546,59 @@ export function CustomerInquiries() {
               </div>
 
               {/* Contact Information */}
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2">
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">
                   Contact Information
                 </h3>
 
-                {/* Customer Section (if linked) */}
-                {selectedInquiry.customer_name && (
-                  <div className="pb-3 border-b border-neutral-200 dark:border-neutral-700">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                          CRM Customer
+                {/* If linked to customer - show customer info with telegram */}
+                {selectedInquiry.customer_name ? (
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-white flex items-center gap-2">
+                        <User className="w-4 h-4 text-success-600" />
+                        {selectedInquiry.customer_name}
+                      </p>
+
+                      {selectedInquiry.telegram_username && (
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
+                          <AtSign className="w-3 h-3" />
+                          @{selectedInquiry.telegram_username}
                         </p>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-white flex items-center gap-2">
-                          <User className="w-4 h-4 text-success-600" />
-                          {selectedInquiry.customer_name}
+                      )}
+
+                      {selectedInquiry.customer_phone && (
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {formatPhoneNumber(selectedInquiry.customer_phone)}
                         </p>
-                        {selectedInquiry.customer_phone && (
-                          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {formatPhoneNumber(selectedInquiry.customer_phone)}
-                          </p>
-                        )}
-                      </div>
-                      {selectedInquiry.customer_id && (
-                        <Link
-                          to={`/customers/${selectedInquiry.customer_id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-                        >
-                          View Profile
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
                       )}
                     </div>
+
+                    {selectedInquiry.customer_id && (
+                      <Link
+                        to={`/customers/${selectedInquiry.customer_id}`}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                      >
+                        View Profile
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    )}
                   </div>
-                )}
+                ) : (
+                  /* If not linked to customer - show bot user info */
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                      {selectedInquiry.bot_user_name || "Unknown"}
+                    </p>
 
-                {/* Bot User Section */}
-                <div>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                    Bot User
-                  </p>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                    {selectedInquiry.bot_user_name || "Unknown"}
-                  </p>
-
-                  {/* Telegram Info */}
-                  <div className="mt-2 space-y-1">
                     {selectedInquiry.telegram_username && (
                       <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
-                        <AtSign className="w-3 h-3" />@
-                        {selectedInquiry.telegram_username}
+                        <AtSign className="w-3 h-3" />
+                        @{selectedInquiry.telegram_username}
                       </p>
                     )}
+
                     {selectedInquiry.bot_user_phone && (
                       <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
                         <Phone className="w-3 h-3" />
@@ -607,7 +606,7 @@ export function CustomerInquiries() {
                       </p>
                     )}
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Date */}
