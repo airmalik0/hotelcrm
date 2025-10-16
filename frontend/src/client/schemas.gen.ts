@@ -1671,18 +1671,6 @@ export const CustomerInquiryCreateSchema = {
             ],
             title: 'Customer Id'
         },
-        booking_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Booking Id'
-        },
         inquiry_type: {
             '$ref': '#/components/schemas/InquiryType'
         },
@@ -1693,10 +1681,6 @@ export const CustomerInquiryCreateSchema = {
         status: {
             '$ref': '#/components/schemas/InquiryStatus',
             default: 'new'
-        },
-        priority: {
-            '$ref': '#/components/schemas/InquiryPriority',
-            default: 'medium'
         },
         inquiry_date: {
             type: 'string',
@@ -1742,19 +1726,6 @@ export const CustomerInquiryPublicSchema = {
             title: 'Customer Id',
             description: 'Linked CRM customer (if found by phone)'
         },
-        booking_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Booking Id',
-            description: 'Related booking (if specified)'
-        },
         inquiry_type: {
             '$ref': '#/components/schemas/InquiryType',
             description: 'Type of inquiry'
@@ -1768,11 +1739,6 @@ export const CustomerInquiryPublicSchema = {
             '$ref': '#/components/schemas/InquiryStatus',
             description: 'Processing status',
             default: 'new'
-        },
-        priority: {
-            '$ref': '#/components/schemas/InquiryPriority',
-            description: 'Priority level',
-            default: 'medium'
         },
         inquiry_date: {
             type: 'string',
@@ -1792,19 +1758,6 @@ export const CustomerInquiryPublicSchema = {
             ],
             title: 'Related Booking Date',
             description: 'Date of booking being discussed'
-        },
-        assigned_to: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Assigned To',
-            description: 'Staff member assigned to handle inquiry'
         },
         resolved_at: {
             anyOf: [
@@ -1857,6 +1810,39 @@ export const CustomerInquiryPublicSchema = {
             ],
             title: 'Bot User Name'
         },
+        bot_user_phone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Bot User Phone'
+        },
+        telegram_username: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Username'
+        },
+        telegram_first_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram First Name'
+        },
         customer_name: {
             anyOf: [
                 {
@@ -1868,7 +1854,7 @@ export const CustomerInquiryPublicSchema = {
             ],
             title: 'Customer Name'
         },
-        assigned_user_name: {
+        customer_phone: {
             anyOf: [
                 {
                     type: 'string'
@@ -1877,7 +1863,12 @@ export const CustomerInquiryPublicSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Assigned User Name'
+            title: 'Customer Phone'
+        },
+        has_customer: {
+            type: 'boolean',
+            title: 'Has Customer',
+            default: false
         }
     },
     type: 'object',
@@ -1896,28 +1887,6 @@ export const CustomerInquiryUpdateSchema = {
                     type: 'null'
                 }
             ]
-        },
-        priority: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/InquiryPriority'
-                },
-                {
-                    type: 'null'
-                }
-            ]
-        },
-        assigned_to: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Assigned To'
         },
         resolved_at: {
             anyOf: [
@@ -1941,18 +1910,6 @@ export const CustomerInquiryUpdateSchema = {
                 }
             ],
             title: 'Resolution Notes'
-        },
-        booking_id: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'uuid'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Booking Id'
         }
     },
     type: 'object',
@@ -2647,13 +2604,6 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
-} as const;
-
-export const InquiryPrioritySchema = {
-    type: 'string',
-    enum: ['low', 'medium', 'high', 'urgent'],
-    title: 'InquiryPriority',
-    description: 'Priority level of inquiry.'
 } as const;
 
 export const InquiryStatusSchema = {

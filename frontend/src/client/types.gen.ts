@@ -404,11 +404,9 @@ export type CustomerInquiriesPublic = {
 export type CustomerInquiryCreate = {
     bot_user_id: string;
     customer_id?: (string | null);
-    booking_id?: (string | null);
     inquiry_type: InquiryType;
     message: string;
     status?: InquiryStatus;
-    priority?: InquiryPriority;
     inquiry_date: string;
     related_booking_date?: (string | null);
 };
@@ -423,10 +421,6 @@ export type CustomerInquiryPublic = {
      */
     customer_id?: (string | null);
     /**
-     * Related booking (if specified)
-     */
-    booking_id?: (string | null);
-    /**
      * Type of inquiry
      */
     inquiry_type: InquiryType;
@@ -439,10 +433,6 @@ export type CustomerInquiryPublic = {
      */
     status?: InquiryStatus;
     /**
-     * Priority level
-     */
-    priority?: InquiryPriority;
-    /**
      * Date when inquiry was made
      */
     inquiry_date: string;
@@ -450,10 +440,6 @@ export type CustomerInquiryPublic = {
      * Date of booking being discussed
      */
     related_booking_date?: (string | null);
-    /**
-     * Staff member assigned to handle inquiry
-     */
-    assigned_to?: (string | null);
     /**
      * When inquiry was resolved
      */
@@ -466,17 +452,18 @@ export type CustomerInquiryPublic = {
     created_at: string;
     updated_at: string;
     bot_user_name?: (string | null);
+    bot_user_phone?: (string | null);
+    telegram_username?: (string | null);
+    telegram_first_name?: (string | null);
     customer_name?: (string | null);
-    assigned_user_name?: (string | null);
+    customer_phone?: (string | null);
+    has_customer?: boolean;
 };
 
 export type CustomerInquiryUpdate = {
     status?: (InquiryStatus | null);
-    priority?: (InquiryPriority | null);
-    assigned_to?: (string | null);
     resolved_at?: (string | null);
     resolution_notes?: (string | null);
-    booking_id?: (string | null);
 };
 
 /**
@@ -631,11 +618,6 @@ export type GroupBy = 'day' | 'week' | 'month' | 'room' | 'payment_method' | 'co
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
-
-/**
- * Priority level of inquiry.
- */
-export type InquiryPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 /**
  * Status of inquiry processing.

@@ -1,7 +1,6 @@
 import { getInquiries, resolveInquiry, updateInquiry } from "@/api/inquiries"
 import type {
   CustomerInquiryPublic,
-  InquiryPriority,
   InquiryStatus,
   InquiryType,
 } from "@/client/types.gen"
@@ -9,7 +8,9 @@ import { formatDateTime } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   AlertCircle,
+  AtSign,
   CheckCircle2,
+  ExternalLink,
   Filter,
   Lightbulb,
   MessageSquare,
@@ -20,6 +21,7 @@ import {
 import type React from "react"
 import { useState } from "react"
 import toast from "react-hot-toast"
+import { Link } from "react-router-dom"
 
 // Status badge colors
 const getStatusBadgeColor = (status: InquiryStatus) => {
@@ -37,20 +39,13 @@ const getStatusBadgeColor = (status: InquiryStatus) => {
   }
 }
 
-// Priority badge colors
-const getPriorityBadgeColor = (priority: InquiryPriority) => {
-  switch (priority) {
-    case "urgent":
-      return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400"
-    case "high":
-      return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400"
-    case "medium":
-      return "bg-info-100 dark:bg-info-600/30 text-info-600 dark:text-info-400"
-    case "low":
-      return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
-    default:
-      return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
-  }
+// Format phone number for display
+const formatPhoneNumber = (phone: string | null | undefined) => {
+  if (!phone) return null
+  // If it starts with +, just return as is
+  if (phone.startsWith("+")) return phone
+  // Otherwise add + prefix
+  return `+${phone}`
 }
 
 // Type icon and color
@@ -71,6 +66,7 @@ export function CustomerInquiries() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<InquiryStatus | "">("")
   const [filterType, setFilterType] = useState<InquiryType | "">("")
+  const [customersOnly, setCustomersOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(50)
   const [selectedInquiry, setSelectedInquiry] =
@@ -89,12 +85,14 @@ export function CustomerInquiries() {
       searchTerm,
       filterStatus,
       filterType,
+      customersOnly,
     ],
     queryFn: () =>
       getInquiries({
         skip: currentPage * itemsPerPage,
         limit: itemsPerPage,
         status: (filterStatus as InquiryStatus) || undefined,
+        customers_only: customersOnly || undefined,
       }),
   })
 
@@ -117,10 +115,7 @@ export function CustomerInquiries() {
 
   // Resolve inquiry mutation
   const resolveMutation = useMutation({
-    mutationFn: ({
-      inquiryId,
-      notes,
-    }: { inquiryId: string; notes: string }) =>
+    mutationFn: ({ inquiryId, notes }: { inquiryId: string; notes: string }) =>
       resolveInquiry(inquiryId, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inquiries"] })
@@ -278,7 +273,7 @@ export function CustomerInquiries() {
 
           {/* Filters */}
           {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-600">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-600">
               <div>
                 <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Status
@@ -318,6 +313,28 @@ export function CustomerInquiries() {
 
               <div>
                 <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Customer Filter
+                </label>
+                <div className="flex items-center h-[30px]">
+                  <label className="inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={customersOnly}
+                      onChange={(e) => {
+                        setCustomersOnly(e.target.checked)
+                        setCurrentPage(0)
+                      }}
+                      className="w-4 h-4 text-primary-600 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-500 rounded focus:ring-primary-500 focus:ring-2"
+                    />
+                    <span className="ml-2 text-sm text-neutral-700 dark:text-neutral-300">
+                      Only Customers
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Items per page
                 </label>
                 <select
@@ -349,13 +366,10 @@ export function CustomerInquiries() {
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Customer / Bot User
+                  Contact Info
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Message
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Priority
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Status
@@ -368,7 +382,7 @@ export function CustomerInquiries() {
             <tbody className="bg-white dark:bg-dark-2 divide-y divide-neutral-200 dark:divide-neutral-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                     </div>
@@ -377,7 +391,7 @@ export function CustomerInquiries() {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="px-6 py-12 text-center text-danger-600"
                   >
                     Failed to load inquiries
@@ -386,7 +400,7 @@ export function CustomerInquiries() {
               ) : !filteredInquiries || filteredInquiries.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="px-6 py-12 text-center text-neutral-500 dark:text-neutral-400"
                   >
                     No inquiries found
@@ -409,31 +423,44 @@ export function CustomerInquiries() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {inquiry.customer_name ? (
-                        <div className="flex flex-col">
-                          <span className="font-medium text-neutral-900 dark:text-white">
-                            {inquiry.customer_name}
-                          </span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {inquiry.bot_user_name}
-                          </span>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex flex-col gap-1">
+                        {/* Customer info (if linked) */}
+                        {inquiry.customer_name && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3 text-success-600" />
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {inquiry.customer_name}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Bot user info */}
+                        <div className="flex flex-col gap-0.5 text-xs text-neutral-600 dark:text-neutral-400">
+                          <span>{inquiry.bot_user_name || "Unknown"}</span>
+
+                          {/* Telegram username */}
+                          {inquiry.telegram_username && (
+                            <div className="flex items-center gap-1">
+                              <AtSign className="w-3 h-3" />
+                              <span>@{inquiry.telegram_username}</span>
+                            </div>
+                          )}
+
+                          {/* Phone number */}
+                          {inquiry.bot_user_phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              <span>
+                                {formatPhoneNumber(inquiry.bot_user_phone)}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-neutral-900 dark:text-white">
-                          {inquiry.bot_user_name || "Unknown"}
-                        </span>
-                      )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-700 dark:text-neutral-300 max-w-md truncate">
                       {inquiry.message}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityBadgeColor(inquiry.priority)}`}
-                      >
-                        {inquiry.priority}
-                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -503,7 +530,7 @@ export function CustomerInquiries() {
             </div>
 
             <div className="px-6 py-4 space-y-4">
-              {/* Type and Priority */}
+              {/* Type and Status */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   {getTypeIcon(selectedInquiry.inquiry_type)}
@@ -512,19 +539,51 @@ export function CustomerInquiries() {
                   </span>
                 </div>
                 <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${getPriorityBadgeColor(selectedInquiry.priority)}`}
-                >
-                  {selectedInquiry.priority}
-                </span>
-                <span
                   className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(selectedInquiry.status)}`}
                 >
                   {selectedInquiry.status.replace("_", " ")}
                 </span>
               </div>
 
-              {/* Customer Info */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Contact Information */}
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2">
+                  Contact Information
+                </h3>
+
+                {/* Customer Section (if linked) */}
+                {selectedInquiry.customer_name && (
+                  <div className="pb-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                          CRM Customer
+                        </p>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-white flex items-center gap-2">
+                          <User className="w-4 h-4 text-success-600" />
+                          {selectedInquiry.customer_name}
+                        </p>
+                        {selectedInquiry.customer_phone && (
+                          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {formatPhoneNumber(selectedInquiry.customer_phone)}
+                          </p>
+                        )}
+                      </div>
+                      {selectedInquiry.customer_id && (
+                        <Link
+                          to={`/customers/${selectedInquiry.customer_id}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                        >
+                          View Profile
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bot User Section */}
                 <div>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
                     Bot User
@@ -532,17 +591,28 @@ export function CustomerInquiries() {
                   <p className="text-sm font-medium text-neutral-900 dark:text-white">
                     {selectedInquiry.bot_user_name || "Unknown"}
                   </p>
-                </div>
-                {selectedInquiry.customer_name && (
-                  <div>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                      CRM Customer
-                    </p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                      {selectedInquiry.customer_name}
-                    </p>
+
+                  {/* Telegram Info */}
+                  <div className="mt-2 space-y-1">
+                    {selectedInquiry.telegram_username && (
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
+                        <AtSign className="w-3 h-3" />@
+                        {selectedInquiry.telegram_username}
+                      </p>
+                    )}
+                    {selectedInquiry.telegram_first_name && (
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Telegram: {selectedInquiry.telegram_first_name}
+                      </p>
+                    )}
+                    {selectedInquiry.bot_user_phone && (
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        {formatPhoneNumber(selectedInquiry.bot_user_phone)}
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Date */}
@@ -644,7 +714,9 @@ export function CustomerInquiries() {
                   <button
                     type="button"
                     onClick={() => handleResolve(selectedInquiry.id)}
-                    disabled={resolveMutation.isPending || !resolutionNotes.trim()}
+                    disabled={
+                      resolveMutation.isPending || !resolutionNotes.trim()
+                    }
                     className="px-4 py-2 bg-success-600 text-white rounded-lg text-sm font-medium hover:bg-success-700 transition-colors disabled:opacity-50"
                   >
                     {resolveMutation.isPending ? "Resolving..." : "Resolve"}
