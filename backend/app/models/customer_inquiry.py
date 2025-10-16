@@ -7,10 +7,8 @@ from sqlalchemy import Column, DateTime, Text
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from .booking import Booking
     from .bot_user import BotUser
     from .customer import Customer
-    from .user import User
 
 
 class InquiryType(str, Enum):
@@ -28,29 +26,18 @@ class InquiryStatus(str, Enum):
     CLOSED = "closed"
 
 
-class InquiryPriority(str, Enum):
-    """Priority level of inquiry."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
-
-
 class CustomerInquiryBase(SQLModel):
     bot_user_id: uuid.UUID = Field(foreign_key="bot_users.id", index=True, description="Bot user who created inquiry")
     customer_id: uuid.UUID | None = Field(default=None, foreign_key="customer.id", index=True, description="Linked CRM customer (if found by phone)")
-    booking_id: uuid.UUID | None = Field(default=None, foreign_key="booking.id", index=True, description="Related booking (if specified)")
 
     inquiry_type: InquiryType = Field(description="Type of inquiry")
     message: str = Field(sa_column=Column(Text), description="Inquiry message text")
 
     status: InquiryStatus = Field(default=InquiryStatus.NEW, index=True, description="Processing status")
-    priority: InquiryPriority = Field(default=InquiryPriority.MEDIUM, description="Priority level")
 
     inquiry_date: datetime = Field(sa_column=Column(DateTime(timezone=True)), description="Date when inquiry was made")
     related_booking_date: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)), description="Date of booking being discussed")
 
-    assigned_to: uuid.UUID | None = Field(default=None, foreign_key="user.id", description="Staff member assigned to handle inquiry")
     resolved_at: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)), description="When inquiry was resolved")
     resolution_notes: str | None = Field(default=None, sa_column=Column(Text), description="Notes about resolution")
 
@@ -65,29 +52,22 @@ class CustomerInquiry(CustomerInquiryBase, table=True):
     # Relationships
     bot_user: "BotUser" = Relationship(back_populates="inquiries")
     customer: Optional["Customer"] = Relationship()
-    booking: Optional["Booking"] = Relationship()
-    assigned_user: Optional["User"] = Relationship()
 
 
 class CustomerInquiryCreate(SQLModel):
     bot_user_id: uuid.UUID
     customer_id: uuid.UUID | None = None
-    booking_id: uuid.UUID | None = None
     inquiry_type: InquiryType
     message: str
     status: InquiryStatus = InquiryStatus.NEW
-    priority: InquiryPriority = InquiryPriority.MEDIUM
     inquiry_date: datetime
     related_booking_date: datetime | None = None
 
 
 class CustomerInquiryUpdate(SQLModel):
     status: InquiryStatus | None = None
-    priority: InquiryPriority | None = None
-    assigned_to: uuid.UUID | None = None
     resolved_at: datetime | None = None
     resolution_notes: str | None = None
-    booking_id: uuid.UUID | None = None
 
 
 class CustomerInquiryPublic(CustomerInquiryBase):
@@ -97,8 +77,17 @@ class CustomerInquiryPublic(CustomerInquiryBase):
 
     # Include related data for convenience
     bot_user_name: str | None = None
+    bot_user_phone: str | None = None
+
+    # Telegram session info (from most recent session)
+    telegram_username: str | None = None
+    telegram_first_name: str | None = None
+
     customer_name: str | None = None
-    assigned_user_name: str | None = None
+    customer_phone: str | None = None
+
+    # Flag for quick customer check
+    has_customer: bool = False
 
 
 class CustomerInquiriesPublic(SQLModel):

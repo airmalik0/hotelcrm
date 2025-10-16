@@ -65,23 +65,27 @@ class BackendAPI:
         telegram_id: int,
         phone: str,
         name: str,
-        surname: Optional[str] = None,
-        birthdate: Optional[datetime] = None,
         language: str = "ru",
+        telegram_username: Optional[str] = None,
+        telegram_first_name: str = "",
+        telegram_last_name: Optional[str] = None,
+        telegram_language_code: Optional[str] = None,
     ) -> Optional[BotUserPublic]:
-        """Login: create or get bot user + create session"""
+        """Login: create or get bot user + create session with Telegram metadata"""
         try:
             login_request = SessionLoginRequest(
                 telegram_id=telegram_id,
                 phone=phone,
                 name=name,
-                surname=surname,
-                birthdate=birthdate,
                 language=language,
+                telegram_username=telegram_username,
+                telegram_first_name=telegram_first_name,
+                telegram_last_name=telegram_last_name,
+                telegram_language_code=telegram_language_code,
             )
             payload = login_request.model_dump(mode="json")
             resp = await self._request("POST", "/bot/sessions/login", json=payload)
-            logger.info(f"Login successful for telegram_id {telegram_id} with phone {phone}")
+            logger.info(f"Login successful for telegram_id {telegram_id} (@ {telegram_username}) with phone {phone}")
             return BotUserPublic.model_validate(resp.json())
         except Exception as e:
             logger.error(f"Ошибка при login: {e}")

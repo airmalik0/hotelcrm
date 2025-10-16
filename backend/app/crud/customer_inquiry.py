@@ -23,6 +23,7 @@ class CRUDCustomerInquiry(CRUDBase[CustomerInquiry, CustomerInquiryCreate, Custo
         status: InquiryStatus | None = None,
         customer_id: uuid.UUID | None = None,
         bot_user_id: uuid.UUID | None = None,
+        customers_only: bool | None = None,
     ) -> list[CustomerInquiry]:
         """Get filtered list of inquiries"""
         statement = select(CustomerInquiry)
@@ -33,6 +34,8 @@ class CRUDCustomerInquiry(CRUDBase[CustomerInquiry, CustomerInquiryCreate, Custo
             statement = statement.where(CustomerInquiry.customer_id == customer_id)
         if bot_user_id:
             statement = statement.where(CustomerInquiry.bot_user_id == bot_user_id)
+        if customers_only:
+            statement = statement.where(CustomerInquiry.customer_id.is_not(None))
 
         statement = statement.order_by(col(CustomerInquiry.created_at).desc()).offset(skip).limit(limit)
         return list(session.exec(statement).all())
@@ -44,6 +47,7 @@ class CRUDCustomerInquiry(CRUDBase[CustomerInquiry, CustomerInquiryCreate, Custo
         status: InquiryStatus | None = None,
         customer_id: uuid.UUID | None = None,
         bot_user_id: uuid.UUID | None = None,
+        customers_only: bool | None = None,
     ) -> int:
         """Count filtered inquiries"""
         statement = select(func.count()).select_from(CustomerInquiry)
@@ -54,6 +58,8 @@ class CRUDCustomerInquiry(CRUDBase[CustomerInquiry, CustomerInquiryCreate, Custo
             statement = statement.where(CustomerInquiry.customer_id == customer_id)
         if bot_user_id:
             statement = statement.where(CustomerInquiry.bot_user_id == bot_user_id)
+        if customers_only:
+            statement = statement.where(CustomerInquiry.customer_id.is_not(None))
 
         return session.exec(statement).one()
 

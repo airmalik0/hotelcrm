@@ -3,10 +3,12 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends
+from sqlmodel import SQLModel, select
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.crud.customer_inquiry import customer_inquiry as crud_inquiry
 from app.models import (
+    BotSession,
     CustomerInquiriesPublic,
     CustomerInquiryCreate,
     CustomerInquiryPublic,
@@ -25,26 +27,37 @@ def read_inquiries(
     limit: int = 100,
     status: InquiryStatus | None = None,
     customer_id: uuid.UUID | None = None,
+    customers_only: bool | None = None,
 ) -> Any:
     """Retrieve customer inquiries (admin/manager only)"""
     inquiries = crud_inquiry.get_multi_filtered(
-        session, skip=skip, limit=limit, status=status, customer_id=customer_id
+        session, skip=skip, limit=limit, status=status, customer_id=customer_id, customers_only=customers_only
     )
-    count = crud_inquiry.count_filtered(session, status=status, customer_id=customer_id)
+    count = crud_inquiry.count_filtered(session, status=status, customer_id=customer_id, customers_only=customers_only)
 
     # Enrich with related data
     inquiry_publics = []
     for inquiry in inquiries:
         inquiry_public = CustomerInquiryPublic.model_validate(inquiry)
-        # Add bot user name
+
+        # Bot user data
         if inquiry.bot_user:
-            inquiry_public.bot_user_name = f"{inquiry.bot_user.name} {inquiry.bot_user.surname or ''}".strip()
-        # Add customer name
+            inquiry_public.bot_user_name = inquiry.bot_user.name
+            inquiry_public.bot_user_phone = inquiry.bot_user.phone
+
+            # Get most recent session for Telegram metadata
+            stmt = select(BotSession).where(BotSession.bot_user_id == inquiry.bot_user.id).order_by(BotSession.last_active_at.desc()).limit(1)  # type: ignore[attr-defined]
+            recent_session = session.exec(stmt).first()
+            if recent_session:
+                inquiry_public.telegram_username = recent_session.username
+                inquiry_public.telegram_first_name = recent_session.first_name
+
+        # Customer data
         if inquiry.customer:
             inquiry_public.customer_name = f"{inquiry.customer.first_name} {inquiry.customer.last_name}"
-        # Add assigned user name
-        if inquiry.assigned_user:
-            inquiry_public.assigned_user_name = inquiry.assigned_user.username
+            inquiry_public.customer_phone = inquiry.customer.phone
+            inquiry_public.has_customer = True
+
         inquiry_publics.append(inquiry_public)
 
     return CustomerInquiriesPublic(data=inquiry_publics, count=count)
@@ -71,13 +84,24 @@ def read_inquiry(session: SessionDep, inquiry_id: uuid.UUID) -> Any:
     inquiry = service.get_inquiry_or_404(inquiry_id)
 
     inquiry_public = CustomerInquiryPublic.model_validate(inquiry)
-    # Enrich with related data
+
+    # Bot user data
     if inquiry.bot_user:
-        inquiry_public.bot_user_name = f"{inquiry.bot_user.name} {inquiry.bot_user.surname or ''}".strip()
+        inquiry_public.bot_user_name = inquiry.bot_user.name
+        inquiry_public.bot_user_phone = inquiry.bot_user.phone
+
+        # Get most recent session for Telegram metadata
+        stmt = select(BotSession).where(BotSession.bot_user_id == inquiry.bot_user.id).order_by(BotSession.last_active_at.desc()).limit(1)  # type: ignore[attr-defined]
+        recent_session = session.exec(stmt).first()
+        if recent_session:
+            inquiry_public.telegram_username = recent_session.username
+            inquiry_public.telegram_first_name = recent_session.first_name
+
+    # Customer data
     if inquiry.customer:
         inquiry_public.customer_name = f"{inquiry.customer.first_name} {inquiry.customer.last_name}"
-    if inquiry.assigned_user:
-        inquiry_public.assigned_user_name = inquiry.assigned_user.username
+        inquiry_public.customer_phone = inquiry.customer.phone
+        inquiry_public.has_customer = True
 
     return inquiry_public
 
@@ -97,20 +121,9 @@ def update_inquiry(
     return inquiry
 
 
-@router.post("/{inquiry_id}/assign", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
-def assign_inquiry(
-    session: SessionDep,
-    _current_user: CurrentUser,
-    inquiry_id: uuid.UUID,
-    assigned_to: uuid.UUID,
-) -> Any:
-    """Assign inquiry to a user (admin/manager only)"""
-    service = CustomerInquiryService(session)
-    inquiry_in = CustomerInquiryUpdate(assigned_to=assigned_to, status=InquiryStatus.IN_PROGRESS)
-    inquiry = service.update_inquiry(inquiry_id, inquiry_in)
-    session.commit()
-    session.refresh(inquiry)
-    return inquiry
+class ResolveInquiryRequest(SQLModel):
+    """Request body for resolving inquiry"""
+    resolution_notes: str
 
 
 @router.post("/{inquiry_id}/resolve", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
@@ -118,14 +131,14 @@ def resolve_inquiry(
     session: SessionDep,
     _current_user: CurrentUser,
     inquiry_id: uuid.UUID,
-    resolution_notes: str | None = None,
+    request: ResolveInquiryRequest,
 ) -> Any:
     """Mark inquiry as resolved (admin/manager only)"""
     service = CustomerInquiryService(session)
     inquiry = service.update_inquiry_status(inquiry_id, InquiryStatus.RESOLVED)
 
-    if resolution_notes:
-        inquiry.resolution_notes = resolution_notes
+    if request.resolution_notes:
+        inquiry.resolution_notes = request.resolution_notes
         session.add(inquiry)
 
     session.commit()

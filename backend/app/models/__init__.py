@@ -131,7 +131,6 @@ from .bot_session import (
 from .customer_inquiry import (
     InquiryType,
     InquiryStatus,
-    InquiryPriority,
     CustomerInquiryBase,
     CustomerInquiry,
     CustomerInquiryCreate,

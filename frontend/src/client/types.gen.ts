@@ -222,18 +222,6 @@ export type BookingUpdate = {
 }> | null);
 };
 
-/**
- * Create bot user (phone-based account)
- */
-export type BotUserCreate = {
-    phone: string;
-    name: string;
-    surname?: (string | null);
-    birthdate?: (string | null);
-    language?: string;
-    business_type?: string;
-};
-
 export type BotUserPublic = {
     /**
      * Normalized phone (digits only)
@@ -244,21 +232,9 @@ export type BotUserPublic = {
      */
     name: string;
     /**
-     * User last name
-     */
-    surname?: (string | null);
-    /**
-     * Date of birth
-     */
-    birthdate?: (string | null);
-    /**
      * Interface language code (ru, uz, en, zh)
      */
     language?: string;
-    /**
-     * Business type (always hotel)
-     */
-    business_type?: string;
     /**
      * Whether user is active
      */
@@ -271,6 +247,16 @@ export type BotUserPublic = {
 export type BotUsersPublic = {
     data: Array<BotUserPublic>;
     count: number;
+};
+
+/**
+ * Update bot user
+ */
+export type BotUserUpdate = {
+    phone?: (string | null);
+    name?: (string | null);
+    language?: (string | null);
+    is_active?: (boolean | null);
 };
 
 /**
@@ -675,6 +661,13 @@ export type PaymentAdjustmentResponse = {
 
 export type PaymentMethod = 'cash' | 'transfer' | 'terminal';
 
+/**
+ * Request body for resolving inquiry
+ */
+export type ResolveInquiryRequest = {
+    resolution_notes: string;
+};
+
 export type RoomCategoriesPublic = {
     data: Array<RoomCategoryPublic>;
     count: number;
@@ -746,6 +739,20 @@ export type RoomUpdate = {
     status?: (RoomStatus | null);
     description?: (string | null);
     room_photo_paths?: (Array<(string)> | null);
+};
+
+/**
+ * Request to create session (login)
+ */
+export type SessionCreateRequest = {
+    telegram_id: number;
+    phone: string;
+    name: string;
+    language?: string;
+    telegram_username?: (string | null);
+    telegram_first_name: string;
+    telegram_last_name?: (string | null);
+    telegram_language_code?: (string | null);
 };
 
 /**
@@ -1427,13 +1434,13 @@ export type FilesDeleteFileResponse = (unknown);
 
 export type FilesDeleteFileError = (HTTPValidationError);
 
-export type BotUpsertBotUserData = {
-    body: BotUserCreate;
+export type BotLoginSessionData = {
+    body: SessionCreateRequest;
 };
 
-export type BotUpsertBotUserResponse = (BotUserPublic);
+export type BotLoginSessionResponse = (BotUserPublic);
 
-export type BotUpsertBotUserError = (HTTPValidationError);
+export type BotLoginSessionError = (HTTPValidationError);
 
 export type BotListBotUsersData = {
     query?: {
@@ -1446,15 +1453,36 @@ export type BotListBotUsersResponse = (BotUsersPublic);
 
 export type BotListBotUsersError = (HTTPValidationError);
 
-export type BotGetUserByTelegramIdData = {
-    query: {
+export type BotGetSessionData = {
+    path: {
         telegram_id: number;
     };
 };
 
-export type BotGetUserByTelegramIdResponse = (BotUserPublic);
+export type BotGetSessionResponse = (BotUserPublic);
 
-export type BotGetUserByTelegramIdError = (HTTPValidationError);
+export type BotGetSessionError = (HTTPValidationError);
+
+export type BotUpdateSessionUserData = {
+    body: BotUserUpdate;
+    path: {
+        telegram_id: number;
+    };
+};
+
+export type BotUpdateSessionUserResponse = (BotUserPublic);
+
+export type BotUpdateSessionUserError = (HTTPValidationError);
+
+export type BotLogoutSessionData = {
+    path: {
+        telegram_id: number;
+    };
+};
+
+export type BotLogoutSessionResponse = (unknown);
+
+export type BotLogoutSessionError = (HTTPValidationError);
 
 export type BotGetUserWithContextData = {
     path: {
@@ -1465,16 +1493,6 @@ export type BotGetUserWithContextData = {
 export type BotGetUserWithContextResponse = (BotUserWithContext);
 
 export type BotGetUserWithContextError = (HTTPValidationError);
-
-export type BotDeleteBotUserData = {
-    path: {
-        telegram_id: number;
-    };
-};
-
-export type BotDeleteBotUserResponse = (unknown);
-
-export type BotDeleteBotUserError = (HTTPValidationError);
 
 export type BotGetCustomerIdByTelegramData = {
     path: {
@@ -1810,6 +1828,7 @@ export type GeoGetDistrictsError = (HTTPValidationError);
 export type InquiriesReadInquiriesData = {
     query?: {
         customer_id?: (string | null);
+        customers_only?: (boolean | null);
         limit?: number;
         skip?: number;
         status?: (InquiryStatus | null);
@@ -1849,25 +1868,10 @@ export type InquiriesUpdateInquiryResponse = (CustomerInquiryPublic);
 
 export type InquiriesUpdateInquiryError = (HTTPValidationError);
 
-export type InquiriesAssignInquiryData = {
-    path: {
-        inquiry_id: string;
-    };
-    query: {
-        assigned_to: string;
-    };
-};
-
-export type InquiriesAssignInquiryResponse = (CustomerInquiryPublic);
-
-export type InquiriesAssignInquiryError = (HTTPValidationError);
-
 export type InquiriesResolveInquiryData = {
+    body: ResolveInquiryRequest;
     path: {
         inquiry_id: string;
-    };
-    query?: {
-        resolution_notes?: (string | null);
     };
 };
 

@@ -19,6 +19,7 @@ export async function getInquiries(params?: {
   status?: InquiryStatus | null
   customer_id?: string | null
   bot_user_id?: string | null
+  customers_only?: boolean | null
 }): Promise<PaginatedResponse<CustomerInquiryPublic>> {
   const response = await apiClient.get<
     PaginatedResponse<CustomerInquiryPublic>
@@ -29,6 +30,7 @@ export async function getInquiries(params?: {
       status: params?.status || undefined,
       customer_id: params?.customer_id || undefined,
       bot_user_id: params?.bot_user_id || undefined,
+      customers_only: params?.customers_only || undefined,
     },
   })
   return response.data

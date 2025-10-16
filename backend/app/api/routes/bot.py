@@ -41,9 +41,12 @@ class SessionCreateRequest(BaseModel):
     telegram_id: int
     phone: str
     name: str
-    surname: str | None = None
-    birthdate: Any | None = None
     language: str = "ru"
+    # Telegram account metadata
+    telegram_username: str | None = None
+    telegram_first_name: str
+    telegram_last_name: str | None = None
+    telegram_language_code: str | None = None
 
 
 @router.post("/sessions/login", response_model=BotUserPublic)
@@ -55,13 +58,18 @@ def login_session(session: SessionDep, request: SessionCreateRequest) -> Any:
     bot_user = service.create_or_get_bot_user(
         phone=request.phone,
         name=request.name,
-        surname=request.surname,
-        birthdate=request.birthdate,
         language=request.language
     )
 
-    # Create session
-    service.create_session(telegram_id=request.telegram_id, bot_user_id=bot_user.id)
+    # Create session with Telegram metadata
+    service.create_session(
+        telegram_id=request.telegram_id,
+        bot_user_id=bot_user.id,
+        username=request.telegram_username,
+        first_name=request.telegram_first_name,
+        last_name=request.telegram_last_name,
+        language_code=request.telegram_language_code
+    )
 
     session.commit()
     session.refresh(bot_user)

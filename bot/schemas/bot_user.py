@@ -10,9 +10,12 @@ class SessionLoginRequest(BaseModel):
     telegram_id: int = Field(description="Telegram user ID")
     phone: str = Field(max_length=20, description="Normalized phone (digits only)")
     name: str = Field(max_length=100, description="User first name")
-    surname: str | None = Field(default=None, max_length=100, description="User last name")
-    birthdate: datetime | None = Field(default=None, description="Date of birth")
     language: str = Field(default="ru", max_length=2, description="Interface language code (ru, uz, en, zh)")
+    # Telegram account metadata
+    telegram_username: str | None = Field(default=None, description="Telegram @username")
+    telegram_first_name: str = Field(description="Telegram display first name")
+    telegram_last_name: str | None = Field(default=None, description="Telegram display last name")
+    telegram_language_code: str | None = Field(default=None, description="Telegram user language code")
 
 
 class BotUserPublic(BaseModel):
@@ -20,10 +23,7 @@ class BotUserPublic(BaseModel):
     id: uuid.UUID
     phone: str
     name: str
-    surname: str | None = None
-    birthdate: datetime | None = None
     language: str
-    business_type: str
     is_active: bool
     created_at: datetime
     updated_at: datetime

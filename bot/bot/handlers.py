@@ -329,19 +329,16 @@ async def _debounced_ai_reply(message: Message, state: FSMContext):
         # Не вызываем повторно форматирование, используем накопленный буфер текста
         last_user_text = pending_user_text.get(user_id, '')
 
-        business_type = get_business_type(user_dict.get("business_type", "hotel"))
+        business_type = get_business_type("hotel")  # Always hotel
         user_info = {
             'user_id': user_dict.get("id"),
             'name': user_dict.get("name"),
-            'surname': user_dict.get("surname"),
-            'birthdate': user_dict.get("birthdate"),
             'telegram_id': user_id,
             'telegram_username': message.from_user.username,
             'telegram_first_name': message.from_user.first_name,
             'telegram_last_name': message.from_user.last_name,
             'phone': user_dict.get("phone"),
-            'language': user_dict.get("language", "ru"),
-            'business_type': user_dict.get("business_type", "hotel")
+            'language': user_dict.get("language", "ru")
         }
 
         # Собираем контент пользователя: текст + все накопленные изображения за окно дебаунса
@@ -762,14 +759,16 @@ async def process_name(message: Message, state: FSMContext):
         # Всегда используем hotel (единственный доступный тип бизнеса)
         business_type = get_business_type('hotel')
 
-        # Login: create or get bot user + create session
+        # Login: create or get bot user + create session with Telegram metadata
         user = await db_service.login(
             telegram_id=message.from_user.id,
             phone=data['phone'],
             name=data['name'],
-            surname=None,
-            birthdate=None,
-            language=lang
+            language=lang,
+            telegram_username=message.from_user.username,
+            telegram_first_name=message.from_user.first_name or data['name'],
+            telegram_last_name=message.from_user.last_name,
+            telegram_language_code=message.from_user.language_code
         )
 
         if user:

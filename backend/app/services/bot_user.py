@@ -169,8 +169,7 @@ class BotUserService:
             logger.error(f"Error generating context for phone {phone}: {e}")
             return {"booking_dates": [], "bookings_info": []}
 
-    def create_or_get_bot_user(self, phone: str, name: str, surname: str | None = None,
-                                birthdate: Any | None = None, language: str = "ru") -> BotUser:
+    def create_or_get_bot_user(self, phone: str, name: str, language: str = "ru") -> BotUser:
         """Create or get bot user by phone"""
         from app.models import BotUserCreate
 
@@ -178,8 +177,6 @@ class BotUserService:
         if user:
             # Update existing user
             user.name = name
-            user.surname = surname
-            user.birthdate = birthdate
             user.language = language
             self.session.add(user)
             self.session.flush()
@@ -190,26 +187,38 @@ class BotUserService:
         user_in = BotUserCreate(
             phone=phone,
             name=name,
-            surname=surname,
-            birthdate=birthdate,
-            language=language,
-            business_type="hotel"
+            language=language
         )
         user = self.crud.create(self.session, obj_in=user_in)
         logger.info(f"Created new bot user for phone {phone}")
         return user
 
-    def create_session(self, telegram_id: int, bot_user_id: uuid.UUID) -> None:
-        """Create or update session for telegram_id"""
+    def create_session(
+        self,
+        telegram_id: int,
+        bot_user_id: uuid.UUID,
+        username: str | None = None,
+        first_name: str = "",
+        last_name: str | None = None,
+        language_code: str | None = None
+    ) -> None:
+        """Create or update session for telegram_id with Telegram metadata"""
         from app.models import BotSessionCreate
 
         # Delete existing session for this telegram_id
         self.crud_session.delete_by_telegram_id(self.session, telegram_id=telegram_id)
 
-        # Create new session
-        session_in = BotSessionCreate(telegram_id=telegram_id, bot_user_id=bot_user_id)
+        # Create new session with Telegram metadata
+        session_in = BotSessionCreate(
+            telegram_id=telegram_id,
+            bot_user_id=bot_user_id,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            language_code=language_code
+        )
         self.crud_session.create(self.session, obj_in=session_in)
-        logger.info(f"Created session for telegram_id {telegram_id} → bot_user_id {bot_user_id}")
+        logger.info(f"Created session for telegram_id {telegram_id} (@ {username}) → bot_user_id {bot_user_id}")
 
     def delete_session(self, telegram_id: int) -> bool:
         """Delete session (logout)"""

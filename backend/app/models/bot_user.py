@@ -14,10 +14,7 @@ class BotUserBase(SQLModel):
     """Bot user = phone number account (can be accessed from multiple telegram accounts)"""
     phone: str = Field(unique=True, index=True, max_length=20, description="Normalized phone (digits only)")
     name: str = Field(max_length=100, description="User first name")
-    surname: str | None = Field(default=None, max_length=100, description="User last name")
-    birthdate: datetime | None = Field(default=None, sa_column=Column(DateTime(timezone=True)), description="Date of birth")
     language: str = Field(default="ru", max_length=2, description="Interface language code (ru, uz, en, zh)")
-    business_type: str = Field(default="hotel", max_length=20, description="Business type (always hotel)")
     is_active: bool = Field(default=True, description="Whether user is active")
 
 
@@ -37,18 +34,13 @@ class BotUserCreate(SQLModel):
     """Create bot user (phone-based account)"""
     phone: str = Field(max_length=20)
     name: str = Field(max_length=100)
-    surname: str | None = None
-    birthdate: datetime | None = None
     language: str = "ru"
-    business_type: str = "hotel"
 
 
 class BotUserUpdate(SQLModel):
     """Update bot user"""
     phone: str | None = None
     name: str | None = None
-    surname: str | None = None
-    birthdate: datetime | None = None
     language: str | None = None
     is_active: bool | None = None
 

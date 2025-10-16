@@ -1076,58 +1076,6 @@ export const BookingsPublicSchema = {
     title: 'BookingsPublic'
 } as const;
 
-export const BotUserCreateSchema = {
-    properties: {
-        phone: {
-            type: 'string',
-            maxLength: 20,
-            title: 'Phone'
-        },
-        name: {
-            type: 'string',
-            maxLength: 100,
-            title: 'Name'
-        },
-        surname: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Surname'
-        },
-        birthdate: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Birthdate'
-        },
-        language: {
-            type: 'string',
-            title: 'Language',
-            default: 'ru'
-        },
-        business_type: {
-            type: 'string',
-            title: 'Business Type',
-            default: 'hotel'
-        }
-    },
-    type: 'object',
-    required: ['phone', 'name'],
-    title: 'BotUserCreate',
-    description: 'Create bot user (phone-based account)'
-} as const;
-
 export const BotUserPublicSchema = {
     properties: {
         phone: {
@@ -1142,45 +1090,12 @@ export const BotUserPublicSchema = {
             title: 'Name',
             description: 'User first name'
         },
-        surname: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 100
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Surname',
-            description: 'User last name'
-        },
-        birthdate: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Birthdate',
-            description: 'Date of birth'
-        },
         language: {
             type: 'string',
             maxLength: 2,
             title: 'Language',
             description: 'Interface language code (ru, uz, en, zh)',
             default: 'ru'
-        },
-        business_type: {
-            type: 'string',
-            maxLength: 20,
-            title: 'Business Type',
-            description: 'Business type (always hotel)',
-            default: 'hotel'
         },
         is_active: {
             type: 'boolean',
@@ -1207,6 +1122,58 @@ export const BotUserPublicSchema = {
     type: 'object',
     required: ['phone', 'name', 'id', 'created_at', 'updated_at'],
     title: 'BotUserPublic'
+} as const;
+
+export const BotUserUpdateSchema = {
+    properties: {
+        phone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Phone'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'BotUserUpdate',
+    description: 'Update bot user'
 } as const;
 
 export const BotUserWithContextSchema = {
@@ -2737,6 +2704,19 @@ export const PaymentMethodSchema = {
     title: 'PaymentMethod'
 } as const;
 
+export const ResolveInquiryRequestSchema = {
+    properties: {
+        resolution_notes: {
+            type: 'string',
+            title: 'Resolution Notes'
+        }
+    },
+    type: 'object',
+    required: ['resolution_notes'],
+    title: 'ResolveInquiryRequest',
+    description: 'Request body for resolving inquiry'
+} as const;
+
 export const RoomCategoriesPublicSchema = {
     properties: {
         data: {
@@ -3221,6 +3201,69 @@ export const SMSStatusSchema = {
     enum: ['pending', 'sent', 'delivered', 'failed', 'mock'],
     title: 'SMSStatus',
     description: 'SMS delivery status'
+} as const;
+
+export const SessionCreateRequestSchema = {
+    properties: {
+        telegram_id: {
+            type: 'integer',
+            title: 'Telegram Id'
+        },
+        phone: {
+            type: 'string',
+            title: 'Phone'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        language: {
+            type: 'string',
+            title: 'Language',
+            default: 'ru'
+        },
+        telegram_username: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Username'
+        },
+        telegram_first_name: {
+            type: 'string',
+            title: 'Telegram First Name'
+        },
+        telegram_last_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Last Name'
+        },
+        telegram_language_code: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Language Code'
+        }
+    },
+    type: 'object',
+    required: ['telegram_id', 'phone', 'name', 'telegram_first_name'],
+    title: 'SessionCreateRequest',
+    description: 'Request to create session (login)'
 } as const;
 
 export const TokenSchema = {

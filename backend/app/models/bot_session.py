@@ -15,6 +15,12 @@ class BotSessionBase(SQLModel):
     telegram_id: int = Field(sa_column=Column(BigInteger, unique=True, index=True), description="Telegram user ID (one session per telegram account)")
     bot_user_id: uuid.UUID = Field(foreign_key="bot_users.id", index=True, description="Bot user (phone number) this session is logged into")
 
+    # Telegram account metadata
+    username: str | None = Field(default=None, max_length=100, description="Telegram @username (can be None, can change)")
+    first_name: str = Field(max_length=100, description="Telegram user first name")
+    last_name: str | None = Field(default=None, max_length=100, description="Telegram user last name")
+    language_code: str | None = Field(default=None, max_length=10, description="Telegram user language code (e.g., 'en', 'ru', 'uz')")
+
 
 class BotSession(BotSessionBase, table=True):
     __tablename__ = "bot_sessions"
@@ -31,6 +37,10 @@ class BotSessionCreate(SQLModel):
     """Create bot session (login)"""
     telegram_id: int
     bot_user_id: uuid.UUID
+    username: str | None = None
+    first_name: str
+    last_name: str | None = None
+    language_code: str | None = None
 
 
 class BotSessionPublic(BotSessionBase):
