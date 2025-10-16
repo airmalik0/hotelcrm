@@ -600,11 +600,6 @@ export function CustomerInquiries() {
                         {selectedInquiry.telegram_username}
                       </p>
                     )}
-                    {selectedInquiry.telegram_first_name && (
-                      <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                        Telegram: {selectedInquiry.telegram_first_name}
-                      </p>
-                    )}
                     {selectedInquiry.bot_user_phone && (
                       <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
                         <Phone className="w-3 h-3" />
