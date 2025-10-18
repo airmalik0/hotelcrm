@@ -17,6 +17,7 @@ class CustomerBase(SQLModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(default=None, max_length=20, unique=True, index=True)
+    name_cyrillic: str | None = Field(default=None, max_length=200)
     date_of_birth: datetime | None = None
     # Geographic fields
     country_code: str | None = Field(default=None, max_length=2, description="ISO-3166 alpha-2 code (e.g., UZ)")
@@ -149,6 +150,7 @@ class CustomerCreate(CustomerBase):
 class CustomerUpdate(SQLModel):
     first_name: str | None = None
     last_name: str | None = None
+    name_cyrillic: str | None = None
     phone: str | None = None
     date_of_birth: datetime | None = None
     country_code: str | None = None

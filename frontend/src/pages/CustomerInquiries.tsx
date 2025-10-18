@@ -435,9 +435,7 @@ export function CustomerInquiries() {
                           </div>
                         )}
 
-                        {/* Bot user info */}
                         <div className="flex flex-col gap-0.5 text-xs text-neutral-600 dark:text-neutral-400">
-                          <span>{inquiry.bot_user_name || "Unknown"}</span>
 
                           {/* Telegram username */}
                           {inquiry.telegram_username && (

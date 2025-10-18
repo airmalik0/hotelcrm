@@ -1532,6 +1532,18 @@ export const CustomerCreateSchema = {
             ],
             title: 'Phone'
         },
+        name_cyrillic: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name Cyrillic'
+        },
         date_of_birth: {
             anyOf: [
                 {
@@ -1971,6 +1983,18 @@ export const CustomerPublicSchema = {
             ],
             title: 'Phone'
         },
+        name_cyrillic: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name Cyrillic'
+        },
         date_of_birth: {
             anyOf: [
                 {
@@ -2127,6 +2151,17 @@ export const CustomerUpdateSchema = {
                 }
             ],
             title: 'Last Name'
+        },
+        name_cyrillic: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name Cyrillic'
         },
         phone: {
             anyOf: [

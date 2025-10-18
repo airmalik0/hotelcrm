@@ -9,18 +9,15 @@ import {
   getSeasonalTrends,
 } from "@/api/analytics"
 import { getRoomCategories, getRooms } from "@/api/rooms"
-import type {
-  AnalyticsExportRequest,
-  DashboardMetrics,
-} from "@/client/types.gen"
+import { getCountries, getDistricts, getRegions } from "@/api/geo"
+import type { AnalyticsExportRequest } from "@/client/types.gen"
 import {
-  CustomerDemographicsChart,
   PaymentDistributionChart,
   RevenueTrendChart,
   RoomPerformanceChart,
   SeasonalTrendsChart,
 } from "@/components/analytics/AnalyticsCharts"
-import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
+import type { GeoValue } from "@/components/ui/GeoSelect"
 import { useAuth } from "@/contexts/AuthContext"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
@@ -34,7 +31,6 @@ import {
   DollarSign,
   Download,
   Heart,
-  TrendingDown,
   TrendingUp,
   UserCheck,
   Users,
@@ -69,6 +65,26 @@ export function Analytics() {
     region: null,
     district: null,
   })
+
+  // For readable summary in the compact Location control
+  const { data: countriesOptions = [] } = useQuery({
+    queryKey: ["geo", "countries"],
+    queryFn: getCountries,
+    staleTime: 24 * 60 * 60 * 1000,
+  })
+  const { data: regionsOptions = [] } = useQuery({
+    queryKey: ["geo", "regions", geoFilter.country_code],
+    queryFn: () => getRegions(geoFilter.country_code || ""),
+    enabled: !!geoFilter.country_code,
+    staleTime: 24 * 60 * 60 * 1000,
+  })
+  const { data: districtsOptions = [] } = useQuery({
+    queryKey: ["geo", "districts", geoFilter.region],
+    queryFn: () => getDistricts(geoFilter.region || ""),
+    enabled:
+      geoFilter.country_code === "UZ" && geoFilter.region === "TASHKENT_CITY",
+    staleTime: 24 * 60 * 60 * 1000,
+  })
   const [customerType, setCustomerType] = useState<"" | "new" | "returning">("")
   const [tags, setTags] = useState<string[]>([])
 
@@ -101,11 +117,7 @@ export function Analytics() {
   }
 
   // Fetch dashboard metrics with date range
-  const {
-    data: dashboardData,
-    isLoading: dashboardLoading,
-    refetch: refetchDashboard,
-  } = useQuery({
+  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: [
       "analytics",
       "dashboard",
@@ -258,8 +270,8 @@ export function Analytics() {
   const handleExportPdf = () => {
     exportPdfMutation.mutate({
       filters: {
-        date_from: new Date(`${dateRange.from}T00:00:00`),
-        date_to: new Date(`${dateRange.to}T23:59:59`),
+        date_from: `${dateRange.from}T00:00:00`,
+        date_to: `${dateRange.to}T23:59:59`,
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
         category_id:
           selectedCategoryId !== "all" ? selectedCategoryId : undefined,
@@ -277,8 +289,8 @@ export function Analytics() {
   const handleExportExcel = () => {
     exportExcelMutation.mutate({
       filters: {
-        date_from: new Date(`${dateRange.from}T00:00:00`),
-        date_to: new Date(`${dateRange.to}T23:59:59`),
+        date_from: `${dateRange.from}T00:00:00`,
+        date_to: `${dateRange.to}T23:59:59`,
         room_id: selectedRoomId !== "all" ? selectedRoomId : undefined,
         category_id:
           selectedCategoryId !== "all" ? selectedCategoryId : undefined,
@@ -334,7 +346,7 @@ export function Analytics() {
     })
   }
 
-  const metrics = dashboardData?.data as DashboardMetrics | undefined
+  const metrics = dashboardData?.data as any
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
@@ -525,17 +537,7 @@ export function Analytics() {
                 ))}
               </select>
             </div>
-            {/* Location filters */}
-            <div className="flex-1 min-w-[220px]">
-              <GeoSelect
-                label="Location Filter"
-                value={geoFilter}
-                onChange={(v) => setGeoFilter(v)}
-                variant="popover"
-                size="sm"
-                hideLabels
-              />
-            </div>
+            {/* Location filters are rendered in a dedicated row below */}
             {/* Customer type */}
             <div className="flex-1 min-w-[160px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
@@ -587,6 +589,88 @@ export function Analytics() {
               Clear Filters
             </button>
           </div>
+          <div className="mt-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-lg p-4 border border-neutral-200 dark:border-neutral-600">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Country */}
+                <div className="min-w-[200px]">
+                  <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                    Country
+                  </label>
+                  <select
+                    value={geoFilter.country_code || ""}
+                    onChange={(e) =>
+                      setGeoFilter({
+                        country_code: e.target.value || null,
+                        region: null,
+                        district: null,
+                      })
+                    }
+                    className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">All countries</option>
+                    {countriesOptions.map((c: any) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Region (UZ only) */}
+                {geoFilter.country_code === "UZ" && (
+                  <div className="min-w-[200px]">
+                    <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                      Region (Uzbekistan)
+                    </label>
+                    <select
+                      value={geoFilter.region || ""}
+                      onChange={(e) =>
+                        setGeoFilter({
+                          ...geoFilter,
+                          region: e.target.value || null,
+                          district: null,
+                        })
+                      }
+                      className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">All regions</option>
+                      {regionsOptions.map((r: any) => (
+                        <option key={r.code} value={r.code}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* District (Tashkent city) */}
+                {geoFilter.country_code === "UZ" &&
+                  geoFilter.region === "TASHKENT_CITY" && (
+                    <div className="min-w-[200px]">
+                      <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                        District (Tashkent city)
+                      </label>
+                      <select
+                        value={geoFilter.district || ""}
+                        onChange={(e) =>
+                          setGeoFilter({
+                            ...geoFilter,
+                            district: e.target.value || null,
+                          })
+                        }
+                        className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">All districts</option>
+                        {districtsOptions.map((d: any) => (
+                          <option key={d.code} value={d.code}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+              </div>
+          </div>
         </div>
       </div>
 
@@ -628,7 +712,7 @@ interface TabProps {
 }
 
 interface OverviewTabProps extends TabProps {
-  metrics?: DashboardMetrics
+  metrics?: any
   quickStats?: any
 }
 

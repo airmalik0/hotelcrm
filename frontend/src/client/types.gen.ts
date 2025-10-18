@@ -377,6 +377,7 @@ export type CustomerCreate = {
     first_name: string;
     last_name: string;
     phone?: (string | null);
+    name_cyrillic?: (string | null);
     date_of_birth?: (string | null);
     /**
      * ISO-3166 alpha-2 code (e.g., UZ)
@@ -484,6 +485,7 @@ export type CustomerPublic = {
     first_name: string;
     last_name: string;
     phone?: (string | null);
+    name_cyrillic?: (string | null);
     date_of_birth?: (string | null);
     /**
      * ISO-3166 alpha-2 code (e.g., UZ)
@@ -515,6 +517,7 @@ export type CustomerType = 'new' | 'returning';
 export type CustomerUpdate = {
     first_name?: (string | null);
     last_name?: (string | null);
+    name_cyrillic?: (string | null);
     phone?: (string | null);
     date_of_birth?: (string | null);
     country_code?: (string | null);
