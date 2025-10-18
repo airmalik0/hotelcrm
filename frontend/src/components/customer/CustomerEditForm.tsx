@@ -33,6 +33,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
   const [formData, setFormData] = useState<CustomerUpdate>({
     first_name: customer.first_name || "",
     last_name: customer.last_name || "",
+    name_cyrillic: (customer as any).name_cyrillic || "",
     phone: customer.phone || "",
     date_of_birth: customer.date_of_birth
       ? safeParseDate(customer.date_of_birth).toISOString().split("T")[0]
@@ -115,6 +116,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
       const submitData: CustomerUpdate = {
         first_name: formData.first_name || undefined,
         last_name: formData.last_name || undefined,
+        name_cyrillic: formData.name_cyrillic || undefined,
         phone: formData.phone || undefined,
         date_of_birth: formData.date_of_birth || undefined,
         // Important: send nulls to explicitly clear values when user removed them
@@ -210,6 +212,25 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
             {errors.last_name && (
               <p className="text-danger-600 text-sm mt-1">{errors.last_name}</p>
             )}
+          </div>
+
+          {/* Name (Cyrillic) */}
+          <div>
+            <label
+              htmlFor="name_cyrillic"
+              className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
+            >
+              Name (Cyrillic)
+            </label>
+            <input
+              type="text"
+              id="name_cyrillic"
+              name="name_cyrillic"
+              value={(formData as any).name_cyrillic || ""}
+              onChange={handleInputChange}
+              className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none"
+              placeholder="Например: Иванов Иван"
+            />
           </div>
 
           {/* Phone */}

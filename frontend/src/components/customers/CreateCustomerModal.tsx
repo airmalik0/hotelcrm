@@ -36,6 +36,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
   const [formData, setFormData] = useState<{
     first_name: string
     last_name: string
+    name_cyrillic: string
     phone: string
     date_of_birth: string
     geo: GeoValue
@@ -44,6 +45,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
   }>({
     first_name: "",
     last_name: "",
+    name_cyrillic: "",
     phone: "",
     date_of_birth: "",
     geo: { country_code: "UZ", region: null, district: null },
@@ -75,6 +77,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     setFormData({
       first_name: "",
       last_name: "",
+      name_cyrillic: "",
       phone: "",
       date_of_birth: "",
       geo: { country_code: "UZ", region: null, district: null },
@@ -118,6 +121,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
     const customerData: CustomerCreate = {
       first_name: formData.first_name.trim(),
       last_name: formData.last_name.trim(),
+      name_cyrillic: formData.name_cyrillic.trim() || null,
       phone: formData.phone.trim() || null,
       date_of_birth: formData.date_of_birth || null,
       country_code: formData.geo.country_code,
@@ -225,6 +229,23 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                   </p>
                 )}
               </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Name (Cyrillic)
+              </label>
+              <input
+                type="text"
+                value={formData.name_cyrillic}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    name_cyrillic: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Например: Иванов Иван"
+              />
+            </div>
             </div>
           </div>
 
