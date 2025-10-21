@@ -450,7 +450,7 @@ export function MarketingCampaigns() {
                 setItemsPerPage(Number(e.target.value))
                 setCurrentPage(0)
               }}
-              className="border border-neutral-300 dark:border-neutral-500 rounded bg-white dark:bg-transparent px-2 py-1 text-sm"
+              className="border border-neutral-300 dark:border-neutral-500 rounded bg-white dark:bg-transparent text-neutral-900 dark:text-white px-2 py-1 text-sm"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
