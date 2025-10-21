@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import SQLModel, select
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
+from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.crud.customer_inquiry import customer_inquiry as crud_inquiry
 from app.models import (
     BotSession,
@@ -66,12 +67,24 @@ def read_inquiries(
 @router.post("/", response_model=CustomerInquiryPublic)
 def create_inquiry_api(
     session: SessionDep,
-    _current_user: CurrentUser,
+    current_user: CurrentUser,
     inquiry_in: CustomerInquiryCreate,
 ) -> Any:
     """Create inquiry via standard user-authenticated API."""
     service = CustomerInquiryService(session)
     inquiry = service.create_inquiry(inquiry_in)
+
+    # Log audit
+    entity_name = get_entity_name("customer_inquiry", inquiry)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="created",
+        entity_type="customer_inquiry",
+        entity_id=inquiry.id,
+        entity_name=entity_name,
+    )
+
     session.commit()
     session.refresh(inquiry)
     return inquiry
@@ -109,13 +122,34 @@ def read_inquiry(session: SessionDep, inquiry_id: uuid.UUID) -> Any:
 @router.patch("/{inquiry_id}", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
 def update_inquiry(
     session: SessionDep,
-    _current_user: CurrentUser,
+    current_user: CurrentUser,
     inquiry_id: uuid.UUID,
     inquiry_in: CustomerInquiryUpdate,
 ) -> Any:
     """Update inquiry (admin/manager only)"""
     service = CustomerInquiryService(session)
+    inquiry = service.get_inquiry_or_404(inquiry_id)
+
+    # Get old and new values for audit
+    update_dict = inquiry_in.model_dump(exclude_unset=True)
+    old_values, new_values = get_change_values(inquiry, update_dict)
+
     inquiry = service.update_inquiry(inquiry_id, inquiry_in)
+
+    # Log audit if there were changes
+    if old_values:
+        entity_name = get_entity_name("customer_inquiry", inquiry)
+        log_audit(
+            session=session,
+            user=current_user,
+            action="updated",
+            entity_type="customer_inquiry",
+            entity_id=inquiry.id,
+            entity_name=entity_name,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
     session.commit()
     session.refresh(inquiry)
     return inquiry
@@ -129,7 +163,7 @@ class ResolveInquiryRequest(SQLModel):
 @router.post("/{inquiry_id}/resolve", response_model=CustomerInquiryPublic, dependencies=[Depends(require_admin_or_manager)])
 def resolve_inquiry(
     session: SessionDep,
-    _current_user: CurrentUser,
+    current_user: CurrentUser,
     inquiry_id: uuid.UUID,
     request: ResolveInquiryRequest,
 ) -> Any:
@@ -140,6 +174,18 @@ def resolve_inquiry(
     if request.resolution_notes:
         inquiry.resolution_notes = request.resolution_notes
         session.add(inquiry)
+
+    # Log audit
+    entity_name = get_entity_name("customer_inquiry", inquiry)
+    log_audit(
+        session=session,
+        user=current_user,
+        action="resolved",
+        entity_type="customer_inquiry",
+        entity_id=inquiry.id,
+        entity_name=entity_name,
+        new_values={"resolution_notes": request.resolution_notes} if request.resolution_notes else None,
+    )
 
     session.commit()
     session.refresh(inquiry)

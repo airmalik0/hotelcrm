@@ -30,6 +30,8 @@ dependencies = [
     "slowapi>=0.1.9",
     "psycopg2-binary>=2.9.10",
     "pycountry>=22.3.5",
+    "openai>=1.52.0",
+    "langsmith>=0.2.0",
 ]
 
 [tool.uv]

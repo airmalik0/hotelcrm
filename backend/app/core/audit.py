@@ -105,6 +105,14 @@ def get_entity_name(entity_type: str, entity: Any) -> str:
             name = f"{getattr(entity, 'first_name', '') or ''} {getattr(entity, 'last_name', '') or ''}".strip()
             return f"Guest: {name}" if name else f"Guest #{str(entity.id)[:8]}"
         return f"Guest #{str(entity.id)[:8]}"
+    elif entity_type == "customer_inquiry":
+        # Format: Inquiry: [type] - [first 50 chars of message]
+        inquiry_type = entity.inquiry_type.value.title() if hasattr(entity, 'inquiry_type') else "Unknown"
+        if hasattr(entity, 'message') and entity.message:
+            message_preview = entity.message[:50]
+            message_preview += "..." if len(entity.message) > 50 else ""
+            return f"Inquiry: {inquiry_type} - {message_preview}"
+        return f"Inquiry: {inquiry_type} #{str(entity.id)[:8]}"
     else:
         # Generic fallback for unknown entity types
         return f"{entity_type.replace('_', ' ').title()} #{str(entity.id)[:8]}"
