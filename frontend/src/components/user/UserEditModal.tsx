@@ -246,7 +246,7 @@ export function UserEditModal({
                   name="full_name"
                   value={formData.full_name || ""}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors"
                   placeholder="Enter full name"
                 />
               </div>
@@ -264,13 +264,13 @@ export function UserEditModal({
                   name="role"
                   value={formData.role}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors"
                 >
                   {roleOptions.map((option) => (
                     <option
                       key={option.value}
                       value={option.value}
-                      className="dark:bg-neutral-700"
+                      className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white"
                     >
                       {option.label}
                     </option>

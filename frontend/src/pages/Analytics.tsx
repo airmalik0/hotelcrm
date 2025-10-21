@@ -443,7 +443,7 @@ export function Analytics() {
                 type="date"
                 value={dateRange.from}
                 onChange={(e) => handleDateChange("from", e.target.value)}
-                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div className="flex-1 min-w-[200px]">
@@ -454,7 +454,7 @@ export function Analytics() {
                 type="date"
                 value={dateRange.to}
                 onChange={(e) => handleDateChange("to", e.target.value)}
-                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -505,7 +505,7 @@ export function Analytics() {
                   if (val !== "all") setSelectedRoomId("all")
                 }}
                 disabled={selectedRoomId !== "all"}
-                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">All Categories</option>
                 {categoriesData?.data.map((cat) => (
@@ -527,7 +527,7 @@ export function Analytics() {
                   if (val !== "all") setSelectedCategoryId("all")
                 }}
                 disabled={selectedCategoryId !== "all"}
-                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">All Rooms</option>
                 {roomsData?.data.map((room) => (
@@ -546,7 +546,7 @@ export function Analytics() {
               <select
                 value={customerType}
                 onChange={(e) => setCustomerType(e.target.value as any)}
-                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">All</option>
                 <option value="new">New</option>
@@ -569,7 +569,7 @@ export function Analytics() {
                   )
                 }
                 placeholder="vip,loyal"
-                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <button
@@ -605,7 +605,7 @@ export function Analytics() {
                         district: null,
                       })
                     }
-                    className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     <option value="">All countries</option>
                     {countriesOptions.map((c: any) => (
@@ -631,7 +631,7 @@ export function Analytics() {
                           district: null,
                         })
                       }
-                      className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       <option value="">All regions</option>
                       {regionsOptions.map((r: any) => (
@@ -658,7 +658,7 @@ export function Analytics() {
                             district: e.target.value || null,
                           })
                         }
-                        className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">All districts</option>
                         {districtsOptions.map((d: any) => (

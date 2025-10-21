@@ -472,7 +472,7 @@ export function CampaignFormModal({
                         }
                         min={0}
                         max={120}
-                        className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-sm"
+                        className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
                         placeholder="Min age"
                       />
                     </div>
@@ -490,7 +490,7 @@ export function CampaignFormModal({
                         }
                         min={0}
                         max={120}
-                        className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg_white dark:bg-transparent text-sm"
+                        className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
                         placeholder="Max age"
                       />
                     </div>
@@ -545,7 +545,7 @@ export function CampaignFormModal({
                         )
                       }
                       min={0}
-                      className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg_white dark:bg-transparent text-sm"
+                      className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
                       placeholder="e.g., 500000"
                     />
                   </div>
@@ -565,7 +565,7 @@ export function CampaignFormModal({
                         )
                       }
                       min={0}
-                      className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg_white dark:bg-transparent text-sm"
+                      className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
                       placeholder="e.g., 30"
                     />
                   </div>

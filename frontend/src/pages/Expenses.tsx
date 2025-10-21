@@ -274,7 +274,7 @@ function ExpensesTab({
               Show
             </span>
             <select
-              className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
+              className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value))
@@ -290,7 +290,7 @@ function ExpensesTab({
               Category
             </span>
             <select
-              className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
+              className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value)
@@ -332,13 +332,13 @@ function ExpensesTab({
             <tbody>
               {expensesLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">
+                  <td colSpan={5} className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400">
                     Loading...
                   </td>
                 </tr>
               ) : (expensesData?.data?.length ?? 0) === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">
+                  <td colSpan={5} className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400">
                     No expenses
                   </td>
                 </tr>
@@ -566,7 +566,7 @@ function ExpenseModal({
                 {...register("category_id", {
                   required: "Please select a category",
                 })}
-                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
+                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
               >
                 <option value="">Select a category</option>
                 {categories.map((cat) => (
@@ -596,7 +596,7 @@ function ExpenseModal({
                     message: "Amount must be greater than 0",
                   },
                 })}
-                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
+                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
                 placeholder="0.00"
               />
               {errors.amount && (
@@ -613,7 +613,7 @@ function ExpenseModal({
               <input
                 type="datetime-local"
                 {...register("expense_date")}
-                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
+                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
               />
             </div>
 
@@ -624,7 +624,7 @@ function ExpenseModal({
               <textarea
                 {...register("description")}
                 rows={3}
-                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
+                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
                 placeholder="Additional information..."
               />
             </div>
@@ -720,7 +720,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
               <input
                 type="text"
                 {...register("name", { required: "Enter a name" })}
-                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
+                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
                 placeholder="E.g., Utilities"
               />
               {errors.name && (
@@ -737,7 +737,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
               <textarea
                 {...register("description")}
                 rows={3}
-                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-4 py-2"
+                className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
                 placeholder="Additional information..."
               />
             </div>
