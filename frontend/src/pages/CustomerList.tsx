@@ -261,7 +261,7 @@ export function CustomerList() {
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 0}
-                      className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -275,7 +275,7 @@ export function CustomerList() {
                           className={`px-3 py-1 rounded ${
                             currentPage === page
                               ? "bg-primary-600 text-white"
-                              : "border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                              : "border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                           }`}
                         >
                           {page + 1}
@@ -285,7 +285,7 @@ export function CustomerList() {
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1}
-                      className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>
