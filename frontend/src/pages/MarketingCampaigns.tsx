@@ -466,7 +466,7 @@ export function MarketingCampaigns() {
               type="button"
               onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
               disabled={currentPage === 0}
-              className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
+              className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >
               Previous
             </button>
@@ -484,7 +484,7 @@ export function MarketingCampaigns() {
                 )
               }
               disabled={currentPage >= Math.ceil(totalCount / itemsPerPage) - 1}
-              className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
+              className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >
               Next
             </button>
