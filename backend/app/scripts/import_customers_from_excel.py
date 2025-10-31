@@ -58,10 +58,8 @@ def normalize_phone(raw: str) -> str | None:
     if not digits or len(digits) < 7:
         return None
     # Ensure phone starts with 998 (Uzbekistan country code)
-    if not digits.startswith("998"):
-        # If it's a 9-digit local number, prepend 998
-        if len(digits) == 9:
-            digits = "998" + digits
+    if len(digits) == 9:
+        digits = "998" + digits
     return digits if 7 <= len(digits) <= 15 else None
 
 
@@ -392,17 +390,13 @@ def normalize_geo_via_llm(client: OpenAI, item: RawRow, region_codes: list[str],
     user_text += (
         f"Allowed region codes: {', '.join(region_codes)}\n"
         f"Allowed district codes: {', '.join(district_codes)}\n"
-        "Rules for location:\n"
-        "1. Determine if location is in Uzbekistan (UZ). If yes, set country_code='UZ'.\n"
-        "2. If country_code='UZ', match location to one of the allowed region codes.\n"
-        "   - 'Uzbekistan' only → country_code='UZ', region=null, district=null\n"
-        "   - 'Tashkent city' → region='TASHKENT_CITY', try to identify district\n"
-        "   - 'Tashkent' standalone → region='TASHKENT_CITY', district=null\n"
-        "   - A Tashkent district name → region='TASHKENT_CITY' and a matching district code\n"
-        "   - Other Uzbek regions/cities → match to appropriate region code\n"
-        "3. If region='TASHKENT_CITY' and a district is specified, match to allowed district codes.\n"
-        "4. If location is outside Uzbekistan: set country_code=null, region=null, district=null\n"
-        "District codes are ONLY for Tashkent city.\n"
+        "Common variants: chilonzoor/chilanzor→CHILANZAR, sirgali/sergeli→SERGELI, yangikhayot→YANGIHAYOT\n"
+        "Rules:\n"
+        "1. If location is outside UZ (Kazakhstan, Russia, Kyrgyzstan, etc.): country_code=null, region=null, district=null\n"
+        "2. If in Uzbekistan: country_code='UZ', match region and district to allowed codes\n"
+        "3. 'Uzbekistan' only → country_code='UZ', region=null, district=null\n"
+        "4. 'Tashkent'/'Toshkent' → region='TASHKENT_CITY', try to identify district from common variants\n"
+        "5. Districts are ONLY for TASHKENT_CITY region\n"
     )
 
     geo_properties = {
@@ -432,7 +426,7 @@ def normalize_geo_via_llm(client: OpenAI, item: RawRow, region_codes: list[str],
 
     try:
         resp = client.responses.create(  # type: ignore[call-overload]
-            model="gpt-5-nano",
+            model="gpt-5-mini",
             input=user_text,
             response_format=response_format,  # type: ignore[arg-type]
             reasoning_effort="minimal",
@@ -453,7 +447,7 @@ def normalize_geo_via_llm(client: OpenAI, item: RawRow, region_codes: list[str],
     except TypeError:
         # Fallback to Chat Completions API with structured output
         chat = client.chat.completions.create(  # type: ignore[call-arg]
-            model="gpt-5-nano",
+            model="gpt-5-mini",
             messages=[{"role": "user", "content": user_text}],
             response_format=response_format,  # type: ignore[arg-type]
             reasoning_effort="minimal",

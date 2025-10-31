@@ -26,8 +26,8 @@ def get_countries() -> list[dict[str, str]]:
 
 # Regions of Uzbekistan (области) + отдельный ключ для города Ташкента
 UZ_REGIONS: list[dict[str, str]] = [
-    {"code": "TASHKENT_CITY", "name": "Toshkent shahar"},
-    {"code": "TASHKENT", "name": "Toshkent viloyati"},
+    {"code": "TASHKENT_CITY", "name": "Toshkent"},
+    {"code": "TASHKENT_REGION", "name": "Toshkent region"},
     {"code": "ANDIJAN", "name": "Andijon"},
     {"code": "BUKHARA", "name": "Buxoro"},
     {"code": "FERGANA", "name": "Farg'ona"},
