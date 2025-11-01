@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     # Backend API
     backend_api_url: str = Field(default="http://backend:8000/api/v1", env="BACKEND_API_URL")
 
+    # Eskiz SMS provider (required for bot operation)
+    eskiz_base_url: str = Field(default="https://notify.eskiz.uz", env="ESKIZ_BASE_URL")
+    eskiz_email: str = Field(..., env="ESKIZ_EMAIL")
+    eskiz_password: str = Field(..., env="ESKIZ_PASSWORD")
+    eskiz_from: str = Field(..., env="ESKIZ_FROM")
+
     class Config:
         env_file = ".env"
         case_sensitive = False

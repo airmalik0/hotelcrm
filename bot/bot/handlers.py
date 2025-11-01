@@ -645,24 +645,13 @@ async def process_phone_number(message: Message, state: FSMContext, phone: str):
         # Сохраняем номер и отправляем SMS
         await state.update_data(phone=normalized_phone)
 
-        success, message_text, test_code = await sms_service.send_sms_code(normalized_phone)
+        success, message_text = await sms_service.send_sms_code(normalized_phone)
 
         if success:
-            # В тестовом режиме отправляем код прямо пользователю
-            if test_code:
-                await message.answer(
-                    get_text('registration.sms_test_mode', lang).format(
-                        code=test_code,
-                        phone=normalized_phone
-                    ),
-                    reply_markup=ReplyKeyboardRemove(),
-                    parse_mode="HTML"
-                )
-            else:
-                await message.answer(
-                    get_text('registration.sms_sent', lang).format(phone=normalized_phone),
-                    reply_markup=ReplyKeyboardRemove()
-                )
+            await message.answer(
+                get_text('registration.sms_sent', lang).format(phone=normalized_phone),
+                reply_markup=ReplyKeyboardRemove()
+            )
             await state.set_state(RegistrationStates.waiting_for_sms_code)
         else:
             await message.answer(
@@ -721,17 +710,10 @@ async def resend_sms_code(message: Message, state: FSMContext):
             await state.clear()
             return
 
-        success, message_text, test_code = await sms_service.send_sms_code(phone)
+        success, message_text = await sms_service.send_sms_code(phone)
 
         if success:
-            # В тестовом режиме отправляем код прямо пользователю
-            if test_code:
-                await message.answer(
-                    get_text('sms.code_resent', lang).format(code=test_code),
-                    parse_mode="HTML"
-                )
-            else:
-                await message.answer(get_text('sms.code_sent', lang).format(message=message_text))
+            await message.answer(get_text('sms.code_sent', lang).format(message=message_text))
         else:
             await message.answer(get_text('sms.code_sent', lang).format(message=message_text))
 
