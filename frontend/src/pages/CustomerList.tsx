@@ -12,17 +12,79 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Edit, Eye, FileCheck, Plus, Search, Trash2 } from "lucide-react"
 import type React from "react"
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 
 export function CustomerList() {
   const { currency, t } = useLanguage()
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [currentPage, setCurrentPage] = useState(0)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
   const queryClient = useQueryClient()
   const { confirm, ConfirmDialog } = useConfirm()
+
+  // Initialize from URL params
+  const pageFromUrl = parseInt(searchParams.get("page") || "1", 10)
+  const limitFromUrl = parseInt(searchParams.get("limit") || "10", 10)
+  const searchFromUrl = searchParams.get("search") || ""
+
+  const [currentPage, setCurrentPage] = useState(Math.max(0, pageFromUrl - 1))
+  const [itemsPerPage, setItemsPerPage] = useState(
+    [5, 10, 20, 50, 100].includes(limitFromUrl) ? limitFromUrl : 10,
+  )
+  const [searchTerm, setSearchTerm] = useState(searchFromUrl)
+
+  // Sync state from URL params when they change externally
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get("page") || "1", 10)
+    const limitFromUrl = parseInt(searchParams.get("limit") || "10", 10)
+    const searchFromUrl = searchParams.get("search") || ""
+
+    const newPage = Math.max(0, pageFromUrl - 1)
+    const newLimit = [5, 10, 20, 50, 100].includes(limitFromUrl)
+      ? limitFromUrl
+      : 10
+
+    if (newPage !== currentPage) {
+      setCurrentPage(newPage)
+    }
+    if (newLimit !== itemsPerPage) {
+      setItemsPerPage(newLimit)
+    }
+    if (searchFromUrl !== searchTerm) {
+      setSearchTerm(searchFromUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  // Update URL when pagination/search changes (only if different from URL)
+  useEffect(() => {
+    const currentPageParam = parseInt(searchParams.get("page") || "1", 10)
+    const currentLimitParam = parseInt(searchParams.get("limit") || "10", 10)
+    const currentSearchParam = searchParams.get("search") || ""
+
+    const urlPage = currentPage + 1
+    const urlLimit = itemsPerPage
+    const urlSearch = searchTerm
+
+    // Only update if different from current URL params
+    if (
+      currentPageParam !== urlPage ||
+      currentLimitParam !== urlLimit ||
+      currentSearchParam !== urlSearch
+    ) {
+      const params = new URLSearchParams()
+      if (urlPage > 1) {
+        params.set("page", String(urlPage))
+      }
+      if (urlLimit !== 10) {
+        params.set("limit", String(urlLimit))
+      }
+      if (urlSearch) {
+        params.set("search", urlSearch)
+      }
+      setSearchParams(params, { replace: true })
+    }
+  }, [currentPage, itemsPerPage, searchTerm, searchParams, setSearchParams])
 
   // Fetch customers
   const { data, isLoading, error } = useQuery({
