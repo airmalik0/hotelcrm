@@ -1,11 +1,10 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
-from app.core.rate_limit import RateLimits, limiter
 from app.crud.campaigns import campaigns as crud_campaigns
 from app.models import (
     CampaignCreate,
@@ -27,9 +26,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=CampaignsPublic)
-@limiter.limit(RateLimits.READ_LIST)
 def read_campaigns(
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
     skip: int = 0,
@@ -72,10 +69,8 @@ def read_campaign(
 
 
 @router.post("/", response_model=CampaignPublic)
-@limiter.limit(RateLimits.BOOKING_CREATE)  # Reuse booking rate limit
 def create_campaign(
     *,
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,
     campaign_in: CampaignCreate,
@@ -179,10 +174,8 @@ def delete_campaign(
 # Specialized campaign operations (following booking's specialized endpoints pattern)
 
 @router.post("/{campaign_id}/execute", response_model=CampaignExecutionResponse)
-@limiter.limit(RateLimits.BOOKING_CREATE)  # Reuse booking rate limit for execution
 def execute_campaign(
     *,
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,
     campaign_id: uuid.UUID,

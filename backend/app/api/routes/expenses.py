@@ -1,11 +1,10 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.audit import get_change_values, get_entity_name, log_audit
-from app.core.rate_limit import RateLimits, limiter
 from app.crud.expense import expense as crud_expense
 from app.crud.expense import expense_category as crud_expense_category
 from app.models import (
@@ -26,9 +25,7 @@ router = APIRouter()
 
 # Expense Category Routes
 @router.get("/categories", response_model=ExpenseCategoriesPublic)
-@limiter.limit(RateLimits.READ_LIST)
 def read_expense_categories(
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
     skip: int = 0,
@@ -154,9 +151,7 @@ def delete_expense_category(
 
 # Expense Routes
 @router.get("/", response_model=ExpensesPublic)
-@limiter.limit(RateLimits.READ_LIST)
 def read_expenses(
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
     skip: int = 0,

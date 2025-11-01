@@ -1,12 +1,11 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from app.api.deps import CurrentUser, SessionDep, require_admin_or_manager
 from app.core.audit import get_change_values, get_entity_name, log_audit
 from app.core.exceptions import ValidationError
-from app.core.rate_limit import RateLimits, limiter
 from app.crud.booking import booking as crud_booking
 from app.models import (
     BookingCreate,
@@ -27,9 +26,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=BookingsPublic)
-@limiter.limit(RateLimits.READ_LIST)
 def read_bookings(
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,  # noqa: ARG001
     skip: int = 0,
@@ -92,10 +89,8 @@ def read_booking(
 
 
 @router.post("/", response_model=BookingPublic)
-@limiter.limit(RateLimits.BOOKING_CREATE)
 def create_booking(
     *,
-    request: Request,  # noqa: ARG001
     session: SessionDep,
     current_user: CurrentUser,
     booking_in: BookingCreate,
