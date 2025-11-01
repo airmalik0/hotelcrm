@@ -7,7 +7,7 @@ from pydantic import field_validator, model_validator
 from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
-from .common import District
+from .common import CustomerSource, District
 
 if TYPE_CHECKING:
     from .booking import Booking
@@ -27,6 +27,7 @@ class CustomerBase(SQLModel):
     district: District | None = None
     passport_photo_path: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None, max_length=1000)
+    source: CustomerSource | None = None
 
     @field_validator("first_name", "last_name")
     @classmethod
@@ -159,6 +160,7 @@ class CustomerUpdate(SQLModel):
     passport_photo_path: str | None = None
     tags: list[str] | None = None
     notes: str | None = None
+    source: CustomerSource | None = None
 
     @field_validator("first_name", "last_name")
     @classmethod

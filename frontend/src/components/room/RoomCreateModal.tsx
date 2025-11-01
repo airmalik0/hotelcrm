@@ -5,6 +5,7 @@ import type {
   RoomCreate,
   RoomStatus,
 } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { X } from "lucide-react"
@@ -16,6 +17,7 @@ interface RoomCreateModalProps {
 }
 
 export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<RoomCreate>({
     room_number: "",
@@ -42,14 +44,14 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
     mutationFn: createRoom,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] })
-      showSuccess("Room created successfully!")
+      showSuccess(t.room.roomCreatedSuccess)
       onClose()
     },
     onError: (error) => {
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create room",
+        t.room.failedToCreateRoom,
       )
     },
   })
@@ -61,24 +63,24 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
     // Validate
     const newErrors: Record<string, string> = {}
     if (!formData.room_number.trim()) {
-      newErrors.room_number = "Room number is required"
+      newErrors.room_number = t.room.roomNumberRequired
     } else if (formData.room_number.trim().length > 10) {
-      newErrors.room_number = "Room number must be 10 characters or less"
+      newErrors.room_number = t.room.roomNumberMaxLength
     } else if (
       !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())
     ) {
       newErrors.room_number =
-        "Room number must start with letter or number and contain only letters, numbers, and hyphens"
+        t.room.roomNumberFormat
     }
     if (formData.floor < 1) {
-      newErrors.floor = "Floor must be 1 or greater"
+      newErrors.floor = t.room.floorMinValue
     } else if (formData.floor > 20) {
-      newErrors.floor = "Floor must be 20 or less"
+      newErrors.floor = t.room.floorMaxValue
     }
     if (formData.price_per_night <= 0) {
-      newErrors.price_per_night = "Price must be greater than 0"
+      newErrors.price_per_night = t.room.priceGreaterThanZero
     } else if (formData.price_per_night > 100000) {
-      newErrors.price_per_night = "Price must be 100,000 or less"
+      newErrors.price_per_night = t.room.priceMaxValue
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -103,7 +105,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
           {/* Header */}
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Add New Room
+              {t.room.addNewRoom}
             </h3>
             <button
               type="button"
@@ -129,7 +131,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   htmlFor="room_number"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Room Number *
+                  {t.room.roomNumberRequired}
                 </label>
                 <input
                   type="text"
@@ -158,7 +160,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   htmlFor="floor"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Floor *
+                  {t.room.floorRequired}
                 </label>
                 <input
                   type="number"
@@ -190,7 +192,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                     htmlFor="category_id"
                     className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                   >
-                    Category
+                    {t.room.categoryLabel}
                   </label>
                 </div>
                 <select
@@ -204,7 +206,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   }
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
                 >
-                  <option value="">No category</option>
+                  <option value="">{t.room.noCategory}</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -219,7 +221,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   htmlFor="price_per_night"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Price per Night ($) *
+                  {t.room.pricePerNightRequired}
                 </label>
                 <input
                   type="number"
@@ -252,7 +254,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   htmlFor="status"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Initial Status
+                  {t.room.initialStatus}
                 </label>
                 <select
                   id="status"
@@ -265,10 +267,10 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   }
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
                 >
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="cleaning">Cleaning</option>
-                  <option value="maintenance">Maintenance</option>
+                  <option value="available">{t.room.statusAvailable}</option>
+                  <option value="occupied">{t.room.statusOccupied}</option>
+                  <option value="cleaning">{t.room.statusCleaning}</option>
+                  <option value="maintenance">{t.room.statusMaintenance}</option>
                 </select>
               </div>
 
@@ -278,7 +280,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   htmlFor="description"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Description
+                  {t.room.categoryDescription}
                 </label>
                 <textarea
                   id="description"
@@ -288,7 +290,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   }
                   rows={3}
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-                  placeholder="Optional room description..."
+                  placeholder={t.room.optionalDescription}
                 />
               </div>
             </div>
@@ -300,7 +302,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
               >
-                Cancel
+                {t.booking.cancel}
               </button>
               <button
                 type="submit"
@@ -310,7 +312,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                 {createMutation.isPending && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 )}
-                Create Room
+                {t.room.createRoom}
               </button>
             </div>
           </form>

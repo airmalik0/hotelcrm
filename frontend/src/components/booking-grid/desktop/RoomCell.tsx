@@ -1,6 +1,8 @@
 import type { RoomPublic } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { getRoomStatusColor } from "@/utils/booking-colors"
 import { formatRoomName } from "@/utils/booking-grid"
+import { formatCurrency } from "@/utils/formatters"
 import clsx from "clsx"
 import { Bed, DollarSign } from "lucide-react"
 import { memo } from "react"
@@ -14,6 +16,7 @@ export const RoomCell = memo(function RoomCell({
   room,
   height = 64,
 }: RoomCellProps) {
+  const { currency, t } = useLanguage()
   return (
     <div
       className={clsx(
@@ -38,14 +41,14 @@ export const RoomCell = memo(function RoomCell({
               "text-[10px] px-1.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-600/30 text-neutral-700 dark:text-neutral-400",
             )}
           >
-            {room.category?.name || "Uncategorized"}
+            {room.category?.name || t.booking.uncategorized}
           </span>
 
           {/* Icons */}
           <div className="flex items-center gap-2 ml-auto text-xs text-neutral-500 dark:text-neutral-400">
             <div className="flex items-center gap-0.5">
               <DollarSign className="w-3 h-3" />
-              <span>{room.price_per_night}</span>
+              <span>{formatCurrency(room.price_per_night, currency)}</span>
             </div>
           </div>
         </div>

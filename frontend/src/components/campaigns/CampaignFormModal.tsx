@@ -7,6 +7,7 @@ import type {
   CampaignUpdate,
   District,
 } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -60,6 +61,7 @@ export function CampaignFormModal({
   campaign,
   onSuccess,
 }: CampaignFormModalProps) {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const isEditMode = !!campaign
 
@@ -123,7 +125,7 @@ export function CampaignFormModal({
     mutationFn: (data: CampaignCreate) => createCampaign(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] })
-      showSuccess("Campaign created successfully!")
+      showSuccess(t.campaigns.campaignCreatedSuccess)
       onSuccess?.()
       onClose()
     },
@@ -131,7 +133,7 @@ export function CampaignFormModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create campaign",
+        t.campaigns.failedToCreateCampaign,
       )
     },
   })
@@ -142,7 +144,7 @@ export function CampaignFormModal({
       updateCampaign(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] })
-      showSuccess("Campaign updated successfully!")
+      showSuccess(t.campaigns.campaignUpdatedSuccess)
       onSuccess?.()
       onClose()
     },
@@ -150,7 +152,7 @@ export function CampaignFormModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to update campaign",
+        t.campaigns.failedToUpdateCampaign,
       )
     },
   })
@@ -163,21 +165,21 @@ export function CampaignFormModal({
     const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
+      newErrors.name = t.campaigns.nameRequired
     }
 
     if (!formData.message_template.trim()) {
-      newErrors.message_template = "Message template is required"
+      newErrors.message_template = t.campaigns.messageTemplateRequired
     }
 
     if (formData.message_template.trim().length < 10) {
       newErrors.message_template =
-        "Message template must be at least 10 characters"
+        t.campaigns.messageTemplateMinLength
     }
 
     if (formData.type === "trigger" && !formData.trigger_frequency_minutes) {
       newErrors.trigger_frequency_minutes =
-        "Frequency is required for trigger campaigns"
+        t.campaigns.frequencyRequired
     }
 
     if (
@@ -185,7 +187,7 @@ export function CampaignFormModal({
       criteria.max_age &&
       criteria.min_age > criteria.max_age
     ) {
-      newErrors.age = "Minimum age cannot be greater than maximum age"
+      newErrors.age = t.campaigns.minAgeGreaterThanMax
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -266,7 +268,7 @@ export function CampaignFormModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-dark-2 border-b border-neutral-200 dark:border-neutral-600 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-            {isEditMode ? "Edit Campaign" : "Create Campaign"}
+            {isEditMode ? t.marketing.editCampaign : t.marketing.createCampaign}
           </h2>
           <button
             type="button"
@@ -446,7 +448,7 @@ export function CampaignFormModal({
                 onClick={() => setShowCriteriaEditor(!showCriteriaEditor)}
                 className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
-                {showCriteriaEditor ? "Hide Criteria" : "Add Criteria"}
+                {showCriteriaEditor ? t.marketing.hideCriteria : t.marketing.addCriteria}
               </button>
             </div>
 
@@ -643,7 +645,7 @@ export function CampaignFormModal({
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  {isEditMode ? "Update Campaign" : "Create Campaign"}
+                  {isEditMode ? t.marketing.updateCampaign : t.marketing.createCampaign}
                 </>
               )}
             </button>

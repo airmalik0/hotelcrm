@@ -4,6 +4,7 @@ import type {
   InquiryStatus,
   InquiryType,
 } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { formatDateTime } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
@@ -63,6 +64,7 @@ const getTypeIcon = (type: InquiryType) => {
 }
 
 export function CustomerInquiries() {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<InquiryStatus | "">("")
   const [filterType, setFilterType] = useState<InquiryType | "">("")
@@ -162,10 +164,10 @@ export function CustomerInquiries() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Customer Inquiries
+            {t.pages.inquiries.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Monitor and manage customer feedback from Telegram bot
+            {t.pages.inquiries.description}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -179,7 +181,7 @@ export function CustomerInquiries() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                New
+                {t.pages.inquiries.new}
               </p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
                 {data?.data.filter((i) => i.status === "new").length || 0}
@@ -195,7 +197,7 @@ export function CustomerInquiries() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                In Progress
+                {t.pages.inquiries.inProgress}
               </p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
                 {data?.data.filter((i) => i.status === "in_progress").length ||
@@ -212,7 +214,7 @@ export function CustomerInquiries() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Resolved
+                {t.pages.inquiries.resolved}
               </p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
                 {data?.data.filter((i) => i.status === "resolved").length || 0}
@@ -228,7 +230,7 @@ export function CustomerInquiries() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Complaints
+                {t.pages.inquiries.complaints}
               </p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
                 {data?.data.filter((i) => i.inquiry_type === "complaint")
@@ -276,7 +278,7 @@ export function CustomerInquiries() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-600">
               <div>
                 <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Status
+                  {t.inquiries.status}
                 </label>
                 <select
                   value={filterStatus}
@@ -285,17 +287,17 @@ export function CustomerInquiries() {
                   }
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-1.5 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">All Statuses</option>
-                  <option value="new">New</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="closed">Closed</option>
+                  <option value="">{t.inquiries.allStatuses}</option>
+                  <option value="new">{t.inquiries.new}</option>
+                  <option value="in_progress">{t.inquiries.inProgress}</option>
+                  <option value="resolved">{t.inquiries.resolved}</option>
+                  <option value="closed">{t.inquiries.closed}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Type
+                  {t.inquiries.type}
                 </label>
                 <select
                   value={filterType}
@@ -304,16 +306,16 @@ export function CustomerInquiries() {
                   }
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-1.5 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">All Types</option>
-                  <option value="complaint">Complaint</option>
-                  <option value="suggestion">Suggestion</option>
-                  <option value="question">Question</option>
+                  <option value="">{t.inquiries.allTypes}</option>
+                  <option value="complaint">{t.inquiries.complaint}</option>
+                  <option value="suggestion">{t.inquiries.suggestion}</option>
+                  <option value="question">{t.inquiries.question}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Customer Filter
+                  {t.inquiries.customerFilter}
                 </label>
                 <div className="flex items-center h-[30px]">
                   <label className="inline-flex items-center cursor-pointer">
@@ -327,7 +329,7 @@ export function CustomerInquiries() {
                       className="w-4 h-4 text-primary-600 bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-500 rounded focus:ring-primary-500 focus:ring-2"
                     />
                     <span className="ml-2 text-sm text-neutral-700 dark:text-neutral-300">
-                      Only Customers
+                      {t.inquiries.onlyCustomers}
                     </span>
                   </label>
                 </div>
@@ -360,22 +362,22 @@ export function CustomerInquiries() {
             <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-600">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Date
+                  {t.pages.inquiries.date}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Type
+                  {t.pages.inquiries.type}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Contact Info
+                  {t.pages.inquiries.contactInfo}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Message
+                  {t.pages.inquiries.message}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Status
+                  {t.pages.inquiries.status}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Actions
+                  {t.pages.inquiries.actions}
                 </th>
               </tr>
             </thead>
@@ -394,7 +396,7 @@ export function CustomerInquiries() {
                     colSpan={6}
                     className="px-6 py-12 text-center text-danger-600"
                   >
-                    Failed to load inquiries
+                    {t.common.failedToLoadInquiries}
                   </td>
                 </tr>
               ) : !filteredInquiries || filteredInquiries.length === 0 ? (
@@ -403,7 +405,7 @@ export function CustomerInquiries() {
                     colSpan={6}
                     className="px-6 py-12 text-center text-neutral-500 dark:text-neutral-400"
                   >
-                    No inquiries found
+                    {t.common.noInquiriesFound}
                   </td>
                 </tr>
               ) : (
@@ -662,7 +664,7 @@ export function CustomerInquiries() {
               {selectedInquiry.resolved_at && (
                 <div>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
-                    Resolved At
+                    {t.pages.inquiries.resolvedAt}
                   </p>
                   <p className="text-sm text-neutral-900 dark:text-white">
                     {formatDateTime(selectedInquiry.resolved_at)}

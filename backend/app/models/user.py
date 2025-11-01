@@ -15,6 +15,8 @@ class UserBase(SQLModel):
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
     role: "UserRole" = Field(default=UserRole.HOST)
+    language: str = Field(default="en", max_length=10)
+    currency: str = Field(default="USD", max_length=3)
 
     @field_validator("username")
     @classmethod
@@ -80,6 +82,8 @@ class UserUpdate(SQLModel):
 class UserUpdateMe(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
     username: str | None = Field(default=None, min_length=3, max_length=50)
+    language: str | None = Field(default=None, max_length=10)
+    currency: str | None = Field(default=None, max_length=3)
 
     @field_validator("username")
     @classmethod

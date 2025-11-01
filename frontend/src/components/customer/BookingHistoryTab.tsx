@@ -1,6 +1,8 @@
 import { getBookings } from "@/api/bookings"
 import type { BookingPublic, BookingStatus } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { safeParseDate } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import { differenceInDays } from "date-fns"
 import {
@@ -51,6 +53,7 @@ const statusConfig = {
 }
 
 export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
+  const { currency, t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all")
   const [sortField, setSortField] = useState<SortField>("check_in")
@@ -143,12 +146,6 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
     })
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
 
   const calculateNights = (checkIn: string, checkOut: string) => {
     // Calculate nights the same way as backend: difference in days only
@@ -192,7 +189,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
-              placeholder="Search by room or booking ID..."
+              placeholder={t.bookingHistory.searchByRoomOrBooking}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -215,18 +212,18 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
             }
             className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            <option value="all">All Status</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="checked_in">Checked In</option>
-            <option value="checked_out">Checked Out</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="all">{t.bookingHistory.allStatus}</option>
+            <option value="confirmed">{t.booking.confirmed}</option>
+            <option value="checked_in">{t.bookingHistory.checkedIn}</option>
+            <option value="checked_out">{t.bookingHistory.checkedOut}</option>
+            <option value="cancelled">{t.booking.cancelled}</option>
           </select>
           <button
             onClick={() => handleSort(sortField)}
             className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-dark-2 transition-colors flex items-center gap-2"
           >
             <ArrowDownUp className="w-4 h-4" />
-            Sort
+            {t.bookingHistory.sort}
           </button>
         </div>
       </div>
@@ -315,7 +312,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                            {formatCurrency(booking.total_amount)}
+                            {formatCurrency(booking.total_amount, currency)}
                           </p>
                           {booking.discount && booking.discount > 0 && (
                             <p className="text-xs text-danger-600 dark:text-danger-400">
@@ -387,7 +384,7 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
                   currentPage * itemsPerPage,
                   filteredAndSortedBookings.length,
                 )}{" "}
-                of {filteredAndSortedBookings.length} bookings
+                {t.bookingHistory.of} {filteredAndSortedBookings.length} {t.bookingHistory.bookings}
               </p>
               <div className="flex items-center gap-2">
                 <button

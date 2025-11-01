@@ -1,7 +1,9 @@
 import { getBookings } from "@/api/bookings"
 import { getCustomers } from "@/api/customers"
 import { KPICard } from "@/components/dashboard/KPICard"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { safeParseDate } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import {
   Calendar,
@@ -14,6 +16,7 @@ import {
 import React from "react"
 
 export function HostDashboard() {
+  const { currency, t } = useLanguage()
   // Fetch all data using our API wrappers
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", "all"],
@@ -55,10 +58,10 @@ export function HostDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Host Dashboard
+            {t.pages.dashboard.host.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Front desk operations and guest services
+            {t.pages.dashboard.host.frontDeskOperations}
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
@@ -80,7 +83,7 @@ export function HostDashboard() {
       {/* Today's KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Today's Check-ins"
+          title={t.pages.dashboard.host.todaysCheckIns}
           value={todayCheckIns.length}
           icon={LogIn}
           color="primary"
@@ -88,7 +91,7 @@ export function HostDashboard() {
         />
 
         <KPICard
-          title="Today's Check-outs"
+          title={t.pages.dashboard.host.todaysCheckOuts}
           value={todayCheckOuts.length}
           icon={LogOut}
           color="success"
@@ -96,7 +99,7 @@ export function HostDashboard() {
         />
 
         <KPICard
-          title="Pending Tasks"
+          title={t.pages.dashboard.host.pendingTasks}
           value={pendingCheckIns.length}
           icon={ClipboardList}
           color="warning"
@@ -104,7 +107,7 @@ export function HostDashboard() {
         />
 
         <KPICard
-          title="Total Customers"
+          title={t.pages.dashboard.host.totalCustomers}
           value={customers?.count || 0}
           icon={Users}
           color="purple"
@@ -129,7 +132,7 @@ export function HostDashboard() {
               <div className="flex items-center gap-2 mb-4">
                 <LogIn className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 <h4 className="font-medium text-neutral-900 dark:text-white">
-                  Check-ins ({todayCheckIns.length})
+                  {t.pages.dashboard.host.checkIns} ({todayCheckIns.length})
                 </h4>
               </div>
 
@@ -195,7 +198,7 @@ export function HostDashboard() {
               <div className="flex items-center gap-2 mb-4">
                 <LogOut className="w-5 h-5 text-success-600 dark:text-success-400" />
                 <h4 className="font-medium text-neutral-900 dark:text-white">
-                  Check-outs ({todayCheckOuts.length})
+                  {t.pages.dashboard.host.todaysCheckOuts} ({todayCheckOuts.length})
                 </h4>
               </div>
 
@@ -231,7 +234,7 @@ export function HostDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                        ${booking.total_amount}
+                        {formatCurrency(booking.total_amount, currency)}
                       </p>
                     </div>
                   </div>
@@ -261,7 +264,7 @@ export function HostDashboard() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Completed Check-ins
+                  {t.pages.dashboard.host.completedCheckIns}
                 </span>
                 <span className="text-sm font-medium text-success-600 dark:text-success-400">
                   {completedCheckIns.length}
@@ -269,7 +272,7 @@ export function HostDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Pending Check-ins
+                  {t.pages.dashboard.host.pendingCheckIns}
                 </span>
                 <span className="text-sm font-medium text-warning-600 dark:text-warning-400">
                   {pendingCheckIns.length}

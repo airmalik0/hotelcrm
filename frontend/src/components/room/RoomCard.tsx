@@ -1,5 +1,6 @@
 import { updateRoomStatus } from "@/api/rooms"
 import type { RoomPublic, RoomStatus } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useRole } from "@/hooks/useRole"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
@@ -31,17 +32,33 @@ function getStatusBadgeClasses(status: RoomStatus): string {
   }
 }
 
-// Get status display text
-function getStatusText(status: RoomStatus): string {
+// Get status display text - this function should not be used directly, use translations instead
+// Keeping for backward compatibility but it's better to use t.room.status* directly
+function getStatusText(status: RoomStatus, t?: any): string {
+  if (!t) {
+    // Fallback if translations not available
+    switch (status) {
+      case "available":
+        return "Available"
+      case "occupied":
+        return "Occupied"
+      case "cleaning":
+        return "Cleaning"
+      case "maintenance":
+        return "Maintenance"
+      default:
+        return status
+    }
+  }
   switch (status) {
     case "available":
-      return "Available"
+      return t.room.statusAvailable
     case "occupied":
-      return "Occupied"
+      return t.room.statusOccupied
     case "cleaning":
-      return "Cleaning"
+      return t.room.statusCleaning
     case "maintenance":
-      return "Maintenance"
+      return t.room.statusMaintenance
     default:
       return status
   }
@@ -53,6 +70,7 @@ function getCategoryBadgeClasses(): string {
 }
 
 export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
+  const { currency, t } = useLanguage()
   const { hasAnyRole } = useRole()
   const canEdit = hasAnyRole(["admin", "manager"])
   const canFullStatusUpdate = hasAnyRole(["admin", "manager"])
@@ -64,12 +82,12 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
   const statusMutation = useMutation({
     mutationFn: (newStatus: RoomStatus) => updateRoomStatus(room.id, newStatus),
     onSuccess: () => {
-      showSuccess("Room status updated successfully")
+      showSuccess(t.room.roomStatusUpdatedSuccess)
       queryClient.invalidateQueries({ queryKey: ["rooms"] })
       setIsChangingStatus(false)
     },
     onError: (error) => {
-      showError(error, "Failed to update room status")
+      showError(error, t.room.failedToUpdateRoomStatus)
     },
   })
 
@@ -106,7 +124,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
           <span
             className={`text-xs font-semibold px-3 py-1 rounded-full uppercase ${getCategoryBadgeClasses()}`}
           >
-            {room.category?.name || "Uncategorized"}
+            {room.category?.name || t.booking.uncategorized}
           </span>
         </div>
       </div>
@@ -119,7 +137,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
             // Managers and Admins can change to any status
             <div className="flex items-center gap-2">
               <label className="text-sm text-neutral-500 dark:text-neutral-400">
-                Status:
+                {t.room.statusLabel}
               </label>
               <select
                 value={room.status || "available"}
@@ -131,10 +149,10 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                     : ""
                 }`}
               >
-                <option value="available">Available</option>
-                <option value="occupied">Occupied</option>
-                <option value="cleaning">Cleaning</option>
-                <option value="maintenance">Maintenance</option>
+                <option value="available">{t.room.statusAvailable}</option>
+                <option value="occupied">{t.room.statusOccupied}</option>
+                <option value="cleaning">{t.room.statusCleaning}</option>
+                <option value="maintenance">{t.room.statusMaintenance}</option>
               </select>
             </div>
           ) : canMarkAvailable ? (
@@ -145,7 +163,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                   room.status || "available",
                 )}`}
               >
-                {getStatusText(room.status || "available")}
+                {getStatusText(room.status || "available", t)}
               </span>
               <button
                 onClick={handleMarkAvailable}
@@ -156,7 +174,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                     : ""
                 }`}
               >
-                Mark as Available
+                {t.room.markAsAvailable}
               </button>
             </div>
           ) : (
@@ -166,7 +184,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                 room.status || "available",
               )}`}
             >
-              {getStatusText(room.status || "available")}
+              {getStatusText(room.status || "available", t)}
             </span>
           )}
         </div>
@@ -174,10 +192,10 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
         {/* Price */}
         <div className="mb-4">
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-            Price per night
+            {t.room.pricePerNightLabel}
           </p>
           <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-            {formatCurrency(room.price_per_night)}
+            {formatCurrency(room.price_per_night, currency)}
           </p>
         </div>
 
@@ -193,7 +211,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
           <button
             onClick={() => onView(room)}
             className="w-8 h-8 bg-primary-50 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-full inline-flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-600/40 transition-colors"
-            title="View Details"
+            title={t.room.viewDetails}
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -202,14 +220,14 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
               <button
                 onClick={() => onEdit(room)}
                 className="w-8 h-8 bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-full inline-flex items-center justify-center hover:bg-success-200 dark:hover:bg-success-600/40 transition-colors"
-                title="Edit Room"
+                title={t.room.editRoom}
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(room)}
                 className="w-8 h-8 bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 rounded-full inline-flex items-center justify-center hover:bg-danger-200 dark:hover:bg-danger-600/40 transition-colors"
-                title="Delete Room"
+                title={t.room.deleteRoom}
               >
                 <Trash2 className="w-4 h-4" />
               </button>

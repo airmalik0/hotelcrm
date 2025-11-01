@@ -4,6 +4,7 @@ import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { getUsers } from "@/api/users"
 import { KPICard } from "@/components/dashboard/KPICard"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { safeParseDate } from "@/utils/date-helpers"
 import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
@@ -20,6 +21,7 @@ import {
 import React from "react"
 
 export function AdminDashboard() {
+  const { currency, t } = useLanguage()
   // Fetch analytics data from unified API
   const { data: analytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ["analytics", "quick-stats"],
@@ -63,10 +65,10 @@ export function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Admin Dashboard
+            {t.pages.dashboard.admin.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            System overview and management tools
+            {t.pages.dashboard.admin.description}
           </p>
         </div>
       </div>
@@ -74,7 +76,7 @@ export function AdminDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Total Users"
+          title={t.pages.dashboard.admin.totalUsers}
           value={users?.count || 0}
           icon={Users}
           color="primary"
@@ -82,7 +84,7 @@ export function AdminDashboard() {
         />
 
         <KPICard
-          title="Total Rooms"
+          title={t.pages.dashboard.admin.totalRooms}
           value={rooms?.count || 0}
           icon={Building2}
           color="success"
@@ -90,7 +92,7 @@ export function AdminDashboard() {
         />
 
         <KPICard
-          title="Total Customers"
+          title={t.pages.dashboard.admin.totalCustomers}
           value={customers?.count || 0}
           icon={Users}
           color="warning"
@@ -98,8 +100,8 @@ export function AdminDashboard() {
         />
 
         <KPICard
-          title="Month Revenue"
-          value={formatCurrency(totalRevenue)}
+          title={t.pages.dashboard.admin.monthRevenue}
+          value={formatCurrency(totalRevenue, currency)}
           icon={DollarSign}
           color="purple"
           loading={analyticsLoading}
@@ -112,7 +114,7 @@ export function AdminDashboard() {
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Recent Activity
+                {t.pages.dashboard.admin.recentActivity}
               </h3>
               <Activity className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
             </div>
@@ -129,18 +131,18 @@ export function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                        New booking created
+                        {t.pages.dashboard.admin.newBookingCreated}
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {booking.customer?.first_name}{" "}
-                        {booking.customer?.last_name} • Room{" "}
+                        {booking.customer?.last_name} • {t.pages.dashboard.admin.room}{" "}
                         {booking.room?.room_number}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                      ${booking.total_amount}
+                      {formatCurrency(booking.total_amount, currency)}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       {safeParseDate(booking.created_at).toLocaleDateString()}
@@ -153,7 +155,7 @@ export function AdminDashboard() {
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-neutral-400 dark:text-neutral-600 mx-auto mb-3" />
                   <p className="text-neutral-500 dark:text-neutral-400">
-                    No recent bookings
+                    {t.pages.dashboard.admin.noRecentBookings}
                   </p>
                 </div>
               )}
@@ -166,7 +168,7 @@ export function AdminDashboard() {
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Today's Overview
+                {t.pages.dashboard.admin.todaysOverview}
               </h3>
               <TrendingUp className="w-5 h-5 text-primary-600" />
             </div>
@@ -174,7 +176,7 @@ export function AdminDashboard() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Check-ins
+                  {t.pages.dashboard.admin.checkIns}
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
                   {todayBookings}
@@ -182,7 +184,7 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Available Rooms
+                  {t.pages.dashboard.admin.availableRooms}
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
                   {availableRooms}
@@ -190,7 +192,7 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Occupancy Rate
+                  {t.pages.dashboard.admin.occupancyRate}
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
                   {occupancyRate}%

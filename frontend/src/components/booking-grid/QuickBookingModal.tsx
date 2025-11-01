@@ -7,8 +7,10 @@ import type {
   RoomPublic,
 } from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
+import { formatCurrency } from "@/utils/formatters"
 import { invalidateAfterBookingCreate } from "@/utils/query-invalidation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
@@ -48,6 +50,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
   checkIn: initialCheckIn,
   checkOut: initialCheckOut,
 }: QuickBookingModalProps) {
+  const { currency, t } = useLanguage()
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCustomer, setSelectedCustomer] =
@@ -215,7 +218,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
         variables.customer_id,
         variables.room_id,
       )
-      showSuccess("Booking created successfully!")
+      showSuccess(t.booking.bookingCreatedSuccess)
       resetForm()
       onClose()
     },
@@ -223,7 +226,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create booking. Please try again.",
+        t.booking.failedToCreateBooking,
       )
     },
   })
@@ -242,20 +245,20 @@ export const QuickBookingModal = memo(function QuickBookingModal({
 
     const activeRoom = room || selectedRoom
     if (!selectedCustomer || !activeRoom) {
-      setErrors({ customer: "Please select a customer" })
+      setErrors({ customer: t.booking.pleaseSelectCustomer })
       return
     }
 
     // Prevent booking when selected customer has no passport photo on file
     if (!selectedCustomer.passport_photo_path) {
-      setErrors({ customer: "Selected customer has no passport photo" })
+      setErrors({ customer: t.booking.selectedCustomerNoPassportQuick })
       return
     }
 
     // Room status validation - only MAINTENANCE prevents booking
     // OCCUPIED and CLEANING rooms can be booked for future dates
     if (activeRoom.status === "maintenance") {
-      setErrors({ room: "Cannot book a room that is under maintenance" })
+      setErrors({ room: t.booking.cannotBookMaintenance })
       return
     }
 
@@ -263,7 +266,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
     const checkInDate = safeParseDate(formData.checkIn)
     const now = new Date()
     if (checkInDate < now) {
-      setErrors({ dates: "Check-in date cannot be in the past" })
+      setErrors({ dates: t.booking.checkInDatePast })
       return
     }
 
@@ -274,7 +277,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
       !formData.discountReason.trim()
     ) {
       setErrors({
-        discountReason: "Discount reason is required when discount is applied",
+        discountReason: t.booking.discountReasonRequired,
       })
       return
     }
@@ -316,7 +319,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-600">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-              Quick Booking
+              {t.booking.quickBooking}
             </h2>
             <button
               onClick={onClose}
@@ -327,7 +330,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           </div>
           {room && (
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Room {room.room_number} - {room.category?.name || "Uncategorized"}
+              {t.room.title} {room.room_number} - {room.category?.name || t.booking.uncategorized}
             </p>
           )}
         </div>
@@ -338,7 +341,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           {!room && (
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Room
+                {t.room.title}
               </label>
               <select
                 value={selectedRoom?.id || ""}
@@ -351,16 +354,16 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
               >
-                <option value="">Select a room</option>
+                <option value="">{t.booking.selectRoom}</option>
                 {roomsData?.data.map((room) => (
                   <option
                     key={room.id}
                     value={room.id}
                     disabled={room.status === "maintenance"}
                   >
-                    Room {room.room_number} -{" "}
-                    {room.category?.name || "Uncategorized"} ($
-                    {room.price_per_night}/night)
+                    {t.room.title} {room.room_number} -{" "}
+                    {room.category?.name || t.booking.uncategorized} (
+                    {formatCurrency(room.price_per_night, currency)}/night)
                     {room.status === "maintenance" &&
                       " [MAINTENANCE - UNAVAILABLE]"}
                     {room.status === "occupied" && " [OCCUPIED]"}
@@ -373,22 +376,21 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
                     <div className="flex items-center gap-1">
                       <DollarSign className="w-3 h-3" />
-                      <span>${selectedRoom.price_per_night}/night</span>
+                      <span>{formatCurrency(selectedRoom.price_per_night, currency)}/night</span>
                     </div>
                   </div>
                   {/* Room Status Warning */}
                   {selectedRoom.status === "maintenance" && (
                     <div className="p-2 rounded-lg bg-danger-100 dark:bg-danger-600/30 border border-danger-300 dark:border-danger-600">
                       <p className="text-xs text-danger-700 dark:text-danger-400 font-medium">
-                        ⚠️ Room is under maintenance. Cannot create booking.
+                        {t.booking.roomUnderMaintenance}
                       </p>
                     </div>
                   )}
                   {selectedRoom.status === "occupied" && (
                     <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700">
                       <p className="text-xs text-blue-700 dark:text-blue-400">
-                        ℹ️ Room is currently occupied. You can book it for future
-                        dates.
+                        {t.booking.roomCurrentlyOccupied}
                       </p>
                     </div>
                   )}
@@ -400,7 +402,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           {/* Customer Selection */}
           <div className="relative">
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Guest
+              {t.booking.guest}
             </label>
 
             {selectedCustomer ? (
@@ -424,8 +426,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   {!selectedCustomer.passport_photo_path && (
                     <div className="mt-2 p-2 rounded-lg bg-danger-100 dark:bg-danger-600/30 border border-danger-300 dark:border-danger-600">
                       <p className="text-xs text-danger-700 dark:text-danger-400 font-medium">
-                        Passport photo is required to create a booking for this
-                        customer.
+                        {t.booking.passportPhotoRequiredBooking}
                       </p>
                     </div>
                   )}
@@ -437,7 +438,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     setSearchTerm("")
                   }}
                   className="p-1 hover:bg-primary-200 dark:hover:bg-primary-700/30 rounded-full transition-colors"
-                  title="Clear selection"
+                  title={t.booking.clearSelection}
                 >
                   <XCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </button>
@@ -456,7 +457,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                         setShowCustomerDropdown(true)
                       }}
                       onFocus={() => setShowCustomerDropdown(true)}
-                      placeholder="Search for guest..."
+                      placeholder={t.booking.searchForGuest}
                       className={`w-full pl-10 pr-3 py-2 border ${
                         errors.customer
                           ? "border-danger-500 focus:ring-danger-500"
@@ -468,7 +469,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     type="button"
                     onClick={() => setShowCreateCustomerModal(true)}
                     className="p-2 bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/40 transition-colors"
-                    title="Create new customer"
+                    title={t.booking.createNewCustomer}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -501,7 +502,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       ))
                     ) : (
                       <div className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400">
-                        No customers found. Click + to create new.
+                        {t.booking.noCustomersFoundCreate}
                       </div>
                     )}
                   </div>
@@ -520,14 +521,14 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           <div>
             <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Check-in & Check-out
+              {t.booking.checkInAndCheckOut}
             </h3>
 
             <div className="space-y-3">
               {/* Check-in */}
               <div>
                 <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                  Check-in
+                  {t.booking.checkInLabel}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <input
@@ -560,7 +561,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               {/* Check-out */}
               <div>
                 <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                  Check-out
+                  {t.booking.checkOutLabel}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <input
@@ -617,7 +618,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   className="w-full px-4 py-2 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center justify-center gap-2"
                 >
                   <DollarSign className="w-4 h-4" />
-                  Apply Discount
+                  {t.booking.applyDiscount}
                 </button>
               </div>
             ) : (
@@ -718,10 +719,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   return (
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                        Total Amount
+                        {t.booking.totalAmount}
                       </label>
                       <div className="text-lg font-semibold text-neutral-900 dark:text-white">
-                        $0
+                        {formatCurrency(0, currency)}
                       </div>
                     </div>
                   )
@@ -745,11 +746,12 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-neutral-600 dark:text-neutral-400">
                             Subtotal ({nights}{" "}
-                            {nights === 1 ? "night" : "nights"} × $
-                            {activeRoom.price_per_night})
+                            {nights === 1 ? "night" : "nights"} ×{" "}
+                            {formatCurrency(activeRoom.price_per_night, currency)}
+                            )
                           </span>
                           <span className="text-neutral-900 dark:text-white">
-                            ${subtotal}
+                            {formatCurrency(subtotal, currency)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
@@ -757,7 +759,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                             Discount ({formData.discount}%)
                           </span>
                           <span className="text-danger-600 dark:text-danger-400">
-                            -${discountAmount.toFixed(2)}
+                            -{formatCurrency(discountAmount, currency)}
                           </span>
                         </div>
                       </>
@@ -766,10 +768,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                       className={`flex items-center justify-between ${showDiscountFields && formData.discount > 0 ? "pt-2 border-t border-neutral-200 dark:border-neutral-600" : ""}`}
                     >
                       <label className="text-base font-medium text-neutral-700 dark:text-neutral-300">
-                        Total Amount
+                        {t.booking.totalAmount}
                       </label>
                       <div className="text-xl font-bold text-neutral-900 dark:text-white">
-                        ${Math.max(total, 0).toFixed(2)}
+                        {formatCurrency(Math.max(total, 0), currency)}
                       </div>
                     </div>
                   </>
@@ -798,10 +800,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     )}
                   >
                     {method === "cash"
-                      ? "Cash"
+                      ? t.paymentMethods.cash
                       : method === "terminal"
-                        ? "Terminal"
-                        : "Transfer"}
+                        ? t.paymentMethods.terminal
+                        : t.paymentMethods.transfer}
                   </button>
                 ))}
               </div>
@@ -815,7 +817,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-3 transition-colors font-medium"
             >
-              Cancel
+              {t.booking.cancel}
             </button>
             <button
               type="submit"
@@ -828,8 +830,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
               className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
             >
               {createBookingMutation.isPending
-                ? "Creating..."
-                : "Create Booking"}
+                ? t.booking.creating
+                : t.booking.createBooking}
             </button>
           </div>
         </form>

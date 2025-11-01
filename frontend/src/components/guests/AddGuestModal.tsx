@@ -6,6 +6,7 @@ import type {
   CustomerPublic,
 } from "@/client/types.gen"
 import { GeoSelect } from "@/components/ui/GeoSelect"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Check, Search, UserPlus, X } from "lucide-react"
@@ -27,6 +28,7 @@ export const AddGuestModal = memo(function AddGuestModal({
   bookingId,
   onSuccess,
 }: AddGuestModalProps) {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [mode, setMode] = useState<FormMode>("search")
   const [searchQuery, setSearchQuery] = useState("")
@@ -83,7 +85,7 @@ export const AddGuestModal = memo(function AddGuestModal({
       queryClient.invalidateQueries({
         queryKey: ["booking-guests", bookingId],
       })
-      showSuccess("Guest added successfully!")
+      showSuccess(t.booking.guestAddedSuccess)
       onSuccess?.(newGuest)
       resetForm()
       onClose()
@@ -92,7 +94,7 @@ export const AddGuestModal = memo(function AddGuestModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to add guest",
+        t.booking.failedToAddGuest,
       )
     },
   })
@@ -138,9 +140,9 @@ export const AddGuestModal = memo(function AddGuestModal({
       (!formData.first_name.trim() || !formData.last_name.trim())
     ) {
       if (!formData.first_name.trim())
-        newErrors.first_name = "First name is required"
+        newErrors.first_name = t.customer.firstNameRequired
       if (!formData.last_name.trim())
-        newErrors.last_name = "Last name is required"
+        newErrors.last_name = t.customer.lastNameRequired
     }
 
     // Passport requirement:
@@ -148,11 +150,10 @@ export const AddGuestModal = memo(function AddGuestModal({
     // - For existing customer: require that customer already has passport on file
     if (!selectedCustomer) {
       if (!formData.passport_photo_path) {
-        newErrors.passport_photo_path = "Passport photo is required"
+        newErrors.passport_photo_path = t.booking.passportPhotoRequired
       }
     } else if (!selectedCustomer.passport_photo_path) {
-      newErrors.general =
-        "Selected customer has no passport photo. Please add it to the customer profile or switch to 'Add New Guest' to upload."
+      newErrors.general = t.booking.selectedCustomerNoPassport
     }
 
     // Geo validation: allow empty overall, but if country is non-UZ, region/district must be empty (handled in backend)
@@ -160,7 +161,7 @@ export const AddGuestModal = memo(function AddGuestModal({
     if (formData.phone?.trim()) {
       const digitsOnly = formData.phone.replace(/\D/g, "")
       if (digitsOnly.length < 7 || digitsOnly.length > 15) {
-        newErrors.phone = "Phone must contain 7-15 digits"
+        newErrors.phone = t.booking.phoneMustContain
       }
     }
 
@@ -202,7 +203,7 @@ export const AddGuestModal = memo(function AddGuestModal({
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-600">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
-              Add Guest to Booking
+              {t.booking.addGuestToBooking}
             </h2>
             <button
               onClick={onClose}
@@ -226,7 +227,7 @@ export const AddGuestModal = memo(function AddGuestModal({
               }`}
             >
               <Search className="w-4 h-4 inline-block mr-2" />
-              Search Existing
+              {t.booking.searchExisting}
             </button>
             <button
               type="button"
@@ -241,7 +242,7 @@ export const AddGuestModal = memo(function AddGuestModal({
               }`}
             >
               <UserPlus className="w-4 h-4 inline-block mr-2" />
-              Add New Guest
+              {t.booking.addNewGuest}
             </button>
           </div>
         </div>
@@ -260,7 +261,7 @@ export const AddGuestModal = memo(function AddGuestModal({
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                  Search Customer
+                  {t.booking.searchCustomer}
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -268,7 +269,7 @@ export const AddGuestModal = memo(function AddGuestModal({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name or phone..."
+                    placeholder={t.booking.searchByNameOrPhone}
                     className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -309,7 +310,7 @@ export const AddGuestModal = memo(function AddGuestModal({
 
               {searchQuery.trim() && filteredCustomers.length === 0 && (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  No customers found. Try adding a new guest instead.
+                  {t.booking.noCustomersFoundTryAdding}
                 </div>
               )}
             </div>
@@ -319,7 +320,7 @@ export const AddGuestModal = memo(function AddGuestModal({
           {selectedCustomer && (
             <div className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg mb-6">
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Selected customer:{" "}
+                {t.booking.selectedCustomer}{" "}
                 <span className="font-medium text-neutral-900 dark:text-neutral-50">
                   {selectedCustomer.first_name} {selectedCustomer.last_name}
                 </span>
@@ -334,7 +335,7 @@ export const AddGuestModal = memo(function AddGuestModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                    First Name <span className="text-danger-600">*</span>
+                    {t.customer.firstName} <span className="text-danger-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -350,7 +351,7 @@ export const AddGuestModal = memo(function AddGuestModal({
                         ? "border-danger-500 focus:ring-danger-500"
                         : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
                     } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                    placeholder="Enter first name"
+                    placeholder={t.customer.enterFirstName}
                   />
                   {errors.first_name && (
                     <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
@@ -360,7 +361,7 @@ export const AddGuestModal = memo(function AddGuestModal({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                    Last Name <span className="text-danger-600">*</span>
+                    {t.customer.lastName} <span className="text-danger-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -376,7 +377,7 @@ export const AddGuestModal = memo(function AddGuestModal({
                         ? "border-danger-500 focus:ring-danger-500"
                         : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
                     } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                    placeholder="Enter last name"
+                    placeholder={t.customer.enterLastName}
                   />
                   {errors.last_name && (
                     <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">
@@ -419,7 +420,7 @@ export const AddGuestModal = memo(function AddGuestModal({
               {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                  Phone Number
+                  {t.customer.phoneNumber}
                 </label>
                 <input
                   type="tel"
@@ -453,7 +454,7 @@ export const AddGuestModal = memo(function AddGuestModal({
               }}
               className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors font-medium"
             >
-              Cancel
+              {t.common.cancel}
             </button>
             <button
               type="submit"
@@ -463,7 +464,7 @@ export const AddGuestModal = memo(function AddGuestModal({
               }
               className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
             >
-              {addGuestMutation.isPending ? "Adding..." : "Add Guest"}
+              {addGuestMutation.isPending ? t.booking.adding : t.booking.addGuest}
             </button>
           </div>
         </form>

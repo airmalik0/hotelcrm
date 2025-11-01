@@ -5,6 +5,7 @@ import {
   getBookingStatusColor,
 } from "@/utils/booking-colors"
 import { getGuestInitials } from "@/utils/booking-grid"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { formatDuration } from "@/utils/date-helpers"
 import {
   getBestFittingName,
@@ -49,9 +50,10 @@ export const BookingBlock = memo(function BookingBlock({
   isTouchDevice = false,
   fontSize = 12,
 }: BookingBlockProps) {
+  const { t } = useLanguage()
   const guestName = booking.customer
     ? `${booking.customer.first_name} ${booking.customer.last_name}`
-    : "Guest"
+    : t.booking.guest
   const duration = formatDuration(booking.check_in, booking.check_out)
 
   // Memoize status to avoid repetition

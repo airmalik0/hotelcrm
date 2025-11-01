@@ -1,6 +1,7 @@
 import { deleteCustomer, getCustomers } from "@/api/customers"
 import type { CustomerPublic } from "@/client/types.gen"
 import { CreateCustomerModal } from "@/components/customers/CreateCustomerModal"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useConfirm } from "@/hooks/useConfirm"
 import { showError, showSuccess } from "@/utils/error-handling"
 import {
@@ -15,6 +16,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 
 export function CustomerList() {
+  const { currency, t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
@@ -38,18 +40,20 @@ export function CustomerList() {
     mutationFn: deleteCustomer,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      showSuccess("Customer deleted successfully!")
+      showSuccess(t.customer.deletedSuccess)
     },
     onError: (error) => {
-      showError(error, "Failed to delete customer. Please try again.")
+      showError(error, t.customer.deleteError)
     },
   })
 
   const handleDelete = async (customer: CustomerPublic) => {
     const confirmed = await confirm({
-      title: "Delete Customer",
-      message: `Are you sure you want to delete ${customer.first_name} ${customer.last_name}? This action cannot be undone.`,
-      confirmText: "Delete",
+      title: t.customer.deleteTitle,
+      message: t.customer.deleteMessage
+        .replace("{firstName}", customer.first_name)
+        .replace("{lastName}", customer.last_name),
+      confirmText: t.customer.deleteConfirm,
       variant: "danger",
     })
 
@@ -73,7 +77,7 @@ export function CustomerList() {
             <div className="border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-6 py-4 flex items-center flex-wrap gap-3 justify-between">
               <div className="flex items-center flex-wrap gap-3">
                 <span className="text-base font-medium text-neutral-600 dark:text-neutral-400 mb-0">
-                  Show
+                  {t.customer.show}
                 </span>
                 <select
                   className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
@@ -93,7 +97,7 @@ export function CustomerList() {
                   <input
                     type="text"
                     className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white h-10 w-64 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-neutral-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-                    placeholder="Search customers..."
+                    placeholder={t.customer.searchPlaceholder}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -105,7 +109,7 @@ export function CustomerList() {
                 className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium shadow-sm hover:shadow-md"
               >
                 <Plus className="w-4 h-4" />
-                Add New Customer
+                {t.customer.addNew}
               </button>
             </div>
             <div className="p-6">
@@ -114,28 +118,28 @@ export function CustomerList() {
                   <thead>
                     <tr className="border-b border-neutral-200 dark:border-neutral-600">
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        S.L
+                        {t.customer.serialNumber}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Name
+                        {t.customer.name}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Phone
+                        {t.customer.phone}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Location
+                        {t.customer.location}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Total Spent
+                        {t.customer.totalSpent}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Bookings
+                        {t.customer.bookings}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Member Since
+                        {t.customer.memberSince}
                       </th>
                       <th className="text-center py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Action
+                        {t.customer.action}
                       </th>
                     </tr>
                   </thead>
@@ -146,7 +150,7 @@ export function CustomerList() {
                           colSpan={8}
                           className="text-center py-8 text-neutral-500"
                         >
-                          Loading customers...
+                          {t.customer.loading}
                         </td>
                       </tr>
                     )}
@@ -156,7 +160,7 @@ export function CustomerList() {
                           colSpan={8}
                           className="text-center py-8 text-danger-600"
                         >
-                          Error loading customers
+                          {t.customer.loadingError}
                         </td>
                       </tr>
                     )}
@@ -166,7 +170,7 @@ export function CustomerList() {
                           colSpan={8}
                           className="text-center py-8 text-neutral-500"
                         >
-                          No customers found
+                          {t.common.noCustomersFound}
                         </td>
                       </tr>
                     )}
@@ -186,7 +190,7 @@ export function CustomerList() {
                             {customer.passport_photo_path && (
                               <FileCheck
                                 className="w-4 h-4 text-success-600 dark:text-success-400"
-                                title="Passport uploaded"
+                                title={t.customer.passportUploaded}
                               />
                             )}
                           </div>
@@ -201,12 +205,12 @@ export function CustomerList() {
                               parts.push(customer.country_code)
                             if (customer.region) parts.push(customer.region)
                             if (customer.district) parts.push(customer.district)
-                            return parts.length ? parts.join(" · ") : "N/A"
+                            return parts.length ? parts.join(" · ") : t.customer.notAvailable
                           })()}
                         </td>
                         <td className="py-3 px-2">
                           <span className="font-semibold text-success-600 dark:text-success-400">
-                            {formatCurrency(customer.total_spent)}
+                            {formatCurrency(customer.total_spent, currency)}
                           </span>
                         </td>
                         <td className="py-3 px-2">
@@ -250,12 +254,18 @@ export function CustomerList() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Showing {currentPage * itemsPerPage + 1} to{" "}
-                    {Math.min(
-                      (currentPage + 1) * itemsPerPage,
-                      data?.count || 0,
-                    )}{" "}
-                    of {data?.count || 0} entries
+                    {t.customer.paginationShowing
+                      .replace("{from}", String(currentPage * itemsPerPage + 1))
+                      .replace(
+                        "{to}",
+                        String(
+                          Math.min(
+                            (currentPage + 1) * itemsPerPage,
+                            data?.count || 0,
+                          ),
+                        ),
+                      )
+                      .replace("{total}", String(data?.count || 0))}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -263,7 +273,7 @@ export function CustomerList() {
                       disabled={currentPage === 0}
                       className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t.common.previous}
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const page = currentPage - 2 + i
@@ -287,7 +297,7 @@ export function CustomerList() {
                       disabled={currentPage >= totalPages - 1}
                       className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t.common.next}
                     </button>
                   </div>
                 </div>

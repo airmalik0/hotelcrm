@@ -11,6 +11,7 @@ import { Expenses } from "@/pages/Expenses"
 import { Login } from "@/pages/Login"
 import { MarketingCampaigns } from "@/pages/MarketingCampaigns"
 import { RoomList } from "@/pages/RoomList"
+import { Settings } from "@/pages/Settings"
 import { UserList } from "@/pages/UserList"
 import { Navigate, createBrowserRouter } from "react-router-dom"
 
@@ -135,6 +136,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute allowedRoles={["admin", "manager"]}>
         <MainLayout>
           <CustomerInquiries />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/settings",
+    element: (
+      <ProtectedRoute allowedRoles={["admin"]}>
+        <MainLayout>
+          <Settings />
         </MainLayout>
       </ProtectedRoute>
     ),

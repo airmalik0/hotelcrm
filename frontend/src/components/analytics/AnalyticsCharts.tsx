@@ -1,4 +1,6 @@
-import type { DashboardMetrics } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
+import { currencySymbols } from "@/i18n"
+import { formatCurrency } from "@/utils/formatters"
 import { format } from "date-fns"
 import {
   Area,
@@ -37,12 +39,31 @@ const CHART_COLORS = [
   COLORS.pink,
 ]
 
+// DashboardMetrics type from Analytics page
+type DashboardMetrics = {
+  revenue_trend?: Array<{ date: string; value: number }>
+  category_breakdown?: Array<{ name: string; revenue: number; bookings: number }>
+  payment_distribution?: Array<{ name: string; value: number; amount: number }>
+  customer_metrics?: any
+  [key: string]: any
+}
+
 interface ChartProps {
   metrics: DashboardMetrics
 }
 
 // Custom tooltip for currency formatting
-const CurrencyTooltip = ({ active, payload, label }: any) => {
+const CurrencyTooltipContent = ({
+  active,
+  payload,
+  label,
+  currency,
+}: {
+  active?: boolean
+  payload?: any[]
+  label?: string
+  currency: string
+}) => {
   if (!active || !payload || !payload.length) return null
 
   return (
@@ -52,33 +73,46 @@ const CurrencyTooltip = ({ active, payload, label }: any) => {
       </p>
       {payload.map((entry: any, index: number) => (
         <p key={index} className="text-sm mt-1" style={{ color: entry.color }}>
-          {entry.name}: ${entry.value.toLocaleString()}
+          {entry.name}: {formatCurrency(entry.value, currency as any)}
         </p>
       ))}
     </div>
   )
 }
 
-// Custom tooltip for percentage
-const PercentageTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload || !payload.length) return null
-
-  return (
-    <div className="bg-white dark:bg-dark-2 p-3 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-600">
-      <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        {label}
-      </p>
-      {payload.map((entry: any, index: number) => (
-        <p key={index} className="text-sm mt-1" style={{ color: entry.color }}>
-          {entry.name}: {entry.value.toFixed(1)}%
-        </p>
-      ))}
-    </div>
-  )
+// Wrapper component that gets currency from context
+const CurrencyTooltip = (props: any) => {
+  const { currency } = useLanguage()
+  return <CurrencyTooltipContent {...props} currency={currency} />
 }
+
+// Custom tooltip for percentage (unused)
+// const PercentageTooltip = ({ active, payload, label }: any) => {
+//   if (!active || !payload || !payload.length) return null
+//   return (
+//     <div className="bg-white dark:bg-dark-2 p-3 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-600">
+//       <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+//         {label}
+//       </p>
+//       {payload.map((entry: any, index: number) => (
+//         <p key={index} className="text-sm mt-1" style={{ color: entry.color }}>
+//           {entry.name}: {entry.value.toFixed(1)}%
+//         </p>
+//       ))}
+//     </div>
+//   )
+// }
 
 // Custom tooltip for payment distribution (percentage + amount)
-const PaymentDistributionTooltip = ({ active, payload }: any) => {
+const PaymentDistributionTooltipContent = ({
+  active,
+  payload,
+  currency,
+}: {
+  active?: boolean
+  payload?: any[]
+  currency: string
+}) => {
   if (!active || !payload || !payload.length) return null
 
   const data = payload[0].payload
@@ -94,22 +128,31 @@ const PaymentDistributionTooltip = ({ active, payload }: any) => {
       </p>
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
         Amount:{" "}
-        <span className="font-semibold">${data.amount.toLocaleString()}</span>
+        <span className="font-semibold">
+          {formatCurrency(data.amount, currency as any)}
+        </span>
       </p>
     </div>
   )
 }
 
+// Wrapper component that gets currency from context
+const PaymentDistributionTooltip = (props: any) => {
+  const { currency } = useLanguage()
+  return <PaymentDistributionTooltipContent {...props} currency={currency} />
+}
+
 export function RevenueTrendChart({ metrics }: ChartProps) {
+  const { currency, t } = useLanguage()
   if (!metrics.revenue_trend || metrics.revenue_trend.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
-        No revenue trend data available
+        {t.pages.analytics.noRevenueTrend}
       </div>
     )
   }
 
-  const data = metrics.revenue_trend.map((point) => ({
+  const data = metrics.revenue_trend.map((point: { date: string; value: number }) => ({
     date: format(new Date(point.date), "MMM dd"),
     revenue: point.value,
   }))
@@ -139,7 +182,11 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
           <YAxis
             className="text-xs text-neutral-600 dark:text-neutral-400"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => {
+              const num = value / 1000
+              const symbol = currencySymbols[currency]
+              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+            }}
           />
           <Tooltip content={<CurrencyTooltip />} />
           <Area
@@ -157,19 +204,20 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
 }
 
 export function RoomPerformanceChart({ metrics }: ChartProps) {
+  const { currency, t } = useLanguage()
   if (!metrics.category_breakdown || metrics.category_breakdown.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
-        No room performance data available
+        {t.pages.analytics.noRoomPerformance}
       </div>
     )
   }
 
-  const data = metrics.category_breakdown.map((cat) => ({
-    name: cat.category_name || "",
+  const data = metrics.category_breakdown.map((cat: any) => ({
+    name: cat.category_name || cat.name || "",
     revenue: cat.revenue,
     bookings: cat.bookings,
-    occupancy: cat.occupancy_rate,
+    occupancy: cat.occupancy_rate || 0,
   }))
 
   return (
@@ -187,12 +235,22 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
             dataKey="name"
             className="text-xs text-neutral-600 dark:text-neutral-400"
             tick={{ fontSize: 12 }}
+            label={{
+              value: t.analytics.trends.chartLabels.room,
+              position: "insideBottom",
+              offset: -5,
+              className: "text-xs text-neutral-600 dark:text-neutral-400",
+            }}
           />
           <YAxis
             yAxisId="left"
             className="text-xs text-neutral-600 dark:text-neutral-400"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => {
+              const num = value / 1000
+              const symbol = currencySymbols[currency]
+              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+            }}
           />
           <YAxis
             yAxisId="right"
@@ -207,13 +265,13 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
             yAxisId="left"
             dataKey="revenue"
             fill={COLORS.primary}
-            name="Revenue"
+            name={t.analytics.trends.chartLabels.revenue}
           />
           <Bar
             yAxisId="right"
             dataKey="occupancy"
             fill={COLORS.secondary}
-            name="Occupancy %"
+            name={t.analytics.trends.chartLabels.occupancyPercent}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -222,6 +280,8 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
 }
 
 export function PaymentDistributionChart({ metrics }: ChartProps) {
+  const { currency, t } = useLanguage()
+  // currency is used in PaymentDistributionTooltip wrapper
   if (!metrics.payment_distribution) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
@@ -230,21 +290,22 @@ export function PaymentDistributionChart({ metrics }: ChartProps) {
     )
   }
 
+  const paymentDist = metrics.payment_distribution as any
   const data = [
     {
-      name: "Cash",
-      value: metrics.payment_distribution.cash_percentage,
-      amount: metrics.payment_distribution.cash_amount,
+      name: t.paymentMethods.cash,
+      value: paymentDist.cash_percentage || 0,
+      amount: paymentDist.cash_amount || 0,
     },
     {
-      name: "Bank Transfer",
-      value: metrics.payment_distribution.transfer_percentage,
-      amount: metrics.payment_distribution.transfer_amount,
+      name: t.paymentMethods.bankTransfer,
+      value: paymentDist.transfer_percentage || 0,
+      amount: paymentDist.transfer_amount || 0,
     },
     {
-      name: "Terminal/Card",
-      value: metrics.payment_distribution.terminal_percentage,
-      amount: metrics.payment_distribution.terminal_amount,
+      name: t.paymentMethods.terminal,
+      value: paymentDist.terminal_percentage || 0,
+      amount: paymentDist.terminal_amount || 0,
     },
   ].filter((item) => item.value > 0)
 
@@ -289,7 +350,7 @@ export function PaymentDistributionChart({ metrics }: ChartProps) {
             fill="#8884d8"
             dataKey="value"
           >
-            {data.map((entry, index) => (
+            {data.map((_entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={CHART_COLORS[index % CHART_COLORS.length]}
@@ -346,7 +407,7 @@ export function CustomerDemographicsChart({ metrics }: ChartProps) {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) =>
+                label={({ name, percent }: any) =>
                   `${name} ${(percent * 100).toFixed(0)}%`
                 }
               >
@@ -397,10 +458,11 @@ export function CustomerDemographicsChart({ metrics }: ChartProps) {
 
 // Seasonal trends chart for multi-year analysis
 export function SeasonalTrendsChart({ data }: { data: any }) {
+  const { currency, t } = useLanguage()
   if (!data || !data.monthly_data || data.monthly_data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
-        No seasonal trends data available
+        {t.pages.analytics.noSeasonalTrends}
       </div>
     )
   }
@@ -433,7 +495,11 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
             yAxisId="left"
             className="text-xs text-neutral-600 dark:text-neutral-400"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => {
+              const num = value / 1000
+              const symbol = currencySymbols[currency]
+              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+            }}
           />
           <YAxis
             yAxisId="right"
@@ -450,7 +516,7 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
             dataKey="revenue"
             stroke={COLORS.primary}
             strokeWidth={2}
-            name="Revenue"
+            name={t.analytics.trends.chartLabels.revenue}
           />
           <Line
             yAxisId="right"
@@ -458,7 +524,7 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
             dataKey="occupancy"
             stroke={COLORS.secondary}
             strokeWidth={2}
-            name="Occupancy %"
+            name={t.analytics.trends.chartLabels.occupancyPercent}
           />
           <Line
             yAxisId="left"
@@ -466,7 +532,7 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
             dataKey="bookings"
             stroke={COLORS.accent}
             strokeWidth={2}
-            name="Bookings"
+            name={t.analytics.trends.chartLabels.bookings}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -476,6 +542,7 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
 
 // District Revenue Chart
 export function DistrictRevenueChart({ data }: { data: any }) {
+  const { currency } = useLanguage()
   if (!data?.districts || data.districts.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-neutral-500 dark:text-neutral-400">
@@ -513,7 +580,11 @@ export function DistrictRevenueChart({ data }: { data: any }) {
           <YAxis
             className="text-xs text-neutral-600 dark:text-neutral-400"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => {
+              const num = value / 1000
+              const symbol = currencySymbols[currency]
+              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+            }}
           />
           <Tooltip content={<CurrencyTooltip />} />
           <Legend />
@@ -558,7 +629,7 @@ export function DistrictRevenueChart({ data }: { data: any }) {
                     {district.district.replace(/_/g, " ")}
                   </td>
                   <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
-                    ${district.revenue.toLocaleString()}
+                    {formatCurrency(district.revenue, currency as any)}
                   </td>
                   <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
                     {district.percentage.toFixed(1)}%
@@ -567,7 +638,7 @@ export function DistrictRevenueChart({ data }: { data: any }) {
                     {district.bookings}
                   </td>
                   <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
-                    ${district.average_booking_value.toLocaleString()}
+                    {formatCurrency(district.average_booking_value, currency as any)}
                   </td>
                 </tr>
               ))}

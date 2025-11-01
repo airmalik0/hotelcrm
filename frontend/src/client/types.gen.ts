@@ -387,6 +387,7 @@ export type CustomerCreate = {
     district?: (District | null);
     passport_photo_path?: (string | null);
     notes?: (string | null);
+    source?: (CustomerSource | null);
 };
 
 /**
@@ -495,6 +496,7 @@ export type CustomerPublic = {
     district?: (District | null);
     passport_photo_path?: (string | null);
     notes?: (string | null);
+    source?: (CustomerSource | null);
     id: string;
     total_spent: number;
     total_bookings: number;
@@ -503,6 +505,11 @@ export type CustomerPublic = {
     created_at: string;
     tags: Array<(string)>;
 };
+
+/**
+ * Customer acquisition sources
+ */
+export type CustomerSource = 'WALK_IN' | 'INSTAGRAM' | 'OLX';
 
 export type CustomersPublic = {
     data: Array<CustomerPublic>;
@@ -526,6 +533,7 @@ export type CustomerUpdate = {
     passport_photo_path?: (string | null);
     tags?: (Array<(string)> | null);
     notes?: (string | null);
+    source?: (CustomerSource | null);
 };
 
 /**
@@ -805,6 +813,8 @@ export type UserPublic = {
     is_superuser?: boolean;
     full_name?: (string | null);
     role?: UserRole;
+    language?: string;
+    currency?: string;
     id: string;
 };
 
@@ -832,6 +842,8 @@ export type UserUpdate = {
 export type UserUpdateMe = {
     full_name?: (string | null);
     username?: (string | null);
+    language?: (string | null);
+    currency?: (string | null);
 };
 
 export type ValidationError = {

@@ -15,6 +15,7 @@ from app.api.routes import (
     login,
     rooms,
     sms_webhook,
+    system_settings,
     users,
     utils,
 )
@@ -36,5 +37,6 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["analytic
 api_router.include_router(expenses.router, prefix="/expenses", tags=["expenses"])
 api_router.include_router(geo.router, prefix="/geo", tags=["geo"])
 api_router.include_router(customer_inquiries.router, prefix="/inquiries", tags=["inquiries"])
+api_router.include_router(system_settings.router)
 
 

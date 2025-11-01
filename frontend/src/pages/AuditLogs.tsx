@@ -1,4 +1,5 @@
 import { getAuditLogs } from "@/api/audit"
+import { useLanguage } from "@/contexts/LanguageContext"
 import type { AuditLogPublic } from "@/client/types.gen"
 import { AuditLogDetails } from "@/components/audit/AuditLogDetails"
 import { AuditStats } from "@/components/audit/AuditStats"
@@ -28,6 +29,7 @@ const getActionBadgeColor = (action: string) => {
 }
 
 export function AuditLogs() {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterAction, setFilterAction] = useState<string>("")
   const [filterEntityType, setFilterEntityType] = useState<string>("")
@@ -80,10 +82,10 @@ export function AuditLogs() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Audit Logs
+            {t.pages.audit.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Monitor system activities and user actions
+            {t.pages.audit.description}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -100,7 +102,7 @@ export function AuditLogs() {
           <div className="flex items-center flex-wrap gap-3 justify-between mb-3">
             <div className="flex items-center flex-wrap gap-3">
               <span className="text-base font-medium text-neutral-600 dark:text-neutral-400 mb-0">
-                Show
+                {t.pages.audit.show}
               </span>
               <select
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
@@ -119,7 +121,7 @@ export function AuditLogs() {
                 <input
                   type="text"
                   className="bg-white dark:bg-neutral-700 h-10 w-64 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-neutral-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-                  placeholder="Search logs..."
+                  placeholder={t.pages.audit.searchLogs}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -135,7 +137,7 @@ export function AuditLogs() {
               }`}
             >
               <Filter className="w-4 h-4" />
-              Filters
+              {t.pages.audit.filters}
             </button>
           </div>
 
@@ -144,7 +146,7 @@ export function AuditLogs() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-neutral-200 dark:border-neutral-600">
               <div>
                 <label className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1 block">
-                  Action
+                  {t.audit.action}
                 </label>
                 <select
                   className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-3 py-2 text-sm w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -154,7 +156,7 @@ export function AuditLogs() {
                     setCurrentPage(0)
                   }}
                 >
-                  <option value="">All Actions</option>
+                  <option value="">{t.audit.allActions}</option>
                   {uniqueActions.map((action) => (
                     <option key={action} value={action}>
                       {action}
@@ -164,7 +166,7 @@ export function AuditLogs() {
               </div>
               <div>
                 <label className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1 block">
-                  Entity Type
+                  {t.audit.entityType}
                 </label>
                 <select
                   className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-3 py-2 text-sm w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -174,7 +176,7 @@ export function AuditLogs() {
                     setCurrentPage(0)
                   }}
                 >
-                  <option value="">All Entity Types</option>
+                  <option value="">{t.audit.allEntityTypes}</option>
                   {uniqueEntityTypes.map((type) => (
                     <option key={type} value={type}>
                       {type}
@@ -184,12 +186,12 @@ export function AuditLogs() {
               </div>
               <div>
                 <label className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1 block">
-                  Username
+                  {t.audit.username}
                 </label>
                 <input
                   type="text"
                   className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 dark:text-white px-3 py-2 text-sm w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Filter by username..."
+                  placeholder={t.audit.filterByUsername}
                   value={filterUsername}
                   onChange={(e) => {
                     setFilterUsername(e.target.value)
@@ -207,10 +209,10 @@ export function AuditLogs() {
               <thead>
                 <tr className="border-b border-neutral-200 dark:border-neutral-600">
                   <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                    Timestamp
+                    {t.pages.audit.timestamp}
                   </th>
                   <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                    User
+                    {t.pages.audit.user}
                   </th>
                   <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
                     Action
@@ -253,7 +255,7 @@ export function AuditLogs() {
                       colSpan={6}
                       className="text-center py-8 text-neutral-500"
                     >
-                      No audit logs found
+                      {t.common.noAuditLogsFound}
                     </td>
                   </tr>
                 )}

@@ -8,6 +8,7 @@ import type {
   RoomCategoryCreate,
   RoomCategoryPublic,
 } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, Trash2, X } from "lucide-react"
@@ -20,6 +21,7 @@ interface RoomCategoryManagerModalProps {
 export function RoomCategoryManagerModal({
   onClose,
 }: RoomCategoryManagerModalProps) {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -33,7 +35,7 @@ export function RoomCategoryManagerModal({
   const createMutation = useMutation({
     mutationFn: (payload: RoomCategoryCreate) => createRoomCategory(payload),
     onSuccess: () => {
-      showSuccess("Category created")
+      showSuccess(t.room.categoryCreated)
       queryClient.invalidateQueries({ queryKey: ["room-categories"] })
       setName("")
       setDescription("")
@@ -43,7 +45,7 @@ export function RoomCategoryManagerModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create category",
+        t.room.failedToCreateCategory,
       )
     },
   })
@@ -51,22 +53,22 @@ export function RoomCategoryManagerModal({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRoomCategory(id),
     onSuccess: () => {
-      showSuccess("Category deleted")
+      showSuccess(t.room.categoryDeleted)
       queryClient.invalidateQueries({ queryKey: ["room-categories"] })
     },
     onError: (error) => {
-      showError(error, "Failed to delete category")
+      showError(error, t.room.failedToDeleteCategory)
     },
   })
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
-    if (!name.trim()) newErrors.name = "Name is required"
+    if (!name.trim()) newErrors.name = t.room.categoryNameRequired
     if (name.trim().length > 100)
-      newErrors.name = "Name must be 100 characters or less"
+      newErrors.name = t.room.categoryNameMaxLength
     if (description && description.length > 500)
-      newErrors.description = "Description must be 500 characters or less"
+      newErrors.description = t.room.categoryDescriptionMaxLength
     if (Object.keys(newErrors).length) {
       setErrors(newErrors)
       return
@@ -93,7 +95,7 @@ export function RoomCategoryManagerModal({
           {/* Header */}
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Manage Room Categories
+              {t.room.manageCategories}
             </h3>
             <button
               type="button"
@@ -115,14 +117,14 @@ export function RoomCategoryManagerModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Name *
+                    {t.room.categoryName} *
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className={`w-full border ${errors.name ? "border-danger-500 dark:border-danger-400" : "border-neutral-300 dark:border-neutral-500"} rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors`}
-                    placeholder="e.g. Deluxe, Economy"
+                    placeholder={t.room.categoryPlaceholder}
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">
@@ -132,14 +134,14 @@ export function RoomCategoryManagerModal({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Description
+                    {t.room.categoryDescription}
                   </label>
                   <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className={`w-full border ${errors.description ? "border-danger-500 dark:border-danger-400" : "border-neutral-300 dark:border-neutral-500"} rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors`}
-                    placeholder="Optional"
+                    placeholder={t.common.optional}
                   />
                   {errors.description && (
                     <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">
@@ -154,26 +156,26 @@ export function RoomCategoryManagerModal({
                 className="rounded-lg px-3 py-2 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
-                Add Category
+                {t.room.addCategory}
               </button>
             </form>
 
             {/* Category list */}
             <div>
               <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                Existing Categories
+                {t.room.existingCategories}
               </h4>
               {isLoading ? (
                 <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Loading...
+                  {t.room.loading}
                 </div>
               ) : error ? (
                 <div className="text-sm text-danger-600 dark:text-danger-400">
-                  Failed to load categories
+                  {t.room.failedToLoadCategories}
                 </div>
               ) : categories.length === 0 ? (
                 <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                  No categories yet
+                  {t.room.noCategoriesYet}
                 </div>
               ) : (
                 <ul className="divide-y divide-neutral-200 dark:divide-neutral-700">

@@ -65,15 +65,24 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
   return `+${digits}`
 }
 
+import { currencyLocales, type Currency } from "@/i18n"
 import { safeParseDateOrNull } from "./date-helpers"
 
 /**
  * Format currency amount
+ * @param amount - Amount to format
+ * @param currency - Currency code (USD, RUB, UZS). Defaults to USD
+ * @param locale - Locale string. If not provided, uses default locale for currency
  */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(
+  amount: number,
+  currency: Currency = "USD",
+  locale?: string,
+): string {
+  const currencyLocale = locale || currencyLocales[currency] || "en-US"
+  return new Intl.NumberFormat(currencyLocale, {
     style: "currency",
-    currency: "USD",
+    currency: currency,
   }).format(amount)
 }
 

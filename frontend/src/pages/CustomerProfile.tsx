@@ -2,8 +2,10 @@ import { getCustomer, updateCustomer } from "@/api/customers"
 import { BookingHistoryTab } from "@/components/customer/BookingHistoryTab"
 import { CustomerEditForm } from "@/components/customer/CustomerEditForm"
 import { ImageUpload } from "@/components/ui/ImageUpload"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { safeParseDate } from "@/utils/date-helpers"
 import { showSuccess } from "@/utils/error-handling"
+import { formatCurrency } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Calendar,
@@ -22,6 +24,7 @@ import { useParams } from "react-router-dom"
 export function CustomerProfile() {
   const { customerId } = useParams<{ customerId: string }>()
   const queryClient = useQueryClient()
+  const { currency, t } = useLanguage()
   const [activeTab, setActiveTab] = useState<
     "details" | "bookings" | "documents" | "edit"
   >("details")
@@ -39,7 +42,7 @@ export function CustomerProfile() {
       updateCustomer(customerId!, { passport_photo_path: passportPath }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer", customerId] })
-      showSuccess("Passport photo updated successfully!")
+      showSuccess(t.customerProfile.passportPhotoUpdatedSuccess)
     },
   })
 
@@ -51,13 +54,6 @@ export function CustomerProfile() {
   const formatDateTime = (date: string | null | undefined) => {
     if (!date) return "N/A"
     return safeParseDate(date).toLocaleString()
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
   }
 
   const getStatusColor = (status: string) => {
@@ -86,7 +82,7 @@ export function CustomerProfile() {
   if (!customer) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-danger-600">Customer not found</div>
+        <div className="text-danger-600">{t.common.customerNotFound}</div>
       </div>
     )
   }
@@ -113,7 +109,7 @@ export function CustomerProfile() {
             {/* Personal Info */}
             <div className="mt-6">
               <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                Personal Information
+                {t.customer.profile.personalInformation}
               </h6>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
@@ -125,19 +121,19 @@ export function CustomerProfile() {
                 <li className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-neutral-500" />
                   <span className="text-neutral-600 dark:text-neutral-400">
-                    {customer.phone || "No phone number"}
+                    {customer.phone || t.customer.profile.noPhoneNumber}
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-neutral-500" />
                   <span className="text-neutral-600 dark:text-neutral-400">
-                    DOB: {formatDate(customer.date_of_birth)}
+                    {t.customer.profile.dobLabel} {formatDate(customer.date_of_birth)}
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-neutral-500" />
                   <span className="text-neutral-600 dark:text-neutral-400">
-                    {customer.district || "No location"}
+                    {customer.district || t.customer.profile.noLocation}
                   </span>
                 </li>
                 {customer.notes && (
@@ -187,16 +183,16 @@ export function CustomerProfile() {
             {/* Statistics */}
             <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
               <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                Statistics
+                {t.customer.profile.statistics}
               </h6>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-success-100 dark:bg-success-600/30 rounded-lg p-4">
                   <DollarSign className="w-8 h-8 text-success-600 dark:text-success-400 mb-2" />
                   <p className="text-2xl font-bold text-success-600 dark:text-success-400">
-                    {formatCurrency(customer.total_spent)}
+                    {formatCurrency(customer.total_spent, currency)}
                   </p>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Total Spent
+                    {t.customer.profile.totalSpent}
                   </p>
                 </div>
                 <div className="bg-info-100 dark:bg-info-600/30 rounded-lg p-4">
@@ -205,21 +201,21 @@ export function CustomerProfile() {
                     {customer.total_bookings}
                   </p>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Total Bookings
+                    {t.customer.profile.totalBookings}
                   </p>
                 </div>
               </div>
               <div className="mt-4 space-y-2">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">Member Since:</span>{" "}
+                  <span className="font-semibold">{t.customer.profile.memberSince}</span>{" "}
                   {formatDate(customer.created_at)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">First Booking:</span>{" "}
+                  <span className="font-semibold">{t.customer.profile.firstBooking}</span>{" "}
                   {formatDate(customer.first_booking_date)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">Last Booking:</span>{" "}
+                  <span className="font-semibold">{t.customer.profile.lastBooking}</span>{" "}
                   {formatDate(customer.last_booking_date)}
                 </p>
               </div>
@@ -243,7 +239,7 @@ export function CustomerProfile() {
                 onClick={() => setActiveTab("details")}
               >
                 <User className="w-4 h-4" />
-                Customer Details
+                {t.customer.profile.customerDetails}
               </button>
               <button
                 className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
@@ -254,7 +250,7 @@ export function CustomerProfile() {
                 onClick={() => setActiveTab("bookings")}
               >
                 <Calendar className="w-4 h-4" />
-                Booking History
+                {t.customer.profile.bookingHistory}
               </button>
               <button
                 className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
@@ -265,7 +261,7 @@ export function CustomerProfile() {
                 onClick={() => setActiveTab("documents")}
               >
                 <FileImage className="w-4 h-4" />
-                Documents
+                {t.customer.profile.documents}
               </button>
               <button
                 className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
@@ -276,7 +272,7 @@ export function CustomerProfile() {
                 onClick={() => setActiveTab("edit")}
               >
                 <Edit className="w-4 h-4" />
-                Edit Profile
+                {t.customer.profile.editProfile}
               </button>
             </div>
 
@@ -286,12 +282,12 @@ export function CustomerProfile() {
               {activeTab === "details" && (
                 <div>
                   <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                    Customer Information
+                    {t.customer.profile.customerInformation}
                   </h5>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        Full Name
+                        {t.customer.profile.fullName}
                       </label>
                       <p className="text-base text-neutral-900 dark:text-white">
                         {customer.first_name} {customer.last_name}
@@ -299,15 +295,15 @@ export function CustomerProfile() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        Phone Number
+                        {t.customer.profile.phoneNumber}
                       </label>
                       <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.phone || "Not provided"}
+                        {customer.phone || t.customer.profile.notProvided}
                       </p>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        Date of Birth
+                        {t.customer.profile.dateOfBirth}
                       </label>
                       <p className="text-base text-neutral-900 dark:text-white">
                         {formatDate(customer.date_of_birth)}
@@ -315,18 +311,18 @@ export function CustomerProfile() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        District/Location
+                        {t.customer.profile.districtLocation}
                       </label>
                       <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.district || "Not provided"}
+                        {customer.district || t.customer.profile.notProvided}
                       </p>
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        Notes
+                        {t.customer.profile.notes}
                       </label>
                       <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.notes || "No notes available"}
+                        {customer.notes || t.common.noNotesAvailable}
                       </p>
                     </div>
                     {/* Tags in details tab */}
@@ -365,20 +361,20 @@ export function CustomerProfile() {
 
                   <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                     <h6 className="text-base font-semibold mb-3 text-neutral-900 dark:text-white">
-                      Customer Metrics
+                      {t.customer.profile.customerMetrics}
                     </h6>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Total Spent
+                          {t.customer.profile.totalSpent}
                         </p>
                         <p className="text-lg font-bold text-success-600 dark:text-success-400">
-                          {formatCurrency(customer.total_spent)}
+                          {formatCurrency(customer.total_spent, currency)}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Total Bookings
+                          {t.customer.profile.totalBookings}
                         </p>
                         <p className="text-lg font-bold text-info-600 dark:text-info-400">
                           {customer.total_bookings}
@@ -386,19 +382,20 @@ export function CustomerProfile() {
                       </div>
                       <div>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Avg. Spending
+                          {t.customer.profile.avgSpending}
                         </p>
                         <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
                           {customer.total_bookings > 0
                             ? formatCurrency(
                                 customer.total_spent / customer.total_bookings,
+                                currency,
                               )
-                            : "$0"}
+                            : formatCurrency(0, currency)}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Customer Since
+                          {t.customer.profile.customerSince}
                         </p>
                         <p className="text-lg font-bold text-neutral-900 dark:text-white">
                           {safeParseDate(customer.created_at).getFullYear()}
@@ -418,25 +415,24 @@ export function CustomerProfile() {
               {activeTab === "documents" && (
                 <div>
                   <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                    Customer Documents
+                    {t.customer.profile.customerDocuments}
                   </h5>
 
                   <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6">
                     <h6 className="text-base font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
                       <FileImage className="w-5 h-5" />
-                      Passport Document
+                      {t.customer.profile.passportDocument}
                     </h6>
 
                     <ImageUpload
                       value={customer.passport_photo_path}
                       onChange={(path) => updatePassportMutation.mutate(path)}
-                      label="Upload Passport"
+                      label={t.customer.profile.uploadPassport}
                       disabled={updatePassportMutation.isPending}
                     />
 
                     <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
-                      Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB). This
-                      document will be used for customer verification.
+                      {t.customer.profile.acceptedFormatsDesc}
                     </p>
                   </div>
                 </div>

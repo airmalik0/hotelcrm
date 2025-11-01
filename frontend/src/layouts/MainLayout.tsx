@@ -1,6 +1,7 @@
 import type { UserRole } from "@/client/types.gen"
 import { BREAKPOINTS } from "@/constants/breakpoints"
 import { useAuth } from "@/contexts/AuthContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useRole } from "@/hooks/useRole"
 import { useViewportWidth } from "@/hooks/useViewportWidth"
 import { setupNavigationListener } from "@/utils/navigation"
@@ -40,80 +41,8 @@ interface MenuItem {
   roles: UserRole[]
 }
 
-const menuItems: MenuItem[] = [
-  {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: Home,
-    href: "/",
-    roles: ["admin", "manager", "host"],
-  },
-  {
-    key: "booking-grid",
-    label: "Booking Grid",
-    icon: LayoutGrid,
-    href: "/booking-grid",
-    roles: ["admin", "manager", "host"],
-  },
-  {
-    key: "rooms",
-    label: "Room Management",
-    icon: Building2,
-    href: "/rooms",
-    roles: ["admin", "manager", "host"],
-  },
-  {
-    key: "customers",
-    label: "Customer Database",
-    icon: Users,
-    href: "/customers",
-    roles: ["admin", "manager", "host"],
-  },
-  {
-    key: "users",
-    label: "User Management",
-    icon: Settings,
-    href: "/users",
-    roles: ["admin"],
-  },
-  {
-    key: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    href: "/analytics",
-    roles: ["admin", "manager"],
-  },
-  {
-    key: "marketing",
-    label: "Marketing",
-    icon: Mail,
-    href: "/marketing",
-    roles: ["admin", "manager"],
-  },
-  {
-    key: "expenses",
-    label: "Expenses",
-    icon: DollarSign,
-    href: "/expenses",
-    roles: ["admin", "manager"],
-  },
-  {
-    key: "inquiries",
-    label: "Customer Inquiries",
-    icon: MessageSquare,
-    href: "/inquiries",
-    roles: ["admin", "manager"],
-  },
-  {
-    key: "audit",
-    label: "Audit Logs",
-    icon: FileText,
-    href: "/audit",
-    roles: ["admin"],
-  },
-]
-
 export function MainLayout({ children }: MainLayoutProps) {
+  const { t } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
@@ -125,6 +54,86 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   // Determine if we're on a 2xl+ screen for wider sidebar
   const isExtraLarge = viewportWidth >= BREAKPOINTS["2xl"]
+
+  const menuItems: MenuItem[] = [
+    {
+      key: "dashboard",
+      label: t.nav.dashboard,
+      icon: Home,
+      href: "/",
+      roles: ["admin", "manager", "host"],
+    },
+    {
+      key: "booking-grid",
+      label: t.nav.bookingGrid,
+      icon: LayoutGrid,
+      href: "/booking-grid",
+      roles: ["admin", "manager", "host"],
+    },
+    {
+      key: "rooms",
+      label: t.nav.rooms,
+      icon: Building2,
+      href: "/rooms",
+      roles: ["admin", "manager", "host"],
+    },
+    {
+      key: "customers",
+      label: t.nav.customers,
+      icon: Users,
+      href: "/customers",
+      roles: ["admin", "manager", "host"],
+    },
+    {
+      key: "users",
+      label: t.nav.users,
+      icon: Settings,
+      href: "/users",
+      roles: ["admin"],
+    },
+    {
+      key: "analytics",
+      label: t.nav.analytics,
+      icon: BarChart3,
+      href: "/analytics",
+      roles: ["admin", "manager"],
+    },
+    {
+      key: "marketing",
+      label: t.nav.marketing,
+      icon: Mail,
+      href: "/marketing",
+      roles: ["admin", "manager"],
+    },
+    {
+      key: "expenses",
+      label: t.nav.expenses,
+      icon: DollarSign,
+      href: "/expenses",
+      roles: ["admin", "manager"],
+    },
+    {
+      key: "inquiries",
+      label: t.nav.inquiries,
+      icon: MessageSquare,
+      href: "/inquiries",
+      roles: ["admin", "manager"],
+    },
+    {
+      key: "audit",
+      label: t.nav.audit,
+      icon: FileText,
+      href: "/audit",
+      roles: ["admin"],
+    },
+    {
+      key: "settings",
+      label: t.nav.settings,
+      icon: Settings,
+      href: "/settings",
+      roles: ["admin"],
+    },
+  ]
 
   // Setup navigation listener for external navigation
   useEffect(() => {
@@ -177,7 +186,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center gap-3">
               <item.icon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
               <span className="text-neutral-900 dark:text-white font-medium">
-                {item.label}
+                {t.nav[item.key as keyof typeof t.nav] || item.label}
               </span>
             </div>
             {isExpanded ? (
@@ -201,7 +210,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                       }`}
                     >
                       <div className="w-2 h-2 rounded-full bg-current opacity-60" />
-                      <span className="font-medium">{child.label}</span>
+                      <span className="font-medium">
+                        {t.nav[child.key as keyof typeof t.nav] || child.label}
+                      </span>
                     </Link>
                   </li>
                 ))}
@@ -222,7 +233,9 @@ export function MainLayout({ children }: MainLayoutProps) {
           }`}
         >
           <item.icon className="w-5 h-5" />
-          <span className="font-medium">{item.label}</span>
+          <span className="font-medium">
+            {t.nav[item.key as keyof typeof t.nav] || item.label}
+          </span>
         </Link>
       </li>
     )
@@ -322,7 +335,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   type="button"
                   onClick={logout}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-danger-100 dark:hover:bg-danger-600/30 hover:text-danger-600 dark:hover:text-danger-400 transition-colors"
-                  title="Logout"
+                  title={t.auth.logout}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>

@@ -1,6 +1,7 @@
 import { deleteRoom, getRooms } from "@/api/rooms"
 import type { RoomPublic, RoomStatus } from "@/client/types.gen"
 import { RoomCard } from "@/components/room/RoomCard"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { RoomCategoryManagerModal } from "@/components/room/RoomCategoryManagerModal"
 import { RoomCreateModal } from "@/components/room/RoomCreateModal"
 import { RoomEditModal } from "@/components/room/RoomEditModal"
@@ -13,6 +14,7 @@ import type React from "react"
 import { useMemo, useState } from "react"
 
 export function RoomList() {
+  const { t } = useLanguage()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -37,10 +39,10 @@ export function RoomList() {
     mutationFn: deleteRoom,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] })
-      showSuccess("Room deleted successfully!")
+      showSuccess(t.room.roomDeletedSuccess)
     },
     onError: (error) => {
-      showError(error, "Failed to delete room. Please try again.")
+      showError(error, t.room.failedToDeleteRoom)
     },
   })
 
@@ -143,7 +145,7 @@ export function RoomList() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Room Management
+            {t.pages.roomManagement.title}
           </h1>
           {canEdit && (
             <>
@@ -152,20 +154,20 @@ export function RoomList() {
                 className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-neutral-600 text-white hover:bg-neutral-700 text-sm font-medium shadow-sm hover:shadow-md"
               >
                 <Filter className="w-4 h-4" />
-                Manage categories
+                {t.pages.roomManagement.manageCategories}
               </button>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium shadow-sm hover:shadow-md"
               >
                 <Plus className="w-4 h-4" />
-                Add New Room
+                {t.pages.roomManagement.addNewRoom}
               </button>
             </>
           )}
         </div>
         <p className="text-neutral-600 dark:text-neutral-400">
-          Manage hotel rooms, status, and pricing
+          {t.pages.roomManagement.description}
         </p>
       </div>
 
@@ -175,7 +177,7 @@ export function RoomList() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Total Rooms
+                {t.pages.roomManagement.totalRooms}
               </p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                 {stats.total}
@@ -190,7 +192,7 @@ export function RoomList() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Available
+                {t.pages.roomManagement.available}
               </p>
               <p className="text-2xl font-bold text-success-600 dark:text-success-400">
                 {stats.available}
@@ -205,7 +207,7 @@ export function RoomList() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Occupied
+                {t.pages.roomManagement.occupied}
               </p>
               <p className="text-2xl font-bold text-danger-600 dark:text-danger-400">
                 {stats.occupied}
@@ -227,7 +229,7 @@ export function RoomList() {
               <input
                 type="text"
                 className="bg-white dark:bg-neutral-700 h-10 w-64 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-neutral-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-                placeholder="Search rooms..."
+                placeholder={t.room.searchRooms}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -239,7 +241,7 @@ export function RoomList() {
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-neutral-500" />
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Filters:
+                  {t.pages.roomManagement.filters}:
                 </span>
               </div>
 
@@ -251,11 +253,11 @@ export function RoomList() {
                   setFilterStatus(e.target.value as RoomStatus | "all")
                 }
               >
-                <option value="all">All Status</option>
-                <option value="available">Available</option>
-                <option value="occupied">Occupied</option>
-                <option value="cleaning">Cleaning</option>
-                <option value="maintenance">Maintenance</option>
+                <option value="all">{t.common.all} {t.common.status}</option>
+                <option value="available">{t.pages.roomManagement.statusAvailable}</option>
+                <option value="occupied">{t.pages.roomManagement.statusOccupied}</option>
+                <option value="cleaning">{t.pages.roomManagement.statusCleaning}</option>
+                <option value="maintenance">{t.pages.roomManagement.statusMaintenance}</option>
               </select>
 
               {/* Category Filter */}
@@ -266,7 +268,7 @@ export function RoomList() {
                   setFilterType(e.target.value as string | "all")
                 }
               >
-                <option value="all">All Categories</option>
+                <option value="all">{t.roomList.allCategories}</option>
                 {/* Category options can be populated from rooms list */}
                 {Array.from(
                   new Map(
@@ -293,7 +295,7 @@ export function RoomList() {
                   setFilterFloor(value === "all" ? "all" : Number(value))
                 }}
               >
-                <option value="all">All Floors</option>
+                <option value="all">{t.roomList.allFloors}</option>
                 {uniqueFloors.map((floor) => (
                   <option key={floor} value={floor}>
                     Floor {floor}
@@ -318,24 +320,24 @@ export function RoomList() {
         <div className="text-center py-12">
           <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
             <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-            Loading rooms...
+            {t.common.loadingRooms}
           </div>
         </div>
       ) : filteredRooms.length === 0 ? (
         <div className="text-center py-12">
           <Building2 className="w-16 h-16 mx-auto text-neutral-300 dark:text-neutral-600 mb-4" />
           <p className="text-neutral-600 dark:text-neutral-400 mb-2">
-            No rooms found
+            {t.common.noRoomsFound}
           </p>
           <p className="text-sm text-neutral-500 dark:text-neutral-500">
             {searchTerm ||
             filterStatus !== "all" ||
             filterType !== "all" ||
             filterFloor !== "all"
-              ? "Try adjusting your filters"
+              ? t.common.tryAdjustingFilters
               : canEdit
-                ? "Add your first room to get started"
-                : "No rooms have been added yet"}
+                ? t.common.addFirstRoom
+                : t.common.noRoomsAddedYet}
           </p>
         </div>
       ) : (

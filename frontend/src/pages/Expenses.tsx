@@ -16,6 +16,7 @@ import type {
   ExpensePublic,
   ExpenseUpdate,
 } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useConfirm } from "@/hooks/useConfirm"
 import { handleFormError, showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency, formatDate } from "@/utils/formatters"
@@ -26,6 +27,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 
 export function Expenses() {
+  const { currency, t } = useLanguage()
   const [activeTab, setActiveTab] = useState<"expenses" | "categories">(
     "expenses",
   )
@@ -75,7 +77,7 @@ export function Expenses() {
         <div className="col-span-12">
           <div className="flex items-center justify-between mb-6">
             <h4 className="text-2xl font-bold text-neutral-900 dark:text-white">
-              Expenses
+              {t.pages.expenses.title}
             </h4>
             <div className="flex gap-3">
               <button
@@ -87,7 +89,7 @@ export function Expenses() {
                 className="rounded-lg py-2 px-4 inline-flex items-center gap-2 transition bg-neutral-600 text-white hover:bg-neutral-700"
               >
                 <FolderOpen className="w-4 h-4" />
-                Add category
+                {t.pages.expenses.addCategory}
               </button>
               <button
                 type="button"
@@ -98,7 +100,7 @@ export function Expenses() {
                 className="rounded-lg py-2 px-4 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700"
               >
                 <Plus className="w-4 h-4" />
-                Add expense
+                {t.pages.expenses.addExpense}
               </button>
             </div>
           </div>
@@ -115,7 +117,7 @@ export function Expenses() {
                     : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                 }`}
               >
-                Expenses
+                {t.pages.expenses.title}
               </button>
               <button
                 type="button"
@@ -126,7 +128,7 @@ export function Expenses() {
                     : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
                 }`}
               >
-                Categories
+                {t.pages.expenses.categories}
               </button>
             </div>
           </div>
@@ -151,18 +153,18 @@ export function Expenses() {
             }}
             onDelete={async (expense) => {
               const confirmed = await confirm({
-                title: "Delete expense",
-                message: "Are you sure you want to delete this expense?",
-                confirmText: "Delete",
+                title: t.pages.expenses.deleteExpense,
+                message: t.pages.expenses.deleteExpenseConfirm,
+                confirmText: t.common.delete,
                 variant: "danger",
               })
               if (confirmed) {
                 try {
                   await deleteExpense(expense.id)
                   queryClient.invalidateQueries({ queryKey: ["expenses"] })
-                  showSuccess("Expense deleted")
+                  showSuccess(t.expenses.expenseDeleted)
                 } catch (error) {
-                  showError(error, "Error deleting expense")
+                  showError(error, t.expenses.errorDeletingExpense)
                 }
               }
             }}
@@ -176,9 +178,9 @@ export function Expenses() {
             }}
             onDelete={async (category) => {
               const confirmed = await confirm({
-                title: "Delete category",
-                message: "Are you sure you want to delete this category?",
-                confirmText: "Delete",
+                title: t.expenses.deleteCategory,
+                message: t.expenses.deleteCategoryConfirm,
+                confirmText: t.common.delete,
                 variant: "danger",
               })
               if (confirmed) {
@@ -187,9 +189,9 @@ export function Expenses() {
                   queryClient.invalidateQueries({
                     queryKey: ["expense-categories"],
                   })
-                  showSuccess("Category deleted")
+                  showSuccess(t.expenses.categoryDeleted)
                 } catch (error) {
-                  showError(error, "Error deleting category")
+                  showError(error, t.expenses.errorDeletingCategory)
                 }
               }
             }}
@@ -264,6 +266,7 @@ function ExpensesTab({
   onEdit,
   onDelete,
 }: ExpensesTabProps) {
+  const { currency, t } = useLanguage()
   return (
     <div className="col-span-12">
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-sm dark:shadow-none overflow-hidden">
@@ -271,7 +274,7 @@ function ExpensesTab({
         <div className="border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-6 py-4 flex items-center flex-wrap gap-3 justify-between">
           <div className="flex items-center flex-wrap gap-3">
             <span className="text-base font-medium text-neutral-600 dark:text-neutral-400">
-              Show
+              {t.pages.expenses.show}
             </span>
             <select
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
@@ -287,7 +290,7 @@ function ExpensesTab({
               <option value={50}>50</option>
             </select>
             <span className="text-base font-medium text-neutral-600 dark:text-neutral-400">
-              Category
+              {t.pages.expenses.categories}
             </span>
             <select
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto"
@@ -297,7 +300,7 @@ function ExpensesTab({
                 setCurrentPage(0)
               }}
             >
-              <option value="">All categories</option>
+              <option value="">{t.pages.expenses.allCategories}</option>
               {categoriesData?.data?.map((cat: ExpenseCategoryPublic) => (
                 <option key={String(cat.id)} value={String(cat.id)}>
                   {cat.name}
@@ -313,19 +316,19 @@ function ExpensesTab({
             <thead>
               <tr className="border-b border-neutral-200 dark:border-neutral-600">
                 <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
-                  Date
+                  {t.common.date}
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
-                  Category
+                  {t.pages.expenses.categories}
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-white">
-                  Description
+                  {t.pages.expenses.description}
                 </th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
-                  Amount
+                  {t.common.amount}
                 </th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-neutral-900 dark:text-white">
-                  Actions
+                  {t.common.actions}
                 </th>
               </tr>
             </thead>
@@ -333,13 +336,13 @@ function ExpensesTab({
               {expensesLoading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400">
-                    Loading...
+                    {t.common.loading}
                   </td>
                 </tr>
               ) : (expensesData?.data?.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400">
-                    No expenses
+                    {t.common.noExpensesFound}
                   </td>
                 </tr>
               ) : (
@@ -358,7 +361,7 @@ function ExpensesTab({
                       {expense.description || "-"}
                     </td>
                     <td className="px-6 py-4 text-sm text-right font-semibold text-neutral-900 dark:text-white">
-                      {formatCurrency(expense.amount)}
+                      {formatCurrency(expense.amount, currency)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-2">
@@ -396,10 +399,12 @@ function ExpensesTab({
               disabled={currentPage === 0}
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-500 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Prev
+              {t.pages.expenses.prev}
             </button>
             <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              Page {currentPage + 1} of {totalPages}
+              {t.pages.expenses.page
+                .replace("{current}", String(currentPage + 1))
+                .replace("{total}", String(totalPages))}
             </span>
             <button
               type="button"
@@ -409,7 +414,7 @@ function ExpensesTab({
               disabled={currentPage >= totalPages - 1}
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-500 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
+              {t.pages.expenses.next}
             </button>
           </div>
         )}
@@ -430,6 +435,7 @@ function CategoriesTab({
   onEdit,
   onDelete,
 }: CategoriesTabProps) {
+  const { t } = useLanguage()
   return (
     <div className="col-span-12">
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-sm dark:shadow-none overflow-hidden">
@@ -471,7 +477,7 @@ function CategoriesTab({
           ))}
           {(categoriesData?.data?.length ?? 0) === 0 && (
             <div className="col-span-full text-center py-8 text-neutral-500">
-              No categories
+              {t.expensesModals.noCategories}
             </div>
           )}
         </div>
@@ -494,6 +500,7 @@ function ExpenseModal({
   onClose,
   onSuccess,
 }: ExpenseModalProps) {
+  const { t } = useLanguage()
   const {
     register,
     handleSubmit,
@@ -520,7 +527,7 @@ function ExpenseModal({
         ? updateExpense(expense.id, data)
         : createExpense(data as ExpenseCreate),
     onSuccess: () => {
-      showSuccess(expense ? "Expense updated" : "Expense created")
+      showSuccess(expense ? t.expenses.expenseUpdated : t.expenses.expenseCreated)
       onSuccess()
     },
     onError: (error) => {
@@ -545,7 +552,7 @@ function ExpenseModal({
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h5 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {expense ? "Edit expense" : "New expense"}
+            {expense ? t.expensesModals.editExpense : t.expensesModals.newExpense}
           </h5>
           <button
             type="button"
@@ -660,6 +667,7 @@ interface CategoryModalProps {
 }
 
 function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
+  const { t } = useLanguage()
   const {
     register,
     handleSubmit,
@@ -675,7 +683,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
         ? updateExpenseCategory(category.id, data)
         : createExpenseCategory(data as ExpenseCategoryCreate),
     onSuccess: () => {
-      showSuccess(category ? "Category updated" : "Category created")
+      showSuccess(category ? t.expenses.categoryUpdated : t.expenses.categoryCreated)
       onSuccess()
     },
     onError: (error) => {
@@ -700,7 +708,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h5 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {category ? "Edit category" : "New category"}
+            {category ? t.expensesModals.editCategory : t.expensesModals.newCategory}
           </h5>
           <button
             type="button"

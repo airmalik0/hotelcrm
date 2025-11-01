@@ -11,6 +11,7 @@ import type {
   CampaignType,
 } from "@/client/types.gen"
 import { CampaignFormModal } from "@/components/campaigns/CampaignFormModal"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useConfirm } from "@/hooks/useConfirm"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
@@ -34,6 +35,7 @@ type StatusFilter = "all" | CampaignStatus
 type TypeFilter = "all" | CampaignType
 
 export function MarketingCampaigns() {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
@@ -70,10 +72,10 @@ export function MarketingCampaigns() {
     mutationFn: deleteCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] })
-      showSuccess("Campaign deleted successfully!")
+      showSuccess(t.marketingActions.campaignDeletedSuccess)
     },
     onError: (error) => {
-      showError(error, "Failed to delete campaign. Please try again.")
+      showError(error, t.marketingActions.failedToDeleteCampaign)
     },
   })
 
@@ -94,7 +96,7 @@ export function MarketingCampaigns() {
       }
     },
     onError: (error) => {
-      showError(error, "Failed to execute campaign. Please try again.")
+      showError(error, t.marketingActions.failedToExecuteCampaign)
     },
   })
 
@@ -102,7 +104,7 @@ export function MarketingCampaigns() {
   const previewMutation = useMutation({
     mutationFn: previewCampaignRecipients,
     onError: (error) => {
-      showError(error, "Failed to preview recipients. Please try again.")
+      showError(error, t.marketingActions.failedToPreviewRecipients)
     },
   })
 
@@ -244,10 +246,10 @@ export function MarketingCampaigns() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Marketing Campaigns
+            {t.pages.marketing.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Create and manage SMS marketing campaigns
+            {t.pages.marketing.description}
           </p>
         </div>
         <button
@@ -256,7 +258,7 @@ export function MarketingCampaigns() {
           className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-dark-2"
         >
           <Plus className="w-4 h-4" />
-          New Campaign
+          {t.pages.marketing.newCampaign}
         </button>
       </div>
 
@@ -283,12 +285,12 @@ export function MarketingCampaigns() {
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-sm text-neutral-900 dark:text-white"
           >
-            <option value="all">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
-            <option value="archived">Archived</option>
+            <option value="all">{t.marketing.allStatuses}</option>
+            <option value="draft">{t.marketing.draft}</option>
+            <option value="active">{t.marketing.active}</option>
+            <option value="paused">{t.marketing.paused}</option>
+            <option value="completed">{t.marketing.completed}</option>
+            <option value="archived">{t.marketing.archived}</option>
           </select>
 
           {/* Type Filter */}
@@ -297,9 +299,9 @@ export function MarketingCampaigns() {
             onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
             className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-sm text-neutral-900 dark:text-white"
           >
-            <option value="all">All Types</option>
-            <option value="onetime">One-time</option>
-            <option value="trigger">Trigger</option>
+            <option value="all">{t.marketing.allTypes}</option>
+            <option value="onetime">{t.marketing.onetime}</option>
+            <option value="trigger">{t.marketing.trigger}</option>
           </select>
         </div>
       </div>
@@ -310,12 +312,12 @@ export function MarketingCampaigns() {
           <div className="text-center py-12">
             <Mail className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
-              No campaigns found
+              {t.common.noCampaignsFound}
             </h3>
             <p className="text-neutral-600 dark:text-neutral-400">
               {searchTerm || statusFilter !== "all" || typeFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Create your first marketing campaign to get started"}
+                ? t.common.tryAdjustingFilters
+                : t.common.createFirstCampaign}
             </p>
           </div>
         ) : (
@@ -442,7 +444,7 @@ export function MarketingCampaigns() {
         <div className="flex items-center justify-between bg-white dark:bg-dark-2 px-6 py-3 border border-neutral-200 dark:border-neutral-600 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              Show
+              {t.pages.marketing.show}
             </span>
             <select
               value={itemsPerPage}
@@ -457,7 +459,7 @@ export function MarketingCampaigns() {
               <option value={50}>50</option>
             </select>
             <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              of {totalCount} campaigns
+              {t.pages.marketing.ofCampaigns.replace("{count}", String(totalCount))}
             </span>
           </div>
 
@@ -468,10 +470,12 @@ export function MarketingCampaigns() {
               disabled={currentPage === 0}
               className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >
-              Previous
+              {t.pages.marketing.previous}
             </button>
             <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              Page {currentPage + 1} of {Math.ceil(totalCount / itemsPerPage)}
+              {t.pages.marketing.page
+                .replace("{current}", String(currentPage + 1))
+                .replace("{total}", String(Math.ceil(totalCount / itemsPerPage)))}
             </span>
             <button
               type="button"
@@ -486,7 +490,7 @@ export function MarketingCampaigns() {
               disabled={currentPage >= Math.ceil(totalCount / itemsPerPage) - 1}
               className="px-3 py-1 text-sm border border-neutral-300 dark:border-neutral-500 rounded text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >
-              Next
+              {t.pages.marketing.next}
             </button>
           </div>
         </div>

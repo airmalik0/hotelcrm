@@ -1,5 +1,6 @@
 import { createUser } from "@/api/users"
 import type { UserCreate, UserRole } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, X } from "lucide-react"
@@ -23,6 +24,7 @@ export function UserCreateModal({
   onClose,
   onSuccess,
 }: UserCreateModalProps) {
+  const { t } = useLanguage()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState<UserCreate>({
     username: "",
@@ -124,7 +126,7 @@ export function UserCreateModal({
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Create New User
+                {t.user.createNewUser}
               </h3>
               <button
                 onClick={onClose}
@@ -143,7 +145,7 @@ export function UserCreateModal({
                   htmlFor="username"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Username <span className="text-danger-600">*</span>
+                  {t.user.usernameRequired}
                 </label>
                 <input
                   type="text"
@@ -156,7 +158,7 @@ export function UserCreateModal({
                       ? "border-danger-500 focus:border-danger-500 focus:ring-danger-500"
                       : "border-neutral-300 dark:border-neutral-600 focus:border-primary-500 focus:ring-primary-500"
                   } bg-white dark:bg-transparent dark:text-white focus:ring-2 focus:outline-none transition-colors`}
-                  placeholder="Enter username"
+                  placeholder={t.user.enterUsername}
                 />
                 {errors.username && (
                   <p className="mt-1 text-sm text-danger-600">
@@ -171,7 +173,7 @@ export function UserCreateModal({
                   htmlFor="password"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Password <span className="text-danger-600">*</span>
+                  {t.user.passwordRequired}
                 </label>
                 <div className="relative">
                   <input
@@ -185,7 +187,7 @@ export function UserCreateModal({
                         ? "border-danger-500 focus:border-danger-500 focus:ring-danger-500"
                         : "border-neutral-300 dark:border-neutral-600 focus:border-primary-500 focus:ring-primary-500"
                     } bg-white dark:bg-transparent dark:text-white focus:ring-2 focus:outline-none transition-colors`}
-                    placeholder="Enter password"
+                    placeholder={t.user.enterPassword}
                   />
                   <button
                     type="button"
@@ -212,7 +214,7 @@ export function UserCreateModal({
                   htmlFor="full_name"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Full Name
+                  {t.user.fullNameLabel}
                 </label>
                 <input
                   type="text"
@@ -221,7 +223,7 @@ export function UserCreateModal({
                   value={formData.full_name || ""}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors"
-                  placeholder="Enter full name"
+                  placeholder={t.user.enterFullName}
                 />
               </div>
 
@@ -231,7 +233,7 @@ export function UserCreateModal({
                   htmlFor="role"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Role <span className="text-danger-600">*</span>
+                  {t.user.roleRequired}
                 </label>
                 <select
                   id="role"
@@ -267,7 +269,7 @@ export function UserCreateModal({
                     htmlFor="is_active"
                     className="ml-3 text-sm font-medium text-neutral-700 dark:text-neutral-300"
                   >
-                    Active account
+                    {t.user.activeAccount}
                   </label>
                 </div>
               </div>
@@ -280,14 +282,14 @@ export function UserCreateModal({
                 onClick={onClose}
                 className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium transition-colors"
               >
-                Cancel
+                {t.booking.cancel}
               </button>
               <button
                 type="submit"
                 disabled={createMutation.isPending}
                 className="px-4 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {createMutation.isPending ? "Creating..." : "Create User"}
+                {createMutation.isPending ? t.user.creatingUser : t.user.createUser}
               </button>
             </div>
           </form>

@@ -2,6 +2,7 @@ import { getQuickStats } from "@/api/analytics"
 import { getCustomers } from "@/api/customers"
 import { getRooms } from "@/api/rooms"
 import { KPICard } from "@/components/dashboard/KPICard"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -15,6 +16,7 @@ import {
 import React from "react"
 
 export function ManagerDashboard() {
+  const { currency, t } = useLanguage()
   // Fetch analytics data from unified API
   const { data: analytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ["analytics", "quick-stats"],
@@ -50,10 +52,10 @@ export function ManagerDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Manager Dashboard
+            {t.pages.dashboard.manager.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Operations overview and management tools
+            {t.pages.dashboard.manager.description}
           </p>
         </div>
         <div className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -69,7 +71,7 @@ export function ManagerDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Today's Occupancy"
+          title={t.pages.dashboard.manager.todaysOccupancy}
           value={`${occupancyRate}%`}
           icon={Building2}
           color="primary"
@@ -77,7 +79,7 @@ export function ManagerDashboard() {
         />
 
         <KPICard
-          title="Today's Bookings"
+          title={t.pages.dashboard.manager.todaysBookings}
           value={todaysBookings}
           icon={Calendar}
           color="success"
@@ -85,15 +87,15 @@ export function ManagerDashboard() {
         />
 
         <KPICard
-          title="Month Revenue"
-          value={formatCurrency(monthRevenue)}
+          title={t.pages.dashboard.manager.monthRevenue}
+          value={formatCurrency(monthRevenue, currency)}
           icon={DollarSign}
           color="warning"
           loading={analyticsLoading}
         />
 
         <KPICard
-          title="Total Customers"
+          title={t.pages.dashboard.manager.totalCustomers}
           value={customers?.count || 0}
           icon={Users}
           color="purple"
@@ -176,7 +178,7 @@ export function ManagerDashboard() {
                     Revenue
                   </span>
                   <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                    {formatCurrency(todaysRevenue)}
+                    {formatCurrency(todaysRevenue, currency)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -189,7 +191,7 @@ export function ManagerDashboard() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Occupancy Rate
+                    {t.pages.dashboard.manager.occupancyRate}
                   </span>
                   <span className="text-sm font-medium text-neutral-900 dark:text-white">
                     {occupancyRate}%
@@ -222,7 +224,7 @@ export function ManagerDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Available Rooms
+                  {t.pages.dashboard.manager.availableRooms}
                 </span>
                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
                   {availableRooms}

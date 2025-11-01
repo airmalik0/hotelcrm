@@ -138,6 +138,12 @@ from .customer_inquiry import (
     CustomerInquiryPublic,
     CustomerInquiriesPublic,
 )
+from .system_settings import (
+    SystemSettingsBase,
+    SystemSettings,
+    SystemSettingsUpdate,
+    SystemSettingsPublic,
+)
 
 from sqlmodel import SQLModel  # re-export for Alembic
 

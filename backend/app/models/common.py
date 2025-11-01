@@ -34,6 +34,13 @@ class CustomerTag(str, Enum):
     PROBLEMATIC = "problematic"
 
 
+class CustomerSource(str, Enum):
+    """Customer acquisition sources"""
+    WALK_IN = "WALK_IN"
+    INSTAGRAM = "INSTAGRAM"
+    OLX = "OLX"
+
+
 class PaymentAdjustmentType(str, Enum):
     """Types of payment adjustments for bookings"""
     ROOM_CHANGE = "room_change"  # Room upgrade/downgrade

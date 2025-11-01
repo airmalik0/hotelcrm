@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext"
 import { AlertTriangle, CheckCircle, Info, X } from "lucide-react"
 import type { ReactNode } from "react"
 
@@ -17,13 +18,18 @@ export function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = "Confirm Action",
+  title,
   message,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   variant = "danger",
   isLoading = false,
 }: ConfirmModalProps) {
+  const { t } = useLanguage()
+  const defaultTitle = title || t.common.confirm
+  const defaultConfirmText = confirmText || t.common.confirm
+  const defaultCancelText = cancelText || t.common.cancel
+  
   if (!isOpen) return null
 
   const variantStyles = {
@@ -91,7 +97,7 @@ export function ConfirmModal({
         {/* Content */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-            {title}
+            {defaultTitle}
           </h3>
           <div className="text-neutral-600 dark:text-neutral-400">
             {typeof message === "string"
@@ -118,7 +124,7 @@ export function ConfirmModal({
             disabled={isLoading}
             className="px-4 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {cancelText}
+            {defaultCancelText}
           </button>
           <button
             onClick={onConfirm}
@@ -128,10 +134,10 @@ export function ConfirmModal({
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Loading...
+                {t.common.loading}
               </div>
             ) : (
-              confirmText
+              defaultConfirmText
             )}
           </button>
         </div>

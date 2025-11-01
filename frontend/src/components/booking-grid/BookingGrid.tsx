@@ -1,6 +1,8 @@
 import { getOccupancyDetails } from "@/api/analytics"
 import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
+import { useLanguage } from "@/contexts/LanguageContext"
+import { formatCurrency } from "@/utils/formatters"
 import type {
   BookingPublic,
   BookingStatus,
@@ -38,6 +40,7 @@ import { TodayLine } from "./desktop/TodayLine"
 import { MobileBookingList } from "./mobile/MobileBookingList"
 
 function BookingGridContent() {
+  const { currency, t } = useLanguage()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [selectedBookingId, setSelectedBookingId] = useState<
@@ -325,11 +328,11 @@ function BookingGridContent() {
             {data.actualDiff > 0 && (
               <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
                 <div className="font-medium text-orange-800 dark:text-orange-300">
-                  Additional charge: ${data.actualDiff.toFixed(2)}
+                  Additional charge: {formatCurrency(data.actualDiff, currency)}
                 </div>
                 <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
-                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}
-                  /night
+                  ({data.nights} nights ×{" "}
+                  {formatCurrency(Math.abs(data.priceDiff), currency)}/night
                   {data.discount && ` with ${data.discount}% discount`})
                 </div>
               </div>
@@ -337,11 +340,11 @@ function BookingGridContent() {
             {data.actualDiff < 0 && (
               <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
                 <div className="font-medium text-emerald-800 dark:text-emerald-300">
-                  Refund amount: ${Math.abs(data.actualDiff).toFixed(2)}
+                  Refund amount: {formatCurrency(Math.abs(data.actualDiff), currency)}
                 </div>
                 <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
-                  ({data.nights} nights × ${Math.abs(data.priceDiff).toFixed(2)}
-                  /night
+                  ({data.nights} nights ×{" "}
+                  {formatCurrency(Math.abs(data.priceDiff), currency)}/night
                   {data.discount && ` with ${data.discount}% discount`})
                 </div>
               </div>
@@ -355,9 +358,9 @@ function BookingGridContent() {
         )
 
         return await confirm({
-          title: "Confirm Room Change",
+          title: t.booking.confirmRoomChange,
           message,
-          confirmText: "Change Room",
+          confirmText: t.booking.changeRoom,
           variant:
             data.actualDiff > 0
               ? "warning"
@@ -546,8 +549,8 @@ function BookingGridContent() {
                   <div className="text-center max-w-md">
                     <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-4">
                       {allRooms.length === 0
-                        ? "No rooms available. Please add rooms to start managing bookings."
-                        : "No rooms match your current filters. Try adjusting your search criteria."}
+                        ? t.common.noRoomsAvailable
+                        : t.common.noRoomsMatchFilters}
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { updateUser } from "@/api/users"
 import type { UserPublic, UserRole, UserUpdate } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, X } from "lucide-react"
@@ -25,6 +26,7 @@ export function UserEditModal({
   onClose,
   onSuccess,
 }: UserEditModalProps) {
+  const { t } = useLanguage()
   const [showPassword, setShowPassword] = useState(false)
   const [changePassword, setChangePassword] = useState(false)
   const [formData, setFormData] = useState<UserUpdate>({
@@ -52,7 +54,7 @@ export function UserEditModal({
   const updateMutation = useMutation({
     mutationFn: (data: UserUpdate) => updateUser(user.id, data),
     onSuccess: () => {
-      showSuccess("User updated successfully!")
+      showSuccess(t.user.userUpdatedSuccess)
       onSuccess()
       resetForm()
     },
@@ -60,7 +62,7 @@ export function UserEditModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to update user",
+        t.user.failedToUpdateUser,
       )
     },
   })
@@ -102,7 +104,7 @@ export function UserEditModal({
 
     if (changePassword && formData.password) {
       if (formData.password.length < 8) {
-        newErrors.password = "Password must be at least 8 characters"
+        newErrors.password = t.user.passwordMinLength
       }
     }
 
@@ -141,7 +143,7 @@ export function UserEditModal({
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Edit User: {user.username}
+                {t.user.editUser}: {user.username}
               </h3>
               <button
                 onClick={onClose}
@@ -160,7 +162,7 @@ export function UserEditModal({
                   htmlFor="username"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Username
+                  {t.auth.username}
                 </label>
                 <input
                   type="text"
@@ -170,7 +172,7 @@ export function UserEditModal({
                   className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
                 />
                 <p className="mt-1 text-xs text-neutral-500">
-                  Username cannot be changed
+                  {t.user.usernameCannotBeChanged}
                 </p>
               </div>
 
@@ -193,7 +195,7 @@ export function UserEditModal({
                     htmlFor="changePassword"
                     className="ml-3 text-sm font-medium text-neutral-700 dark:text-neutral-300"
                   >
-                    Change password
+                    {t.user.changePassword}
                   </label>
                 </div>
 
@@ -210,7 +212,7 @@ export function UserEditModal({
                           ? "border-danger-500 focus:border-danger-500 focus:ring-danger-500"
                           : "border-neutral-300 dark:border-neutral-600 focus:border-primary-500 focus:ring-primary-500"
                       } bg-white dark:bg-transparent dark:text-white focus:ring-2 focus:outline-none transition-colors`}
-                      placeholder="Enter new password"
+                      placeholder={t.user.enterNewPassword}
                     />
                     <button
                       type="button"
@@ -238,7 +240,7 @@ export function UserEditModal({
                   htmlFor="full_name"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Full Name
+                  {t.user.fullName}
                 </label>
                 <input
                   type="text"
@@ -247,7 +249,7 @@ export function UserEditModal({
                   value={formData.full_name || ""}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors"
-                  placeholder="Enter full name"
+                  placeholder={t.user.fullName}
                 />
               </div>
 
@@ -257,7 +259,7 @@ export function UserEditModal({
                   htmlFor="role"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
                 >
-                  Role
+                  {t.user.role}
                 </label>
                 <select
                   id="role"
@@ -272,13 +274,13 @@ export function UserEditModal({
                       value={option.value}
                       className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white"
                     >
-                      {option.label}
+                      {t.user.roles[option.value]}
                     </option>
                   ))}
                 </select>
                 {formData.role !== user.role && (
                   <p className="mt-1 text-sm text-warning-600">
-                    Warning: Changing role will affect user permissions
+                    {t.user.warningRoleChange}
                   </p>
                 )}
               </div>
@@ -298,13 +300,13 @@ export function UserEditModal({
                     htmlFor="is_active"
                     className="ml-3 text-sm font-medium text-neutral-700 dark:text-neutral-300"
                   >
-                    Active account
+                    {t.user.activeAccount}
                   </label>
                 </div>
                 {!formData.is_active &&
                   formData.is_active !== user.is_active && (
                     <p className="ml-7 text-sm text-warning-600">
-                      Warning: Deactivating will prevent user from logging in
+                      {t.user.warningDeactivate}
                     </p>
                   )}
               </div>
@@ -317,14 +319,14 @@ export function UserEditModal({
                 onClick={onClose}
                 className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium transition-colors"
               >
-                Cancel
+                {t.common.cancel}
               </button>
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
                 className="px-4 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                {updateMutation.isPending ? t.forms.saving : t.forms.saveChanges}
               </button>
             </div>
           </form>

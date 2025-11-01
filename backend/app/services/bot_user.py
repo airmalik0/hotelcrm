@@ -1,8 +1,10 @@
 """BotUser service for business logic and context generation"""
 import logging
+import re
 import uuid
 from typing import Any
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from app.core.exceptions import NotFoundError
@@ -12,6 +14,25 @@ from app.crud.customer import customer as crud_customer
 from app.models import Booking, BookingGuest, BotUser, Customer
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_phone_for_search(phone: str) -> str:
+    """
+    Normalize phone number for search by removing all non-digit characters.
+    
+    This ensures that phones stored in different formats (+998..., 998..., etc.)
+    can be found regardless of format.
+    
+    Args:
+        phone: Phone number in any format (E164, with/without +, etc.)
+        
+    Returns:
+        Phone number with only digits
+    """
+    if not phone:
+        return ""
+    # Remove all non-digit characters
+    return re.sub(r'\D', '', phone)
 
 
 class BotUserService:
@@ -37,14 +58,23 @@ class BotUserService:
         return user
 
     def get_customer_by_phone(self, phone: str) -> Customer | None:
-        """Find customer by normalized phone number using CRUD layer."""
+        """
+        Find customer by normalized phone number using CRUD layer.
+        
+        Normalizes phone to digits-only format before search to handle
+        format differences (E164 with + vs digits-only).
+        """
         try:
-            customer = crud_customer.get_by_phone(self.session, phone=phone)
+            # Normalize phone to digits-only for comparison
+            # Customer.phone is stored as digits-only (validated in Customer model)
+            normalized_phone = normalize_phone_for_search(phone)
+            
+            customer = crud_customer.get_by_phone(self.session, phone=normalized_phone)
 
             if customer:
-                logger.info(f"Found customer {customer.id} for phone {phone}")
+                logger.info(f"Found customer {customer.id} for phone {phone} (normalized: {normalized_phone})")
             else:
-                logger.info(f"No customer found for phone {phone}")
+                logger.info(f"No customer found for phone {phone} (normalized: {normalized_phone})")
 
             return customer
         except Exception as e:
@@ -58,6 +88,7 @@ class BotUserService:
         try:
             stmt = (
                 select(Booking)
+                .options(selectinload(Booking.room))  # type: ignore[arg-type]
                 .where(Booking.customer_id == customer_id)
                 .order_by(Booking.check_in.desc())  # type: ignore
                 .limit(limit)
@@ -71,18 +102,49 @@ class BotUserService:
             return []
 
     def get_guest_bookings_by_phone(self, phone: str, limit: int = 10) -> list[Booking]:
-        """Get bookings where person is listed as guest."""
+        """
+        Get bookings where person is listed as guest.
+        
+        Normalizes phone to digits-only format and searches for both
+        normalized and original format to handle format inconsistencies.
+        """
         try:
+            # Normalize phone to digits-only
+            normalized_phone = normalize_phone_for_search(phone)
+            
+            # Search for bookings where guest phone matches normalized or original format
+            # BookingGuest.phone may be stored in different formats (with/without +)
+            # Use PostgreSQL regexp_replace to normalize on the fly for comparison
+            from sqlalchemy import func, or_
+            
+            # Build OR conditions for different phone formats
+            conditions = [
+                # Match normalized phone (digits-only) using regexp_replace
+                func.regexp_replace(
+                    func.coalesce(BookingGuest.phone, ''),
+                    r'\D',
+                    '',
+                    'g'
+                ) == normalized_phone,
+                # Also try direct match for normalized format (in case it's already stored normalized)
+                BookingGuest.phone == normalized_phone,
+            ]
+            
+            # Add original format match if different from normalized
+            if phone and phone != normalized_phone:
+                conditions.append(BookingGuest.phone == phone)
+            
             stmt = (
                 select(Booking)
                 .join(BookingGuest)
-                .where(BookingGuest.phone == phone)
+                .options(selectinload(Booking.room))  # type: ignore[arg-type]
+                .where(or_(*conditions))
                 .order_by(Booking.check_in.desc())  # type: ignore
                 .limit(limit)
             )
             bookings = list(self.session.exec(stmt).all())
 
-            logger.info(f"Found {len(bookings)} guest bookings for phone {phone}")
+            logger.info(f"Found {len(bookings)} guest bookings for phone {phone} (normalized: {normalized_phone})")
             return bookings
         except Exception as e:
             logger.error(f"Error getting guest bookings for phone {phone}: {e}")
@@ -96,7 +158,16 @@ class BotUserService:
             {
                 "booking_dates": ["01.10.2025", "24.09.2025", ...],
                 "bookings_info": [
-                    {"date": "01.10.2025", "room": "101", "status": "checked_out"},
+                    {
+                        "check_in": "01.10.2025",           # Запланированная дата заезда
+                        "check_out": "05.10.2025",          # Запланированная дата выезда
+                        "actual_check_in": "01.10.2025 14:30",  # Фактическая дата/время заезда
+                        "actual_check_out": "05.10.2025 12:00", # Фактическая дата/время выезда
+                        "room": "101",
+                        "status": "checked_out",
+                        "total_amount": 50000.0,
+                        "nights": 4
+                    },
                     ...
                 ]
             }
@@ -106,8 +177,18 @@ class BotUserService:
 
         for booking in bookings:
             try:
-                # Format date as DD.MM.YYYY
-                date_str = booking.check_in.strftime("%d.%m.%Y")
+                # Format planned dates as DD.MM.YYYY
+                check_in_str = booking.check_in.strftime("%d.%m.%Y")
+                check_out_str = booking.check_out.strftime("%d.%m.%Y")
+
+                # Format actual dates with time if available
+                actual_check_in_str = None
+                if booking.actual_check_in:
+                    actual_check_in_str = booking.actual_check_in.strftime("%d.%m.%Y %H:%M")
+
+                actual_check_out_str = None
+                if booking.actual_check_out:
+                    actual_check_out_str = booking.actual_check_out.strftime("%d.%m.%Y %H:%M")
 
                 # Get room number
                 room_number = "N/A"
@@ -117,12 +198,26 @@ class BotUserService:
                 # Get status
                 status = booking.status.value if booking.status else "unknown"
 
-                booking_dates.append(date_str)
-                bookings_info.append({
-                    "date": date_str,
+                # Calculate number of nights
+                nights = max(1, (booking.check_out.date() - booking.check_in.date()).days)
+
+                booking_dates.append(check_in_str)
+                booking_info = {
+                    "check_in": check_in_str,
+                    "check_out": check_out_str,
                     "room": room_number,
                     "status": status,
-                })
+                    "total_amount": float(booking.total_amount),
+                    "nights": nights,
+                }
+
+                # Add actual dates only if they exist
+                if actual_check_in_str:
+                    booking_info["actual_check_in"] = actual_check_in_str
+                if actual_check_out_str:
+                    booking_info["actual_check_out"] = actual_check_out_str
+
+                bookings_info.append(booking_info)
             except Exception as e:
                 logger.error(f"Error formatting booking {booking.id}: {e}")
                 continue

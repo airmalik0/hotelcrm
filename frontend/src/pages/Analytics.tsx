@@ -19,6 +19,7 @@ import {
 } from "@/components/analytics/AnalyticsCharts"
 import type { GeoValue } from "@/components/ui/GeoSelect"
 import { useAuth } from "@/contexts/AuthContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -46,6 +47,7 @@ type AnalyticsTab =
   | "trends"
 
 export function Analytics() {
+  const { currency, t } = useLanguage()
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<AnalyticsTab>("overview")
 
@@ -106,10 +108,10 @@ export function Analytics() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-            Access Denied
+            {t.analytics.accessDenied}
           </h2>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Analytics is available for administrators only.
+            {t.analytics.accessDeniedMessage}
           </p>
         </div>
       </div>
@@ -249,10 +251,10 @@ export function Analytics() {
   const exportPdfMutation = useMutation({
     mutationFn: (request: AnalyticsExportRequest) => exportToPdf(request),
     onSuccess: () => {
-      showSuccess("PDF report exported successfully!")
+      showSuccess(t.analytics.pdfExported)
     },
     onError: (error) => {
-      showError(error, "Failed to export PDF report")
+      showError(error, t.analytics.pdfExportError)
     },
   })
 
@@ -260,10 +262,10 @@ export function Analytics() {
   const exportExcelMutation = useMutation({
     mutationFn: (request: AnalyticsExportRequest) => exportToExcel(request),
     onSuccess: () => {
-      showSuccess("Excel report exported successfully!")
+      showSuccess(t.analytics.excelExported)
     },
     onError: (error) => {
-      showError(error, "Failed to export Excel report")
+      showError(error, t.analytics.excelExportError)
     },
   })
 
@@ -349,11 +351,11 @@ export function Analytics() {
   const metrics = dashboardData?.data as any
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "revenue", label: "Revenue", icon: DollarSign },
-    { id: "occupancy", label: "Occupancy", icon: Bed },
-    { id: "customers", label: "Customers", icon: Users },
-    { id: "trends", label: "Trends", icon: TrendingUp },
+    { id: "overview", label: t.analytics.tabs.overview, icon: BarChart3 },
+    { id: "revenue", label: t.analytics.tabs.revenue, icon: DollarSign },
+    { id: "occupancy", label: t.analytics.tabs.occupancy, icon: Bed },
+    { id: "customers", label: t.analytics.tabs.customers, icon: Users },
+    { id: "trends", label: t.analytics.tabs.trends, icon: TrendingUp },
   ] as const
 
   const renderTabContent = () => {
@@ -405,10 +407,10 @@ export function Analytics() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Analytics Dashboard
+            {t.analytics.title}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Comprehensive business intelligence and insights
+            {t.analytics.description}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -418,7 +420,7 @@ export function Analytics() {
             className="rounded-lg py-2 px-4 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
-            Export PDF
+            {t.analytics.exportPdf}
           </button>
           <button
             onClick={handleExportExcel}
@@ -426,7 +428,7 @@ export function Analytics() {
             className="rounded-lg py-2 px-4 inline-flex items-center gap-2 transition bg-success-600 text-white hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
-            Export Excel
+            {t.analytics.exportExcel}
           </button>
         </div>
       </div>
@@ -437,7 +439,7 @@ export function Analytics() {
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                From Date
+                {t.analytics.fromDate}
               </label>
               <input
                 type="date"
@@ -448,7 +450,7 @@ export function Analytics() {
             </div>
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                To Date
+                {t.analytics.toDate}
               </label>
               <input
                 type="date"
@@ -462,31 +464,31 @@ export function Analytics() {
                 onClick={() => setQuickDateRange("today")}
                 className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
               >
-                Today
+                {t.analytics.today}
               </button>
               <button
                 onClick={() => setQuickDateRange("week")}
                 className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
               >
-                Last 7 Days
+                {t.analytics.last7Days}
               </button>
               <button
                 onClick={() => setQuickDateRange("month")}
                 className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
               >
-                This Month
+                {t.analytics.thisMonth}
               </button>
               <button
                 onClick={() => setQuickDateRange("quarter")}
                 className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
               >
-                Last 3 Months
+                {t.analytics.last3Months}
               </button>
               <button
                 onClick={() => setQuickDateRange("year")}
                 className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
               >
-                Last 12 Months
+                {t.analytics.last12Months}
               </button>
             </div>
           </div>
@@ -495,7 +497,7 @@ export function Analytics() {
           <div className="flex flex-wrap items-end gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-600">
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Room Category
+                {t.analytics.roomCategory}
               </label>
               <select
                 value={selectedCategoryId}
@@ -507,7 +509,7 @@ export function Analytics() {
                 disabled={selectedRoomId !== "all"}
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value="all">All Categories</option>
+                <option value="all">{t.analytics.allCategories}</option>
                 {categoriesData?.data.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -517,7 +519,7 @@ export function Analytics() {
             </div>
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Specific Room
+                {t.analytics.specificRoom}
               </label>
               <select
                 value={selectedRoomId}
@@ -529,7 +531,7 @@ export function Analytics() {
                 disabled={selectedCategoryId !== "all"}
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value="all">All Rooms</option>
+                <option value="all">{t.analytics.allRooms}</option>
                 {roomsData?.data.map((room) => (
                   <option key={room.id} value={room.id}>
                     Room {room.room_number} ({room.category?.name || "-"})
@@ -541,22 +543,22 @@ export function Analytics() {
             {/* Customer type */}
             <div className="flex-1 min-w-[160px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Customer Type
+                {t.analytics.customerType}
               </label>
               <select
                 value={customerType}
                 onChange={(e) => setCustomerType(e.target.value as any)}
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value="">All</option>
-                <option value="new">New</option>
-                <option value="returning">Returning</option>
+                <option value="">{t.analytics.all}</option>
+                <option value="new">{t.analytics.new}</option>
+                <option value="returning">{t.analytics.returning}</option>
               </select>
             </div>
             {/* Tags (comma-separated) */}
             <div className="flex-1 min-w-[220px]">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Tags
+                {t.analytics.tags}
               </label>
               <input
                 value={tags.join(",")}
@@ -586,7 +588,7 @@ export function Analytics() {
               }}
               className="rounded-lg py-2 px-4 inline-flex transition bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600"
             >
-              Clear Filters
+              {t.analytics.clearFilters}
             </button>
           </div>
           <div className="mt-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-lg p-4 border border-neutral-200 dark:border-neutral-600">
@@ -594,7 +596,7 @@ export function Analytics() {
                 {/* Country */}
                 <div className="min-w-[200px]">
                   <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
-                    Country
+                    {t.analytics.country}
                   </label>
                   <select
                     value={geoFilter.country_code || ""}
@@ -607,7 +609,7 @@ export function Analytics() {
                     }
                     className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
-                    <option value="">All countries</option>
+                    <option value="">{t.analytics.allCountries}</option>
                     {countriesOptions.map((c: any) => (
                       <option key={c.code} value={c.code}>
                         {c.name}
@@ -620,7 +622,7 @@ export function Analytics() {
                 {geoFilter.country_code === "UZ" && (
                   <div className="min-w-[200px]">
                     <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
-                      Region (Uzbekistan)
+                      {t.analytics.region}
                     </label>
                     <select
                       value={geoFilter.region || ""}
@@ -633,7 +635,7 @@ export function Analytics() {
                       }
                       className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
-                      <option value="">All regions</option>
+                      <option value="">{t.analytics.allRegions}</option>
                       {regionsOptions.map((r: any) => (
                         <option key={r.code} value={r.code}>
                           {r.name}
@@ -648,7 +650,7 @@ export function Analytics() {
                   geoFilter.region === "TASHKENT_CITY" && (
                     <div className="min-w-[200px]">
                       <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
-                        District (Tashkent city)
+                        {t.analytics.district}
                       </label>
                       <select
                         value={geoFilter.district || ""}
@@ -660,7 +662,7 @@ export function Analytics() {
                         }
                         className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
-                        <option value="">All districts</option>
+                        <option value="">{t.analytics.allDistricts}</option>
                         {districtsOptions.map((d: any) => (
                           <option key={d.code} value={d.code}>
                             {d.name}
@@ -717,12 +719,13 @@ interface OverviewTabProps extends TabProps {
 }
 
 function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
+  const { currency, t } = useLanguage()
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
           <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          Loading overview data...
+          {t.common.loadingOverview}
         </div>
       </div>
     )
@@ -732,7 +735,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
     return (
       <div className="text-center py-12">
         <p className="text-neutral-600 dark:text-neutral-400">
-          No data available
+          {t.common.noData}
         </p>
       </div>
     )
@@ -744,20 +747,20 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
       {quickStats && (
         <div>
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-            Quick Statistics
+            {t.analytics.overview.quickStatistics}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-blue-600/10 to-white dark:from-blue-600/20 dark:to-dark-1 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Today
+                    {t.analytics.overview.today}
                   </p>
                   <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                    {formatCurrency(quickStats.today.revenue)}
+                    {formatCurrency(quickStats.today.revenue, currency)}
                   </p>
                   <p className="text-xs text-neutral-500">
-                    {quickStats.today.bookings} bookings
+                    {quickStats.today.bookings} {t.analytics.overview.bookings}
                   </p>
                 </div>
                 <Calendar className="w-8 h-8 text-blue-600" />
@@ -767,13 +770,13 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    This Week
+                    {t.analytics.overview.thisWeek}
                   </p>
                   <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                    {formatCurrency(quickStats.week.revenue)}
+                    {formatCurrency(quickStats.week.revenue, currency)}
                   </p>
                   <p className="text-xs text-neutral-500">
-                    {quickStats.week.bookings} bookings
+                    {quickStats.week.bookings} {t.analytics.overview.bookings}
                   </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-green-600" />
@@ -783,13 +786,13 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    This Month
+                    {t.analytics.overview.thisMonth}
                   </p>
                   <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                    {formatCurrency(quickStats.month.revenue)}
+                    {formatCurrency(quickStats.month.revenue, currency)}
                   </p>
                   <p className="text-xs text-neutral-500">
-                    {quickStats.month.bookings} bookings
+                    {quickStats.month.bookings} {t.analytics.overview.bookings}
                   </p>
                 </div>
                 <BarChart3 className="w-8 h-8 text-purple-600" />
@@ -809,15 +812,15 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                Total Revenue
+                {t.analytics.overview.totalRevenue}
               </p>
               <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
-                {formatCurrency(metrics.revenue.total_revenue)}
+                {formatCurrency(metrics.revenue.total_revenue, currency)}
               </h4>
             </div>
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {metrics.revenue.total_bookings} bookings
+            {metrics.revenue.total_bookings} {t.analytics.overview.bookings}
           </p>
         </div>
 
@@ -829,7 +832,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                Occupancy Rate
+                {t.analytics.overview.occupancyRate}
               </p>
               <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
                 {metrics.occupancy.occupancy_rate}%
@@ -837,8 +840,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {metrics.occupancy.average_length_of_stay.toFixed(1)} nights avg
-            stay
+            {metrics.occupancy.average_length_of_stay.toFixed(1)} {t.analytics.overview.nightsAvgStay}
           </p>
         </div>
 
@@ -850,7 +852,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                Check-ins
+                {t.analytics.overview.checkIns}
               </p>
               <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
                 {metrics.occupancy.check_ins}
@@ -858,7 +860,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {metrics.customer_metrics.total_customers} total guests
+            {metrics.customer_metrics.total_customers} {t.analytics.overview.totalGuests}
           </p>
         </div>
 
@@ -870,7 +872,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                Cancellations
+                {t.analytics.overview.cancellations}
               </p>
               <h4 className="text-xl font-bold text-neutral-900 dark:text-white">
                 {metrics.occupancy.cancellations}
@@ -879,8 +881,8 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
             {metrics.occupancy.cancellations > 0
-              ? `${((metrics.occupancy.cancellations / metrics.revenue.total_bookings) * 100).toFixed(1)}% rate`
-              : "No cancellations"}
+              ? `${((metrics.occupancy.cancellations / metrics.revenue.total_bookings) * 100).toFixed(1)}% ${t.analytics.overview.rate}`
+              : t.analytics.overview.noCancellations}
           </p>
         </div>
       </div>
@@ -891,7 +893,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 lg:col-span-2">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Revenue Trend
+              {t.analytics.overview.revenueTrend}
             </h3>
           </div>
           <div className="p-6">
@@ -903,7 +905,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Room Performance
+              {t.analytics.overview.roomPerformance}
             </h3>
           </div>
           <div className="p-6">
@@ -915,7 +917,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Payment Methods Distribution
+              {t.analytics.overview.paymentMethodsDistribution}
             </h3>
           </div>
           <div className="p-6">
@@ -932,12 +934,13 @@ interface RevenueTabProps extends TabProps {
 }
 
 function RevenueTab({ data, isLoading }: RevenueTabProps) {
+  const { currency, t } = useLanguage()
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
           <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          Loading revenue data...
+          {t.common.loadingRevenue}
         </div>
       </div>
     )
@@ -947,7 +950,7 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
     return (
       <div className="text-center py-12">
         <p className="text-neutral-600 dark:text-neutral-400">
-          No revenue data available
+          {t.common.noData}
         </p>
       </div>
     )
@@ -963,10 +966,10 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Total Revenue
+                {t.analytics.revenue.totalRevenue}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                {formatCurrency(data.metrics?.total_revenue || 0)}
+                {formatCurrency(data.metrics?.total_revenue || 0, currency)}
               </p>
             </div>
           </div>
@@ -979,7 +982,7 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Total Bookings
+                {t.analytics.revenue.totalBookings}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.metrics?.booking_count || 0}
@@ -995,7 +998,7 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Total Nights
+                {t.analytics.revenue.totalNights}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.metrics?.total_nights || 0}
@@ -1010,7 +1013,11 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Revenue Trend ({data.group_by})
+              {t.analytics.revenue.revenueTrend} (
+              {t.analytics.trends.groupBy[
+                data.group_by as "day" | "week" | "month"
+              ] || data.group_by}
+              )
             </h3>
           </div>
           <div className="p-6">
@@ -1024,7 +1031,7 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
                     {point.date}
                   </span>
                   <span className="font-semibold text-neutral-900 dark:text-white">
-                    {formatCurrency(point.value)}
+                    {formatCurrency(point.value, currency)}
                   </span>
                 </div>
               ))}
@@ -1041,12 +1048,13 @@ interface OccupancyTabProps extends TabProps {
 }
 
 function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
+  const { t } = useLanguage()
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
           <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          Loading occupancy data...
+          {t.common.loadingOccupancy}
         </div>
       </div>
     )
@@ -1056,7 +1064,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
     return (
       <div className="text-center py-12">
         <p className="text-neutral-600 dark:text-neutral-400">
-          No occupancy data available
+          {t.common.noData}
         </p>
       </div>
     )
@@ -1074,7 +1082,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
               {data.occupancy_rate}%
             </p>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Occupancy Rate
+              {t.analytics.occupancy.occupancyRate}
             </p>
           </div>
         </div>
@@ -1088,7 +1096,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
               {data.check_ins}
             </p>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Check-ins
+              {t.analytics.occupancy.checkIns}
             </p>
           </div>
         </div>
@@ -1102,7 +1110,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
               {data.average_length_of_stay?.toFixed(1)}
             </p>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Avg Stay (nights)
+              {t.analytics.occupancy.avgStayNights}
             </p>
           </div>
         </div>
@@ -1116,7 +1124,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
               {data.cancellations}
             </p>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Cancellations
+              {t.analytics.occupancy.cancellations}
             </p>
           </div>
         </div>
@@ -1125,7 +1133,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            Occupancy Details
+            {t.analytics.occupancy.occupancyDetails}
           </h3>
         </div>
         <div className="p-6">
@@ -1133,7 +1141,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-neutral-600 dark:text-neutral-400">
-                  Total Available Room Nights
+                  {t.analytics.occupancy.totalAvailableRoomNights}
                 </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.total_available_room_nights?.toLocaleString()}
@@ -1141,7 +1149,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-neutral-600 dark:text-neutral-400">
-                  Total Occupied Room Nights
+                  {t.analytics.occupancy.totalOccupiedRoomNights}
                 </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.total_occupied_room_nights?.toLocaleString()}
@@ -1151,7 +1159,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-neutral-600 dark:text-neutral-400">
-                  Check-outs
+                  {t.analytics.occupancy.checkOuts}
                 </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.check_outs}
@@ -1159,7 +1167,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-neutral-600 dark:text-neutral-400">
-                  Cancellation Rate
+                  {t.analytics.occupancy.cancellationRate}
                 </span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {data.check_ins > 0
@@ -1185,12 +1193,13 @@ interface CustomersTabProps extends TabProps {
 }
 
 function CustomersTab({ data, isLoading }: CustomersTabProps) {
+  const { t } = useLanguage()
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
           <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          Loading customer data...
+          {t.common.loadingCustomerData}
         </div>
       </div>
     )
@@ -1200,7 +1209,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
     return (
       <div className="text-center py-12">
         <p className="text-neutral-600 dark:text-neutral-400">
-          No customer data available
+          {t.common.noData}
         </p>
       </div>
     )
@@ -1216,7 +1225,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Total Customers
+                {t.analytics.customers.totalCustomers}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.total_customers}
@@ -1232,7 +1241,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                New Customers
+                {t.analytics.customers.newCustomers}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.new_customers}
@@ -1248,7 +1257,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Returning Customers
+                {t.analytics.customers.returningCustomers}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.returning_customers}
@@ -1263,7 +1272,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Age Distribution
+              {t.analytics.customers.ageDistribution}
             </h3>
           </div>
           <div className="p-6">
@@ -1294,7 +1303,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
           <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
             <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                District Distribution
+                {t.analytics.customers.districtDistribution}
               </h3>
             </div>
             <div className="p-6">
@@ -1328,12 +1337,13 @@ interface TrendsTabProps extends TabProps {
 }
 
 function TrendsTab({ data, isLoading }: TrendsTabProps) {
+  const { currency, t } = useLanguage()
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
           <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          Loading seasonal trends...
+          {t.common.loadingSeasonalTrends}
         </div>
       </div>
     )
@@ -1343,7 +1353,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
     return (
       <div className="text-center py-12">
         <p className="text-neutral-600 dark:text-neutral-400">
-          No seasonal trends data available
+          {t.common.noData}
         </p>
       </div>
     )
@@ -1360,10 +1370,18 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Peak Season
+                {t.analytics.trends.peakSeason}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                {data.peak_season || "N/A"}
+                {data.peak_season
+                  ? t.analytics.trends.seasons[
+                      data.peak_season.toLowerCase() as
+                        | "winter"
+                        | "spring"
+                        | "summer"
+                        | "autumn"
+                    ] || data.peak_season
+                  : "N/A"}
               </p>
             </div>
           </div>
@@ -1376,7 +1394,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Highest Revenue Month
+                {t.analytics.trends.highestRevenueMonth}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.highest_revenue_month || "N/A"}
@@ -1392,7 +1410,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Best Occupancy Month
+                {t.analytics.trends.bestOccupancyMonth}
               </p>
               <p className="text-xl font-bold text-neutral-900 dark:text-white">
                 {data.highest_occupancy_month || "N/A"}
@@ -1406,11 +1424,10 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
       <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
         <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            Multi-Year Seasonal Analysis
+            {t.analytics.trends.multiYearSeasonalAnalysis}
           </h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            Revenue, occupancy, and booking trends over the past{" "}
-            {data.years_analyzed || 2} years
+            {t.analytics.trends.seasonalTrends.replace("{years}", String(data.years_analyzed || 2))}
           </p>
         </div>
         <div className="p-6">
@@ -1423,7 +1440,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Seasonal Insights
+              {t.analytics.trends.seasonalInsights}
             </h3>
           </div>
           <div className="p-6">
@@ -1437,15 +1454,15 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Avg Revenue
+                          {t.analytics.trends.avgRevenue}
                         </span>
                         <span className="font-semibold text-neutral-900 dark:text-white">
-                          {formatCurrency(insights.avg_revenue || 0)}
+                          {formatCurrency(insights.avg_revenue || 0, currency)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Avg Occupancy
+                          {t.analytics.trends.avgOccupancy}
                         </span>
                         <span className="font-semibold text-neutral-900 dark:text-white">
                           {insights.avg_occupancy?.toFixed(1) || 0}%
@@ -1453,7 +1470,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Avg Bookings
+                          {t.analytics.trends.avgBookings}
                         </span>
                         <span className="font-semibold text-neutral-900 dark:text-white">
                           {insights.avg_bookings || 0}
@@ -1473,7 +1490,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600">
           <div className="border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Monthly Performance Summary
+              {t.analytics.trends.monthlyPerformanceSummary}
             </h3>
           </div>
           <div className="overflow-x-auto">
@@ -1481,16 +1498,16 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
               <thead className="bg-neutral-50 dark:bg-neutral-800">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Month
+                    {t.analytics.trends.month}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Revenue
+                    {t.analytics.trends.revenue}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Bookings
+                    {t.analytics.trends.bookings}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Occupancy Rate
+                    {t.analytics.trends.occupancyRate}
                   </th>
                 </tr>
               </thead>
@@ -1504,7 +1521,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
                       {month.month}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                      {formatCurrency(month.revenue)}
+                      {formatCurrency(month.revenue, currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                       {month.bookings}

@@ -150,22 +150,49 @@ You are an empathetic AI assistant for a hotel complex. Your main mission is to 
         return {"booking_dates": [], "bookings_info": []}
 
     def format_context_for_prompt(self, context: Dict[str, Any]) -> str:
-        """Форматирование контекста для AI промпта"""
+        """Форматирование контекста для AI промпта (на английском для лучшего понимания AI)"""
         try:
             bookings_info = context.get("bookings_info", [])
 
             if not bookings_info:
                 return "- Stay dates: `no check-in data`"
 
-            # Форматируем как "дата (номер комнаты)"
-            dates_with_rooms = []
+            # Форматируем детальную информацию о каждой брони
+            booking_details = []
             for booking in bookings_info:
-                date_str = booking.get("date", "")
+                check_in = booking.get("check_in", "N/A")
+                check_out = booking.get("check_out", "N/A")
                 room = booking.get("room", "N/A")
-                dates_with_rooms.append(f"{date_str} (номер {room})")
+                status = booking.get("status", "unknown")
+                
+                # Формируем базовую строку на английском для AI
+                base_info = f"{check_in} to {check_out} (room {room}, status: {status})"
+                
+                # Добавляем фактические даты, если есть
+                actual_parts = []
+                actual_check_in = booking.get("actual_check_in")
+                if actual_check_in:
+                    actual_parts.append(f"actual check-in: {actual_check_in}")
+                
+                actual_check_out = booking.get("actual_check_out")
+                if actual_check_out:
+                    actual_parts.append(f"actual check-out: {actual_check_out}")
+                
+                if actual_parts:
+                    base_info += f" [{', '.join(actual_parts)}]"
+                
+                # Добавляем количество ночей и сумму, если есть
+                nights = booking.get("nights")
+                total_amount = booking.get("total_amount")
+                if nights:
+                    base_info += f", {nights} nights"
+                if total_amount:
+                    base_info += f", amount: {total_amount:.0f}"
+                
+                booking_details.append(base_info)
 
-            dates_str = ", ".join(dates_with_rooms)
-            return f"- Stay dates: `{dates_str}`"
+            details_str = "\n  - ".join([""] + booking_details)
+            return f"- Booking history:{details_str}"
         except Exception as e:
             logger.error(f"Ошибка форматирования контекста: {e}")
             return "- Stay dates: `error loading data`"
@@ -184,21 +211,57 @@ You are an empathetic AI assistant for a hotel complex. Your main mission is to 
                 }
                 return translations.get(language, translations['en'])
 
-            # Формируем список дат с номерами
+            # Формируем детальный список броней
             lines = []
             for booking in bookings_info:
-                date_str = booking.get("date", "")
+                check_in = booking.get("check_in", "")
+                check_out = booking.get("check_out", "")
                 room = booking.get("room", "N/A")
+                status = booking.get("status", "unknown")
+                actual_check_in = booking.get("actual_check_in")
+                actual_check_out = booking.get("actual_check_out")
 
                 # Локализованный формат
                 if language == 'ru':
-                    lines.append(f"• {date_str} - номер {room}")
+                    base_line = f"• {check_in} - {check_out} (номер {room}, {status})"
+                    if actual_check_in or actual_check_out:
+                        actual_parts = []
+                        if actual_check_in:
+                            actual_parts.append(f"заезд: {actual_check_in}")
+                        if actual_check_out:
+                            actual_parts.append(f"выезд: {actual_check_out}")
+                        base_line += f" [факт: {', '.join(actual_parts)}]"
+                    lines.append(base_line)
                 elif language == 'uz':
-                    lines.append(f"• {date_str} - xona {room}")
+                    base_line = f"• {check_in} - {check_out} (xona {room}, {status})"
+                    if actual_check_in or actual_check_out:
+                        actual_parts = []
+                        if actual_check_in:
+                            actual_parts.append(f"kirish: {actual_check_in}")
+                        if actual_check_out:
+                            actual_parts.append(f"chiqish: {actual_check_out}")
+                        base_line += f" [fakt: {', '.join(actual_parts)}]"
+                    lines.append(base_line)
                 elif language == 'zh':
-                    lines.append(f"• {date_str} - 房间 {room}")
+                    base_line = f"• {check_in} - {check_out} (房间 {room}, {status})"
+                    if actual_check_in or actual_check_out:
+                        actual_parts = []
+                        if actual_check_in:
+                            actual_parts.append(f"入住: {actual_check_in}")
+                        if actual_check_out:
+                            actual_parts.append(f"退房: {actual_check_out}")
+                        base_line += f" [实际: {', '.join(actual_parts)}]"
+                    lines.append(base_line)
                 else:  # en
-                    lines.append(f"• {date_str} - room {room}")
+                    base_line = f"• {check_in} - {check_out} (room {room}, {status})"
+                    if actual_check_in or actual_check_out:
+                        actual_parts = []
+                        if actual_check_in:
+                            actual_parts.append(f"check-in: {actual_check_in}")
+                        if actual_check_out:
+                            actual_parts.append(f"check-out: {actual_check_out}")
+                        base_line += f" [actual: {', '.join(actual_parts)}]"
+                    lines.append(base_line)
 
             return "\n".join(lines)
         except Exception as e:
@@ -226,7 +289,10 @@ You are an empathetic AI assistant for a hotel complex. Your main mission is to 
             for booking in context["bookings_info"]:
                 if not isinstance(booking, dict):
                     return False
-                if "date" not in booking or "room" not in booking:
+                # Проверяем обязательные поля: check_in, check_out, room, status
+                if "check_in" not in booking or "check_out" not in booking:
+                    return False
+                if "room" not in booking or "status" not in booking:
                     return False
 
             return True

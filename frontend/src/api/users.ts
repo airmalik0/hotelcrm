@@ -1,4 +1,9 @@
-import type { UserCreate, UserPublic, UserUpdate } from "@/client/types.gen"
+import type {
+  UserCreate,
+  UserPublic,
+  UserUpdate,
+  UserUpdateMe,
+} from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
 interface PaginatedResponse<T> {
@@ -52,6 +57,14 @@ export async function updateUser(
     `/api/v1/users/${userId}`,
     data,
   )
+  return response.data
+}
+
+/**
+ * Update current user
+ */
+export async function updateUserMe(data: UserUpdateMe): Promise<UserPublic> {
+  const response = await apiClient.patch<UserPublic>("/api/v1/users/me", data)
   return response.data
 }
 

@@ -6,6 +6,7 @@ import type {
   RoomStatus,
   RoomUpdate,
 } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -24,6 +25,7 @@ export function RoomEditModal({
   onClose,
   viewOnly = false,
 }: RoomEditModalProps) {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<RoomUpdate>({
     room_number: room.room_number,
@@ -49,14 +51,14 @@ export function RoomEditModal({
     mutationFn: (data: RoomUpdate) => updateRoom(room.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] })
-      showSuccess("Room updated successfully!")
+      showSuccess(t.room.roomUpdatedSuccess)
       onClose()
     },
     onError: (error) => {
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to update room",
+        t.room.failedToUpdateRoom,
       )
     },
   })
@@ -70,31 +72,31 @@ export function RoomEditModal({
     // Validate
     const newErrors: Record<string, string> = {}
     if (formData.room_number !== null && !formData.room_number?.trim()) {
-      newErrors.room_number = "Room number cannot be empty"
+      newErrors.room_number = t.room.roomNumberRequired
     } else if (
       formData.room_number &&
       formData.room_number.trim().length > 10
     ) {
-      newErrors.room_number = "Room number must be 10 characters or less"
+      newErrors.room_number = t.room.roomNumberMaxLength
     } else if (
       formData.room_number &&
       !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())
     ) {
       newErrors.room_number =
-        "Room number must start with letter or number and contain only letters, numbers, and hyphens"
+        t.room.roomNumberFormat
     }
     if (formData.floor !== null && formData.floor < 1) {
-      newErrors.floor = "Floor must be 1 or greater"
+      newErrors.floor = t.room.floorMinValue
     } else if (formData.floor !== null && formData.floor > 20) {
-      newErrors.floor = "Floor must be 20 or less"
+      newErrors.floor = t.room.floorMaxValue
     }
     if (formData.price_per_night !== null && formData.price_per_night <= 0) {
-      newErrors.price_per_night = "Price must be greater than 0"
+      newErrors.price_per_night = t.room.priceGreaterThanZero
     } else if (
       formData.price_per_night !== null &&
       formData.price_per_night > 100000
     ) {
-      newErrors.price_per_night = "Price must be 100,000 or less"
+      newErrors.price_per_night = t.room.priceMaxValue
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -132,7 +134,7 @@ export function RoomEditModal({
     updateMutation.mutate(changedFields)
   }
 
-  const modalTitle = viewOnly ? "Room Details" : "Edit Room"
+  const modalTitle = viewOnly ? t.room.roomDetails : t.room.editRoomLabel
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -174,7 +176,7 @@ export function RoomEditModal({
                   htmlFor="room_number"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Room Number
+                  {t.room.roomNumber}
                 </label>
                 <input
                   type="text"
@@ -203,7 +205,7 @@ export function RoomEditModal({
                   htmlFor="floor"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Floor
+                  {t.room.floor}
                 </label>
                 <input
                   type="number"
@@ -236,7 +238,7 @@ export function RoomEditModal({
                     htmlFor="category_id"
                     className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                   >
-                    Category
+                    {t.room.categoryLabel}
                   </label>
                 </div>
                 <select
@@ -254,7 +256,7 @@ export function RoomEditModal({
                   disabled={viewOnly}
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed"
                 >
-                  <option value="">No category</option>
+                  <option value="">{t.room.noCategory}</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -269,7 +271,7 @@ export function RoomEditModal({
                   htmlFor="price_per_night"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Price per Night ($)
+                  {t.room.pricePerNight}
                 </label>
                 <input
                   type="number"
@@ -303,7 +305,7 @@ export function RoomEditModal({
                   htmlFor="status"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Status
+                  {t.room.statusLabel}
                 </label>
                 <select
                   id="status"
@@ -317,10 +319,10 @@ export function RoomEditModal({
                   disabled={viewOnly}
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed"
                 >
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="cleaning">Cleaning</option>
-                  <option value="maintenance">Maintenance</option>
+                  <option value="available">{t.room.statusAvailable}</option>
+                  <option value="occupied">{t.room.statusOccupied}</option>
+                  <option value="cleaning">{t.room.statusCleaning}</option>
+                  <option value="maintenance">{t.room.statusMaintenance}</option>
                 </select>
               </div>
 
@@ -330,7 +332,7 @@ export function RoomEditModal({
                   htmlFor="description"
                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
-                  Description
+                  {t.room.categoryDescription}
                 </label>
                 <textarea
                   id="description"
@@ -341,7 +343,7 @@ export function RoomEditModal({
                   disabled={viewOnly}
                   rows={3}
                   className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed"
-                  placeholder="Optional room description..."
+                  placeholder={t.room.optionalDescription}
                 />
               </div>
 
@@ -349,7 +351,7 @@ export function RoomEditModal({
               {viewOnly && (
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Created
+                    {t.room.created}
                   </label>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     {formatDate(room.created_at)}
@@ -365,7 +367,7 @@ export function RoomEditModal({
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
               >
-                {viewOnly ? "Close" : "Cancel"}
+                {viewOnly ? t.room.close : t.booking.cancel}
               </button>
               {!viewOnly && (
                 <button
@@ -376,7 +378,7 @@ export function RoomEditModal({
                   {updateMutation.isPending && (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   )}
-                  Save Changes
+                  {t.room.saveChanges}
                 </button>
               )}
             </div>

@@ -1,5 +1,6 @@
 import type { BookingStatus } from "@/client/types.gen"
 import type { GridState } from "@/constants/breakpoints"
+import { useLanguage } from "@/contexts/LanguageContext"
 import clsx from "clsx"
 import {
   BarChart3,
@@ -29,32 +30,32 @@ interface GridControlsProps {
   currentGridState: GridState
 }
 
-const statusConfig = {
+const getStatusConfig = (t: any) => ({
   confirmed: {
     icon: CheckCircle,
     color:
       "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-600/30 dark:text-emerald-400 dark:border-emerald-600/50",
-    label: "Confirmed",
+    label: t.booking.confirmed,
   },
   checked_in: {
     icon: Clock,
     color:
       "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-600/30 dark:text-blue-400 dark:border-blue-600/50",
-    label: "Checked In",
+    label: t.booking.checkedIn,
   },
   checked_out: {
     icon: LogOut,
     color:
       "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-600/30 dark:text-violet-400 dark:border-violet-600/50",
-    label: "Checked Out",
+    label: t.booking.checkedOut,
   },
   cancelled: {
     icon: XCircle,
     color:
       "bg-danger-100 text-danger-700 border-danger-200 dark:bg-danger-600/30 dark:text-danger-400 dark:border-danger-600/50",
-    label: "Cancelled",
+    label: t.booking.cancelled,
   },
-}
+})
 
 export const GridControls = memo(function GridControls({
   searchTerm,
@@ -69,6 +70,8 @@ export const GridControls = memo(function GridControls({
   onClearAllFilters,
   currentGridState,
 }: GridControlsProps) {
+  const { t } = useLanguage()
+  const statusConfig = getStatusConfig(t)
   const [showCategoryFilter, setShowCategoryFilter] = useState(false)
   const [showStatusFilter, setShowStatusFilter] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -107,7 +110,7 @@ export const GridControls = memo(function GridControls({
               type="text"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search..."
+              placeholder={t.bookingGrid.search}
               className={clsx(
                 "pl-10 pr-4 py-1.5 md:py-2 text-sm md:text-base border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
                 // Responsive widths based on grid state
@@ -170,7 +173,7 @@ export const GridControls = memo(function GridControls({
               )}
             >
               <CheckCircle className="w-4 h-4" />
-              Status
+              {t.bookingGrid.status}
               {statusFilters.length > 0 && (
                 <span className="bg-blue-600 dark:bg-blue-400 text-white dark:text-neutral-900 text-xs px-1.5 py-0.5 rounded-full">
                   {statusFilters.length}
@@ -245,7 +248,7 @@ export const GridControls = memo(function GridControls({
               )}
             >
               <Bed className="w-4 h-4" />
-              Categories
+              {t.bookingGrid.categories}
               {categoryFilters.length > 0 && (
                 <span className="bg-primary-600 dark:bg-primary-400 text-white dark:text-neutral-900 text-xs px-1.5 py-0.5 rounded-full">
                   {categoryFilters.length}
@@ -303,7 +306,7 @@ export const GridControls = memo(function GridControls({
               className="px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors flex items-center gap-1"
             >
               <X className="w-3 h-3" />
-              Clear all
+              {t.bookingGrid.clearAll}
             </button>
           )}
         </div>
@@ -318,11 +321,11 @@ export const GridControls = memo(function GridControls({
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <Users className="w-4 h-4" />
-              <span>{totalBookings} bookings</span>
+              <span>{totalBookings} {t.bookingGrid.bookings}</span>
             </div>
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <BarChart3 className="w-4 h-4" />
-              <span>{occupancyRate}% occupied</span>
+              <span>{occupancyRate}% {t.bookingGrid.occupied}</span>
             </div>
           </div>
         </div>

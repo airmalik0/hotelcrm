@@ -19,11 +19,13 @@ import type {
 } from "@/client/types.gen"
 import { AddGuestModal } from "@/components/guests/AddGuestModal"
 import { GuestList } from "@/components/guests/GuestList"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
 import { isRoomAvailable } from "@/utils/booking-grid"
 import { getPaymentAdjustmentSummary } from "@/utils/booking-payments"
 import { safeParseDate } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { showError, showSuccess } from "@/utils/error-handling"
 import {
   invalidateAfterBookingCancel,
@@ -66,6 +68,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
   onClose,
   bookingId,
 }: BookingDetailModalProps) {
+  const { currency, t } = useLanguage()
   const queryClient = useQueryClient()
   const {
     canDeleteBookings,
@@ -160,11 +163,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         oldCustomerId: booking?.customer_id,
         newCustomerId: updatedBooking.customer_id,
       })
-      showSuccess("Booking updated successfully!")
+      showSuccess(t.bookingDetails.bookingUpdatedSuccess)
       setIsEditing(false)
     },
     onError: (error) => {
-      showError(error, "Failed to update booking. Please try again.")
+      showError(error, t.bookingDetails.failedToUpdateBooking)
     },
   })
 
@@ -182,11 +185,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
           booking.status === "checked_in",
         )
       }
-      showSuccess("Booking deleted successfully!")
+      showSuccess(t.bookingDetails.bookingDeletedSuccess)
       onClose()
     },
     onError: (error) => {
-      showError(error, "Failed to delete booking. Please try again.")
+      showError(error, t.bookingDetails.failedToDeleteBooking)
     },
   })
 
@@ -200,10 +203,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         updatedBooking.id,
         updatedBooking.room_id,
       )
-      showSuccess("Guest checked in successfully!")
+      showSuccess(t.bookingDetails.guestCheckedInSuccess)
     },
     onError: (error) => {
-      showError(error, "Failed to check in booking. Please try again.")
+      showError(error, t.bookingDetails.failedToCheckIn)
     },
   })
 
@@ -217,10 +220,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         updatedBooking.id,
         updatedBooking.room_id,
       )
-      showSuccess("Guest checked out successfully!")
+      showSuccess(t.bookingDetails.guestCheckedOutSuccess)
     },
     onError: (error) => {
-      showError(error, "Failed to check out booking. Please try again.")
+      showError(error, t.bookingDetails.failedToCheckOut)
     },
   })
 
@@ -233,19 +236,21 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       invalidateAfterBookingUpdate(queryClient, bookingId!)
       const diff = response.payment_difference
       if (diff > 0) {
-        showSuccess(`Dates modified. Additional charge: $${diff.toFixed(2)}`)
+        showSuccess(
+          `Dates modified. Additional charge: ${formatCurrency(diff, currency)}`,
+        )
       } else if (diff < 0) {
         showSuccess(
-          `Dates modified. Refund amount: $${Math.abs(diff).toFixed(2)}`,
+          `Dates modified. Refund amount: ${formatCurrency(Math.abs(diff), currency)}`,
         )
       } else {
-        showSuccess("Dates modified successfully!")
+        showSuccess(t.bookingDetails.datesModifiedSuccess)
       }
       setShowDateModification(false)
       setDateModification({})
     },
     onError: (error) => {
-      showError(error, "Failed to modify dates")
+      showError(error, t.bookingDetails.failedToModifyDates)
     },
   })
 
@@ -306,10 +311,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         {actualDiff > 0 && (
           <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
             <div className="font-medium text-orange-800 dark:text-orange-300">
-              Additional charge: ${actualDiff.toFixed(2)}
+              Additional charge: {formatCurrency(actualDiff, currency)}
             </div>
             <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
-              ({nightsDiff} additional nights × ${booking.room.price_per_night}
+              ({nightsDiff} additional nights ×{" "}
+              {formatCurrency(booking.room.price_per_night, currency)}
               /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
@@ -317,11 +323,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         {actualDiff < 0 && (
           <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
             <div className="font-medium text-emerald-800 dark:text-emerald-300">
-              Refund amount: ${Math.abs(actualDiff).toFixed(2)}
+              Refund amount: {formatCurrency(Math.abs(actualDiff), currency)}
             </div>
             <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
-              ({Math.abs(nightsDiff)} fewer nights × $
-              {booking.room.price_per_night}/night
+              ({Math.abs(nightsDiff)} fewer nights ×{" "}
+              {formatCurrency(booking.room.price_per_night, currency)}/night
               {hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
@@ -335,9 +341,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     )
 
     const confirmed = await confirm({
-      title: "Confirm Date Modification",
+      title: t.booking.confirmDateModification,
       message,
-      confirmText: "Modify Dates",
+      confirmText: t.booking.modifyDates,
       variant:
         actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
     })
@@ -371,18 +377,20 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       invalidateAfterBookingUpdate(queryClient, bookingId!)
       const diff = response.payment_difference
       if (diff > 0) {
-        showSuccess(`Discount modified. Additional charge: $${diff.toFixed(2)}`)
+        showSuccess(
+          `Discount modified. Additional charge: ${formatCurrency(diff, currency)}`,
+        )
       } else if (diff < 0) {
         showSuccess(
-          `Discount modified. Refund amount: $${Math.abs(diff).toFixed(2)}`,
+          `Discount modified. Refund amount: ${formatCurrency(Math.abs(diff), currency)}`,
         )
       } else {
-        showSuccess("Discount modified successfully!")
+        showSuccess(t.bookingDetails.discountModifiedSuccess)
       }
       setIsEditing(false)
     },
     onError: (error) => {
-      showError(error, "Failed to modify discount")
+      showError(error, t.bookingDetails.failedToModifyDiscount)
     },
   })
 
@@ -400,19 +408,21 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       })
       const diff = response.payment_difference
       if (diff > 0) {
-        showSuccess(`Room changed. Additional charge: $${diff.toFixed(2)}`)
+        showSuccess(
+          `Room changed. Additional charge: ${formatCurrency(diff, currency)}`,
+        )
       } else if (diff < 0) {
         showSuccess(
-          `Room changed. Refund amount: $${Math.abs(diff).toFixed(2)}`,
+          `Room changed. Refund amount: ${formatCurrency(Math.abs(diff), currency)}`,
         )
       } else {
-        showSuccess("Room changed successfully!")
+        showSuccess(t.bookingDetails.roomChangedSuccess)
       }
       setShowRoomChange(false)
       setSelectedNewRoom("")
     },
     onError: (error) => {
-      showError(error, "Failed to change room")
+      showError(error, t.bookingDetails.failedToChangeRoom)
     },
   })
 
@@ -452,13 +462,16 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         {actualDiff > 0 && (
           <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-600/50">
             <div className="font-medium text-orange-800 dark:text-orange-300">
-              Additional charge: ${actualDiff.toFixed(2)}
+              Additional charge: {formatCurrency(actualDiff, currency)}
             </div>
             <div className="text-orange-700 dark:text-orange-400 text-xs mt-1">
-              ({nights} nights × $
-              {Math.abs(
-                newRoom.price_per_night - (booking.room?.price_per_night || 0),
-              ).toFixed(2)}
+              ({nights} nights ×{" "}
+              {formatCurrency(
+                Math.abs(
+                  newRoom.price_per_night - (booking.room?.price_per_night || 0),
+                ),
+                currency,
+              )}
               /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
@@ -466,13 +479,16 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         {actualDiff < 0 && (
           <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
             <div className="font-medium text-emerald-800 dark:text-emerald-300">
-              Refund amount: ${Math.abs(actualDiff).toFixed(2)}
+              Refund amount: {formatCurrency(Math.abs(actualDiff), currency)}
             </div>
             <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
-              ({nights} nights × $
-              {Math.abs(
-                newRoom.price_per_night - (booking.room?.price_per_night || 0),
-              ).toFixed(2)}
+              ({nights} nights ×{" "}
+              {formatCurrency(
+                Math.abs(
+                  newRoom.price_per_night - (booking.room?.price_per_night || 0),
+                ),
+                currency,
+              )}
               /night{hasDiscount && ` with ${booking.discount}% discount`})
             </div>
           </div>
@@ -486,9 +502,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     )
 
     const confirmed = await confirm({
-      title: "Confirm Room Change",
+      title: t.booking.confirmRoomChange,
       message,
-      confirmText: "Change Room",
+      confirmText: t.booking.changeRoom,
       variant:
         actualDiff > 0 ? "warning" : actualDiff < 0 ? "success" : "primary",
     })
@@ -506,7 +522,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     // Validate discount reason
     if (formData.discount > 0 && !formData.discountReason.trim()) {
-      showError("Discount reason is required when discount is applied")
+      showError(t.bookingDetails.discountReasonRequired)
       return
     }
 
@@ -543,7 +559,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     // Client-side validation: Check room status
     if (booking.room?.status === "maintenance") {
-      showError("Cannot check in: Room is under maintenance")
+      showError(t.bookingDetails.cannotCheckInMaintenance)
       return
     }
 
@@ -583,9 +599,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
       )
 
       const confirmedEarly = await confirm({
-        title: "Early Check-in Confirmation",
+        title: t.booking.earlyCheckInConfirmation,
         message: earlyMessage,
-        confirmText: "Proceed with Early Check-in",
+        confirmText: t.booking.earlyCheckInConfirmation,
         variant: "warning",
       })
 
@@ -597,10 +613,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     // Handle cleaning status with confirmation and two API calls
     if (booking.room?.status === "cleaning") {
       const confirmed = await confirm({
-        title: "Room Status Confirmation",
+        title: t.booking.roomStatusConfirmation,
         message:
-          "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
-        confirmText: "Yes, Proceed",
+          t.bookingDetails.roomCleaningConfirm,
+        confirmText: t.common.yes,
         variant: "warning",
       })
 
@@ -671,9 +687,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     if (!booking) return
 
     const confirmed = await confirm({
-      title: "Remove Guest",
+      title: t.booking.removeGuest,
       message: "Are you sure you want to remove this guest from the booking?",
-      confirmText: "Remove Guest",
+      confirmText: t.booking.removeGuestConfirm,
       variant: "danger",
     })
 
@@ -874,8 +890,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             return filteredRooms.map((room) => (
                               <option key={room.id} value={room.id}>
                                 {room.room_number} -{" "}
-                                {room.category?.name || "Uncategorized"} ($
-                                {room.price_per_night}/night)
+                                {room.category?.name || t.booking.uncategorized} (
+                                {formatCurrency(room.price_per_night, currency)}/night)
                                 {room.status !== "available" &&
                                   ` [${room.status}]`}
                               </option>
@@ -931,12 +947,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             } disabled:bg-neutral-300 dark:disabled:bg-neutral-700 disabled:text-neutral-500 dark:disabled:text-neutral-400`}
                           >
                             {changeRoomMutation.isPending
-                              ? "Changing..."
+                              ? t.booking.processing
                               : actualDiff > 0
-                                ? "Add Charge & Change"
+                                ? t.booking.addChargeAndChange
                                 : actualDiff < 0
-                                  ? "Apply Refund & Change"
-                                  : "Change Room"}
+                                  ? t.booking.applyRefundAndChange
+                                  : t.booking.changeRoom}
                           </button>
                         )
                       })()}
@@ -955,25 +971,25 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-neutral-500 dark:text-neutral-400">
-                        Room:
+                        {t.bookingHistory.room}
                       </span>
                       <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                         {booking.room?.room_number} -{" "}
-                        {booking.room?.category?.name || "Uncategorized"}
+                        {booking.room?.category?.name || t.booking.uncategorized}
                       </span>
                     </div>
                     <div>
                       <span className="text-neutral-500 dark:text-neutral-400">
-                        Price/Night:
+                        {t.bookingHistory.pricePerNight}
                       </span>
                       <span className="ml-2 text-neutral-700 dark:text-neutral-300">
-                        ${booking.room?.price_per_night}
+                        {formatCurrency(booking.room?.price_per_night || 0, currency)}
                       </span>
                     </div>
                     {/* Room Status Indicator */}
                     <div>
                       <span className="text-neutral-500 dark:text-neutral-400">
-                        Status:
+                        {t.bookingHistory.status}
                       </span>
                       <span className="ml-2">
                         {booking.room?.status === "available" && (
@@ -1042,8 +1058,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   >
                     <Edit2 className="w-3 h-3" />
                     {booking.status === "checked_in"
-                      ? "Modify Check-out"
-                      : "Modify Dates"}
+                      ? t.booking.modifyCheckOut
+                      : t.booking.modifyDates}
                   </button>
                 )}
               </div>
@@ -1319,12 +1335,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             } disabled:bg-neutral-300 dark:disabled:bg-neutral-700 disabled:text-neutral-500 dark:disabled:text-neutral-400`}
                           >
                             {modifyDatesMutation.isPending
-                              ? "Saving..."
+                              ? t.forms.saving
                               : actualDiff > 0
-                                ? "Add Charge & Modify"
+                                ? t.booking.addChargeAndModify
                                 : actualDiff < 0
-                                  ? "Apply Refund & Modify"
-                                  : "Modify Dates"}
+                                  ? t.booking.applyRefundAndModify
+                                  : t.booking.modifyDates}
                           </button>
                           <button
                             onClick={() => {
@@ -1554,7 +1570,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           Room Rate:
                         </span>
                         <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                          ${booking.room?.price_per_night}/night
+                          {formatCurrency(booking.room?.price_per_night || 0, currency)}/night
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -1576,7 +1592,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           Base Amount:
                         </span>
                         <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                          ${formData.totalAmount}
+                          {formatCurrency(formData.totalAmount, currency)}
                         </span>
                       </div>
                       {formData.discount > 0 && (
@@ -1586,11 +1602,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               Discount ({formData.discount}%):
                             </span>
                             <span className="text-sm text-danger-600 dark:text-danger-400">
-                              -$
-                              {(
-                                (formData.totalAmount * formData.discount) /
-                                100
-                              ).toFixed(2)}
+                              -{formatCurrency(
+                                (formData.totalAmount * formData.discount) / 100,
+                                currency,
+                              )}
                             </span>
                           </div>
                           <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">
@@ -1598,11 +1613,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               Final Amount:
                             </span>
                             <span className="font-bold text-lg text-neutral-900 dark:text-white">
-                              $
-                              {(
+                              {formatCurrency(
                                 formData.totalAmount *
-                                (1 - formData.discount / 100)
-                              ).toFixed(2)}
+                                  (1 - formData.discount / 100),
+                                currency,
+                              )}
                             </span>
                           </div>
                         </>
@@ -1663,7 +1678,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       Total Amount:
                     </span>
                     <span className="font-semibold text-neutral-900 dark:text-white">
-                      ${booking.total_amount}
+                      {formatCurrency(booking.total_amount, currency)}
                     </span>
                   </div>
                   {booking.discount > 0 && (
@@ -1700,7 +1715,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         Final Amount:
                       </span>
                       <span className="font-bold text-lg text-neutral-900 dark:text-white">
-                        ${booking.total_amount}
+                        {formatCurrency(booking.total_amount, currency)}
                       </span>
                     </div>
                   </div>
@@ -1721,13 +1736,12 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                 <>
                                   {refundAmount > 0 && (
                                     <span className="text-emerald-600 dark:text-emerald-400 font-medium text-sm">
-                                      Refunds: -${refundAmount.toFixed(2)}
+                                      Refunds: -{formatCurrency(refundAmount, currency)}
                                     </span>
                                   )}
                                   {additionalPayment > 0 && (
                                     <span className="text-orange-600 dark:text-orange-400 font-medium text-sm">
-                                      Additional: +$
-                                      {additionalPayment.toFixed(2)}
+                                      Additional: +{formatCurrency(additionalPayment, currency)}
                                     </span>
                                   )}
                                 </>
@@ -1796,7 +1810,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-200 dark:disabled:bg-neutral-700 disabled:text-neutral-400 dark:disabled:text-neutral-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  {checkInMutation.isPending ? "Processing..." : "Check In"}
+                  {checkInMutation.isPending ? t.booking.processing : t.booking.checkIn}
                 </button>
               )}
 
@@ -1807,7 +1821,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   className="flex-1 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-neutral-200 dark:disabled:bg-neutral-700 disabled:text-neutral-400 dark:disabled:text-neutral-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
-                  {checkOutMutation.isPending ? "Processing..." : "Check Out"}
+                  {checkOutMutation.isPending ? t.booking.processing : t.booking.checkOut}
                 </button>
               )}
 
@@ -1830,8 +1844,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       className="px-5 py-2.5 bg-danger-600 hover:bg-danger-700 disabled:bg-neutral-200 dark:disabled:bg-neutral-700 disabled:text-neutral-400 dark:disabled:text-neutral-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
                     >
                       {deleteMutation.isPending
-                        ? "Deleting..."
-                        : "Confirm Delete"}
+                        ? t.booking.processing
+                        : t.booking.confirmDelete}
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}

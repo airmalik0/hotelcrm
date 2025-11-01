@@ -1614,6 +1614,16 @@ export const CustomerCreateSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        source: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CustomerSource'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
@@ -2066,6 +2076,16 @@ export const CustomerPublicSchema = {
             ],
             title: 'Notes'
         },
+        source: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CustomerSource'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -2119,6 +2139,13 @@ export const CustomerPublicSchema = {
     type: 'object',
     required: ['first_name', 'last_name', 'id', 'total_spent', 'total_bookings', 'first_booking_date', 'last_booking_date', 'created_at', 'tags'],
     title: 'CustomerPublic'
+} as const;
+
+export const CustomerSourceSchema = {
+    type: 'string',
+    enum: ['WALK_IN', 'INSTAGRAM', 'OLX'],
+    title: 'CustomerSource',
+    description: 'Customer acquisition sources'
 } as const;
 
 export const CustomerTypeSchema = {
@@ -2253,6 +2280,16 @@ export const CustomerUpdateSchema = {
                 }
             ],
             title: 'Notes'
+        },
+        source: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CustomerSource'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
@@ -3391,6 +3428,18 @@ export const UserPublicSchema = {
             '$ref': '#/components/schemas/UserRole',
             default: 'host'
         },
+        language: {
+            type: 'string',
+            maxLength: 10,
+            title: 'Language',
+            default: 'en'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            title: 'Currency',
+            default: 'USD'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -3531,6 +3580,30 @@ export const UserUpdateMeSchema = {
                 }
             ],
             title: 'Username'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 10
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 3
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency'
         }
     },
     type: 'object',

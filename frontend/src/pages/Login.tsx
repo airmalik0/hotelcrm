@@ -1,5 +1,6 @@
 import { login as apiLogin, getCurrentUser } from "@/api/auth"
 import { useAuth } from "@/contexts/AuthContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
@@ -8,6 +9,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 export function Login() {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -78,8 +80,8 @@ export function Login() {
 
   return (
     <AuthLayout
-      title="Sign In to your Account"
-      subtitle="Welcome back! Please enter your details"
+      title={t.auth.signInToAccount}
+      subtitle={t.auth.welcomeBack}
     >
       <form onSubmit={handleSubmit}>
         {/* Email/Username Field */}
@@ -93,7 +95,7 @@ export function Login() {
             value={formData.username}
             onChange={handleInputChange}
             className="border-neutral-300 dark:border-neutral-500 rounded-xl bg-neutral-50 dark:bg-dark-2 px-5 py-2.5 ps-11 w-full h-[56px] text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-primary-300 focus:outline-none"
-            placeholder="Username"
+            placeholder={t.auth.username}
             required
             disabled={loginMutation.isPending}
           />
@@ -110,7 +112,7 @@ export function Login() {
             value={formData.password}
             onChange={handleInputChange}
             className="border-neutral-300 dark:border-neutral-500 rounded-xl bg-neutral-50 dark:bg-dark-2 px-5 py-2.5 ps-11 pe-11 w-full h-[56px] text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-primary-300 focus:outline-none"
-            placeholder="Password"
+            placeholder={t.auth.password}
             required
             disabled={loginMutation.isPending}
           />
@@ -145,7 +147,7 @@ export function Login() {
                 htmlFor="rememberMe"
                 className="ms-2 text-sm text-neutral-700 dark:text-neutral-300"
               >
-                Remember me
+                {t.auth.rememberMe}
               </label>
             </div>
             <button
@@ -153,7 +155,7 @@ export function Login() {
               className="text-primary-600 font-medium hover:underline text-sm"
               disabled={loginMutation.isPending}
             >
-              Forgot Password?
+              {t.auth.forgotPassword}
             </button>
           </div>
         </div>
@@ -161,7 +163,7 @@ export function Login() {
         {/* Error Message */}
         {loginMutation.isError && (
           <div className="mt-4 p-3 bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 border border-danger-200 dark:border-danger-600/50 rounded-lg text-sm">
-            Invalid username or password. Please try again.
+            {t.auth.invalidCredentials}
           </div>
         )}
 
@@ -174,10 +176,10 @@ export function Login() {
           {loginMutation.isPending ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              Signing In...
+              {t.common.loading}
             </>
           ) : (
-            "Sign In"
+            t.auth.signIn
           )}
         </button>
       </form>

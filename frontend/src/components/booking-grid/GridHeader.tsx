@@ -1,4 +1,5 @@
 import { useGridZoom } from "@/contexts/GridZoomContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import type { ViewMode } from "@/utils/date-helpers"
 import clsx from "clsx"
 import { format } from "date-fns"
@@ -40,6 +41,7 @@ export const GridHeader = memo(function GridHeader({
   onViewModeChange,
   onAddBooking,
 }: GridHeaderProps) {
+  const { t } = useLanguage()
   // Get zoom context
   const {
     zoomLevel,
@@ -108,7 +110,7 @@ export const GridHeader = memo(function GridHeader({
                 onClick={onToday}
                 className="px-2 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors text-xs font-medium text-neutral-700 dark:text-neutral-300"
               >
-                Today
+                {t.bookingGrid.today}
               </button>
             </div>
 
@@ -169,7 +171,7 @@ export const GridHeader = memo(function GridHeader({
               <span className="xl:hidden">
                 <Calendar className="w-4 h-4" />
               </span>
-              <span className="hidden xl:inline">Today</span>
+              <span className="hidden xl:inline">{t.bookingGrid.today}</span>
             </button>
 
             {/* Date range display */}
@@ -184,7 +186,7 @@ export const GridHeader = memo(function GridHeader({
           {/* Center - Occupancy */}
           <div className="flex items-center gap-1 md:gap-2">
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Occupancy:
+              {t.bookingGrid.occupancy}
             </span>
             <div className="flex items-center gap-1">
               <div className="w-20 md:w-32 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
@@ -226,8 +228,8 @@ export const GridHeader = memo(function GridHeader({
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-neutral-100 dark:hover:bg-dark-3",
                 )}
-                aria-label="Zoom out"
-                title={"Zoom out (Ctrl+-)"}
+                aria-label={t.bookingGrid.zoomOut}
+                title={`${t.bookingGrid.zoomOut} (Ctrl+-)`}
               >
                 <ZoomOut className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
@@ -248,8 +250,8 @@ export const GridHeader = memo(function GridHeader({
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-neutral-100 dark:hover:bg-dark-3",
                 )}
-                aria-label="Zoom in"
-                title={"Zoom in (Ctrl++)"}
+                aria-label={t.bookingGrid.zoomIn}
+                title={`${t.bookingGrid.zoomIn} (Ctrl++)`}
               >
                 <ZoomIn className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
@@ -258,8 +260,8 @@ export const GridHeader = memo(function GridHeader({
               <button
                 onClick={resetZoom}
                 className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors"
-                aria-label="Reset zoom"
-                title={"Reset zoom (Ctrl+0)"}
+                aria-label={t.bookingGrid.resetZoom}
+                title={`${t.bookingGrid.resetZoom} (Ctrl+0)`}
               >
                 <RotateCcw className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
@@ -279,7 +281,7 @@ export const GridHeader = memo(function GridHeader({
                 )}
               >
                 <LayoutGrid className="w-4 h-4" />
-                <span className="hidden xl:inline">Week</span>
+                <span className="hidden xl:inline">{t.bookingGrid.week}</span>
               </button>
               <button
                 onClick={() => onViewModeChange("month")}
@@ -291,7 +293,7 @@ export const GridHeader = memo(function GridHeader({
                 )}
               >
                 <CalendarDays className="w-4 h-4" />
-                <span className="hidden xl:inline">Month</span>
+                <span className="hidden xl:inline">{t.bookingGrid.month}</span>
               </button>
             </div>
 
@@ -301,7 +303,7 @@ export const GridHeader = memo(function GridHeader({
               className="px-3 md:px-4 py-1.5 md:py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-1 md:gap-2 text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden xl:inline">Add Booking</span>
+              <span className="hidden xl:inline">{t.bookingGrid.addBooking}</span>
             </button>
           </div>
         </div>

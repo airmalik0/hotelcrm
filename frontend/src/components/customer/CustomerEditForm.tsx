@@ -1,11 +1,13 @@
 import { updateCustomer } from "@/api/customers"
 import type {
   CustomerPublic,
+  CustomerSource,
   CustomerUpdate,
   District,
 } from "@/client/types.gen"
 import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { TagsInput } from "@/components/ui/TagsInput"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { generateCyrillicName } from "@/utils/transliteration"
@@ -30,6 +32,7 @@ interface CustomerEditFormProps {
 export function CustomerEditForm({ customer }: CustomerEditFormProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t } = useLanguage()
 
   const [formData, setFormData] = useState<CustomerUpdate>({
     first_name: customer.first_name || "",
@@ -46,6 +49,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     district: customer.district || undefined,
     notes: customer.notes || "",
     tags: customer.tags || [],
+    source: customer.source || undefined,
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -67,13 +71,13 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer", customer.id] })
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      showSuccess("Customer updated successfully!")
+      showSuccess(t.customer.customerUpdatedSuccess)
     },
     onError: (error) => {
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to update customer",
+        t.customer.failedToUpdate,
       )
     },
   })
@@ -100,14 +104,14 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
     const newErrors: Record<string, string> = {}
 
     if (formData.first_name && !formData.first_name.trim()) {
-      newErrors.first_name = "First name cannot be empty"
+      newErrors.first_name = t.customer.firstNameCannotBeEmpty
     } else if (formData.first_name && formData.first_name.trim().length > 100) {
-      newErrors.first_name = "First name must be 100 characters or less"
+      newErrors.first_name = t.customer.firstNameMaxLength
     }
     if (formData.last_name && !formData.last_name.trim()) {
-      newErrors.last_name = "Last name cannot be empty"
+      newErrors.last_name = t.customer.lastNameCannotBeEmpty
     } else if (formData.last_name && formData.last_name.trim().length > 100) {
-      newErrors.last_name = "Last name must be 100 characters or less"
+      newErrors.last_name = t.customer.lastNameMaxLength
     }
     if (formData.phone) {
       const digitsOnly = formData.phone.replace(/\D/g, "")
@@ -115,7 +119,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         digitsOnly.length > 0 &&
         (digitsOnly.length < 7 || digitsOnly.length > 15)
       ) {
-        newErrors.phone = "Phone number must contain between 7 and 15 digits"
+        newErrors.phone = t.customer.phoneInvalid
       }
     }
 
@@ -138,6 +142,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
         district: (formData.district as District | null) ?? null,
         notes: formData.notes || undefined,
         tags: formData.tags || undefined,
+        source: formData.source ?? null,
       }
       updateMutation.mutate(submitData)
     }
@@ -172,7 +177,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
   return (
     <div>
       <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-        Edit Customer Profile
+        {t.customer.editProfile}
       </h5>
 
       <form onSubmit={handleSubmit}>
@@ -183,7 +188,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               htmlFor="first_name"
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
-              First Name <span className="text-danger-600">*</span>
+              {t.customer.firstName} <span className="text-danger-600">*</span>
             </label>
             <input
               type="text"
@@ -194,7 +199,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none ${
                 errors.first_name ? "border-danger-600" : ""
               }`}
-              placeholder="Enter first name"
+              placeholder={t.customer.enterFirstName}
             />
             {errors.first_name && (
               <p className="text-danger-600 text-sm mt-1">
@@ -209,7 +214,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               htmlFor="last_name"
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
-              Last Name <span className="text-danger-600">*</span>
+              {t.customer.lastName} <span className="text-danger-600">*</span>
             </label>
             <input
               type="text"
@@ -220,7 +225,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none ${
                 errors.last_name ? "border-danger-600" : ""
               }`}
-              placeholder="Enter last name"
+              placeholder={t.customer.enterLastName}
             />
             {errors.last_name && (
               <p className="text-danger-600 text-sm mt-1">{errors.last_name}</p>
@@ -233,9 +238,9 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               htmlFor="name_cyrillic"
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
-              Name (Cyrillic)
+              {t.customer.nameCyrillic}
               <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-2 font-normal">
-                (Auto-generated)
+                {t.customer.autoGenerated}
               </span>
             </label>
             <input
@@ -248,7 +253,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
                 handleInputChange(e)
               }}
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none"
-              placeholder="Автоматически генерируется из First Name"
+              placeholder={t.customer.cyrillicNamePlaceholder}
             />
           </div>
 
@@ -258,7 +263,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               htmlFor="phone"
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
-              Phone Number
+              {t.customer.phoneNumber}
             </label>
             <input
               type="tel"
@@ -269,7 +274,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               className={`border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none ${
                 errors.phone ? "border-danger-600" : ""
               }`}
-              placeholder="Enter phone number"
+              placeholder={t.customer.enterPhoneNumber}
             />
             {errors.phone && (
               <p className="text-danger-600 text-sm mt-1">{errors.phone}</p>
@@ -282,7 +287,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               htmlFor="date_of_birth"
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
-              Date of Birth
+              {t.customer.dateOfBirth}
             </label>
             <input
               type="date"
@@ -297,7 +302,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
           {/* Location */}
           <div className="sm:col-span-2">
             <GeoSelect
-              label="Location"
+              label={t.customer.location}
               value={{
                 country_code: formData.country_code || null,
                 region: formData.region || null,
@@ -327,13 +332,40 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
           {/* Tags */}
           <div className="sm:col-span-2">
             <TagsInput
-              label="Tags"
+              label={t.analytics.tags}
               value={formData.tags || []}
               onChange={handleTagsChange}
               availableTags={CUSTOMER_TAGS}
-              placeholder="Select customer tags..."
+              placeholder={t.customer.selectCustomerTags}
               disabled={updateMutation.isPending}
             />
+          </div>
+
+          {/* Source */}
+          <div>
+            <label
+              htmlFor="source"
+              className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
+            >
+              {t.customer.source}
+            </label>
+            <select
+              id="source"
+              name="source"
+              value={formData.source || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  source: (e.target.value as CustomerSource) || undefined,
+                }))
+              }
+              className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-300 focus:outline-none"
+            >
+              <option value="">{t.customer.sourcePlaceholder}</option>
+              <option value="WALK_IN">{t.customer.sourceWalkIn}</option>
+              <option value="INSTAGRAM">{t.customer.sourceInstagram}</option>
+              <option value="OLX">{t.customer.sourceOlx}</option>
+            </select>
           </div>
 
           {/* Notes */}
@@ -342,7 +374,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               htmlFor="notes"
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
-              Notes
+              {t.customer.notes}
             </label>
             <textarea
               id="notes"
@@ -351,7 +383,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               onChange={handleInputChange}
               rows={4}
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none resize-none"
-              placeholder="Add any notes about the customer..."
+              placeholder={t.customer.addNotesAboutCustomer}
             />
           </div>
         </div>
@@ -363,7 +395,7 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
             onClick={handleCancel}
             className="border border-danger-600 text-danger-600 hover:bg-danger-100 dark:hover:bg-danger-600/30 text-base px-14 py-2.5 rounded-lg"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             type="submit"
@@ -373,10 +405,10 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
             {updateMutation.isPending ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Saving...
+                {t.forms.saving}
               </>
             ) : (
-              "Save Changes"
+              t.forms.saveChanges
             )}
           </button>
         </div>

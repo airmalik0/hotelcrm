@@ -1,5 +1,6 @@
 import { deleteUser, getUsers } from "@/api/users"
 import type { UserPublic, UserRole } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { UserCreateModal } from "@/components/user/UserCreateModal"
 import { UserEditModal } from "@/components/user/UserEditModal"
 import { useConfirm } from "@/hooks/useConfirm"
@@ -26,14 +27,9 @@ const roleBadgeColors: Record<UserRole, string> = {
   host: "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400",
 }
 
-// Role display names
-const roleDisplayNames: Record<UserRole, string> = {
-  admin: "Admin",
-  manager: "Manager",
-  host: "Host",
-}
 
 export function UserList() {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -58,10 +54,10 @@ export function UserList() {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
-      showSuccess("User deleted successfully!")
+      showSuccess(t.user.deletedSuccess)
     },
     onError: (error) => {
-      showError(error, "Failed to delete user. Please try again.")
+      showError(error, t.user.deleteError)
     },
   })
 
@@ -77,9 +73,9 @@ export function UserList() {
 
   const handleDelete = async (user: UserPublic) => {
     const confirmed = await confirm({
-      title: "Delete User",
-      message: `Are you sure you want to delete user "${user.username}"? This action cannot be undone.`,
-      confirmText: "Delete",
+      title: t.user.deleteTitle,
+      message: t.user.deleteMessage.replace("{username}", user.username),
+      confirmText: t.user.deleteConfirm,
       variant: "danger",
     })
 
@@ -114,7 +110,7 @@ export function UserList() {
             <div className="border-b border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-6 py-4 flex items-center flex-wrap gap-3 justify-between">
               <div className="flex items-center flex-wrap gap-3">
                 <span className="text-base font-medium text-neutral-600 dark:text-neutral-400 mb-0">
-                  Show
+                  {t.user.show}
                 </span>
                 <select
                   className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white ps-3 pe-5 py-1.5 text-sm w-auto focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
@@ -133,7 +129,7 @@ export function UserList() {
                   <input
                     type="text"
                     className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white h-10 w-64 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-neutral-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors"
-                    placeholder="Search users..."
+                    placeholder={t.user.searchPlaceholder}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -145,7 +141,7 @@ export function UserList() {
                 className="rounded-lg px-4 py-2.5 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium shadow-sm hover:shadow-md"
               >
                 <Plus className="w-4 h-4" />
-                Add New User
+                {t.user.addNew}
               </button>
             </div>
             <div className="p-6">
@@ -154,25 +150,25 @@ export function UserList() {
                   <thead>
                     <tr className="border-b border-neutral-200 dark:border-neutral-600">
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        S.L
+                        {t.user.serialNumber}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Username
+                        {t.user.username}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Full Name
+                        {t.user.fullName}
                       </th>
                       <th className="text-left py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Role
+                        {t.user.role}
                       </th>
                       <th className="text-center py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Status
+                        {t.common.status}
                       </th>
                       <th className="text-center py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Permissions
+                        {t.user.permissions}
                       </th>
                       <th className="text-center py-3 px-2 font-semibold text-neutral-900 dark:text-white">
-                        Action
+                        {t.user.action}
                       </th>
                     </tr>
                   </thead>
@@ -183,7 +179,7 @@ export function UserList() {
                           colSpan={7}
                           className="text-center py-8 text-neutral-500"
                         >
-                          Loading users...
+                          {t.common.loadingUsers}
                         </td>
                       </tr>
                     )}
@@ -193,7 +189,7 @@ export function UserList() {
                           colSpan={7}
                           className="text-center py-8 text-danger-600"
                         >
-                          Error loading users
+                          {t.common.errorLoadingUsers}
                         </td>
                       </tr>
                     )}
@@ -203,7 +199,7 @@ export function UserList() {
                           colSpan={7}
                           className="text-center py-8 text-neutral-500"
                         >
-                          No users found
+                          {t.common.noUsersFound}
                         </td>
                       </tr>
                     )}
@@ -233,18 +229,18 @@ export function UserList() {
                             <span
                               className={`${roleBadgeColors[user.role]} px-3 py-1 rounded-full text-sm font-medium`}
                             >
-                              {roleDisplayNames[user.role]}
+                              {t.user.roles[user.role]}
                             </span>
                           )}
                         </td>
                         <td className="text-center py-3 px-2">
                           {user.is_active ? (
                             <span className="bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-600/50 px-3 py-1 rounded-full text-sm font-medium">
-                              Active
+                              {t.user.active}
                             </span>
                           ) : (
                             <span className="bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-600/50 px-3 py-1 rounded-full text-sm font-medium">
-                              Inactive
+                              {t.user.inactive}
                             </span>
                           )}
                         </td>
@@ -253,7 +249,7 @@ export function UserList() {
                             {user.is_superuser && (
                               <span
                                 className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-600/30"
-                                title="Superuser"
+                                title={t.user.superuser}
                               >
                                 <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                               </span>
@@ -261,7 +257,7 @@ export function UserList() {
                             {!user.is_superuser && user.role === "admin" && (
                               <span
                                 className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-danger-100 dark:bg-danger-600/30"
-                                title="Admin"
+                                title={t.user.admin}
                               >
                                 <UserCheck className="w-4 h-4 text-danger-600 dark:text-danger-400" />
                               </span>
@@ -295,12 +291,18 @@ export function UserList() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Showing {currentPage * itemsPerPage + 1} to{" "}
-                    {Math.min(
-                      (currentPage + 1) * itemsPerPage,
-                      filteredUsers?.length || 0,
-                    )}{" "}
-                    of {filteredUsers?.length || 0} entries
+                    {t.user.paginationShowing
+                      .replace("{from}", String(currentPage * itemsPerPage + 1))
+                      .replace(
+                        "{to}",
+                        String(
+                          Math.min(
+                            (currentPage + 1) * itemsPerPage,
+                            filteredUsers?.length || 0,
+                          ),
+                        ),
+                      )
+                      .replace("{total}", String(filteredUsers?.length || 0))}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -308,7 +310,7 @@ export function UserList() {
                       disabled={currentPage === 0}
                       className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t.common.previous}
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const page = currentPage - 2 + i
@@ -332,7 +334,7 @@ export function UserList() {
                       disabled={currentPage >= totalPages - 1}
                       className="px-3 py-1 rounded border border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t.common.next}
                     </button>
                   </div>
                 </div>

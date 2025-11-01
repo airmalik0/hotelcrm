@@ -101,12 +101,21 @@ class EskizClient:
         if user_sms_id:
             payload["user_sms_id"] = user_sms_id
 
+        # Log request for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Eskiz SMS request: phone={mobile_phone_digits}, message={message[:50]}..., from={sender}")
+
         resp = self._client.post(url, json=payload, headers=headers)
+        logger.info(f"Eskiz response status: {resp.status_code}, body: {resp.text[:200]}")
+
         if resp.status_code == 401:
             # Refresh token and retry once
+            logger.info("Token expired, refreshing...")
             token = self._login().token
             headers["Authorization"] = f"Bearer {token}"
             resp = self._client.post(url, json=payload, headers=headers)
+            logger.info(f"Retry response status: {resp.status_code}, body: {resp.text[:200]}")
 
         if resp.status_code >= 300:
             raise EskizSendError("Eskiz send failed", status_code=resp.status_code, detail=resp.text)
