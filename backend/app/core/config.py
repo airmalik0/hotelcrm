@@ -76,6 +76,7 @@ class Settings(BaseSettings):
 
     # Eskiz SMS provider configuration
     ESKIZ_ENABLED: bool = False
+    ESKIZ_TEST_MODE: bool = False  # Use test message instead of custom text
     ESKIZ_BASE_URL: AnyUrl | None = None  # e.g., https://notify.eskiz.uz
     ESKIZ_EMAIL: str | None = None
     ESKIZ_PASSWORD: str | None = None

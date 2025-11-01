@@ -521,9 +521,15 @@ class CampaignService:
 
                 client = get_eskiz_client()
                 callback_url = str(settings.ESKIZ_CALLBACK_URL) if settings.ESKIZ_CALLBACK_URL else None
+
+                # Use test message if in test mode (for accounts with limited API access)
+                sms_message = message
+                if settings.ESKIZ_TEST_MODE:
+                    sms_message = "Это тест от Eskiz"
+
                 response = client.send_sms(
                     mobile_phone=customer.phone,
-                    message=message,
+                    message=sms_message,
                     from_sender=settings.ESKIZ_FROM,
                     callback_url=callback_url,
                 )
