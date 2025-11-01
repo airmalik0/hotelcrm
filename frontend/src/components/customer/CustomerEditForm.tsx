@@ -8,9 +8,10 @@ import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { TagsInput } from "@/components/ui/TagsInput"
 import { safeParseDate } from "@/utils/date-helpers"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
+import { generateCyrillicName } from "@/utils/transliteration"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 // Legacy district-only options removed; use GeoSelect
@@ -48,6 +49,18 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const isManualCyrillicEdit = useRef(false)
+
+  // Auto-generate name_cyrillic from first_name
+  useEffect(() => {
+    if (formData.first_name && !isManualCyrillicEdit.current) {
+      const cyrillicName = generateCyrillicName(formData.first_name)
+      setFormData((prev) => ({
+        ...prev,
+        name_cyrillic: cyrillicName,
+      }))
+    }
+  }, [formData.first_name])
 
   const updateMutation = useMutation({
     mutationFn: (data: CustomerUpdate) => updateCustomer(customer.id, data),
@@ -221,15 +234,21 @@ export function CustomerEditForm({ customer }: CustomerEditFormProps) {
               className="inline-block font-semibold text-neutral-600 dark:text-neutral-200 text-sm mb-2"
             >
               Name (Cyrillic)
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-2 font-normal">
+                (Auto-generated)
+              </span>
             </label>
             <input
               type="text"
               id="name_cyrillic"
               name="name_cyrillic"
               value={(formData as any).name_cyrillic || ""}
-              onChange={handleInputChange}
+              onChange={(e) => {
+                isManualCyrillicEdit.current = true
+                handleInputChange(e)
+              }}
               className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent px-5 py-2.5 w-full text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-2 focus:ring-primary-300 focus:outline-none"
-              placeholder="Например: Иванов Иван"
+              placeholder="Автоматически генерируется из First Name"
             />
           </div>
 

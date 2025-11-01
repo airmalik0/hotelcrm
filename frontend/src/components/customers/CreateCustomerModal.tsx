@@ -6,7 +6,9 @@ import type {
 } from "@/client/types.gen"
 import { GeoSelect, type GeoValue } from "@/components/ui/GeoSelect"
 import { ImageUpload } from "@/components/ui/ImageUpload"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { handleFormError, showSuccess } from "@/utils/error-handling"
+import { generateCyrillicName } from "@/utils/transliteration"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Calendar,
@@ -17,7 +19,7 @@ import {
   User,
   X,
 } from "lucide-react"
-import { memo, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 
 interface CreateCustomerModalProps {
   isOpen: boolean
@@ -32,6 +34,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
   onClose,
   onSuccess,
 }: CreateCustomerModalProps) {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<{
     first_name: string
@@ -54,12 +57,24 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const isManualCyrillicEdit = useRef(false)
+
+  // Auto-generate name_cyrillic from first_name
+  useEffect(() => {
+    if (formData.first_name && !isManualCyrillicEdit.current) {
+      const cyrillicName = generateCyrillicName(formData.first_name)
+      setFormData((prev) => ({
+        ...prev,
+        name_cyrillic: cyrillicName,
+      }))
+    }
+  }, [formData.first_name])
 
   const createMutation = useMutation({
     mutationFn: (data: CustomerCreate) => createCustomer(data),
     onSuccess: (newCustomer) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      showSuccess("Customer created successfully!")
+      showSuccess(t.customer.customerCreatedSuccess)
       onSuccess?.(newCustomer)
       resetForm()
       onClose()
@@ -68,7 +83,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create customer",
+        t.customer.failedToCreate,
       )
     },
   })
@@ -85,6 +100,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
       notes: "",
     })
     setErrors({})
+    isManualCyrillicEdit.current = false
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -150,7 +166,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-600">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-              Create New Customer
+              {t.customer.createNew}
             </h2>
             <button
               onClick={onClose}
@@ -174,12 +190,12 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <User className="w-4 h-4" />
-              Personal Information
+              {t.customer.personalInformation}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  First Name *
+                  {t.customer.firstName} *
                 </label>
                 <input
                   type="text"
@@ -205,7 +221,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Last Name *
+                  {t.customer.lastName} *
                 </label>
                 <input
                   type="text"
@@ -231,19 +247,23 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Name (Cyrillic)
+                {t.customer.nameCyrillic}
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-2">
+                  (Auto-generated)
+                </span>
               </label>
               <input
                 type="text"
                 value={formData.name_cyrillic}
-                onChange={(e) =>
+                onChange={(e) => {
+                  isManualCyrillicEdit.current = true
                   setFormData((prev) => ({
                     ...prev,
                     name_cyrillic: e.target.value,
                   }))
-                }
+                }}
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-dark-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Например: Иванов Иван"
+                placeholder="Автоматически генерируется из First Name"
               />
             </div>
             </div>
@@ -253,12 +273,12 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <Phone className="w-4 h-4" />
-              Contact Information
+              {t.customer.contactInformation}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Phone Number
+                  {t.customer.phoneNumber}
                 </label>
                 <input
                   type="tel"
@@ -281,7 +301,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Date of Birth
+                  {t.customer.dateOfBirth}
                 </label>
                 <input
                   type="date"
@@ -302,7 +322,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <MapPin className="w-4 h-4" />
-              Location
+              {t.customer.location}
             </h3>
             <GeoSelect
               value={formData.geo}
@@ -314,11 +334,11 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Additional Information
+              {t.customer.additionalInformation}
             </h3>
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Notes
+                {t.common.name === "Name" ? "Notes" : t.common.name}
               </label>
               <textarea
                 value={formData.notes}
@@ -350,7 +370,7 @@ export const CreateCustomerModal = memo(function CreateCustomerModal({
                     passport_photo_path: path,
                   }))
                 }
-                label="Upload Passport"
+                label={t.forms.uploadPassport}
               />
               <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
                 Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB)
