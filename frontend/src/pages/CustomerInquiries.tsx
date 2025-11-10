@@ -438,7 +438,6 @@ export function CustomerInquiries() {
                         )}
 
                         <div className="flex flex-col gap-0.5 text-xs text-neutral-600 dark:text-neutral-400">
-
                           {/* Telegram username */}
                           {inquiry.telegram_username && (
                             <div className="flex items-center gap-1">
@@ -562,8 +561,8 @@ export function CustomerInquiries() {
 
                       {selectedInquiry.telegram_username && (
                         <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
-                          <AtSign className="w-3 h-3" />
-                          @{selectedInquiry.telegram_username}
+                          <AtSign className="w-3 h-3" />@
+                          {selectedInquiry.telegram_username}
                         </p>
                       )}
 
@@ -594,8 +593,8 @@ export function CustomerInquiries() {
 
                     {selectedInquiry.telegram_username && (
                       <p className="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1">
-                        <AtSign className="w-3 h-3" />
-                        @{selectedInquiry.telegram_username}
+                        <AtSign className="w-3 h-3" />@
+                        {selectedInquiry.telegram_username}
                       </p>
                     )}
 

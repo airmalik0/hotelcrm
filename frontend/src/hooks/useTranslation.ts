@@ -17,4 +17,3 @@ export function useCurrency() {
   const { currency } = useLanguage()
   return { currency }
 }
-

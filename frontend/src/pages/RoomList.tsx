@@ -1,10 +1,10 @@
 import { deleteRoom, getRooms } from "@/api/rooms"
 import type { RoomPublic, RoomStatus } from "@/client/types.gen"
 import { RoomCard } from "@/components/room/RoomCard"
-import { useLanguage } from "@/contexts/LanguageContext"
 import { RoomCategoryManagerModal } from "@/components/room/RoomCategoryManagerModal"
 import { RoomCreateModal } from "@/components/room/RoomCreateModal"
 import { RoomEditModal } from "@/components/room/RoomEditModal"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useConfirm } from "@/hooks/useConfirm"
 import { useRole } from "@/hooks/useRole"
 import { showError, showSuccess } from "@/utils/error-handling"
@@ -253,11 +253,21 @@ export function RoomList() {
                   setFilterStatus(e.target.value as RoomStatus | "all")
                 }
               >
-                <option value="all">{t.common.all} {t.common.status}</option>
-                <option value="available">{t.pages.roomManagement.statusAvailable}</option>
-                <option value="occupied">{t.pages.roomManagement.statusOccupied}</option>
-                <option value="cleaning">{t.pages.roomManagement.statusCleaning}</option>
-                <option value="maintenance">{t.pages.roomManagement.statusMaintenance}</option>
+                <option value="all">
+                  {t.common.all} {t.common.status}
+                </option>
+                <option value="available">
+                  {t.pages.roomManagement.statusAvailable}
+                </option>
+                <option value="occupied">
+                  {t.pages.roomManagement.statusOccupied}
+                </option>
+                <option value="cleaning">
+                  {t.pages.roomManagement.statusCleaning}
+                </option>
+                <option value="maintenance">
+                  {t.pages.roomManagement.statusMaintenance}
+                </option>
               </select>
 
               {/* Category Filter */}

@@ -135,7 +135,8 @@ export function AdminDashboard() {
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {booking.customer?.first_name}{" "}
-                        {booking.customer?.last_name} • {t.pages.dashboard.admin.room}{" "}
+                        {booking.customer?.last_name} •{" "}
+                        {t.pages.dashboard.admin.room}{" "}
                         {booking.room?.room_number}
                       </p>
                     </div>

@@ -459,7 +459,10 @@ export function MarketingCampaigns() {
               <option value={50}>50</option>
             </select>
             <span className="text-sm text-neutral-700 dark:text-neutral-300">
-              {t.pages.marketing.ofCampaigns.replace("{count}", String(totalCount))}
+              {t.pages.marketing.ofCampaigns.replace(
+                "{count}",
+                String(totalCount),
+              )}
             </span>
           </div>
 
@@ -475,7 +478,10 @@ export function MarketingCampaigns() {
             <span className="text-sm text-neutral-700 dark:text-neutral-300">
               {t.pages.marketing.page
                 .replace("{current}", String(currentPage + 1))
-                .replace("{total}", String(Math.ceil(totalCount / itemsPerPage)))}
+                .replace(
+                  "{total}",
+                  String(Math.ceil(totalCount / itemsPerPage)),
+                )}
             </span>
             <button
               type="button"

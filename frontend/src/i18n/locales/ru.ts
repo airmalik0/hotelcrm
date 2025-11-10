@@ -52,8 +52,10 @@ export const ru: Translations = {
     warning: "Предупреждение",
     info: "Информация",
     // Empty states
-    noRoomsAvailable: "Нет доступных номеров. Пожалуйста, добавьте номера для управления бронированиями.",
-    noRoomsMatchFilters: "Нет номеров, соответствующих вашим фильтрам. Попробуйте изменить критерии поиска.",
+    noRoomsAvailable:
+      "Нет доступных номеров. Пожалуйста, добавьте номера для управления бронированиями.",
+    noRoomsMatchFilters:
+      "Нет номеров, соответствующих вашим фильтрам. Попробуйте изменить критерии поиска.",
     noRoomsFound: "Номера не найдены",
     tryAdjustingFilters: "Попробуйте изменить фильтры",
     addFirstRoom: "Добавьте первый номер для начала работы",
@@ -84,7 +86,8 @@ export const ru: Translations = {
     failedToLoadInquiries: "Не удалось загрузить запросы",
     customerNotFound: "Клиент не найден",
     // Instructions
-    createFirstCampaign: "Создайте первую маркетинговую кампанию для начала работы",
+    createFirstCampaign:
+      "Создайте первую маркетинговую кампанию для начала работы",
     createFirstExpense: "Создайте первый расход для начала работы",
   },
   // Auth
@@ -143,31 +146,39 @@ export const ru: Translations = {
     searchCustomer: "Поиск клиента",
     searchByNameOrPhone: "Поиск по имени или телефону...",
     selectedCustomer: "Выбранный клиент:",
-    noCustomersFoundTryAdding: "Клиенты не найдены. Попробуйте добавить нового гостя.",
+    noCustomersFoundTryAdding:
+      "Клиенты не найдены. Попробуйте добавить нового гостя.",
     passportPhotoRequired: "Фото паспорта обязательно",
-    selectedCustomerNoPassport: "У выбранного клиента нет фото паспорта. Пожалуйста, добавьте его в профиль клиента или переключитесь на 'Добавить нового гостя' для загрузки.",
+    selectedCustomerNoPassport:
+      "У выбранного клиента нет фото паспорта. Пожалуйста, добавьте его в профиль клиента или переключитесь на 'Добавить нового гостя' для загрузки.",
     adding: "Добавление...",
     addGuest: "Добавить гостя",
     guestAddedSuccess: "Гость успешно добавлен!",
     failedToAddGuest: "Не удалось добавить гостя",
     phoneMustContain: "Телефон должен содержать 7-15 цифр",
-    roomUnderMaintenance: "⚠️ Номер на обслуживании. Невозможно создать бронирование.",
-    roomCurrentlyOccupied: "ℹ️ Номер занят. Вы можете забронировать его на будущие даты.",
+    roomUnderMaintenance:
+      "⚠️ Номер на обслуживании. Невозможно создать бронирование.",
+    roomCurrentlyOccupied:
+      "ℹ️ Номер занят. Вы можете забронировать его на будущие даты.",
     quickBooking: "Быстрое бронирование",
     pleaseSelectCustomer: "Пожалуйста, выберите клиента",
     selectedCustomerNoPassportQuick: "У выбранного клиента нет фото паспорта",
-    cannotBookMaintenance: "Невозможно забронировать номер, находящийся на обслуживании",
+    cannotBookMaintenance:
+      "Невозможно забронировать номер, находящийся на обслуживании",
     checkInDatePast: "Дата заезда не может быть в прошлом",
     discountReasonRequired: "Причина скидки обязательна при применении скидки",
     bookingCreatedSuccess: "Бронирование успешно создано!",
-    failedToCreateBooking: "Не удалось создать бронирование. Пожалуйста, попробуйте снова.",
+    failedToCreateBooking:
+      "Не удалось создать бронирование. Пожалуйста, попробуйте снова.",
     selectRoom: "Выберите номер",
     uncategorized: "Без категории",
     clearSelection: "Очистить выбор",
-    passportPhotoRequiredBooking: "Фото паспорта необходимо для создания бронирования для этого клиента.",
+    passportPhotoRequiredBooking:
+      "Фото паспорта необходимо для создания бронирования для этого клиента.",
     searchForGuest: "Поиск гостя...",
     createNewCustomer: "Создать нового клиента",
-    noCustomersFoundCreate: "Клиенты не найдены. Нажмите +, чтобы создать нового.",
+    noCustomersFoundCreate:
+      "Клиенты не найдены. Нажмите +, чтобы создать нового.",
   },
   // Room
   room: {
@@ -201,7 +212,6 @@ export const ru: Translations = {
     categoryLabel: "Категория",
     pricePerNightRequired: "Цена за ночь ($) *",
     initialStatus: "Начальный статус",
-    statusLabel: "Статус",
     optionalDescription: "Необязательное описание номера...",
     createRoom: "Создать номер",
     roomDetails: "Детали номера",
@@ -292,10 +302,12 @@ export const ru: Translations = {
     superuser: "Суперпользователь",
     admin: "Администратор",
     deleteTitle: "Удалить пользователя",
-    deleteMessage: "Вы уверены, что хотите удалить пользователя \"{username}\"? Это действие нельзя отменить.",
+    deleteMessage:
+      'Вы уверены, что хотите удалить пользователя "{username}"? Это действие нельзя отменить.',
     deleteConfirm: "Удалить",
     deletedSuccess: "Пользователь успешно удален!",
-    deleteError: "Не удалось удалить пользователя. Пожалуйста, попробуйте снова.",
+    deleteError:
+      "Не удалось удалить пользователя. Пожалуйста, попробуйте снова.",
     paginationShowing: "Показано {from} до {to} из {total} записей",
     roles: {
       admin: "Администратор",
@@ -309,9 +321,11 @@ export const ru: Translations = {
     changePassword: "Изменить пароль",
     enterNewPassword: "Введите новый пароль",
     passwordMinLength: "Пароль должен содержать не менее 8 символов",
-    warningRoleChange: "Предупреждение: Изменение роли повлияет на права пользователя",
+    warningRoleChange:
+      "Предупреждение: Изменение роли повлияет на права пользователя",
     activeAccount: "Активный аккаунт",
-    warningDeactivate: "Предупреждение: Деактивация предотвратит вход пользователя в систему",
+    warningDeactivate:
+      "Предупреждение: Деактивация предотвратит вход пользователя в систему",
     // User create modal
     createNewUser: "Создать нового пользователя",
     usernameRequired: "Имя пользователя *",
@@ -324,6 +338,12 @@ export const ru: Translations = {
     createUser: "Создать пользователя",
     creatingUser: "Создание...",
   },
+  // Customer Profile
+  customerProfile: {
+    passportPhotoUpdatedSuccess: "Фото паспорта успешно обновлено!",
+    noBookingsYet: "Бронирований пока нет",
+    customerHasNoBookings: "Этот клиент еще не совершал бронирований.",
+  },
   // Customer Management
   customer: {
     show: "Показать",
@@ -332,7 +352,6 @@ export const ru: Translations = {
     serialNumber: "№",
     name: "Имя",
     phone: "Телефон",
-    location: "Местоположение",
     totalSpent: "Всего потрачено",
     bookings: "Бронирования",
     memberSince: "Участник с",
@@ -342,7 +361,8 @@ export const ru: Translations = {
     notAvailable: "Н/Д",
     passportUploaded: "Паспорт загружен",
     deleteTitle: "Удалить клиента",
-    deleteMessage: "Вы уверены, что хотите удалить {firstName} {lastName}? Это действие нельзя отменить.",
+    deleteMessage:
+      "Вы уверены, что хотите удалить {firstName} {lastName}? Это действие нельзя отменить.",
     deleteConfirm: "Удалить",
     deletedSuccess: "Клиент успешно удален!",
     deleteError: "Не удалось удалить клиента. Пожалуйста, попробуйте снова.",
@@ -418,8 +438,36 @@ export const ru: Translations = {
       customerDocuments: "Документы клиента",
       passportDocument: "Паспортный документ",
       uploadPassport: "Загрузить паспорт",
-      acceptedFormatsDesc: "Принимаемые форматы: JPG, JPEG, PNG, WEBP (макс. 5МБ). Этот документ будет использоваться для верификации клиента.",
+      acceptedFormatsDesc:
+        "Принимаемые форматы: JPG, JPEG, PNG, WEBP (макс. 5МБ). Этот документ будет использоваться для верификации клиента.",
     },
+    // Filtering and sorting
+    filters: "Фильтры",
+    sortBy: "Сортировать по",
+    sortOrder: "Порядок сортировки",
+    ascending: "По возрастанию",
+    descending: "По убыванию",
+    sortByName: "Имени",
+    sortByDate: "Дате",
+    sortBySpent: "Сумме расходов",
+    sortByBookings: "Количеству бронирований",
+    dateRange: "Диапазон дат",
+    dateFrom: "С",
+    dateTo: "По",
+    spendingRange: "Диапазон расходов",
+    minSpent: "Мин. расходы",
+    maxSpent: "Макс. расходы",
+    bookingsRange: "Диапазон бронирований",
+    minBookings: "Мин. бронирования",
+    maxBookings: "Макс. бронирования",
+    location: "Местоположение",
+    country: "Страна",
+    region: "Регион",
+    district: "Район",
+    applyFilters: "Применить фильтры",
+    clearFilters: "Очистить фильтры",
+    filtersApplied: "Фильтры применены",
+    sortApplied: "Отсортировано по {field} ({order})",
   },
   // Analytics
   analytics: {
@@ -510,7 +558,8 @@ export const ru: Translations = {
       highestRevenueMonth: "Месяц с наибольшим доходом",
       bestOccupancyMonth: "Месяц с лучшей загруженностью",
       multiYearSeasonalAnalysis: "Многолетний сезонный анализ",
-      seasonalTrends: "Тренды доходов, загруженности и бронирований за последние {years} лет",
+      seasonalTrends:
+        "Тренды доходов, загруженности и бронирований за последние {years} лет",
       seasonalInsights: "Сезонные инсайты",
       avgRevenue: "Средний доход",
       avgOccupancy: "Средняя загруженность",
@@ -556,9 +605,11 @@ export const ru: Translations = {
     failedToUpdateCampaign: "Не удалось обновить кампанию",
     nameRequired: "Имя обязательно",
     messageTemplateRequired: "Шаблон сообщения обязателен",
-    messageTemplateMinLength: "Шаблон сообщения должен содержать не менее 10 символов",
+    messageTemplateMinLength:
+      "Шаблон сообщения должен содержать не менее 10 символов",
     frequencyRequired: "Частота обязательна для триггерных кампаний",
-    minAgeGreaterThanMax: "Минимальный возраст не может быть больше максимального",
+    minAgeGreaterThanMax:
+      "Минимальный возраст не может быть больше максимального",
   },
   // Marketing Campaigns
   marketing: {
@@ -579,6 +630,65 @@ export const ru: Translations = {
     hideCriteria: "Скрыть критерии",
     addCriteria: "Добавить критерии",
     updateCampaign: "Обновить кампанию",
+    // Form fields
+    basicInformation: "Основная информация",
+    campaignNameLabel: "Название кампании *",
+    campaignTypeLabel: "Тип кампании *",
+    statusLabel: "Статус *",
+    messageTemplateLabel: "Шаблон сообщения *",
+    availableVariables:
+      "Доступные переменные: {first_name}, {last_name}, {full_name}",
+    customerCriteria: "Критерии клиентов",
+    ageRange: "Возрастной диапазон",
+    districts: "Районы",
+    minimumTotalSpent: "Минимальная сумма расходов",
+    daysSinceLastVisit: "Дней с последнего визита",
+    activeFilters: "Активные фильтры",
+    minimumAgeFilter: "Минимальный возраст: {age}",
+    maximumAgeFilter: "Максимальный возраст: {age}",
+    districtsFilter: "Районы: {districts}",
+    minimumSpentFilter: "Минимальные расходы: {amount}",
+    daysSinceLastVisitFilter: "Дней с последнего визита: {days}",
+    notVisitedForFilter: "Не посещал: {days} дней",
+  },
+  // Booking Details
+  bookingDetails: {
+    bookingDetails: "Детали бронирования",
+    guestInformation: "Информация о госте",
+    roomInformation: "Информация о номере",
+    paymentDetails: "Детали оплаты",
+    stayDuration: "Продолжительность пребывания",
+    plannedCheckIn: "Планируемый заезд:",
+    actualCheckIn: "Фактический заезд:",
+    plannedCheckOut: "Планируемый выезд:",
+    actualCheckOut: "Фактический выезд:",
+    guestsInRoom: "Гости в номере",
+    noGuestsAdded: "Гости еще не добавлены.",
+    clickAddGuest: "Нажмите \"Добавить гостя\", чтобы начать добавлять гостей в бронирование.",
+    totalAmount: "Общая сумма:",
+    paymentMethod: "Способ оплаты:",
+    discountLabel: "Скидка:",
+    finalAmount: "Итоговая сумма:",
+    bookingUpdatedSuccess: "Бронирование успешно обновлено!",
+    failedToUpdateBooking:
+      "Не удалось обновить бронирование. Пожалуйста, попробуйте снова.",
+    bookingDeletedSuccess: "Бронирование успешно удалено!",
+    failedToDeleteBooking:
+      "Не удалось удалить бронирование. Пожалуйста, попробуйте снова.",
+    guestCheckedInSuccess: "Гость успешно заселен!",
+    failedToCheckIn: "Не удалось заселить. Пожалуйста, попробуйте снова.",
+    guestCheckedOutSuccess: "Гость успешно выселен!",
+    failedToCheckOut: "Не удалось выселить. Пожалуйста, попробуйте снова.",
+    datesModifiedSuccess: "Даты успешно изменены!",
+    failedToModifyDates: "Не удалось изменить даты",
+    discountModifiedSuccess: "Скидка успешно изменена!",
+    failedToModifyDiscount: "Не удалось изменить скидку",
+    roomChangedSuccess: "Номер успешно изменен!",
+    failedToChangeRoom: "Не удалось изменить номер",
+    discountReasonRequired: "Причина скидки обязательна при применении скидки",
+    cannotCheckInMaintenance: "Невозможно заселить: Номер на обслуживании",
+    roomCleaningConfirm:
+      "Номер убирается. Хотите отметить его как доступный и продолжить заселение?",
   },
   // Customer Inquiries
   inquiries: {
@@ -709,7 +819,8 @@ export const ru: Translations = {
     },
     inquiries: {
       title: "Запросы клиентов",
-      description: "Мониторинг и управление обратной связью клиентов из Telegram бота",
+      description:
+        "Мониторинг и управление обратной связью клиентов из Telegram бота",
       new: "Новый",
       inProgress: "В процессе",
       resolved: "Решен",
@@ -732,6 +843,7 @@ export const ru: Translations = {
       user: "Пользователь",
       totalActions: "Всего действий",
       last30Days: "Последние 30 дней",
+      lastDays: "Последние {days} дней",
       topActions: "Топ действий",
       topEntities: "Топ сущностей",
       mostActiveUsers: "Самые активные пользователи",
@@ -749,6 +861,11 @@ export const ru: Translations = {
     editCategory: "Редактировать категорию",
     newCategory: "Новая категория",
     noCategories: "Нет категорий",
+    // Form fields
+    categoryLabel: "Категория *",
+    amountLabel: "Сумма *",
+    dateLabel: "Дата",
+    descriptionLabel: "Описание",
+    nameLabel: "Имя *",
   },
 }
-

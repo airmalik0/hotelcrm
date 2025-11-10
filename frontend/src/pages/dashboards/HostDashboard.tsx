@@ -198,7 +198,8 @@ export function HostDashboard() {
               <div className="flex items-center gap-2 mb-4">
                 <LogOut className="w-5 h-5 text-success-600 dark:text-success-400" />
                 <h4 className="font-medium text-neutral-900 dark:text-white">
-                  {t.pages.dashboard.host.todaysCheckOuts} ({todayCheckOuts.length})
+                  {t.pages.dashboard.host.todaysCheckOuts} (
+                  {todayCheckOuts.length})
                 </h4>
               </div>
 

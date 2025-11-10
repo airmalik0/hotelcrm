@@ -25,14 +25,53 @@ def read_customers(
     skip: int = 0,
     limit: int = 100,
     search: str | None = None,
+    # Filters
+    date_from: str | None = None,
+    date_to: str | None = None,
+    min_spent: float | None = None,
+    max_spent: float | None = None,
+    min_bookings: int | None = None,
+    max_bookings: int | None = None,
+    country_code: str | None = None,
+    region: str | None = None,
+    district: str | None = None,
+    # Sorting
+    order_by: str = "created_at",
+    order_direction: str = "desc",
 ) -> Any:
     """
-    Retrieve customers.
+    Retrieve customers with filtering and sorting.
     """
-    customers = crud_customer.get_multi_with_search(
-        session, skip=skip, limit=limit, search=search
+    customers = crud_customer.get_multi_filtered(
+        session,
+        skip=skip,
+        limit=limit,
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+        min_spent=min_spent,
+        max_spent=max_spent,
+        min_bookings=min_bookings,
+        max_bookings=max_bookings,
+        country_code=country_code,
+        region=region,
+        district=district,
+        order_by=order_by,
+        order_direction=order_direction,
     )
-    count = crud_customer.count_with_search(session, search=search)
+    count = crud_customer.count_filtered(
+        session,
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+        min_spent=min_spent,
+        max_spent=max_spent,
+        min_bookings=min_bookings,
+        max_bookings=max_bookings,
+        country_code=country_code,
+        region=region,
+        district=district,
+    )
     return CustomersPublic(data=customers, count=count)
 
 

@@ -326,7 +326,9 @@ export function UserEditModal({
                 disabled={updateMutation.isPending}
                 className="px-4 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {updateMutation.isPending ? t.forms.saving : t.forms.saveChanges}
+                {updateMutation.isPending
+                  ? t.forms.saving
+                  : t.forms.saveChanges}
               </button>
             </div>
           </form>

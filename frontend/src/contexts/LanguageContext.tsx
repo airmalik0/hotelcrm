@@ -1,18 +1,13 @@
+import { getSystemSettings } from "@/api/systemSettings"
 import {
+  type Currency,
+  type Language,
   defaultCurrency,
   getBrowserLanguage,
   getTranslation,
-  type Currency,
-  type Language,
 } from "@/i18n"
-import { getSystemSettings } from "@/api/systemSettings"
 import { useQuery } from "@tanstack/react-query"
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from "react"
+import { type ReactNode, createContext, useContext, useMemo } from "react"
 
 interface LanguageContextType {
   language: Language
@@ -42,14 +37,24 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
 
   // Initialize from system settings or defaults - use useMemo to recalculate on systemSettings change
   const language = useMemo((): Language => {
-    if (systemSettings?.language && (systemSettings.language === "en" || systemSettings.language === "ru" || systemSettings.language === "uz")) {
+    if (
+      systemSettings?.language &&
+      (systemSettings.language === "en" ||
+        systemSettings.language === "ru" ||
+        systemSettings.language === "uz")
+    ) {
       return systemSettings.language as Language
     }
     return getBrowserLanguage()
   }, [systemSettings?.language])
 
   const currency = useMemo((): Currency => {
-    if (systemSettings?.currency && (systemSettings.currency === "USD" || systemSettings.currency === "RUB" || systemSettings.currency === "UZS")) {
+    if (
+      systemSettings?.currency &&
+      (systemSettings.currency === "USD" ||
+        systemSettings.currency === "RUB" ||
+        systemSettings.currency === "UZS")
+    ) {
       return systemSettings.currency as Currency
     }
     return defaultCurrency
@@ -58,22 +63,29 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
   // Placeholder functions - settings should be updated via Settings page (admin only)
   const setLanguage = (_lang: Language) => {
     // This should not be called directly - use Settings page
-    console.warn("setLanguage should not be called directly. Use Settings page to update system settings.")
+    console.warn(
+      "setLanguage should not be called directly. Use Settings page to update system settings.",
+    )
   }
 
   const setCurrency = (_curr: Currency) => {
     // This should not be called directly - use Settings page
-    console.warn("setCurrency should not be called directly. Use Settings page to update system settings.")
+    console.warn(
+      "setCurrency should not be called directly. Use Settings page to update system settings.",
+    )
   }
 
   // Memoize context value to ensure it updates when language or currency changes
-  const value = useMemo<LanguageContextType>(() => ({
-    language,
-    currency,
-    setLanguage,
-    setCurrency,
-    t: getTranslation(language),
-  }), [language, currency])
+  const value = useMemo<LanguageContextType>(
+    () => ({
+      language,
+      currency,
+      setLanguage,
+      setCurrency,
+      t: getTranslation(language),
+    }),
+    [language, currency],
+  )
 
   // Show loading state with defaults if settings not loaded yet
   if (isLoading) {
@@ -92,7 +104,9 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
   }
 
   return (
-    <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
   )
 }
 
@@ -103,4 +117,3 @@ export function useLanguage(): LanguageContextType {
   }
   return context
 }
-

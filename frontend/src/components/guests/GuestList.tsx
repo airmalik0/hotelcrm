@@ -1,4 +1,5 @@
 import type { BookingGuestPublic } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { Plus, Users } from "lucide-react"
 import { GuestCard } from "./GuestCard"
 
@@ -21,6 +22,7 @@ export function GuestList({
   showAddButton = true,
   showRemoveButtons = true,
 }: GuestListProps) {
+  const { t } = useLanguage()
   const canAddMore = maxOccupancy ? guests.length < maxOccupancy : true
 
   return (
@@ -30,7 +32,7 @@ export function GuestList({
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
           <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
-            Guests in Room
+            {t.bookingDetails.guestsInRoom}
           </h3>
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
             ({guests.length}
@@ -45,7 +47,7 @@ export function GuestList({
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Add Guest
+            {t.booking.addGuest}
           </button>
         )}
       </div>
@@ -55,11 +57,11 @@ export function GuestList({
         <div className="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
           <Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mb-3" />
           <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center">
-            No guests added yet.
+            {t.bookingDetails.noGuestsAdded}
             {showAddButton && onAddGuest && (
               <>
                 <br />
-                Click "Add Guest" to start adding guests to this booking.
+                {t.bookingDetails.clickAddGuest}
               </>
             )}
           </p>

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Form, Header, HTTPException, Request
 from app.api.deps import SessionDep
 from app.core.config import settings
 from app.crud.campaigns import sms_history as crud_sms_history
-from app.models import SMSStatus
+from app.models import Campaign, SMSStatus
 
 router = APIRouter()
 
@@ -55,6 +55,7 @@ def eskiz_webhook(
 
     # Map status
     mapped = _map_provider_status(status or "")
+    old_status = record.status
     record.provider_status = (status or "").upper()
     record.status = mapped
     if mapped == SMSStatus.DELIVERED and status_date:
@@ -64,6 +65,23 @@ def eskiz_webhook(
             record.delivered_at = dt
         except Exception:
             pass
+
+    # Update campaign statistics if status changed
+    if old_status != mapped:
+        campaign = session.get(Campaign, record.campaign_id)
+        if campaign:
+            if old_status == SMSStatus.DELIVERED and campaign.total_delivered > 0:
+                campaign.total_delivered -= 1
+            if old_status == SMSStatus.FAILED and campaign.total_failed > 0:
+                campaign.total_failed -= 1
+
+            if mapped == SMSStatus.DELIVERED:
+                campaign.total_delivered += 1
+            elif mapped == SMSStatus.FAILED:
+                campaign.total_failed += 1
+
+            campaign.updated_at = datetime.now(timezone.utc)
+            session.add(campaign)
 
     session.add(record)
     session.commit()

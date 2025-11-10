@@ -8,6 +8,7 @@ import { showSuccess } from "@/utils/error-handling"
 import { formatCurrency } from "@/utils/formatters"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  ArrowLeft,
   Calendar,
   DollarSign,
   Edit,
@@ -19,7 +20,7 @@ import {
   User,
 } from "lucide-react"
 import { useState } from "react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 
 export function CustomerProfile() {
   const { customerId } = useParams<{ customerId: string }>()
@@ -28,6 +29,39 @@ export function CustomerProfile() {
   const [activeTab, setActiveTab] = useState<
     "details" | "bookings" | "documents" | "edit"
   >("details")
+
+  // Generate back URL with saved pagination and filter state
+  const getBackUrl = () => {
+    try {
+      const savedState = localStorage.getItem('customerListState')
+      if (savedState) {
+        const state = JSON.parse(savedState)
+        const params = new URLSearchParams()
+
+        if (state.page && state.page > 1) params.set('page', state.page)
+        if (state.limit && state.limit !== 10) params.set('limit', state.limit)
+        if (state.search) params.set('search', state.search)
+        if (state.date_from) params.set('date_from', state.date_from)
+        if (state.date_to) params.set('date_to', state.date_to)
+        if (state.min_spent) params.set('min_spent', state.min_spent)
+        if (state.max_spent) params.set('max_spent', state.max_spent)
+        if (state.min_bookings) params.set('min_bookings', state.min_bookings)
+        if (state.max_bookings) params.set('max_bookings', state.max_bookings)
+        if (state.country_code) params.set('country_code', state.country_code)
+        if (state.region) params.set('region', state.region)
+        if (state.district) params.set('district', state.district)
+        if (state.order_by && state.order_by !== 'created_at') params.set('order_by', state.order_by)
+        if (state.order_direction && state.order_direction !== 'desc') params.set('order_direction', state.order_direction)
+
+        const queryString = params.toString()
+        return queryString ? `/customers?${queryString}` : '/customers'
+      }
+    } catch (error) {
+      // If there's an error parsing localStorage, just return default URL
+      console.warn('Error parsing customer list state from localStorage:', error)
+    }
+    return '/customers'
+  }
 
   // Fetch customer data
   const { data: customer, isLoading: customerLoading } = useQuery({
@@ -88,8 +122,20 @@ export function CustomerProfile() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Left Column - Customer Info */}
+    <>
+      {/* Back Button */}
+      <div className="mb-6">
+        <Link
+          to={getBackUrl()}
+          className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>{t.common.back}</span>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column - Customer Info */}
       <div className="col-span-12 lg:col-span-4">
         <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-dark-2 h-full shadow-sm dark:shadow-none">
           <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
@@ -127,7 +173,8 @@ export function CustomerProfile() {
                 <li className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-neutral-500" />
                   <span className="text-neutral-600 dark:text-neutral-400">
-                    {t.customer.profile.dobLabel} {formatDate(customer.date_of_birth)}
+                    {t.customer.profile.dobLabel}{" "}
+                    {formatDate(customer.date_of_birth)}
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
@@ -207,15 +254,21 @@ export function CustomerProfile() {
               </div>
               <div className="mt-4 space-y-2">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">{t.customer.profile.memberSince}</span>{" "}
+                  <span className="font-semibold">
+                    {t.customer.profile.memberSince}
+                  </span>{" "}
                   {formatDate(customer.created_at)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">{t.customer.profile.firstBooking}</span>{" "}
+                  <span className="font-semibold">
+                    {t.customer.profile.firstBooking}
+                  </span>{" "}
                   {formatDate(customer.first_booking_date)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">{t.customer.profile.lastBooking}</span>{" "}
+                  <span className="font-semibold">
+                    {t.customer.profile.lastBooking}
+                  </span>{" "}
                   {formatDate(customer.last_booking_date)}
                 </p>
               </div>
@@ -444,6 +497,7 @@ export function CustomerProfile() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

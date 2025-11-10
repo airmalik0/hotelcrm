@@ -42,7 +42,11 @@ const CHART_COLORS = [
 // DashboardMetrics type from Analytics page
 type DashboardMetrics = {
   revenue_trend?: Array<{ date: string; value: number }>
-  category_breakdown?: Array<{ name: string; revenue: number; bookings: number }>
+  category_breakdown?: Array<{
+    name: string
+    revenue: number
+    bookings: number
+  }>
   payment_distribution?: Array<{ name: string; value: number; amount: number }>
   customer_metrics?: any
   [key: string]: any
@@ -152,10 +156,12 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
     )
   }
 
-  const data = metrics.revenue_trend.map((point: { date: string; value: number }) => ({
-    date: format(new Date(point.date), "MMM dd"),
-    revenue: point.value,
-  }))
+  const data = metrics.revenue_trend.map(
+    (point: { date: string; value: number }) => ({
+      date: format(new Date(point.date), "MMM dd"),
+      revenue: point.value,
+    }),
+  )
 
   return (
     <div className="h-80">
@@ -185,7 +191,9 @@ export function RevenueTrendChart({ metrics }: ChartProps) {
             tickFormatter={(value) => {
               const num = value / 1000
               const symbol = currencySymbols[currency]
-              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+              return num >= 1
+                ? `${symbol}${num.toFixed(0)}k`
+                : `${symbol}${value}`
             }}
           />
           <Tooltip content={<CurrencyTooltip />} />
@@ -249,7 +257,9 @@ export function RoomPerformanceChart({ metrics }: ChartProps) {
             tickFormatter={(value) => {
               const num = value / 1000
               const symbol = currencySymbols[currency]
-              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+              return num >= 1
+                ? `${symbol}${num.toFixed(0)}k`
+                : `${symbol}${value}`
             }}
           />
           <YAxis
@@ -498,7 +508,9 @@ export function SeasonalTrendsChart({ data }: { data: any }) {
             tickFormatter={(value) => {
               const num = value / 1000
               const symbol = currencySymbols[currency]
-              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+              return num >= 1
+                ? `${symbol}${num.toFixed(0)}k`
+                : `${symbol}${value}`
             }}
           />
           <YAxis
@@ -583,7 +595,9 @@ export function DistrictRevenueChart({ data }: { data: any }) {
             tickFormatter={(value) => {
               const num = value / 1000
               const symbol = currencySymbols[currency]
-              return num >= 1 ? `${symbol}${num.toFixed(0)}k` : `${symbol}${value}`
+              return num >= 1
+                ? `${symbol}${num.toFixed(0)}k`
+                : `${symbol}${value}`
             }}
           />
           <Tooltip content={<CurrencyTooltip />} />
@@ -638,7 +652,10 @@ export function DistrictRevenueChart({ data }: { data: any }) {
                     {district.bookings}
                   </td>
                   <td className="px-4 py-3 text-sm text-right text-neutral-700 dark:text-neutral-300">
-                    {formatCurrency(district.average_booking_value, currency as any)}
+                    {formatCurrency(
+                      district.average_booking_value,
+                      currency as any,
+                    )}
                   </td>
                 </tr>
               ))}

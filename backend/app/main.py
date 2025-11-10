@@ -9,10 +9,12 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.cors import CORSMiddleware
+from sqlmodel import Session
 
 from app.api.main import api_router
 from app.core.config import settings
 from app.core.consistency import run_all_consistency_checks
+from app.core.db import engine
 from app.core.db_events import setup_db_events
 from app.core.exceptions import (
     AlreadyExistsError,
@@ -27,6 +29,7 @@ from app.core.exceptions import (
     ValidationError as DomainValidationError,
 )
 from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
+from app.services.campaigns import CampaignService
 
 logger = logging.getLogger(__name__)
 
@@ -306,6 +309,23 @@ async def integrity_exception_handler(request: Request, exc: IntegrityError) -> 
 scheduler = AsyncIOScheduler()
 
 
+def run_trigger_campaign_check() -> None:
+    """Run trigger campaign execution from background scheduler."""
+    with Session(engine) as session:
+        service = CampaignService(session)
+        try:
+            result = service.check_trigger_campaigns()
+            session.commit()
+            logger.info(
+                "Trigger campaign check completed: %d campaigns executed, %d SMS sent",
+                result["campaigns_executed"],
+                result["total_sms_sent"],
+            )
+        except Exception:
+            session.rollback()
+            logger.exception("Trigger campaign check failed")
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     """Configure and start background tasks."""
@@ -326,6 +346,25 @@ async def startup_event() -> None:
         run_date=None,  # Run immediately
         id='startup_consistency_check',
         name='Startup consistency check'
+    )
+
+    # Schedule trigger campaign checks - run every 5 minutes
+    scheduler.add_job(
+        run_trigger_campaign_check,
+        'interval',
+        minutes=5,
+        id='trigger_campaign_check',
+        name='Trigger campaign execution',
+        replace_existing=True
+    )
+
+    # Run trigger campaign check once on startup
+    scheduler.add_job(
+        run_trigger_campaign_check,
+        'date',
+        run_date=None,
+        id='startup_trigger_campaign_check',
+        name='Startup trigger campaign check'
     )
 
     scheduler.start()

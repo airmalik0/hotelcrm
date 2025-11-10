@@ -82,8 +82,7 @@ export function RoomEditModal({
       formData.room_number &&
       !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())
     ) {
-      newErrors.room_number =
-        t.room.roomNumberFormat
+      newErrors.room_number = t.room.roomNumberFormat
     }
     if (formData.floor !== null && formData.floor < 1) {
       newErrors.floor = t.room.floorMinValue
@@ -322,7 +321,9 @@ export function RoomEditModal({
                   <option value="available">{t.room.statusAvailable}</option>
                   <option value="occupied">{t.room.statusOccupied}</option>
                   <option value="cleaning">{t.room.statusCleaning}</option>
-                  <option value="maintenance">{t.room.statusMaintenance}</option>
+                  <option value="maintenance">
+                    {t.room.statusMaintenance}
+                  </option>
                 </select>
               </div>
 

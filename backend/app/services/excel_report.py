@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Border, Font, PatternFill, Side
 from sqlmodel import Session
 
+from app.localization import get_report_text
 from app.models.analytics import AnalyticsFilter, DashboardMetrics
 from app.services.analytics import AnalyticsService
 
@@ -30,7 +31,7 @@ class ExcelReportService:
             bottom=Side(style="thin"),
         )
 
-    def generate_dashboard_report(self, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None) -> BytesIO:
+    def generate_dashboard_report(self, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None, language: str = "en") -> BytesIO:
         """
         Generate comprehensive Excel report with dashboard metrics.
 
@@ -47,12 +48,12 @@ class ExcelReportService:
             wb.remove(wb.active)
 
         # Create sheets
-        self._create_summary_sheet(wb, metrics, filters)
-        self._create_revenue_sheet(wb, metrics)
-        self._create_occupancy_sheet(wb, metrics)
-        self._create_customer_sheet(wb, metrics)
-        self._create_payment_sheet(wb, metrics)
-        self._create_room_performance_sheet(wb, metrics)
+        self._create_summary_sheet(wb, metrics, filters, language)
+        self._create_revenue_sheet(wb, metrics, language)
+        self._create_occupancy_sheet(wb, metrics, language)
+        self._create_customer_sheet(wb, metrics, language)
+        self._create_payment_sheet(wb, metrics, language)
+        self._create_room_performance_sheet(wb, metrics, language)
 
         # Save to buffer
         buffer = BytesIO()
@@ -66,6 +67,7 @@ class ExcelReportService:
         session: Session,
         filters: AnalyticsFilter,
         include_charts: bool = True,
+        language: str = "en",
     ) -> BytesIO:
         """
         Generate comprehensive Excel report using all analytics endpoints.
@@ -103,25 +105,25 @@ class ExcelReportService:
             top_customers = analytics_service.get_top_customers(limit=20, date_from=filters.date_from, date_to=filters.date_to)
 
             # Create comprehensive sheets
-            self._create_executive_summary_sheet(wb, dashboard_metrics, filters)
-            self._create_revenue_analysis_sheet(wb, revenue_details, include_charts)
-            self._create_occupancy_analysis_sheet(wb, occupancy_details, include_charts)
-            self._create_customer_analytics_sheet(wb, customer_details, include_charts)
-            self._create_payment_analysis_sheet(wb, dashboard_metrics.payment_distribution)
-            self._create_room_performance_sheet(wb, dashboard_metrics)
-            self._create_hourly_patterns_sheet(wb, hourly_checkins, hourly_checkouts, include_charts)
-            self._create_seasonal_trends_sheet(wb, seasonal_trends, include_charts)
-            self._create_top_customers_sheet(wb, top_customers)
+            self._create_executive_summary_sheet(wb, dashboard_metrics, filters, language)
+            self._create_revenue_analysis_sheet(wb, revenue_details, include_charts, language)
+            self._create_occupancy_analysis_sheet(wb, occupancy_details, include_charts, language)
+            self._create_customer_analytics_sheet(wb, customer_details, include_charts, language)
+            self._create_payment_analysis_sheet(wb, dashboard_metrics.payment_distribution, language)
+            self._create_room_performance_sheet(wb, dashboard_metrics, language)
+            self._create_hourly_patterns_sheet(wb, hourly_checkins, hourly_checkouts, include_charts, language)
+            self._create_seasonal_trends_sheet(wb, seasonal_trends, include_charts, language)
+            self._create_top_customers_sheet(wb, top_customers, language)
 
         except Exception:
             # Fallback to basic dashboard if comprehensive fails
             dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
-            self._create_summary_sheet(wb, dashboard_metrics, filters)
-            self._create_revenue_sheet(wb, dashboard_metrics)
-            self._create_occupancy_sheet(wb, dashboard_metrics)
-            self._create_customer_sheet(wb, dashboard_metrics)
-            self._create_payment_sheet(wb, dashboard_metrics)
-            self._create_room_performance_sheet(wb, dashboard_metrics)
+            self._create_summary_sheet(wb, dashboard_metrics, filters, language)
+            self._create_revenue_sheet(wb, dashboard_metrics, language)
+            self._create_occupancy_sheet(wb, dashboard_metrics, language)
+            self._create_customer_sheet(wb, dashboard_metrics, language)
+            self._create_payment_sheet(wb, dashboard_metrics, language)
+            self._create_room_performance_sheet(wb, dashboard_metrics, language)
 
         # Save to buffer
         buffer = BytesIO()
@@ -130,20 +132,20 @@ class ExcelReportService:
 
         return buffer
 
-    def _create_executive_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics, filters: AnalyticsFilter) -> None:
+    def _create_executive_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics, filters: AnalyticsFilter, language: str = "en") -> None:
         """Create executive summary sheet with key insights (without Quick Statistics)."""
         ws = wb.create_sheet("Executive Summary")
 
         # Title
-        ws["A1"] = "Executive Summary - Analytics Report"
+        ws["A1"] = get_report_text('executive_summary', language)
         ws["A1"].font = Font(size=18, bold=True)
         ws.merge_cells("A1:F1")
 
-        ws["A2"] = f"Period: {filters.date_from.strftime('%Y-%m-%d')} to {filters.date_to.strftime('%Y-%m-%d')}"
+        ws["A2"] = f"{get_report_text('period', language)}: {filters.date_from.strftime('%Y-%m-%d')} to {filters.date_to.strftime('%Y-%m-%d')}"
         ws["A2"].font = Font(size=12)
         ws.merge_cells("A2:F2")
 
-        ws["A3"] = f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        ws["A3"] = f"{get_report_text('generated', language)}: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} {get_report_text('utc', language)}"
         ws["A3"].font = Font(size=10, italic=True)
         ws.merge_cells("A3:F3")
 
@@ -199,12 +201,12 @@ class ExcelReportService:
         ws.column_dimensions["C"].width = 15
         ws.column_dimensions["D"].width = 15
 
-    def _create_payment_analysis_sheet(self, wb: Workbook, payment_distribution: Any) -> None:
+    def _create_payment_analysis_sheet(self, wb: Workbook, payment_distribution: Any, language: str = "en") -> None:
         """Create payment analysis sheet."""
-        ws = wb.create_sheet("Payment Analysis")
+        ws = wb.create_sheet(get_report_text('payment_method_analysis', language))
 
         # Header
-        ws["A1"] = "Payment Method Analysis"
+        ws["A1"] = get_report_text('payment_method_analysis', language)
         ws["A1"].font = Font(size=14, bold=True)
         ws.merge_cells("A1:D1")
 
@@ -234,12 +236,12 @@ class ExcelReportService:
         ws.column_dimensions["B"].width = 15
         ws.column_dimensions["C"].width = 20
 
-    def _create_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None) -> None:
+    def _create_summary_sheet(self, wb: Workbook, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None, language: str = "en") -> None:
         """Create summary sheet with key metrics."""
-        ws = wb.create_sheet("Summary")
+        ws = wb.create_sheet(get_report_text('summary_sheet', language))
 
         # Title
-        ws["A1"] = "Analytics Dashboard Report"
+        ws["A1"] = get_report_text('hotel_crm_analytics_report', language)
         ws["A1"].font = Font(size=16, bold=True)
         ws.merge_cells("A1:D1")
 

@@ -29,7 +29,7 @@ export function ConfirmModal({
   const defaultTitle = title || t.common.confirm
   const defaultConfirmText = confirmText || t.common.confirm
   const defaultCancelText = cancelText || t.common.cancel
-  
+
   if (!isOpen) return null
 
   const variantStyles = {

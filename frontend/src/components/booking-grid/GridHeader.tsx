@@ -303,7 +303,9 @@ export const GridHeader = memo(function GridHeader({
               className="px-3 md:px-4 py-1.5 md:py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-1 md:gap-2 text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden xl:inline">{t.bookingGrid.addBooking}</span>
+              <span className="hidden xl:inline">
+                {t.bookingGrid.addBooking}
+              </span>
             </button>
           </div>
         </div>

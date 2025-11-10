@@ -50,8 +50,10 @@ export const en = {
     warning: "Warning",
     info: "Information",
     // Empty states
-    noRoomsAvailable: "No rooms available. Please add rooms to start managing bookings.",
-    noRoomsMatchFilters: "No rooms match your current filters. Try adjusting your search criteria.",
+    noRoomsAvailable:
+      "No rooms available. Please add rooms to start managing bookings.",
+    noRoomsMatchFilters:
+      "No rooms match your current filters. Try adjusting your search criteria.",
     noRoomsFound: "No rooms found",
     tryAdjustingFilters: "Try adjusting your filters",
     addFirstRoom: "Add your first room to get started",
@@ -141,28 +143,33 @@ export const en = {
     searchCustomer: "Search Customer",
     searchByNameOrPhone: "Search by name or phone...",
     selectedCustomer: "Selected customer:",
-    noCustomersFoundTryAdding: "No customers found. Try adding a new guest instead.",
+    noCustomersFoundTryAdding:
+      "No customers found. Try adding a new guest instead.",
     passportPhotoRequired: "Passport photo is required",
-    selectedCustomerNoPassport: "Selected customer has no passport photo. Please add it to the customer profile or switch to 'Add New Guest' to upload.",
+    selectedCustomerNoPassport:
+      "Selected customer has no passport photo. Please add it to the customer profile or switch to 'Add New Guest' to upload.",
     adding: "Adding...",
     addGuest: "Add Guest",
     guestAddedSuccess: "Guest added successfully!",
     failedToAddGuest: "Failed to add guest",
     phoneMustContain: "Phone must contain 7-15 digits",
     roomUnderMaintenance: "⚠️ Room is under maintenance. Cannot create booking.",
-    roomCurrentlyOccupied: "ℹ️ Room is currently occupied. You can book it for future dates.",
+    roomCurrentlyOccupied:
+      "ℹ️ Room is currently occupied. You can book it for future dates.",
     quickBooking: "Quick Booking",
     pleaseSelectCustomer: "Please select a customer",
     selectedCustomerNoPassportQuick: "Selected customer has no passport photo",
     cannotBookMaintenance: "Cannot book a room that is under maintenance",
     checkInDatePast: "Check-in date cannot be in the past",
-    discountReasonRequired: "Discount reason is required when discount is applied",
+    discountReasonRequired:
+      "Discount reason is required when discount is applied",
     bookingCreatedSuccess: "Booking created successfully!",
     failedToCreateBooking: "Failed to create booking. Please try again.",
     selectRoom: "Select a room",
     uncategorized: "Uncategorized",
     clearSelection: "Clear selection",
-    passportPhotoRequiredBooking: "Passport photo is required to create a booking for this customer.",
+    passportPhotoRequiredBooking:
+      "Passport photo is required to create a booking for this customer.",
     searchForGuest: "Search for guest...",
     createNewCustomer: "Create new customer",
     noCustomersFoundCreate: "No customers found. Click + to create new.",
@@ -179,7 +186,8 @@ export const en = {
     roomUpdatedSuccess: "Room updated successfully!",
     failedToUpdateRoom: "Failed to update room",
     roomNumberMaxLength: "Room number must be 10 characters or less",
-    roomNumberFormat: "Room number must start with letter or number and contain only letters, numbers, and hyphens",
+    roomNumberFormat:
+      "Room number must start with letter or number and contain only letters, numbers, and hyphens",
     floorMinValue: "Floor must be 1 or greater",
     floorMaxValue: "Floor must be 20 or less",
     priceGreaterThanZero: "Price must be greater than 0",
@@ -220,7 +228,6 @@ export const en = {
     categoryLabel: "Category",
     pricePerNightRequired: "Price per Night ($) *",
     initialStatus: "Initial Status",
-    statusLabel: "Status",
     optionalDescription: "Optional room description...",
     createRoom: "Create Room",
     roomDetails: "Room Details",
@@ -311,7 +318,8 @@ export const en = {
     superuser: "Superuser",
     admin: "Admin",
     deleteTitle: "Delete User",
-    deleteMessage: "Are you sure you want to delete user \"{username}\"? This action cannot be undone.",
+    deleteMessage:
+      'Are you sure you want to delete user "{username}"? This action cannot be undone.',
     deleteConfirm: "Delete",
     deletedSuccess: "User deleted successfully!",
     deleteError: "Failed to delete user. Please try again.",
@@ -330,7 +338,8 @@ export const en = {
     passwordMinLength: "Password must be at least 8 characters",
     warningRoleChange: "Warning: Changing role will affect user permissions",
     activeAccount: "Active account",
-    warningDeactivate: "Warning: Deactivating will prevent user from logging in",
+    warningDeactivate:
+      "Warning: Deactivating will prevent user from logging in",
     // User create modal
     createNewUser: "Create New User",
     usernameRequired: "Username *",
@@ -346,6 +355,8 @@ export const en = {
   // Customer Profile
   customerProfile: {
     passportPhotoUpdatedSuccess: "Passport photo updated successfully!",
+    noBookingsYet: "No Bookings Yet",
+    customerHasNoBookings: "This customer hasn't made any bookings.",
   },
   // Customer Management
   customer: {
@@ -355,7 +366,6 @@ export const en = {
     serialNumber: "S.L",
     name: "Name",
     phone: "Phone",
-    location: "Location",
     totalSpent: "Total Spent",
     bookings: "Bookings",
     memberSince: "Member Since",
@@ -365,7 +375,8 @@ export const en = {
     notAvailable: "N/A",
     passportUploaded: "Passport uploaded",
     deleteTitle: "Delete Customer",
-    deleteMessage: "Are you sure you want to delete {firstName} {lastName}? This action cannot be undone.",
+    deleteMessage:
+      "Are you sure you want to delete {firstName} {lastName}? This action cannot be undone.",
     deleteConfirm: "Delete",
     deletedSuccess: "Customer deleted successfully!",
     deleteError: "Failed to delete customer. Please try again.",
@@ -441,8 +452,36 @@ export const en = {
       customerDocuments: "Customer Documents",
       passportDocument: "Passport Document",
       uploadPassport: "Upload Passport",
-      acceptedFormatsDesc: "Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB). This document will be used for customer verification.",
+      acceptedFormatsDesc:
+        "Accepted formats: JPG, JPEG, PNG, WEBP (max 5MB). This document will be used for customer verification.",
     },
+    // Filtering and sorting
+    filters: "Filters",
+    sortBy: "Sort by",
+    sortOrder: "Sort order",
+    ascending: "Ascending",
+    descending: "Descending",
+    sortByName: "Name",
+    sortByDate: "Date",
+    sortBySpent: "Total Spent",
+    sortByBookings: "Bookings",
+    dateRange: "Date Range",
+    dateFrom: "From",
+    dateTo: "To",
+    spendingRange: "Spending Range",
+    minSpent: "Min spent",
+    maxSpent: "Max spent",
+    bookingsRange: "Bookings Range",
+    minBookings: "Min bookings",
+    maxBookings: "Max bookings",
+    location: "Location",
+    country: "Country",
+    region: "Region",
+    district: "District",
+    applyFilters: "Apply Filters",
+    clearFilters: "Clear Filters",
+    filtersApplied: "Filters applied",
+    sortApplied: "Sorted by {field} ({order})",
   },
   // Analytics
   analytics: {
@@ -533,7 +572,8 @@ export const en = {
       highestRevenueMonth: "Highest Revenue Month",
       bestOccupancyMonth: "Best Occupancy Month",
       multiYearSeasonalAnalysis: "Multi-Year Seasonal Analysis",
-      seasonalTrends: "Revenue, occupancy, and booking trends over the past {years} years",
+      seasonalTrends:
+        "Revenue, occupancy, and booking trends over the past {years} years",
       seasonalInsights: "Seasonal Insights",
       avgRevenue: "Avg Revenue",
       avgOccupancy: "Avg Occupancy",
@@ -573,6 +613,22 @@ export const en = {
   },
   // Booking Details
   bookingDetails: {
+    bookingDetails: "Booking Details",
+    guestInformation: "Guest Information",
+    roomInformation: "Room Information",
+    paymentDetails: "Payment Details",
+    stayDuration: "Stay Duration",
+    plannedCheckIn: "Planned Check-in:",
+    actualCheckIn: "Actual Check-in:",
+    plannedCheckOut: "Planned Check-out:",
+    actualCheckOut: "Actual Check-out:",
+    guestsInRoom: "Guests in Room",
+    noGuestsAdded: "No guests added yet.",
+    clickAddGuest: "Click \"Add Guest\" to start adding guests to this booking.",
+    totalAmount: "Total Amount:",
+    paymentMethod: "Payment Method:",
+    discountLabel: "Discount:",
+    finalAmount: "Final Amount:",
     bookingUpdatedSuccess: "Booking updated successfully!",
     failedToUpdateBooking: "Failed to update booking. Please try again.",
     bookingDeletedSuccess: "Booking deleted successfully!",
@@ -587,9 +643,11 @@ export const en = {
     failedToModifyDiscount: "Failed to modify discount",
     roomChangedSuccess: "Room changed successfully!",
     failedToChangeRoom: "Failed to change room",
-    discountReasonRequired: "Discount reason is required when discount is applied",
+    discountReasonRequired:
+      "Discount reason is required when discount is applied",
     cannotCheckInMaintenance: "Cannot check in: Room is under maintenance",
-    roomCleaningConfirm: "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
+    roomCleaningConfirm:
+      "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
   },
   // Campaigns
   campaigns: {
@@ -610,7 +668,8 @@ export const en = {
     campaignExecutedSuccess: "Campaign executed successfully!",
     campaignPausedSuccess: "Campaign paused successfully!",
     failedToExecuteCampaign: "Failed to execute campaign. Please try again.",
-    failedToPreviewRecipients: "Failed to preview recipients. Please try again.",
+    failedToPreviewRecipients:
+      "Failed to preview recipients. Please try again.",
   },
   // Marketing Campaigns
   marketing: {
@@ -631,6 +690,26 @@ export const en = {
     hideCriteria: "Hide Criteria",
     addCriteria: "Add Criteria",
     updateCampaign: "Update Campaign",
+    // Form fields
+    basicInformation: "Basic Information",
+    campaignNameLabel: "Campaign Name *",
+    campaignTypeLabel: "Campaign Type *",
+    statusLabel: "Status *",
+    messageTemplateLabel: "Message Template *",
+    availableVariables:
+      "Available variables: {first_name}, {last_name}, {full_name}",
+    customerCriteria: "Customer Criteria",
+    ageRange: "Age Range",
+    districts: "Districts",
+    minimumTotalSpent: "Minimum Total Spent",
+    daysSinceLastVisit: "Days Since Last Visit",
+    activeFilters: "Active Filters",
+    minimumAgeFilter: "Minimum age: {age}",
+    maximumAgeFilter: "Maximum age: {age}",
+    districtsFilter: "Districts: {districts}",
+    minimumSpentFilter: "Minimum spent: {amount}",
+    daysSinceLastVisitFilter: "Days since last visit: {days}",
+    notVisitedForFilter: "Not visited for: {days} days",
   },
   // Customer Inquiries
   inquiries: {
@@ -784,6 +863,7 @@ export const en = {
       user: "User",
       totalActions: "Total Actions",
       last30Days: "Last 30 days",
+      lastDays: "Last {days} days",
       topActions: "Top Actions",
       topEntities: "Top Entities",
       mostActiveUsers: "Most Active Users",
@@ -801,8 +881,13 @@ export const en = {
     editCategory: "Edit category",
     newCategory: "New category",
     noCategories: "No categories",
+    // Form fields
+    categoryLabel: "Category *",
+    amountLabel: "Amount *",
+    dateLabel: "Date",
+    descriptionLabel: "Description",
+    nameLabel: "Name *",
   },
 } as const
 
 export type Translations = typeof en
-

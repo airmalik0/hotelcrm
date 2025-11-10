@@ -11,10 +11,23 @@ export interface CustomerParams {
   skip?: number
   limit?: number
   search?: string
+  // Filters
+  date_from?: string
+  date_to?: string
+  min_spent?: number
+  max_spent?: number
+  min_bookings?: number
+  max_bookings?: number
+  country_code?: string
+  region?: string
+  district?: string
+  // Sorting
+  order_by?: string
+  order_direction?: string
 }
 
 /**
- * Get list of customers with optional search
+ * Get list of customers with optional search, filtering and sorting
  */
 export async function getCustomers(
   params?: CustomerParams,
@@ -24,6 +37,19 @@ export async function getCustomers(
       skip: params?.skip || 0,
       limit: params?.limit || 100,
       search: params?.search,
+      // Filters
+      date_from: params?.date_from,
+      date_to: params?.date_to,
+      min_spent: params?.min_spent,
+      max_spent: params?.max_spent,
+      min_bookings: params?.min_bookings,
+      max_bookings: params?.max_bookings,
+      country_code: params?.country_code,
+      region: params?.region,
+      district: params?.district,
+      // Sorting
+      order_by: params?.order_by || "created_at",
+      order_direction: params?.order_direction || "desc",
     },
   })
   return response.data

@@ -8,8 +8,8 @@ import {
   getRevenueDetails,
   getSeasonalTrends,
 } from "@/api/analytics"
-import { getRoomCategories, getRooms } from "@/api/rooms"
 import { getCountries, getDistricts, getRegions } from "@/api/geo"
+import { getRoomCategories, getRooms } from "@/api/rooms"
 import type { AnalyticsExportRequest } from "@/client/types.gen"
 import {
   PaymentDistributionChart,
@@ -592,86 +592,86 @@ export function Analytics() {
             </button>
           </div>
           <div className="mt-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-lg p-4 border border-neutral-200 dark:border-neutral-600">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Country */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Country */}
+              <div className="min-w-[200px]">
+                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                  {t.analytics.country}
+                </label>
+                <select
+                  value={geoFilter.country_code || ""}
+                  onChange={(e) =>
+                    setGeoFilter({
+                      country_code: e.target.value || null,
+                      region: null,
+                      district: null,
+                    })
+                  }
+                  className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">{t.analytics.allCountries}</option>
+                  {countriesOptions.map((c: any) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Region (UZ only) */}
+              {geoFilter.country_code === "UZ" && (
                 <div className="min-w-[200px]">
                   <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
-                    {t.analytics.country}
+                    {t.analytics.region}
                   </label>
                   <select
-                    value={geoFilter.country_code || ""}
+                    value={geoFilter.region || ""}
                     onChange={(e) =>
                       setGeoFilter({
-                        country_code: e.target.value || null,
-                        region: null,
+                        ...geoFilter,
+                        region: e.target.value || null,
                         district: null,
                       })
                     }
                     className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
-                    <option value="">{t.analytics.allCountries}</option>
-                    {countriesOptions.map((c: any) => (
-                      <option key={c.code} value={c.code}>
-                        {c.name}
+                    <option value="">{t.analytics.allRegions}</option>
+                    {regionsOptions.map((r: any) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name}
                       </option>
                     ))}
                   </select>
                 </div>
+              )}
 
-                {/* Region (UZ only) */}
-                {geoFilter.country_code === "UZ" && (
+              {/* District (Tashkent city) */}
+              {geoFilter.country_code === "UZ" &&
+                geoFilter.region === "TASHKENT_CITY" && (
                   <div className="min-w-[200px]">
                     <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
-                      {t.analytics.region}
+                      {t.analytics.district}
                     </label>
                     <select
-                      value={geoFilter.region || ""}
+                      value={geoFilter.district || ""}
                       onChange={(e) =>
                         setGeoFilter({
                           ...geoFilter,
-                          region: e.target.value || null,
-                          district: null,
+                          district: e.target.value || null,
                         })
                       }
                       className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
-                      <option value="">{t.analytics.allRegions}</option>
-                      {regionsOptions.map((r: any) => (
-                        <option key={r.code} value={r.code}>
-                          {r.name}
+                      <option value="">{t.analytics.allDistricts}</option>
+                      {districtsOptions.map((d: any) => (
+                        <option key={d.code} value={d.code}>
+                          {d.name}
                         </option>
                       ))}
                     </select>
                   </div>
                 )}
-
-                {/* District (Tashkent city) */}
-                {geoFilter.country_code === "UZ" &&
-                  geoFilter.region === "TASHKENT_CITY" && (
-                    <div className="min-w-[200px]">
-                      <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
-                        {t.analytics.district}
-                      </label>
-                      <select
-                        value={geoFilter.district || ""}
-                        onChange={(e) =>
-                          setGeoFilter({
-                            ...geoFilter,
-                            district: e.target.value || null,
-                          })
-                        }
-                        className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-3 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">{t.analytics.allDistricts}</option>
-                        {districtsOptions.map((d: any) => (
-                          <option key={d.code} value={d.code}>
-                            {d.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -840,7 +840,8 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {metrics.occupancy.average_length_of_stay.toFixed(1)} {t.analytics.overview.nightsAvgStay}
+            {metrics.occupancy.average_length_of_stay.toFixed(1)}{" "}
+            {t.analytics.overview.nightsAvgStay}
           </p>
         </div>
 
@@ -860,7 +861,8 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
             </div>
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {metrics.customer_metrics.total_customers} {t.analytics.overview.totalGuests}
+            {metrics.customer_metrics.total_customers}{" "}
+            {t.analytics.overview.totalGuests}
           </p>
         </div>
 
@@ -1427,7 +1429,10 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
             {t.analytics.trends.multiYearSeasonalAnalysis}
           </h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            {t.analytics.trends.seasonalTrends.replace("{years}", String(data.years_analyzed || 2))}
+            {t.analytics.trends.seasonalTrends.replace(
+              "{years}",
+              String(data.years_analyzed || 2),
+            )}
           </p>
         </div>
         <div className="p-6">

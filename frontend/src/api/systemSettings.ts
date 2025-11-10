@@ -1,4 +1,7 @@
-import type { SystemSettingsPublic, SystemSettingsUpdate } from "@/client/types.gen"
+import type {
+  SystemSettingsPublic,
+  SystemSettingsUpdate,
+} from "@/client/types.gen"
 import { apiClient } from "@/lib/axios"
 
 /**
@@ -23,4 +26,3 @@ export async function updateSystemSettings(
   )
   return response.data
 }
-

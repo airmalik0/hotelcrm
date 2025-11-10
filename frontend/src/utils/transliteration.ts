@@ -262,8 +262,10 @@ export function normalizeNameDual(rawName: string): [string, string | null] {
   }
 
   // Normalize to title-case for stability (passport-style)
-  const latNorm = lat.length > 0 ? lat[0].toUpperCase() + lat.slice(1).toLowerCase() : lat
-  const cyrNorm = cyr.length > 0 ? cyr[0].toUpperCase() + cyr.slice(1).toLowerCase() : cyr
+  const latNorm =
+    lat.length > 0 ? lat[0].toUpperCase() + lat.slice(1).toLowerCase() : lat
+  const cyrNorm =
+    cyr.length > 0 ? cyr[0].toUpperCase() + cyr.slice(1).toLowerCase() : cyr
 
   return [latNorm, cyrNorm]
 }

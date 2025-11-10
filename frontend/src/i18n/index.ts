@@ -55,4 +55,3 @@ export function getBrowserLanguage(): Language {
 export function getTranslation(language: Language) {
   return translations[language] || translations[defaultLanguage]
 }
-

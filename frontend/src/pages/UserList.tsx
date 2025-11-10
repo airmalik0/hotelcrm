@@ -1,8 +1,8 @@
 import { deleteUser, getUsers } from "@/api/users"
 import type { UserPublic, UserRole } from "@/client/types.gen"
-import { useLanguage } from "@/contexts/LanguageContext"
 import { UserCreateModal } from "@/components/user/UserCreateModal"
 import { UserEditModal } from "@/components/user/UserEditModal"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useConfirm } from "@/hooks/useConfirm"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { formatDate } from "@/utils/formatters"
@@ -26,7 +26,6 @@ const roleBadgeColors: Record<UserRole, string> = {
   manager: "bg-info-100 dark:bg-info-600/30 text-info-600 dark:text-info-400",
   host: "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400",
 }
-
 
 export function UserList() {
   const { t } = useLanguage()

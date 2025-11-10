@@ -65,7 +65,7 @@ export function formatPhoneNumber(phone: string | null | undefined): string {
   return `+${digits}`
 }
 
-import { currencyLocales, type Currency } from "@/i18n"
+import { type Currency, currencyLocales } from "@/i18n"
 import { safeParseDateOrNull } from "./date-helpers"
 
 /**

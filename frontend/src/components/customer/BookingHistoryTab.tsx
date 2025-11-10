@@ -146,7 +146,6 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
     })
   }
 
-
   const calculateNights = (checkIn: string, checkOut: string) => {
     // Calculate nights the same way as backend: difference in days only
     const checkInDate = safeParseDate(checkIn)
@@ -171,10 +170,10 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
           <Calendar className="w-10 h-10 text-neutral-400" />
         </div>
         <p className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-          No Bookings Yet
+          {t.customerProfile.noBookingsYet}
         </p>
         <p className="text-neutral-600 dark:text-neutral-400">
-          This customer hasn't made any bookings.
+          {t.customerProfile.customerHasNoBookings}
         </p>
       </div>
     )
@@ -384,7 +383,8 @@ export function BookingHistoryTab({ customerId }: BookingHistoryTabProps) {
                   currentPage * itemsPerPage,
                   filteredAndSortedBookings.length,
                 )}{" "}
-                {t.bookingHistory.of} {filteredAndSortedBookings.length} {t.bookingHistory.bookings}
+                {t.bookingHistory.of} {filteredAndSortedBookings.length}{" "}
+                {t.bookingHistory.bookings}
               </p>
               <div className="flex items-center gap-2">
                 <button

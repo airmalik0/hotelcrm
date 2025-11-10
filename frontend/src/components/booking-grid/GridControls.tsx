@@ -321,11 +321,15 @@ export const GridControls = memo(function GridControls({
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <Users className="w-4 h-4" />
-              <span>{totalBookings} {t.bookingGrid.bookings}</span>
+              <span>
+                {totalBookings} {t.bookingGrid.bookings}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
               <BarChart3 className="w-4 h-4" />
-              <span>{occupancyRate}% {t.bookingGrid.occupied}</span>
+              <span>
+                {occupancyRate}% {t.bookingGrid.occupied}
+              </span>
             </div>
           </div>
         </div>

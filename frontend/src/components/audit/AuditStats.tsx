@@ -1,8 +1,10 @@
 import { getAuditStats } from "@/api/audit"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useQuery } from "@tanstack/react-query"
 import { Activity, Calendar, FileText, Users } from "lucide-react"
 
 export function AuditStats() {
+  const { t } = useLanguage()
   const { data: stats, isLoading } = useQuery({
     queryKey: ["audit-stats"],
     queryFn: getAuditStats,
@@ -40,13 +42,16 @@ export function AuditStats() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-              Total Actions
+              {t.pages.audit.totalActions}
             </p>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-2">
               {stats.total_actions.toLocaleString()}
             </p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-              Last {stats.period_days} days
+              {t.pages.audit.lastDays.replace(
+                "{days}",
+                stats.period_days.toString(),
+              )}
             </p>
           </div>
           <div className="w-12 h-12 bg-primary-100 dark:bg-primary-600/30 rounded-lg flex items-center justify-center">
@@ -60,7 +65,7 @@ export function AuditStats() {
         <div className="flex items-start justify-between mb-3">
           <div>
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-              Top Actions
+              {t.pages.audit.topActions}
             </p>
           </div>
           <div className="w-12 h-12 bg-info-100 dark:bg-info-600/30 rounded-lg flex items-center justify-center">
@@ -86,7 +91,7 @@ export function AuditStats() {
         <div className="flex items-start justify-between mb-3">
           <div>
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-              Top Entities
+              {t.pages.audit.topEntities}
             </p>
           </div>
           <div className="w-12 h-12 bg-success-100 dark:bg-success-600/30 rounded-lg flex items-center justify-center">
@@ -112,7 +117,7 @@ export function AuditStats() {
         <div className="flex items-start justify-between mb-3">
           <div>
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-              Most Active Users
+              {t.pages.audit.mostActiveUsers}
             </p>
           </div>
           <div className="w-12 h-12 bg-warning-100 dark:bg-warning-600/30 rounded-lg flex items-center justify-center">

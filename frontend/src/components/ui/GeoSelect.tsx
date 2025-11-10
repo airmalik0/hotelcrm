@@ -1,4 +1,5 @@
 import { getCountries, getDistricts, getRegions } from "@/api/geo"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
 
@@ -23,6 +24,7 @@ export function GeoSelect({
   required,
   error,
 }: GeoSelectProps) {
+  const { t } = useLanguage()
   const { data: countries = [] } = useQuery({
     queryKey: ["geo", "countries"],
     queryFn: getCountries,
@@ -84,7 +86,7 @@ export function GeoSelect({
       {/* Country */}
       <div>
         <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-          Country
+          {t.analytics.country}
         </label>
         <select
           value={value.country_code || ""}
@@ -107,7 +109,7 @@ export function GeoSelect({
       {value.country_code === "UZ" && (
         <div>
           <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-            Region (Uzbekistan)
+            {t.analytics.region}
           </label>
           <select
             value={value.region || ""}
@@ -131,7 +133,7 @@ export function GeoSelect({
       {value.country_code === "UZ" && value.region === "TASHKENT_CITY" && (
         <div>
           <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-            District (Tashkent city)
+            {t.analytics.district}
           </label>
           <select
             value={value.district || ""}

@@ -1,11 +1,11 @@
 import type { BookingPublic } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import {
   getBookingHoverColor,
   getBookingIndicatorColor,
   getBookingStatusColor,
 } from "@/utils/booking-colors"
 import { getGuestInitials } from "@/utils/booking-grid"
-import { useLanguage } from "@/contexts/LanguageContext"
 import { formatDuration } from "@/utils/date-helpers"
 import {
   getBestFittingName,

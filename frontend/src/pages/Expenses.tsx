@@ -335,13 +335,19 @@ function ExpensesTab({
             <tbody>
               {expensesLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400"
+                  >
                     {t.common.loading}
                   </td>
                 </tr>
               ) : (expensesData?.data?.length ?? 0) === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-neutral-600 dark:text-neutral-400"
+                  >
                     {t.common.noExpensesFound}
                   </td>
                 </tr>
@@ -527,7 +533,9 @@ function ExpenseModal({
         ? updateExpense(expense.id, data)
         : createExpense(data as ExpenseCreate),
     onSuccess: () => {
-      showSuccess(expense ? t.expenses.expenseUpdated : t.expenses.expenseCreated)
+      showSuccess(
+        expense ? t.expenses.expenseUpdated : t.expenses.expenseCreated,
+      )
       onSuccess()
     },
     onError: (error) => {
@@ -552,7 +560,9 @@ function ExpenseModal({
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h5 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {expense ? t.expensesModals.editExpense : t.expensesModals.newExpense}
+            {expense
+              ? t.expensesModals.editExpense
+              : t.expensesModals.newExpense}
           </h5>
           <button
             type="button"
@@ -567,7 +577,7 @@ function ExpenseModal({
           <div className="px-6 py-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Category *
+                {t.expensesModals.categoryLabel}
               </label>
               <select
                 {...register("category_id", {
@@ -591,7 +601,7 @@ function ExpenseModal({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Amount *
+                {t.expensesModals.amountLabel}
               </label>
               <input
                 type="number"
@@ -615,7 +625,7 @@ function ExpenseModal({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Date
+                {t.expensesModals.dateLabel}
               </label>
               <input
                 type="datetime-local"
@@ -626,7 +636,7 @@ function ExpenseModal({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Description
+                {t.expensesModals.descriptionLabel}
               </label>
               <textarea
                 {...register("description")}
@@ -683,7 +693,9 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
         ? updateExpenseCategory(category.id, data)
         : createExpenseCategory(data as ExpenseCategoryCreate),
     onSuccess: () => {
-      showSuccess(category ? t.expenses.categoryUpdated : t.expenses.categoryCreated)
+      showSuccess(
+        category ? t.expenses.categoryUpdated : t.expenses.categoryCreated,
+      )
       onSuccess()
     },
     onError: (error) => {
@@ -708,7 +720,9 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
       <div className="bg-white dark:bg-dark-2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-600 px-6 py-4">
           <h5 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {category ? t.expensesModals.editCategory : t.expensesModals.newCategory}
+            {category
+              ? t.expensesModals.editCategory
+              : t.expensesModals.newCategory}
           </h5>
           <button
             type="button"
@@ -723,7 +737,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
           <div className="px-6 py-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Name *
+                {t.expensesModals.nameLabel}
               </label>
               <input
                 type="text"
@@ -740,7 +754,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Description
+                {t.expensesModals.descriptionLabel}
               </label>
               <textarea
                 {...register("description")}

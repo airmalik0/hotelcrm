@@ -1,14 +1,13 @@
 import { getOccupancyDetails } from "@/api/analytics"
 import { getBookings } from "@/api/bookings"
 import { getRooms } from "@/api/rooms"
-import { useLanguage } from "@/contexts/LanguageContext"
-import { formatCurrency } from "@/utils/formatters"
 import type {
   BookingPublic,
   BookingStatus,
   RoomPublic,
 } from "@/client/types.gen"
 import { GridZoomProvider, useGridZoom } from "@/contexts/GridZoomContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import type { RoomChangeData } from "@/hooks/useBookingDrag"
 import { useBookingDrag } from "@/hooks/useBookingDrag"
 import { useConfirm } from "@/hooks/useConfirm"
@@ -24,6 +23,7 @@ import type { BookingFilters } from "@/utils/booking-filters"
 import { groupBookingsByRoom, sortRoomsByNumber } from "@/utils/booking-grid"
 import type { ViewMode } from "@/utils/date-helpers"
 import { getViewDateRange } from "@/utils/date-helpers"
+import { formatCurrency } from "@/utils/formatters"
 import { useQuery } from "@tanstack/react-query"
 import { addMonths, addWeeks, differenceInDays } from "date-fns"
 import { GripHorizontal, Loader2 } from "lucide-react"
@@ -340,7 +340,8 @@ function BookingGridContent() {
             {data.actualDiff < 0 && (
               <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 text-sm border border-emerald-200 dark:border-emerald-600/50">
                 <div className="font-medium text-emerald-800 dark:text-emerald-300">
-                  Refund amount: {formatCurrency(Math.abs(data.actualDiff), currency)}
+                  Refund amount:{" "}
+                  {formatCurrency(Math.abs(data.actualDiff), currency)}
                 </div>
                 <div className="text-emerald-700 dark:text-emerald-400 text-xs mt-1">
                   ({data.nights} nights ×{" "}

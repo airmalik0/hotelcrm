@@ -65,8 +65,7 @@ export function RoomCategoryManagerModal({
     e.preventDefault()
     const newErrors: Record<string, string> = {}
     if (!name.trim()) newErrors.name = t.room.categoryNameRequired
-    if (name.trim().length > 100)
-      newErrors.name = t.room.categoryNameMaxLength
+    if (name.trim().length > 100) newErrors.name = t.room.categoryNameMaxLength
     if (description && description.length > 500)
       newErrors.description = t.room.categoryDescriptionMaxLength
     if (Object.keys(newErrors).length) {

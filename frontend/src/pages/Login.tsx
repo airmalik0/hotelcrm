@@ -79,10 +79,7 @@ export function Login() {
   }
 
   return (
-    <AuthLayout
-      title={t.auth.signInToAccount}
-      subtitle={t.auth.welcomeBack}
-    >
+    <AuthLayout title={t.auth.signInToAccount} subtitle={t.auth.welcomeBack}>
       <form onSubmit={handleSubmit}>
         {/* Email/Username Field */}
         <div className="relative mb-4">

@@ -335,7 +335,8 @@ export const AddGuestModal = memo(function AddGuestModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                    {t.customer.firstName} <span className="text-danger-600">*</span>
+                    {t.customer.firstName}{" "}
+                    <span className="text-danger-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -361,7 +362,8 @@ export const AddGuestModal = memo(function AddGuestModal({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-                    {t.customer.lastName} <span className="text-danger-600">*</span>
+                    {t.customer.lastName}{" "}
+                    <span className="text-danger-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -464,7 +466,9 @@ export const AddGuestModal = memo(function AddGuestModal({
               }
               className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed"
             >
-              {addGuestMutation.isPending ? t.booking.adding : t.booking.addGuest}
+              {addGuestMutation.isPending
+                ? t.booking.adding
+                : t.booking.addGuest}
             </button>
           </div>
         </form>

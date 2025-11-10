@@ -213,6 +213,11 @@ def export_pdf(
     filters = payload.filters
     include_charts = payload.include_charts
 
+    # Get language from system settings (same as frontend)
+    from app.crud.system_settings import system_settings as crud_system_settings
+    system_settings = crud_system_settings.get_settings(session)
+    user_language = system_settings.language
+
     analytics_service = AnalyticsService(session)
     metrics = analytics_service.get_dashboard_metrics(filters)
 
@@ -220,12 +225,12 @@ def export_pdf(
     # Prefer comprehensive report if charts requested; fallback to dashboard-only
     try:
         if include_charts:
-            buffer = pdf_service.generate_comprehensive_report(session, filters, include_charts=True)
+            buffer = pdf_service.generate_comprehensive_report(session, filters, include_charts=True, language=user_language)
         else:
-            buffer = pdf_service.generate_dashboard_report(metrics, filters=filters)
+            buffer = pdf_service.generate_dashboard_report(metrics, filters=filters, language=user_language)
     except Exception:
         # Fallback to basic dashboard report in case of any error
-        buffer = pdf_service.generate_dashboard_report(metrics, filters=filters)
+        buffer = pdf_service.generate_dashboard_report(metrics, filters=filters, language=user_language)
 
     return StreamingResponse(
         buffer,
@@ -246,14 +251,19 @@ def export_excel(
     filters = payload.filters
     include_charts = payload.include_charts
 
+    # Get language from system settings (same as frontend)
+    from app.crud.system_settings import system_settings as crud_system_settings
+    system_settings = crud_system_settings.get_settings(session)
+    user_language = system_settings.language
+
     excel_service = ExcelReportService()
     try:
-        buffer = excel_service.generate_comprehensive_report(session, filters, include_charts=include_charts)
+        buffer = excel_service.generate_comprehensive_report(session, filters, include_charts=include_charts, language=user_language)
     except Exception:
         # Fallback to dashboard-only if comprehensive fails
         analytics_service = AnalyticsService(session)
         dashboard = analytics_service.get_dashboard_metrics(filters)
-        buffer = excel_service.generate_dashboard_report(dashboard, filters=filters)
+        buffer = excel_service.generate_dashboard_report(dashboard, filters=filters, language=user_language)
 
     return StreamingResponse(
         buffer,

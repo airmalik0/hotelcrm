@@ -69,8 +69,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
     } else if (
       !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(formData.room_number.trim())
     ) {
-      newErrors.room_number =
-        t.room.roomNumberFormat
+      newErrors.room_number = t.room.roomNumberFormat
     }
     if (formData.floor < 1) {
       newErrors.floor = t.room.floorMinValue
@@ -270,7 +269,9 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                   <option value="available">{t.room.statusAvailable}</option>
                   <option value="occupied">{t.room.statusOccupied}</option>
                   <option value="cleaning">{t.room.statusCleaning}</option>
-                  <option value="maintenance">{t.room.statusMaintenance}</option>
+                  <option value="maintenance">
+                    {t.room.statusMaintenance}
+                  </option>
                 </select>
               </div>
 

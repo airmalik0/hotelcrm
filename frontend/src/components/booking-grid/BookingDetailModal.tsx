@@ -25,8 +25,8 @@ import { useRole } from "@/hooks/useRole"
 import { isRoomAvailable } from "@/utils/booking-grid"
 import { getPaymentAdjustmentSummary } from "@/utils/booking-payments"
 import { safeParseDate } from "@/utils/date-helpers"
-import { formatCurrency } from "@/utils/formatters"
 import { showError, showSuccess } from "@/utils/error-handling"
+import { formatCurrency } from "@/utils/formatters"
 import {
   invalidateAfterBookingCancel,
   invalidateAfterBookingUpdate,
@@ -468,7 +468,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               ({nights} nights ×{" "}
               {formatCurrency(
                 Math.abs(
-                  newRoom.price_per_night - (booking.room?.price_per_night || 0),
+                  newRoom.price_per_night -
+                    (booking.room?.price_per_night || 0),
                 ),
                 currency,
               )}
@@ -485,7 +486,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
               ({nights} nights ×{" "}
               {formatCurrency(
                 Math.abs(
-                  newRoom.price_per_night - (booking.room?.price_per_night || 0),
+                  newRoom.price_per_night -
+                    (booking.room?.price_per_night || 0),
                 ),
                 currency,
               )}
@@ -614,8 +616,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     if (booking.room?.status === "cleaning") {
       const confirmed = await confirm({
         title: t.booking.roomStatusConfirmation,
-        message:
-          t.bookingDetails.roomCleaningConfirm,
+        message: t.bookingDetails.roomCleaningConfirm,
         confirmText: t.common.yes,
         variant: "warning",
       })
@@ -890,8 +891,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             return filteredRooms.map((room) => (
                               <option key={room.id} value={room.id}>
                                 {room.room_number} -{" "}
-                                {room.category?.name || t.booking.uncategorized} (
-                                {formatCurrency(room.price_per_night, currency)}/night)
+                                {room.category?.name || t.booking.uncategorized}{" "}
+                                (
+                                {formatCurrency(room.price_per_night, currency)}
+                                /night)
                                 {room.status !== "available" &&
                                   ` [${room.status}]`}
                               </option>
@@ -975,7 +978,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       </span>
                       <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                         {booking.room?.room_number} -{" "}
-                        {booking.room?.category?.name || t.booking.uncategorized}
+                        {booking.room?.category?.name ||
+                          t.booking.uncategorized}
                       </span>
                     </div>
                     <div>
@@ -983,7 +987,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         {t.bookingHistory.pricePerNight}
                       </span>
                       <span className="ml-2 text-neutral-700 dark:text-neutral-300">
-                        {formatCurrency(booking.room?.price_per_night || 0, currency)}
+                        {formatCurrency(
+                          booking.room?.price_per_night || 0,
+                          currency,
+                        )}
                       </span>
                     </div>
                     {/* Room Status Indicator */}
@@ -1029,7 +1036,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
                   <h3 className="font-medium text-neutral-900 dark:text-white">
-                    Stay Duration
+                    {t.bookingDetails.stayDuration}
                   </h3>
                 </div>
                 {((canModifyPlannedDates() && booking.status === "confirmed") ||
@@ -1361,7 +1368,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-neutral-500 dark:text-neutral-400">
-                        Planned Check-in:
+                        {t.bookingDetails.plannedCheckIn}
                       </span>
                       <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                         {format(safeParseDate(booking.check_in), "PPP p")}
@@ -1369,7 +1376,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     </div>
                     <div>
                       <span className="text-neutral-500 dark:text-neutral-400">
-                        Planned Check-out:
+                        {t.bookingDetails.plannedCheckOut}
                       </span>
                       <span className="ml-2 font-medium text-neutral-900 dark:text-white">
                         {format(safeParseDate(booking.check_out), "PPP p")}
@@ -1384,7 +1391,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         {booking.actual_check_in && (
                           <div>
                             <span className="text-neutral-500 dark:text-neutral-400">
-                              Actual Check-in:
+                              {t.bookingDetails.actualCheckIn}
                             </span>
                             <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">
                               {format(
@@ -1397,7 +1404,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         {booking.actual_check_out && (
                           <div>
                             <span className="text-neutral-500 dark:text-neutral-400">
-                              Actual Check-out:
+                              {t.bookingDetails.actualCheckOut}
                             </span>
                             <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">
                               {format(
@@ -1570,7 +1577,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                           Room Rate:
                         </span>
                         <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                          {formatCurrency(booking.room?.price_per_night || 0, currency)}/night
+                          {formatCurrency(
+                            booking.room?.price_per_night || 0,
+                            currency,
+                          )}
+                          /night
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -1602,15 +1613,17 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               Discount ({formData.discount}%):
                             </span>
                             <span className="text-sm text-danger-600 dark:text-danger-400">
-                              -{formatCurrency(
-                                (formData.totalAmount * formData.discount) / 100,
+                              -
+                              {formatCurrency(
+                                (formData.totalAmount * formData.discount) /
+                                  100,
                                 currency,
                               )}
                             </span>
                           </div>
                           <div className="pt-1 border-t border-neutral-200 dark:border-neutral-600 flex justify-between items-center">
                             <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                              Final Amount:
+                              {t.bookingDetails.finalAmount}
                             </span>
                             <span className="font-bold text-lg text-neutral-900 dark:text-white">
                               {formatCurrency(
@@ -1675,7 +1688,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">
-                      Total Amount:
+                      {t.bookingDetails.totalAmount}
                     </span>
                     <span className="font-semibold text-neutral-900 dark:text-white">
                       {formatCurrency(booking.total_amount, currency)}
@@ -1684,7 +1697,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   {booking.discount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400">
-                        Discount:
+                        {t.bookingDetails.discountLabel}
                       </span>
                       <span className="text-danger-600 dark:text-danger-400">
                         -{booking.discount}%
@@ -1736,12 +1749,17 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                 <>
                                   {refundAmount > 0 && (
                                     <span className="text-emerald-600 dark:text-emerald-400 font-medium text-sm">
-                                      Refunds: -{formatCurrency(refundAmount, currency)}
+                                      Refunds: -
+                                      {formatCurrency(refundAmount, currency)}
                                     </span>
                                   )}
                                   {additionalPayment > 0 && (
                                     <span className="text-orange-600 dark:text-orange-400 font-medium text-sm">
-                                      Additional: +{formatCurrency(additionalPayment, currency)}
+                                      Additional: +
+                                      {formatCurrency(
+                                        additionalPayment,
+                                        currency,
+                                      )}
                                     </span>
                                   )}
                                 </>
@@ -1810,7 +1828,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-200 dark:disabled:bg-neutral-700 disabled:text-neutral-400 dark:disabled:text-neutral-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
-                  {checkInMutation.isPending ? t.booking.processing : t.booking.checkIn}
+                  {checkInMutation.isPending
+                    ? t.booking.processing
+                    : t.booking.checkIn}
                 </button>
               )}
 
@@ -1821,7 +1841,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                   className="flex-1 px-6 py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-neutral-200 dark:disabled:bg-neutral-700 disabled:text-neutral-400 dark:disabled:text-neutral-500 text-white rounded-lg transition-colors font-medium disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
-                  {checkOutMutation.isPending ? t.booking.processing : t.booking.checkOut}
+                  {checkOutMutation.isPending
+                    ? t.booking.processing
+                    : t.booking.checkOut}
                 </button>
               )}
 

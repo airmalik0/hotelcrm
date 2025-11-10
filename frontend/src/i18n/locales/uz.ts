@@ -52,8 +52,10 @@ export const uz: Translations = {
     warning: "Ogohlantirish",
     info: "Ma'lumot",
     // Empty states
-    noRoomsAvailable: "Mavjud xonalar yo'q. Bronlarni boshqarish uchun xonalarni qo'shing.",
-    noRoomsMatchFilters: "Sizning filtrlaringizga mos keladigan xonalar yo'q. Qidiruv mezonlarini o'zgartirib ko'ring.",
+    noRoomsAvailable:
+      "Mavjud xonalar yo'q. Bronlarni boshqarish uchun xonalarni qo'shing.",
+    noRoomsMatchFilters:
+      "Sizning filtrlaringizga mos keladigan xonalar yo'q. Qidiruv mezonlarini o'zgartirib ko'ring.",
     noRoomsFound: "Xonalar topilmadi",
     tryAdjustingFilters: "Filtrlarni o'zgartirib ko'ring",
     addFirstRoom: "Boshlash uchun birinchi xonani qo'shing",
@@ -84,7 +86,8 @@ export const uz: Translations = {
     failedToLoadInquiries: "So'rovlarni yuklashda xatolik",
     customerNotFound: "Mijoz topilmadi",
     // Instructions
-    createFirstCampaign: "Boshlash uchun birinchi marketing kampaniyasini yarating",
+    createFirstCampaign:
+      "Boshlash uchun birinchi marketing kampaniyasini yarating",
     createFirstExpense: "Boshlash uchun birinchi xarajatni yarating",
   },
   // Auth
@@ -143,31 +146,39 @@ export const uz: Translations = {
     searchCustomer: "Mijozni qidirish",
     searchByNameOrPhone: "Ism yoki telefon bo'yicha qidirish...",
     selectedCustomer: "Tanlangan mijoz:",
-    noCustomersFoundTryAdding: "Mijozlar topilmadi. O'rniga yangi mehmon qo'shing.",
+    noCustomersFoundTryAdding:
+      "Mijozlar topilmadi. O'rniga yangi mehmon qo'shing.",
     passportPhotoRequired: "Pasport rasmi majburiy",
-    selectedCustomerNoPassport: "Tanlangan mijozda pasport rasmi yo'q. Iltimos, uni mijoz profiliga qo'shing yoki yuklash uchun 'Yangi mehmon qo'shish' ga o'ting.",
+    selectedCustomerNoPassport:
+      "Tanlangan mijozda pasport rasmi yo'q. Iltimos, uni mijoz profiliga qo'shing yoki yuklash uchun 'Yangi mehmon qo'shish' ga o'ting.",
     adding: "Qo'shilmoqda...",
     addGuest: "Mehmon qo'shish",
     guestAddedSuccess: "Mehmon muvaffaqiyatli qo'shildi!",
     failedToAddGuest: "Mehmonni qo'shishda xatolik",
     phoneMustContain: "Telefon 7-15 raqamdan iborat bo'lishi kerak",
-    roomUnderMaintenance: "⚠️ Xona texnik xizmat ko'rsatilmoqda. Bron yaratib bo'lmaydi.",
-    roomCurrentlyOccupied: "ℹ️ Xona hozirda band. Uni kelajakdagi sanalar uchun bron qilishingiz mumkin.",
+    roomUnderMaintenance:
+      "⚠️ Xona texnik xizmat ko'rsatilmoqda. Bron yaratib bo'lmaydi.",
+    roomCurrentlyOccupied:
+      "ℹ️ Xona hozirda band. Uni kelajakdagi sanalar uchun bron qilishingiz mumkin.",
     quickBooking: "Tezkor bron",
     pleaseSelectCustomer: "Iltimos, mijozni tanlang",
     selectedCustomerNoPassportQuick: "Tanlangan mijozda pasport rasmi yo'q",
-    cannotBookMaintenance: "Texnik xizmat ko'rsatilayotgan xonani bron qilish mumkin emas",
+    cannotBookMaintenance:
+      "Texnik xizmat ko'rsatilayotgan xonani bron qilish mumkin emas",
     checkInDatePast: "Kirish sanasi o'tmishda bo'lishi mumkin emas",
     discountReasonRequired: "Chegirma qo'llanilganda chegirma sababi majburiy",
     bookingCreatedSuccess: "Bron muvaffaqiyatli yaratildi!",
-    failedToCreateBooking: "Bron yaratishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+    failedToCreateBooking:
+      "Bron yaratishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
     selectRoom: "Xonani tanlang",
     uncategorized: "Kategoriyasiz",
     clearSelection: "Tanlovni tozalash",
-    passportPhotoRequiredBooking: "Bu mijoz uchun bron yaratish uchun pasport rasmi talab qilinadi.",
+    passportPhotoRequiredBooking:
+      "Bu mijoz uchun bron yaratish uchun pasport rasmi talab qilinadi.",
     searchForGuest: "Mehmonni qidirish...",
     createNewCustomer: "Yangi mijoz yaratish",
-    noCustomersFoundCreate: "Mijozlar topilmadi. Yangisini yaratish uchun + ni bosing.",
+    noCustomersFoundCreate:
+      "Mijozlar topilmadi. Yangisini yaratish uchun + ni bosing.",
   },
   // Room
   room: {
@@ -201,7 +212,6 @@ export const uz: Translations = {
     categoryLabel: "Kategoriya",
     pricePerNightRequired: "Kechalik narx ($) *",
     initialStatus: "Boshlang'ich holat",
-    statusLabel: "Holat",
     optionalDescription: "Ixtiyoriy xona tavsifi...",
     createRoom: "Xona yaratish",
     roomDetails: "Xona tafsilotlari",
@@ -292,11 +302,14 @@ export const uz: Translations = {
     superuser: "Superfoydalanuvchi",
     admin: "Administrator",
     deleteTitle: "Foydalanuvchini o'chirish",
-    deleteMessage: "\"{username}\" foydalanuvchisini o'chirishni xohlaysizmi? Bu harakatni bekor qilib bo'lmaydi.",
+    deleteMessage:
+      "\"{username}\" foydalanuvchisini o'chirishni xohlaysizmi? Bu harakatni bekor qilib bo'lmaydi.",
     deleteConfirm: "O'chirish",
     deletedSuccess: "Foydalanuvchi muvaffaqiyatli o'chirildi!",
-    deleteError: "Foydalanuvchini o'chirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-    paginationShowing: "{from} dan {to} gacha {total} ta yozuvdan ko'rsatilmoqda",
+    deleteError:
+      "Foydalanuvchini o'chirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+    paginationShowing:
+      "{from} dan {to} gacha {total} ta yozuvdan ko'rsatilmoqda",
     roles: {
       admin: "Administrator",
       manager: "Menejer",
@@ -309,9 +322,11 @@ export const uz: Translations = {
     changePassword: "Parolni o'zgartirish",
     enterNewPassword: "Yangi parolni kiriting",
     passwordMinLength: "Parol kamida 8 belgidan iborat bo'lishi kerak",
-    warningRoleChange: "Ogohlantirish: Rolni o'zgartirish foydalanuvchi huquqlariga ta'sir qiladi",
+    warningRoleChange:
+      "Ogohlantirish: Rolni o'zgartirish foydalanuvchi huquqlariga ta'sir qiladi",
     activeAccount: "Faol hisob",
-    warningDeactivate: "Ogohlantirish: O'chirish foydalanuvchining tizimga kirishini oldini oladi",
+    warningDeactivate:
+      "Ogohlantirish: O'chirish foydalanuvchining tizimga kirishini oldini oladi",
     // User create modal
     createNewUser: "Yangi foydalanuvchi yaratish",
     usernameRequired: "Foydalanuvchi nomi *",
@@ -323,6 +338,13 @@ export const uz: Translations = {
     enterFullName: "To'liq ismni kiriting",
     createUser: "Foydalanuvchi yaratish",
     creatingUser: "Yaratilmoqda...",
+  },
+  // Customer Profile
+  customerProfile: {
+    passportPhotoUpdatedSuccess:
+      "Pasport fotosurati muvaffaqiyatli yangilandi!",
+    noBookingsYet: "Hali bron qilmagan",
+    customerHasNoBookings: "Bu mijoz hali bron qilmagan.",
   },
   // Customer Management
   customer: {
@@ -342,11 +364,14 @@ export const uz: Translations = {
     notAvailable: "Mavjud emas",
     passportUploaded: "Pasport yuklangan",
     deleteTitle: "Mijozni o'chirish",
-    deleteMessage: "{firstName} {lastName} ni o'chirishni xohlaysizmi? Bu harakatni bekor qilib bo'lmaydi.",
+    deleteMessage:
+      "{firstName} {lastName} ni o'chirishni xohlaysizmi? Bu harakatni bekor qilib bo'lmaydi.",
     deleteConfirm: "O'chirish",
     deletedSuccess: "Mijoz muvaffaqiyatli o'chirildi!",
-    deleteError: "Mijozni o'chirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-    paginationShowing: "{from} dan {to} gacha {total} ta yozuvdan ko'rsatilmoqda",
+    deleteError:
+      "Mijozni o'chirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+    paginationShowing:
+      "{from} dan {to} gacha {total} ta yozuvdan ko'rsatilmoqda",
     createNew: "Yangi mijoz yaratish",
     personalInformation: "Shaxsiy ma'lumotlar",
     firstName: "Ism",
@@ -366,14 +391,16 @@ export const uz: Translations = {
     firstNameMaxLength: "Ism 100 belgidan ko'p bo'lmasligi kerak",
     lastNameRequired: "Familiya majburiy",
     lastNameMaxLength: "Familiya 100 belgidan ko'p bo'lmasligi kerak",
-    phoneInvalid: "Telefon raqami 7 dan 15 gacha raqamdan iborat bo'lishi kerak",
+    phoneInvalid:
+      "Telefon raqami 7 dan 15 gacha raqamdan iborat bo'lishi kerak",
     firstNamePlaceholder: "John",
     lastNamePlaceholder: "Doe",
     autoGenerated: "(Avtomatik yaratiladi)",
     cyrillicNamePlaceholder: "Ismdan avtomatik yaratiladi",
     notes: "Eslatmalar",
     notesPlaceholder: "Mijoz haqida maxsus eslatmalar...",
-    acceptedFormats: "Qabul qilinadigan formatlar: JPG, JPEG, PNG, WEBP (maks. 5MB)",
+    acceptedFormats:
+      "Qabul qilinadigan formatlar: JPG, JPEG, PNG, WEBP (maks. 5MB)",
     source: "Manba",
     sourcePlaceholder: "Manbani tanlang",
     sourceWalkIn: "Walk-in",
@@ -418,7 +445,8 @@ export const uz: Translations = {
       customerDocuments: "Mijoz hujjatlari",
       passportDocument: "Pasport hujjati",
       uploadPassport: "Pasportni yuklash",
-      acceptedFormatsDesc: "Qabul qilinadigan formatlar: JPG, JPEG, PNG, WEBP (maks. 5MB). Ushbu hujjat mijozni tekshirish uchun ishlatiladi.",
+      acceptedFormatsDesc:
+        "Qabul qilinadigan formatlar: JPG, JPEG, PNG, WEBP (maks. 5MB). Ushbu hujjat mijozni tekshirish uchun ishlatiladi.",
     },
   },
   // Analytics
@@ -510,7 +538,8 @@ export const uz: Translations = {
       highestRevenueMonth: "Eng yuqori daromad oyi",
       bestOccupancyMonth: "Eng yaxshi bandlik oyi",
       multiYearSeasonalAnalysis: "Ko'p yillik mavsumiy tahlil",
-      seasonalTrends: "Oxirgi {years} yil davomida daromad, bandlik va bron tendentsiyalari",
+      seasonalTrends:
+        "Oxirgi {years} yil davomida daromad, bandlik va bron tendentsiyalari",
       seasonalInsights: "Mavsumiy tushunchalar",
       avgRevenue: "O'rtacha daromad",
       avgOccupancy: "O'rtacha bandlik",
@@ -556,9 +585,11 @@ export const uz: Translations = {
     failedToUpdateCampaign: "Kampaniyani yangilashda xatolik",
     nameRequired: "Ism majburiy",
     messageTemplateRequired: "Xabar shabloni majburiy",
-    messageTemplateMinLength: "Xabar shabloni kamida 10 belgidan iborat bo'lishi kerak",
+    messageTemplateMinLength:
+      "Xabar shabloni kamida 10 belgidan iborat bo'lishi kerak",
     frequencyRequired: "Trigger kampaniyalar uchun chastota majburiy",
-    minAgeGreaterThanMax: "Minimal yosh maksimal yoshdan katta bo'lishi mumkin emas",
+    minAgeGreaterThanMax:
+      "Minimal yosh maksimal yoshdan katta bo'lishi mumkin emas",
   },
   // Marketing Campaigns
   marketing: {
@@ -579,6 +610,66 @@ export const uz: Translations = {
     hideCriteria: "Mezonlarni yashirish",
     addCriteria: "Mezonlar qo'shish",
     updateCampaign: "Kampaniyani yangilash",
+    // Form fields
+    basicInformation: "Asosiy ma'lumotlar",
+    campaignNameLabel: "Kampaniya nomi *",
+    campaignTypeLabel: "Kampaniya turi *",
+    statusLabel: "Holat *",
+    messageTemplateLabel: "Xabar shabloni *",
+    availableVariables:
+      "Mavjud o'zgaruvchilar: {first_name}, {last_name}, {full_name}",
+    customerCriteria: "Mijozlar kriteriyalari",
+    ageRange: "Yosh oralig'i",
+    districts: "Tumanlar",
+    minimumTotalSpent: "Minimal umumiy xarajat",
+    daysSinceLastVisit: "Oxirgi tashrifdan o'tgan kunlar",
+    activeFilters: "Faol filtrlar",
+    minimumAgeFilter: "Minimal yosh: {age}",
+    maximumAgeFilter: "Maksimal yosh: {age}",
+    districtsFilter: "Tumanlar: {districts}",
+    minimumSpentFilter: "Minimal xarajat: {amount}",
+    daysSinceLastVisitFilter: "Oxirgi tashrifdan o'tgan kunlar: {days}",
+    notVisitedForFilter: "Tashrif buyurmagan: {days} kun",
+  },
+  // Booking Details
+  bookingDetails: {
+    bookingDetails: "Bron qilish tafsilotlari",
+    guestInformation: "Mehmon ma'lumotlari",
+    roomInformation: "Xona ma'lumotlari",
+    paymentDetails: "To'lov tafsilotlari",
+    stayDuration: "Qolish muddati",
+    plannedCheckIn: "Rejalashtirilgan kirish:",
+    actualCheckIn: "Haqiqiy kirish:",
+    plannedCheckOut: "Rejalashtirilgan chiqish:",
+    actualCheckOut: "Haqiqiy chiqish:",
+    guestsInRoom: "Xonadagi mehmonlar",
+    noGuestsAdded: "Hali mehmonlar qo'shilmagan.",
+    clickAddGuest: "Mehmon qo'shish uchun \"Mehmon qo'shish\" tugmasini bosing.",
+    totalAmount: "Umumiy summa:",
+    paymentMethod: "To'lov usuli:",
+    discountLabel: "Chegirma:",
+    finalAmount: "Yakuniy summa:",
+    bookingUpdatedSuccess: "Bron muvaffaqiyatli yangilandi!",
+    failedToUpdateBooking:
+      "Bronni yangib bo'lmadi. Iltimos, qayta urinib ko'ring.",
+    bookingDeletedSuccess: "Bron muvaffaqiyatli o'chirildi!",
+    failedToDeleteBooking:
+      "Bronni o'chirib bo'lmadi. Iltimos, qayta urinib ko'ring.",
+    guestCheckedInSuccess: "Mehmon muvaffaqiyatli joylashtirildi!",
+    failedToCheckIn: "Joylashtirib bo'lmadi. Iltimos, qayta urinib ko'ring.",
+    guestCheckedOutSuccess: "Mehmon muvaffaqiyatli chiqarildi!",
+    failedToCheckOut: "Chiqarib bo'lmadi. Iltimos, qayta urinib ko'ring.",
+    datesModifiedSuccess: "Sanalar muvaffaqiyatli o'zgartirildi!",
+    failedToModifyDates: "Sanalarni o'zgartirib bo'lmadi",
+    discountModifiedSuccess: "Chegirma muvaffaqiyatli o'zgartirildi!",
+    failedToModifyDiscount: "Chegirmani o'zgartirib bo'lmadi",
+    roomChangedSuccess: "Xona muvaffaqiyatli o'zgartirildi!",
+    failedToChangeRoom: "Xonani o'zgartirib bo'lmadi",
+    discountReasonRequired: "Chegirma sababi chegirma qo'llanilganda majburiy",
+    cannotCheckInMaintenance:
+      "Joylashtirib bo'lmaydi: Xona texnik xizmat ko'rsatmoqda",
+    roomCleaningConfirm:
+      "Xona tozalanmoqda. Uni mavjud deb belgilashni va joylashtirishni davom ettirishni xohlaysizmi?",
   },
   // Customer Inquiries
   inquiries: {
@@ -631,7 +722,8 @@ export const uz: Translations = {
   pages: {
     roomManagement: {
       title: "Xona boshqaruvi",
-      description: "Mehmonxona xonalarini, holatlarini va narxlarini boshqarish",
+      description:
+        "Mehmonxona xonalarini, holatlarini va narxlarini boshqarish",
       totalRooms: "Jami xonalar",
       available: "Mavjud",
       occupied: "Band",
@@ -704,7 +796,8 @@ export const uz: Translations = {
         checkIns: "Kirishlar",
         completedCheckIns: "Tugallangan kirishlar",
         pendingCheckIns: "Kutilayotgan kirishlar",
-        frontDeskOperations: "Front desk operatsiyalari va mehmonlar xizmatlari",
+        frontDeskOperations:
+          "Front desk operatsiyalari va mehmonlar xizmatlari",
       },
     },
     inquiries: {
@@ -732,6 +825,7 @@ export const uz: Translations = {
       user: "Foydalanuvchi",
       totalActions: "Jami harakatlar",
       last30Days: "Oxirgi 30 kun",
+      lastDays: "Oxirgi {days} kun",
       topActions: "Top harakatlar",
       topEntities: "Top entitylar",
       mostActiveUsers: "Eng faol foydalanuvchilar",
@@ -749,6 +843,11 @@ export const uz: Translations = {
     editCategory: "Kategoriyani tahrirlash",
     newCategory: "Yangi kategoriya",
     noCategories: "Kategoriyalar yo'q",
+    // Form fields
+    categoryLabel: "Kategoriya *",
+    amountLabel: "Miqdor *",
+    dateLabel: "Sana",
+    descriptionLabel: "Tavsif",
+    nameLabel: "Nomi *",
   },
 }
-

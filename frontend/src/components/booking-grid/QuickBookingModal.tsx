@@ -330,7 +330,8 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           </div>
           {room && (
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              {t.room.title} {room.room_number} - {room.category?.name || t.booking.uncategorized}
+              {t.room.title} {room.room_number} -{" "}
+              {room.category?.name || t.booking.uncategorized}
             </p>
           )}
         </div>
@@ -376,7 +377,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                   <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
                     <div className="flex items-center gap-1">
                       <DollarSign className="w-3 h-3" />
-                      <span>{formatCurrency(selectedRoom.price_per_night, currency)}/night</span>
+                      <span>
+                        {formatCurrency(selectedRoom.price_per_night, currency)}
+                        /night
+                      </span>
                     </div>
                   </div>
                   {/* Room Status Warning */}
@@ -747,7 +751,10 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                           <span className="text-neutral-600 dark:text-neutral-400">
                             Subtotal ({nights}{" "}
                             {nights === 1 ? "night" : "nights"} ×{" "}
-                            {formatCurrency(activeRoom.price_per_night, currency)}
+                            {formatCurrency(
+                              activeRoom.price_per_night,
+                              currency,
+                            )}
                             )
                           </span>
                           <span className="text-neutral-900 dark:text-white">

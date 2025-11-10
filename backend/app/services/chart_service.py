@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 import matplotlib
+from app.localization import get_report_text
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -54,10 +55,10 @@ class ChartService:
         plt.close(fig)  # Free memory
         return buffer
 
-    def generate_revenue_trend_chart(self, revenue_trend: list[dict[str, Any]]) -> io.BytesIO:
+    def generate_revenue_trend_chart(self, revenue_trend: list[dict[str, Any]], language: str = "en") -> io.BytesIO:
         """Generate revenue trend line chart."""
         if not revenue_trend:
-            return self._generate_empty_chart("No revenue data available")
+            return self._generate_empty_chart(get_report_text('no_revenue_data_available', language), language)
 
         fig, ax = self._create_figure((12, 6))
 
@@ -103,9 +104,9 @@ class ChartService:
                 color=self.colors['primary'], markerfacecolor=self.colors['primary'])
 
         # Formatting
-        ax.set_title('Revenue Trend Over Time', fontsize=16, fontweight='bold', pad=20)
-        ax.set_xlabel('Date', fontsize=12)
-        ax.set_ylabel('Revenue ($)', fontsize=12)
+        ax.set_title(get_report_text('revenue_trend_over_time', language), fontsize=16, fontweight='bold', pad=20)
+        ax.set_xlabel(get_report_text('date', language), fontsize=12)
+        ax.set_ylabel(get_report_text('revenue', language) + ' ($)', fontsize=12)
 
         # Format y-axis as currency
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
@@ -122,7 +123,7 @@ class ChartService:
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_payment_distribution_chart(self, payment_data: dict[str, Any]) -> io.BytesIO:
+    def generate_payment_distribution_chart(self, payment_data: dict[str, Any], language: str = "en") -> io.BytesIO:
         """Generate payment method distribution pie chart."""
         # Extract payment percentages
         methods = []
@@ -141,7 +142,7 @@ class ChartService:
             percentages.append(payment_data['terminal_percentage'])
 
         if not methods:
-            return self._generate_empty_chart("No payment data available")
+            return self._generate_empty_chart(get_report_text('no_payment_data_available', language), language)
 
         fig, ax = self._create_figure((8, 8))
 
@@ -158,15 +159,16 @@ class ChartService:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
 
-        ax.set_title('Payment Methods Distribution', fontsize=16, fontweight='bold', pad=20)
+        ax.set_title(get_report_text('payment_methods_distribution', language), fontsize=16, fontweight='bold', pad=20)
 
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_hourly_distribution_chart(self, hourly_data: list[dict[str, Any]], metric: str = "check_ins") -> io.BytesIO:
+    def generate_hourly_distribution_chart(self, hourly_data: list[dict[str, Any]], metric: str = "check_ins", language: str = "en") -> io.BytesIO:
         """Generate hourly distribution bar chart."""
         if not hourly_data:
-            return self._generate_empty_chart(f"No {metric} data available")
+            metric_key = 'no_check_ins_data_available' if metric == 'check_ins' else 'no_check_outs_data_available'
+            return self._generate_empty_chart(get_report_text(metric_key, language), language)
 
         fig, ax = self._create_figure((14, 6))
 
@@ -184,10 +186,10 @@ class ChartService:
                 bar.set_color(self.colors['danger'])
 
         # Formatting
-        metric_title = metric.replace('_', ' ').title()
-        ax.set_title(f'Hourly {metric_title} Distribution', fontsize=16, fontweight='bold', pad=20)
-        ax.set_xlabel('Hour of Day', fontsize=12)
-        ax.set_ylabel(f'Number of {metric_title}', fontsize=12)
+        metric_title = get_report_text(metric, language) if metric in ['check_ins', 'check_outs'] else metric.replace('_', ' ').title()
+        ax.set_title(f'{get_report_text("hourly_check_ins_distribution", language) if metric == "check_ins" else get_report_text("hourly_check_outs_distribution", language)}', fontsize=16, fontweight='bold', pad=20)
+        ax.set_xlabel(get_report_text('hour_of_day', language), fontsize=12)
+        ax.set_ylabel(f'{get_report_text("number_of_events", language)}', fontsize=12)
 
         # Set x-axis ticks for all 24 hours
         ax.set_xticks(range(0, 24, 2))
@@ -205,10 +207,10 @@ class ChartService:
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_room_performance_chart(self, room_data: list[dict[str, Any]]) -> io.BytesIO:
+    def generate_room_performance_chart(self, room_data: list[dict[str, Any]], language: str = "en") -> io.BytesIO:
         """Generate room category performance chart."""
         if not room_data:
-            return self._generate_empty_chart("No room performance data available")
+            return self._generate_empty_chart(get_report_text('no_room_performance_data_available', language), language)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -249,7 +251,7 @@ class ChartService:
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_customer_demographics_chart(self, age_distribution: dict[str, int], district_distribution: dict[str, int]) -> io.BytesIO:
+    def generate_customer_demographics_chart(self, age_distribution: dict[str, int], district_distribution: dict[str, int], language: str = "en") -> io.BytesIO:
         """Generate customer demographics charts."""
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
@@ -266,10 +268,10 @@ class ChartService:
             if age_groups:
                 colors1 = sns.color_palette("viridis", len(age_groups))
                 ax1.pie(age_counts, labels=age_groups, autopct='%1.1f%%', colors=colors1, startangle=90)
-                ax1.set_title('Customer Age Distribution', fontsize=14, fontweight='bold')
+                ax1.set_title(get_report_text('customer_age_distribution_chart', language), fontsize=14, fontweight='bold')
         else:
-            ax1.text(0.5, 0.5, 'No age data available', ha='center', va='center', transform=ax1.transAxes)
-            ax1.set_title('Customer Age Distribution', fontsize=14, fontweight='bold')
+            ax1.text(0.5, 0.5, get_report_text('no_age_data_available', language), ha='center', va='center', transform=ax1.transAxes)
+            ax1.set_title(get_report_text('customer_age_distribution_chart', language), fontsize=14, fontweight='bold')
 
         # District distribution (top 8)
         if district_distribution and any(count > 0 for count in district_distribution.values()):
@@ -280,24 +282,24 @@ class ChartService:
             if districts:
                 colors2 = sns.color_palette("Set3", len(districts))
                 bars = ax2.barh(districts, counts, color=colors2)
-                ax2.set_title('Top Districts by Customer Count', fontsize=14, fontweight='bold')
-                ax2.set_xlabel('Number of Customers')
+                ax2.set_title(get_report_text('top_districts_by_customers', language), fontsize=14, fontweight='bold')
+                ax2.set_xlabel(get_report_text('number_of_customers', language))
 
                 # Add value labels
                 for bar, count in zip(bars, counts, strict=False):
                     ax2.text(bar.get_width() + max(counts) * 0.01, bar.get_y() + bar.get_height()/2,
                             str(count), ha='left', va='center', fontsize=10)
         else:
-            ax2.text(0.5, 0.5, 'No district data available', ha='center', va='center', transform=ax2.transAxes)
-            ax2.set_title('Top Districts by Customer Count', fontsize=14, fontweight='bold')
+            ax2.text(0.5, 0.5, get_report_text('no_district_data_available', language), ha='center', va='center', transform=ax2.transAxes)
+            ax2.set_title(get_report_text('top_districts_by_customers', language), fontsize=14, fontweight='bold')
 
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_seasonal_trends_chart(self, monthly_trends: list[dict[str, Any]]) -> io.BytesIO:
+    def generate_seasonal_trends_chart(self, monthly_trends: list[dict[str, Any]], language: str = "en") -> io.BytesIO:
         """Generate seasonal trends chart."""
         if not monthly_trends:
-            return self._generate_empty_chart("No seasonal data available")
+            return self._generate_empty_chart(get_report_text('no_seasonal_data_available', language), language)
 
         fig, ax = self._create_figure((14, 8))
 
@@ -318,10 +320,10 @@ class ChartService:
                 color=self.colors['success'], label='Bookings')
 
         # Formatting
-        ax.set_title('Seasonal Revenue and Booking Trends', fontsize=16, fontweight='bold', pad=20)
-        ax.set_xlabel('Month', fontsize=12)
-        ax.set_ylabel('Revenue ($)', fontsize=12, color=self.colors['primary'])
-        ax2.set_ylabel('Number of Bookings', fontsize=12, color=self.colors['success'])
+        ax.set_title(get_report_text('seasonal_revenue_and_booking_trends', language), fontsize=16, fontweight='bold', pad=20)
+        ax.set_xlabel(get_report_text('month', language), fontsize=12)
+        ax.set_ylabel(get_report_text('revenue', language) + ' ($)', fontsize=12, color=self.colors['primary'])
+        ax2.set_ylabel(get_report_text('number_of_events', language), fontsize=12, color=self.colors['success'])
 
         # Format axes
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
@@ -342,12 +344,12 @@ class ChartService:
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_customer_segments_chart(self, segments_data: dict[str, Any]) -> io.BytesIO:
+    def generate_customer_segments_chart(self, segments_data: dict[str, Any], language: str = "en") -> io.BytesIO:
         """Generate customer segmentation pie chart."""
         segments = segments_data.get('segments', {})
 
         if not segments:
-            return self._generate_empty_chart("No customer segmentation data available")
+            return self._generate_empty_chart(get_report_text('no_customer_segmentation_data_available', language), language)
 
         fig, ax = self._create_figure((10, 8))
 
@@ -370,7 +372,7 @@ class ChartService:
                 segment_counts.append(count)
 
         if not segment_names:
-            return self._generate_empty_chart("No customer segments with data")
+            return self._generate_empty_chart(get_report_text('no_customer_segmentation_data_available', language), language)
 
         # Color mapping for segments
         segment_colors = {
@@ -392,15 +394,15 @@ class ChartService:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
 
-        ax.set_title('Customer Segmentation', fontsize=16, fontweight='bold', pad=20)
+        ax.set_title(get_report_text('customer_segmentation', language), fontsize=16, fontweight='bold', pad=20)
 
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def generate_ltv_distribution_chart(self, ltv_by_tenure: list[dict[str, Any]]) -> io.BytesIO:
+    def generate_ltv_distribution_chart(self, ltv_by_tenure: list[dict[str, Any]], language: str = "en") -> io.BytesIO:
         """Generate customer LTV by tenure chart."""
         if not ltv_by_tenure:
-            return self._generate_empty_chart("No LTV data available")
+            return self._generate_empty_chart(get_report_text('no_ltv_data_available', language), language)
 
         fig, ax = self._create_figure((10, 6))
 
@@ -420,9 +422,9 @@ class ChartService:
             bar.set_width(current_width * width_factor)
 
         # Formatting
-        ax.set_title('Customer Lifetime Value by Tenure', fontsize=16, fontweight='bold', pad=20)
-        ax.set_xlabel('Customer Tenure', fontsize=12)
-        ax.set_ylabel('Average LTV ($)', fontsize=12)
+        ax.set_title(get_report_text('customer_lifetime_value_by_tenure', language), fontsize=16, fontweight='bold', pad=20)
+        ax.set_xlabel(get_report_text('customer_tenure', language), fontsize=12)
+        ax.set_ylabel(get_report_text('average_ltv', language), fontsize=12)
 
         # Format y-axis as currency
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
@@ -438,7 +440,7 @@ class ChartService:
         plt.tight_layout()
         return self._save_chart_to_buffer(fig)
 
-    def _generate_empty_chart(self, message: str) -> io.BytesIO:
+    def _generate_empty_chart(self, message: str, language: str = "en") -> io.BytesIO:
         """Generate an empty chart with a message."""
         fig, ax = self._create_figure((8, 6))
 

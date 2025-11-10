@@ -1,10 +1,10 @@
-import { useLanguage } from "@/contexts/LanguageContext"
-import { showError, showSuccess } from "@/utils/error-handling"
-import { type Currency, type Language, currencies, languages } from "@/i18n"
-import { useState, useEffect } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { getSystemSettings, updateSystemSettings } from "@/api/systemSettings"
+import { useLanguage } from "@/contexts/LanguageContext"
+import { type Currency, type Language, currencies, languages } from "@/i18n"
+import { showError, showSuccess } from "@/utils/error-handling"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Settings as SettingsIcon } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function Settings() {
   const { language, currency, t } = useLanguage()
@@ -22,10 +22,20 @@ export function Settings() {
   // Update local state when system settings load or when context updates
   useEffect(() => {
     if (systemSettings) {
-      if (systemSettings.language && (systemSettings.language === "en" || systemSettings.language === "ru" || systemSettings.language === "uz")) {
+      if (
+        systemSettings.language &&
+        (systemSettings.language === "en" ||
+          systemSettings.language === "ru" ||
+          systemSettings.language === "uz")
+      ) {
         setSelectedLanguage(systemSettings.language as Language)
       }
-      if (systemSettings.currency && (systemSettings.currency === "USD" || systemSettings.currency === "RUB" || systemSettings.currency === "UZS")) {
+      if (
+        systemSettings.currency &&
+        (systemSettings.currency === "USD" ||
+          systemSettings.currency === "RUB" ||
+          systemSettings.currency === "UZS")
+      ) {
         setSelectedCurrency(systemSettings.currency as Currency)
       }
     }
@@ -166,4 +176,3 @@ export function Settings() {
     </div>
   )
 }
-

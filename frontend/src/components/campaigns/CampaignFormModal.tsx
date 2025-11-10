@@ -173,13 +173,11 @@ export function CampaignFormModal({
     }
 
     if (formData.message_template.trim().length < 10) {
-      newErrors.message_template =
-        t.campaigns.messageTemplateMinLength
+      newErrors.message_template = t.campaigns.messageTemplateMinLength
     }
 
     if (formData.type === "trigger" && !formData.trigger_frequency_minutes) {
-      newErrors.trigger_frequency_minutes =
-        t.campaigns.frequencyRequired
+      newErrors.trigger_frequency_minutes = t.campaigns.frequencyRequired
     }
 
     if (
@@ -286,13 +284,13 @@ export function CampaignFormModal({
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-neutral-900 dark:text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              Basic Information
+              {t.marketing.basicInformation}
             </h3>
 
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Campaign Name *
+                {t.marketing.campaignNameLabel}
               </label>
               <input
                 type="text"
@@ -313,7 +311,7 @@ export function CampaignFormModal({
               {/* Type */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Campaign Type *
+                  {t.marketing.campaignTypeLabel}
                 </label>
                 <select
                   value={formData.type}
@@ -336,7 +334,7 @@ export function CampaignFormModal({
               {/* Status */}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Status *
+                  {t.marketing.statusLabel}
                 </label>
                 <select
                   value={formData.status}
@@ -404,7 +402,7 @@ export function CampaignFormModal({
             {/* Message Template */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Message Template *
+                {t.marketing.messageTemplateLabel}
               </label>
               <textarea
                 value={formData.message_template}
@@ -421,7 +419,7 @@ export function CampaignFormModal({
               />
               <div className="flex justify-between mt-1">
                 <p className="text-xs text-neutral-500">
-                  Available variables: {"{first_name}"}, {"{last_name}"},{" "}
+                  {t.marketing.availableVariables}
                   {"{full_name}"}
                 </p>
                 <p className="text-xs text-neutral-500">
@@ -441,14 +439,16 @@ export function CampaignFormModal({
             <div className="flex items-center justify_between">
               <h3 className="text-lg font-medium text-neutral-900 dark:text-white flex items-center gap-2">
                 <Filter className="w-5 h-5" />
-                Customer Criteria
+                {t.marketing.customerCriteria}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCriteriaEditor(!showCriteriaEditor)}
                 className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
               >
-                {showCriteriaEditor ? t.marketing.hideCriteria : t.marketing.addCriteria}
+                {showCriteriaEditor
+                  ? t.marketing.hideCriteria
+                  : t.marketing.addCriteria}
               </button>
             </div>
 
@@ -457,7 +457,7 @@ export function CampaignFormModal({
                 {/* Age Range */}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    Age Range
+                    {t.marketing.ageRange}
                   </label>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -505,7 +505,7 @@ export function CampaignFormModal({
                 {/* Districts */}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    Districts
+                    {t.marketing.districts}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {DISTRICTS.map((district) => (
@@ -533,7 +533,7 @@ export function CampaignFormModal({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                      Minimum Total Spent
+                      {t.marketing.minimumTotalSpent}
                     </label>
                     <input
                       type="number"
@@ -553,7 +553,7 @@ export function CampaignFormModal({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                      Days Since Last Visit
+                      {t.marketing.daysSinceLastVisit}
                     </label>
                     <input
                       type="number"
@@ -582,34 +582,31 @@ export function CampaignFormModal({
                       <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
                       <div>
                         <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                          Active Filters
+                          {t.marketing.activeFilters}
                         </p>
                         <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-0.5">
                           {criteria.min_age && (
-                            <li>• Minimum age: {criteria.min_age}</li>
+                            <li>• {t.marketing.minimumAgeFilter.replace("{age}", criteria.min_age.toString())}</li>
                           )}
                           {criteria.max_age && (
-                            <li>• Maximum age: {criteria.max_age}</li>
+                            <li>• {t.marketing.maximumAgeFilter.replace("{age}", criteria.max_age.toString())}</li>
                           )}
                           {criteria.districts &&
                             criteria.districts.length > 0 && (
                               <li>
-                                • Districts:{" "}
-                                {criteria.districts
+                                • {t.marketing.districtsFilter.replace("{districts}", criteria.districts
                                   .map((d) => formatDistrictDisplay(d))
-                                  .join(", ")}
+                                  .join(", "))}
                               </li>
                             )}
                           {criteria.min_total_spent && (
                             <li>
-                              • Minimum spent:{" "}
-                              {criteria.min_total_spent.toLocaleString()}
+                              • {t.marketing.minimumSpentFilter.replace("{amount}", criteria.min_total_spent.toLocaleString())}
                             </li>
                           )}
                           {criteria.days_since_last_visit && (
                             <li>
-                              • Not visited for:{" "}
-                              {criteria.days_since_last_visit} days
+                              • {t.marketing.notVisitedForFilter.replace("{days}", criteria.days_since_last_visit.toString())}
                             </li>
                           )}
                           {/* Room types summary removed */}
@@ -645,7 +642,9 @@ export function CampaignFormModal({
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  {isEditMode ? t.marketing.updateCampaign : t.marketing.createCampaign}
+                  {isEditMode
+                    ? t.marketing.updateCampaign
+                    : t.marketing.createCampaign}
                 </>
               )}
             </button>
