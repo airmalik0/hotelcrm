@@ -29,7 +29,7 @@ from app.core.exceptions import (
     ValidationError as DomainValidationError,
 )
 from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
-from app.services.backup import run_scheduled_backup
+# from app.services.backup import run_scheduled_backup  # Temporarily disabled
 from app.services.campaigns import CampaignService
 
 logger = logging.getLogger(__name__)
@@ -368,22 +368,22 @@ async def startup_event() -> None:
         name='Startup trigger campaign check'
     )
 
-    if settings.BACKUP_ENABLED:
-        scheduler.add_job(
-            run_scheduled_backup,
-            'interval',
-            hours=24,
-            id='daily_database_backup',
-            name='Daily database backup',
-            replace_existing=True
-        )
-        scheduler.add_job(
-            run_scheduled_backup,
-            'date',
-            run_date=None,
-            id='startup_database_backup',
-            name='Initial database backup run'
-        )
+    # if settings.BACKUP_ENABLED:  # Temporarily disabled
+    #     scheduler.add_job(
+    #         run_scheduled_backup,
+    #         'interval',
+    #         hours=24,
+    #         id='daily_database_backup',
+    #         name='Daily database backup',
+    #         replace_existing=True
+    #     )
+    #     scheduler.add_job(
+    #         run_scheduled_backup,
+    #         'date',
+    #         run_date=None,
+    #         id='startup_database_backup',
+    #         name='Initial database backup run'
+    #     )
 
     scheduler.start()
     logger.info("Background scheduler started")
