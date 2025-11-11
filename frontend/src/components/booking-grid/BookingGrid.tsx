@@ -666,7 +666,9 @@ function BookingGridContent() {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-40">
           <GripHorizontal className="w-4 h-4" />
           <span className="text-sm font-medium">
-            {isUpdating ? "Moving booking..." : "Drag to another room"}
+            {isUpdating
+              ? t.bookingDetails.movingBooking
+              : t.bookingDetails.dragToAnotherRoom}
           </span>
         </div>
       )}

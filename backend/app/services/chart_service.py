@@ -7,9 +7,10 @@ from datetime import datetime
 from typing import Any
 
 import matplotlib
-from app.localization import get_report_text
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from app.localization import get_report_text
 
 # Use non-interactive backend for server environment
 matplotlib.use('Agg')

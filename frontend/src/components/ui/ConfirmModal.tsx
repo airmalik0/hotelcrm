@@ -81,10 +81,10 @@ export function ConfirmModal({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+          className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
           disabled={isLoading}
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300" />
         </button>
 
         {/* Icon */}

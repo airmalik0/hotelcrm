@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel
 class SystemSettingsBase(SQLModel):
     """Base model for system settings."""
     language: str = Field(default="en", max_length=10, description="System default language")
-    currency: str = Field(default="USD", max_length=3, description="System default currency")
+    currency: str = Field(default="UZS", max_length=3, description="System default currency")
 
     @field_validator("language")
     @classmethod
@@ -49,7 +49,7 @@ class SystemSettingsUpdate(SQLModel):
 class SystemSettings(SystemSettingsBase, table=True):
     """System settings table - singleton (only one record should exist)."""
     __tablename__ = "system_settings"
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

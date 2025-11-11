@@ -109,9 +109,9 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300"
+              className="text-neutral-400 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-neutral-400 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300" />
             </button>
           </div>
 
@@ -144,7 +144,7 @@ export function RoomCreateModal({ onClose }: RoomCreateModalProps) {
                       ? "border-danger-500 dark:border-danger-400"
                       : "border-neutral-300 dark:border-neutral-500"
                   } rounded-lg bg-white dark:bg-transparent px-3 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-600 transition-colors`}
-                  placeholder="e.g., 101, 202, A1"
+                  placeholder={t.bookingDetails.roomNumberExample}
                 />
                 {errors.room_number && (
                   <p className="mt-1 text-sm text-danger-600 dark:text-danger-400">

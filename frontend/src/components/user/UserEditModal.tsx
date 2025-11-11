@@ -14,12 +14,6 @@ interface UserEditModalProps {
   onSuccess: () => void
 }
 
-const roleOptions: Array<{ value: UserRole; label: string }> = [
-  { value: "admin", label: "Admin" },
-  { value: "manager", label: "Manager" },
-  { value: "host", label: "Host" },
-]
-
 export function UserEditModal({
   isOpen,
   user,
@@ -27,6 +21,13 @@ export function UserEditModal({
   onSuccess,
 }: UserEditModalProps) {
   const { t } = useLanguage()
+
+  const roleOptions: Array<{ value: UserRole; label: string }> = [
+    { value: "admin", label: t.user.roles.admin },
+    { value: "manager", label: t.user.roles.manager },
+    { value: "host", label: t.user.roles.host },
+  ]
+
   const [showPassword, setShowPassword] = useState(false)
   const [changePassword, setChangePassword] = useState(false)
   const [formData, setFormData] = useState<UserUpdate>({
@@ -217,12 +218,12 @@ export function UserEditModal({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
                     >
                       {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
+                        <EyeOff className="w-4 h-4 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300" />
                       ) : (
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300" />
                       )}
                     </button>
                     {errors.password && (

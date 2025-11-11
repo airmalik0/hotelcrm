@@ -777,6 +777,30 @@ export type SMSHistoryPublic = {
  */
 export type SMSStatus = 'pending' | 'sent' | 'delivered' | 'failed' | 'mock';
 
+/**
+ * Public schema for system settings.
+ */
+export type SystemSettingsPublic = {
+    /**
+     * System default language
+     */
+    language?: string;
+    /**
+     * System default currency
+     */
+    currency?: string;
+    id: string;
+    updated_at: string;
+};
+
+/**
+ * Schema for updating system settings.
+ */
+export type SystemSettingsUpdate = {
+    language?: (string | null);
+    currency?: (string | null);
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -1059,7 +1083,18 @@ export type RoomsUpdateRoomStatusError = (HTTPValidationError);
 
 export type CustomersReadCustomersData = {
     query?: {
+        country_code?: (string | null);
+        date_from?: (string | null);
+        date_to?: (string | null);
+        district?: (string | null);
         limit?: number;
+        max_bookings?: (number | null);
+        max_spent?: (number | null);
+        min_bookings?: (number | null);
+        min_spent?: (number | null);
+        order_by?: string;
+        order_direction?: string;
+        region?: (string | null);
         search?: (string | null);
         skip?: number;
     };
@@ -1875,3 +1910,15 @@ export type InquiriesResolveInquiryData = {
 export type InquiriesResolveInquiryResponse = (CustomerInquiryPublic);
 
 export type InquiriesResolveInquiryError = (HTTPValidationError);
+
+export type SystemSettingsGetSystemSettingsResponse = (SystemSettingsPublic);
+
+export type SystemSettingsGetSystemSettingsError = unknown;
+
+export type SystemSettingsUpdateSystemSettingsData = {
+    body: SystemSettingsUpdate;
+};
+
+export type SystemSettingsUpdateSystemSettingsResponse = (SystemSettingsPublic);
+
+export type SystemSettingsUpdateSystemSettingsError = (HTTPValidationError);

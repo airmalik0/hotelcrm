@@ -12,7 +12,7 @@ export const translations = {
 } as const
 
 export const defaultLanguage: Language = "en"
-export const defaultCurrency: Currency = "USD"
+export const defaultCurrency: Currency = "UZS"
 
 // Language display names
 export const languages = {

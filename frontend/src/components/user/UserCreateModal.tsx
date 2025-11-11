@@ -13,18 +13,18 @@ interface UserCreateModalProps {
   onSuccess: () => void
 }
 
-const roleOptions: Array<{ value: UserRole; label: string }> = [
-  { value: "admin", label: "Admin" },
-  { value: "manager", label: "Manager" },
-  { value: "host", label: "Host" },
-]
-
 export function UserCreateModal({
   isOpen,
   onClose,
   onSuccess,
 }: UserCreateModalProps) {
   const { t } = useLanguage()
+
+  const roleOptions: Array<{ value: UserRole; label: string }> = [
+    { value: "admin", label: t.user.roles.admin },
+    { value: "manager", label: t.user.roles.manager },
+    { value: "host", label: t.user.roles.host },
+  ]
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState<UserCreate>({
     username: "",
@@ -39,7 +39,7 @@ export function UserCreateModal({
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
-      showSuccess("User created successfully!")
+      showSuccess(t.bookingDetails.userCreatedSuccessfully)
       onSuccess()
       resetForm()
     },
@@ -47,7 +47,7 @@ export function UserCreateModal({
       handleFormError(
         error,
         (validationErrors) => setErrors(validationErrors),
-        "Failed to create user",
+        t.bookingDetails.failedToCreateUser,
       )
     },
   })
@@ -88,18 +88,17 @@ export function UserCreateModal({
     const newErrors: Partial<UserCreate> = {}
 
     if (!formData.username.trim()) {
-      newErrors.username = "Username is required"
+      newErrors.username = t.bookingDetails.usernameRequired
     } else if (formData.username.length < 3) {
-      newErrors.username = "Username must be at least 3 characters"
+      newErrors.username = t.bookingDetails.usernameMinLength
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username =
-        "Username must contain only letters, numbers, hyphens and underscores"
+      newErrors.username = t.bookingDetails.usernameInvalidChars
     }
 
     if (!formData.password) {
-      newErrors.password = "Password is required"
+      newErrors.password = t.bookingDetails.passwordRequired
     } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters"
+      newErrors.password = t.bookingDetails.passwordMinLength
     }
 
     setErrors(newErrors)
@@ -192,12 +191,12 @@ export function UserCreateModal({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
+                      <EyeOff className="w-4 h-4 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300" />
                     ) : (
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300" />
                     )}
                   </button>
                 </div>

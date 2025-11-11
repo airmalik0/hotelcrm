@@ -8,7 +8,7 @@ from .ru import REPORTS_TRANSLATIONS as RU_TRANSLATIONS
 from .uz import REPORTS_TRANSLATIONS as UZ_TRANSLATIONS
 from .zh import REPORTS_TRANSLATIONS as ZH_TRANSLATIONS
 
-__all__ = ['get_report_text', 'SUPPORTED_REPORT_LANGUAGES']
+__all__ = ['get_report_text', 'get_currency_symbol', 'SUPPORTED_REPORT_LANGUAGES']
 
 SUPPORTED_REPORT_LANGUAGES = {
     'en': 'English',
@@ -60,3 +60,21 @@ def get_report_text(key: str, language: str = 'en') -> str:
         if language != 'en':
             return get_report_text(key, 'en')
         return key
+
+
+def get_currency_symbol(currency: str = 'UZS') -> str:
+    """
+    Get currency symbol for the given currency code.
+
+    Args:
+        currency: Currency code (USD, RUB, UZS)
+
+    Returns:
+        Currency symbol
+    """
+    symbols = {
+        'USD': '$',
+        'RUB': '₽',
+        'UZS': 'сум'
+    }
+    return symbols.get(currency, currency)

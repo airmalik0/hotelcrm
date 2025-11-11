@@ -1,4 +1,5 @@
 import { ImageUpload } from "@/components/ui/ImageUpload"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 interface PassportUploadInputProps {
   value?: string | null
@@ -15,15 +16,17 @@ export function PassportUploadInput({
   required = false,
   error,
 }: PassportUploadInputProps) {
+  const { t } = useLanguage()
   return (
     <div className="w-full">
       <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2">
-        Passport Photo {required && <span className="text-danger-600">*</span>}
+        {t.bookingDetails.passportPhoto}{" "}
+        {required && <span className="text-danger-600">*</span>}
       </label>
       <ImageUpload
         value={value}
         onChange={onChange}
-        label="Upload Passport"
+        label={t.bookingDetails.uploadPassport}
         disabled={disabled}
         maxSizeMB={5}
         acceptedFormats={[".jpg", ".jpeg", ".png", ".webp"]}

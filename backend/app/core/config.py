@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
+    BACKUP_ENABLED: bool = True
+    BACKUP_DIRECTORY: str = "uploads/backups"
+    BACKUP_SPLIT_SIZE_MB: int = 45
+    TELEGRAM_ADMIN_ID: int | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property

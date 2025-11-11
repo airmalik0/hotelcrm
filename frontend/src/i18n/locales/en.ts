@@ -68,6 +68,7 @@ export const en = {
     noNotesAvailable: "No notes available",
     // Loading states
     loadingRooms: "Loading rooms...",
+    chooseRoomPlaceholder: "Choose a room...",
     loadingUsers: "Loading users...",
     loadingCustomers: "Loading customers...",
     loadingBookings: "Loading bookings...",
@@ -128,6 +129,7 @@ export const en = {
     roomStatusConfirmation: "Room Status Confirmation",
     removeGuest: "Remove Guest",
     removeGuestConfirm: "Remove Guest",
+    removeGuestMessage: "Are you sure you want to remove this guest from the booking?",
     addChargeAndChange: "Add Charge & Change",
     applyRefundAndChange: "Apply Refund & Change",
     modifyCheckOut: "Modify Check-out",
@@ -210,6 +212,7 @@ export const en = {
     viewDetails: "View Details",
     editRoom: "Edit Room",
     deleteRoom: "Delete Room",
+    deleteRoomConfirm: "Are you sure you want to delete Room {roomNumber}? This action cannot be undone.",
     floor: "Floor",
     // Room modals
     manageCategories: "Manage Room Categories",
@@ -624,7 +627,7 @@ export const en = {
     actualCheckOut: "Actual Check-out:",
     guestsInRoom: "Guests in Room",
     noGuestsAdded: "No guests added yet.",
-    clickAddGuest: "Click \"Add Guest\" to start adding guests to this booking.",
+    clickAddGuest: 'Click "Add Guest" to start adding guests to this booking.',
     totalAmount: "Total Amount:",
     paymentMethod: "Payment Method:",
     discountLabel: "Discount:",
@@ -646,8 +649,55 @@ export const en = {
     discountReasonRequired:
       "Discount reason is required when discount is applied",
     cannotCheckInMaintenance: "Cannot check in: Room is under maintenance",
+    cannotCheckInOccupied: "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support.",
+    onlyCheckedInCanCheckOut: "Only checked-in bookings can be checked out",
+    guestRemovedSuccess: "Guest removed successfully!",
+    failedToUpdateRoomStatus: "Failed to update room status. Please try again.",
     roomCleaningConfirm:
       "Room is being cleaned. Do you want to mark it as available and proceed with check-in?",
+    // Guest List
+    roomAtMaximumCapacity: "Room at maximum capacity",
+    roomAccommodatesGuests:
+      "This room can accommodate up to {count} guest{plural}. Remove a guest to add another.",
+    // Guest Card
+    passport: "passport",
+    noPhoto: "No photo",
+    primary: "Primary",
+    removeGuest: "Remove guest",
+    // Passport Upload
+    passportPhoto: "Passport Photo",
+    uploadPassport: "Upload Passport",
+    phonePlaceholder: "+998901234567",
+    // Booking Detail Modal
+    onlyConfirmedBookingsCanBeCheckedIn:
+      "Only confirmed bookings can be checked in",
+    failedToRemoveGuest: "Failed to remove guest",
+    removeDiscount: "Remove discount",
+    required: "Required",
+    unknown: "Unknown",
+    noReasonProvided: "No reason provided",
+    // User Create Modal
+    userCreatedSuccessfully: "User created successfully!",
+    failedToCreateUser: "Failed to create user",
+    usernameRequired: "Username is required",
+    usernameMinLength: "Username must be at least 3 characters",
+    usernameInvalidChars:
+      "Username must contain only letters, numbers, hyphens and underscores",
+    passwordRequired: "Password is required",
+    passwordMinLength: "Password must be at least 8 characters",
+    // Booking Grid
+    movingBooking: "Moving booking...",
+    dragToAnotherRoom: "Drag to another room",
+    unnamedCategory: "Unnamed",
+    // Placeholders
+    tagsPlaceholder: "vip,loyal",
+    amountPlaceholder: "0.00",
+    additionalInfoPlaceholder: "Additional information...",
+    searchInquiriesPlaceholder: "Search inquiries...",
+    resolutionDetailsPlaceholder: "Enter resolution details...",
+    searchCampaignsPlaceholder: "Search campaigns...",
+    utilitiesExample: "E.g., Utilities",
+    roomNumberExample: "e.g., 101, 202, A1",
   },
   // Campaigns
   campaigns: {
@@ -687,6 +737,17 @@ export const en = {
     campaign: "Campaign",
     editCampaign: "Edit Campaign",
     createCampaign: "Create Campaign",
+    deleteCampaign: "Delete Campaign",
+    deleteCampaignConfirm: "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    campaignRecipientsPreview: "Campaign Recipients Preview",
+    executeCampaign: "Execute Campaign",
+    testCampaign: "Test Campaign",
+    execute: "Execute",
+    testRun: "Test Run",
+    previewRecipients: "Preview recipients",
+    testRunTitle: "Test run",
+    executeCampaignTitle: "Execute campaign",
+    editCampaignTitle: "Edit campaign",
     hideCriteria: "Hide Criteria",
     addCriteria: "Add Criteria",
     updateCampaign: "Update Campaign",
@@ -710,6 +771,23 @@ export const en = {
     minimumSpentFilter: "Minimum spent: {amount}",
     daysSinceLastVisitFilter: "Days since last visit: {days}",
     notVisitedForFilter: "Not visited for: {days} days",
+    // Campaign form specific
+    onetimeOption: "One-time",
+    triggerOption: "Trigger (Automated)",
+    campaignCheckFrequencyText:
+      "Campaign will check for new matching customers every {minutes} minutes",
+    campaignNamePlaceholder: "e.g., Summer Sale Campaign",
+    frequencyPlaceholder: "30",
+    frequencyHelpText: "min: 5, max: 1440 (24h)",
+    minAgePlaceholder: "Min age",
+    maxAgePlaceholder: "Max age",
+    minSpentPlaceholder: "e.g., 500000",
+    daysSinceVisitPlaceholder: "e.g., 30",
+    messageTemplatePlaceholder:
+      "Hello {first_name}! We have a special offer for you...",
+    cancelButton: "Cancel",
+    updatingButton: "Updating...",
+    creatingButton: "Creating...",
   },
   // Customer Inquiries
   inquiries: {
@@ -744,6 +822,51 @@ export const en = {
     room: "Room:",
     pricePerNight: "Price/Night:",
     status: "Status:",
+  },
+  // UI Components
+  ui: {
+    searchableSelect: {
+      selectOption: "Select an option",
+      clearSelection: "Clear selection",
+      typeToSearch: "Type to search...",
+      searchOptions: "Search options",
+      noOptionsFound: "No options found",
+      result: "result",
+      results: "results",
+      found: "found",
+    },
+    imageUpload: {
+      uploadPhoto: "Upload Photo",
+      fileSizeError: "File size must be less than {size}MB",
+      invalidFileType: "Invalid file type. Accepted formats: {formats}",
+      photoUploadedSuccess: "Photo uploaded successfully",
+      failedToUploadPhoto: "Failed to upload photo",
+      removePhoto: "Remove photo",
+      passportPreview: "Passport preview",
+      uploading: "Uploading...",
+      clickToUploadPassport: "Click to upload passport photo",
+    },
+    tagsInput: {
+      selectOrAddTags: "Select or add tags...",
+      searchTags: "Search tags...",
+      noTagsFound: "No tags found",
+      noTagsAvailable: "No tags available",
+    },
+    errorBoundary: {
+      somethingWentWrong: "Something went wrong",
+      errorDescription:
+        "We're sorry, but something unexpected happened. The page has been automatically reloaded to fix the issue.",
+      reloadPage: "Reload Page",
+      goBack: "Go Back",
+      errorDetails: "Error Details (Development Only)",
+    },
+    protectedRoute: {
+      loading: "Loading...",
+      accessDenied: "Access Denied",
+      accessDeniedDescription:
+        "You don't have permission to access this page. Contact your administrator if you believe this is an error.",
+      goBack: "Go Back",
+    },
   },
   // Forms
   forms: {
@@ -794,6 +917,18 @@ export const en = {
       description: "Description",
       deleteExpense: "Delete expense",
       deleteExpenseConfirm: "Are you sure you want to delete this expense?",
+      editExpense: "Edit expense",
+      editCategory: "Edit category",
+      saveExpense: "Save expense",
+      saveCategory: "Save category",
+      saving: "Saving...",
+      errorSavingExpense: "Error saving expense",
+      errorSavingCategory: "Error saving category",
+      enterName: "Enter a name",
+      selectCategory: "Please select a category",
+      enterAmount: "Enter an amount",
+      amountGreaterThanZero: "Amount must be greater than 0",
+      noDescription: "No description",
       page: "Page {current} of {total}",
       prev: "Prev",
       next: "Next",

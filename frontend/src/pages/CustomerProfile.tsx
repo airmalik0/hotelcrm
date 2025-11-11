@@ -33,34 +33,39 @@ export function CustomerProfile() {
   // Generate back URL with saved pagination and filter state
   const getBackUrl = () => {
     try {
-      const savedState = localStorage.getItem('customerListState')
+      const savedState = localStorage.getItem("customerListState")
       if (savedState) {
         const state = JSON.parse(savedState)
         const params = new URLSearchParams()
 
-        if (state.page && state.page > 1) params.set('page', state.page)
-        if (state.limit && state.limit !== 10) params.set('limit', state.limit)
-        if (state.search) params.set('search', state.search)
-        if (state.date_from) params.set('date_from', state.date_from)
-        if (state.date_to) params.set('date_to', state.date_to)
-        if (state.min_spent) params.set('min_spent', state.min_spent)
-        if (state.max_spent) params.set('max_spent', state.max_spent)
-        if (state.min_bookings) params.set('min_bookings', state.min_bookings)
-        if (state.max_bookings) params.set('max_bookings', state.max_bookings)
-        if (state.country_code) params.set('country_code', state.country_code)
-        if (state.region) params.set('region', state.region)
-        if (state.district) params.set('district', state.district)
-        if (state.order_by && state.order_by !== 'created_at') params.set('order_by', state.order_by)
-        if (state.order_direction && state.order_direction !== 'desc') params.set('order_direction', state.order_direction)
+        if (state.page && state.page > 1) params.set("page", state.page)
+        if (state.limit && state.limit !== 10) params.set("limit", state.limit)
+        if (state.search) params.set("search", state.search)
+        if (state.date_from) params.set("date_from", state.date_from)
+        if (state.date_to) params.set("date_to", state.date_to)
+        if (state.min_spent) params.set("min_spent", state.min_spent)
+        if (state.max_spent) params.set("max_spent", state.max_spent)
+        if (state.min_bookings) params.set("min_bookings", state.min_bookings)
+        if (state.max_bookings) params.set("max_bookings", state.max_bookings)
+        if (state.country_code) params.set("country_code", state.country_code)
+        if (state.region) params.set("region", state.region)
+        if (state.district) params.set("district", state.district)
+        if (state.order_by && state.order_by !== "created_at")
+          params.set("order_by", state.order_by)
+        if (state.order_direction && state.order_direction !== "desc")
+          params.set("order_direction", state.order_direction)
 
         const queryString = params.toString()
-        return queryString ? `/customers?${queryString}` : '/customers'
+        return queryString ? `/customers?${queryString}` : "/customers"
       }
     } catch (error) {
       // If there's an error parsing localStorage, just return default URL
-      console.warn('Error parsing customer list state from localStorage:', error)
+      console.warn(
+        "Error parsing customer list state from localStorage:",
+        error,
+      )
     }
-    return '/customers'
+    return "/customers"
   }
 
   // Fetch customer data
@@ -136,367 +141,370 @@ export function CustomerProfile() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - Customer Info */}
-      <div className="col-span-12 lg:col-span-4">
-        <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-dark-2 h-full shadow-sm dark:shadow-none">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
-          <div className="pb-6 px-6 -mt-16">
-            <div className="text-center border-b border-neutral-200 dark:border-neutral-600 pb-6">
-              <div className="w-32 h-32 rounded-lg bg-primary-100 dark:bg-primary-600/30 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
-                <User className="w-16 h-16 text-primary-600 dark:text-primary-400" />
+        <div className="col-span-12 lg:col-span-4">
+          <div className="relative rounded-2xl overflow-hidden bg-white dark:bg-dark-2 h-full shadow-sm dark:shadow-none">
+            <div className="bg-gradient-to-r from-primary-600 to-primary-400 h-32" />
+            <div className="pb-6 px-6 -mt-16">
+              <div className="text-center border-b border-neutral-200 dark:border-neutral-600 pb-6">
+                <div className="w-32 h-32 rounded-lg bg-primary-100 dark:bg-primary-600/30 border-4 border-white dark:border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
+                  <User className="w-16 h-16 text-primary-600 dark:text-primary-400" />
+                </div>
+                <h4 className="text-xl font-semibold mt-4 mb-1 text-neutral-900 dark:text-white">
+                  {customer.first_name} {customer.last_name}
+                </h4>
+                <span className="text-neutral-600 dark:text-neutral-400">
+                  Customer ID: {customer.id.slice(0, 8)}
+                </span>
               </div>
-              <h4 className="text-xl font-semibold mt-4 mb-1 text-neutral-900 dark:text-white">
-                {customer.first_name} {customer.last_name}
-              </h4>
-              <span className="text-neutral-600 dark:text-neutral-400">
-                Customer ID: {customer.id.slice(0, 8)}
-              </span>
-            </div>
 
-            {/* Personal Info */}
-            <div className="mt-6">
-              <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                {t.customer.profile.personalInformation}
-              </h6>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-neutral-500" />
-                  <span className="text-neutral-600 dark:text-neutral-400">
-                    {customer.first_name} {customer.last_name}
-                  </span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <Phone className="w-5 h-5 text-neutral-500" />
-                  <span className="text-neutral-600 dark:text-neutral-400">
-                    {customer.phone || t.customer.profile.noPhoneNumber}
-                  </span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-neutral-500" />
-                  <span className="text-neutral-600 dark:text-neutral-400">
-                    {t.customer.profile.dobLabel}{" "}
-                    {formatDate(customer.date_of_birth)}
-                  </span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-neutral-500" />
-                  <span className="text-neutral-600 dark:text-neutral-400">
-                    {customer.district || t.customer.profile.noLocation}
-                  </span>
-                </li>
-                {customer.notes && (
-                  <li className="flex items-start gap-3">
-                    <FileText className="w-5 h-5 text-neutral-500 mt-0.5" />
+              {/* Personal Info */}
+              <div className="mt-6">
+                <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
+                  {t.customer.profile.personalInformation}
+                </h6>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <User className="w-5 h-5 text-neutral-500" />
                     <span className="text-neutral-600 dark:text-neutral-400">
-                      {customer.notes}
+                      {customer.first_name} {customer.last_name}
                     </span>
                   </li>
-                )}
-              </ul>
+                  <li className="flex items-center gap-3">
+                    <Phone className="w-5 h-5 text-neutral-500" />
+                    <span className="text-neutral-600 dark:text-neutral-400">
+                      {customer.phone || t.customer.profile.noPhoneNumber}
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Calendar className="w-5 h-5 text-neutral-500" />
+                    <span className="text-neutral-600 dark:text-neutral-400">
+                      {t.customer.profile.dobLabel}{" "}
+                      {formatDate(customer.date_of_birth)}
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-neutral-500" />
+                    <span className="text-neutral-600 dark:text-neutral-400">
+                      {customer.district || t.customer.profile.noLocation}
+                    </span>
+                  </li>
+                  {customer.notes && (
+                    <li className="flex items-start gap-3">
+                      <FileText className="w-5 h-5 text-neutral-500 mt-0.5" />
+                      <span className="text-neutral-600 dark:text-neutral-400">
+                        {customer.notes}
+                      </span>
+                    </li>
+                  )}
+                </ul>
 
-              {/* Tags */}
-              {customer.tags && customer.tags.length > 0 && (
-                <div className="mt-4">
-                  <h6 className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
-                    Tags
-                  </h6>
-                  <div className="flex flex-wrap gap-2">
-                    {customer.tags.map((tag) => {
-                      const getTagStyle = () => {
-                        switch (tag.toLowerCase()) {
-                          case "loyal":
-                            return "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400"
-                          case "vip":
-                            return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400"
-                          case "problematic":
-                            return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400"
-                          default:
-                            return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
+                {/* Tags */}
+                {customer.tags && customer.tags.length > 0 && (
+                  <div className="mt-4">
+                    <h6 className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
+                      Tags
+                    </h6>
+                    <div className="flex flex-wrap gap-2">
+                      {customer.tags.map((tag) => {
+                        const getTagStyle = () => {
+                          switch (tag.toLowerCase()) {
+                            case "loyal":
+                              return "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400"
+                            case "vip":
+                              return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400"
+                            case "problematic":
+                              return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400"
+                            default:
+                              return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400"
+                          }
                         }
-                      }
-                      return (
-                        <span
-                          key={tag}
-                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getTagStyle()}`}
-                        >
-                          {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                        </span>
-                      )
-                    })}
+                        return (
+                          <span
+                            key={tag}
+                            className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getTagStyle()}`}
+                          >
+                            {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Statistics */}
-            <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
-              <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                {t.customer.profile.statistics}
-              </h6>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-success-100 dark:bg-success-600/30 rounded-lg p-4">
-                  <DollarSign className="w-8 h-8 text-success-600 dark:text-success-400 mb-2" />
-                  <p className="text-2xl font-bold text-success-600 dark:text-success-400">
-                    {formatCurrency(customer.total_spent, currency)}
-                  </p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {t.customer.profile.totalSpent}
-                  </p>
-                </div>
-                <div className="bg-info-100 dark:bg-info-600/30 rounded-lg p-4">
-                  <ShoppingBag className="w-8 h-8 text-info-600 dark:text-info-400 mb-2" />
-                  <p className="text-2xl font-bold text-info-600 dark:text-info-400">
-                    {customer.total_bookings}
-                  </p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {t.customer.profile.totalBookings}
-                  </p>
-                </div>
+                )}
               </div>
-              <div className="mt-4 space-y-2">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">
-                    {t.customer.profile.memberSince}
-                  </span>{" "}
-                  {formatDate(customer.created_at)}
-                </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">
-                    {t.customer.profile.firstBooking}
-                  </span>{" "}
-                  {formatDate(customer.first_booking_date)}
-                </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold">
-                    {t.customer.profile.lastBooking}
-                  </span>{" "}
-                  {formatDate(customer.last_booking_date)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Right Column - Tabs */}
-      <div className="col-span-12 lg:col-span-8">
-        <div className="bg-white dark:bg-dark-2 rounded-xl h-full shadow-sm dark:shadow-none">
-          <div className="p-6">
-            {/* Tab Navigation */}
-            <div className="flex flex-wrap border-b border-neutral-200 dark:border-neutral-600 mb-6">
-              <button
-                className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
-                  activeTab === "details"
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
-                }`}
-                onClick={() => setActiveTab("details")}
-              >
-                <User className="w-4 h-4" />
-                {t.customer.profile.customerDetails}
-              </button>
-              <button
-                className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
-                  activeTab === "bookings"
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
-                }`}
-                onClick={() => setActiveTab("bookings")}
-              >
-                <Calendar className="w-4 h-4" />
-                {t.customer.profile.bookingHistory}
-              </button>
-              <button
-                className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
-                  activeTab === "documents"
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
-                }`}
-                onClick={() => setActiveTab("documents")}
-              >
-                <FileImage className="w-4 h-4" />
-                {t.customer.profile.documents}
-              </button>
-              <button
-                className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
-                  activeTab === "edit"
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
-                }`}
-                onClick={() => setActiveTab("edit")}
-              >
-                <Edit className="w-4 h-4" />
-                {t.customer.profile.editProfile}
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div>
-              {/* Details Tab */}
-              {activeTab === "details" && (
-                <div>
-                  <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                    {t.customer.profile.customerInformation}
-                  </h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        {t.customer.profile.fullName}
-                      </label>
-                      <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.first_name} {customer.last_name}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        {t.customer.profile.phoneNumber}
-                      </label>
-                      <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.phone || t.customer.profile.notProvided}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        {t.customer.profile.dateOfBirth}
-                      </label>
-                      <p className="text-base text-neutral-900 dark:text-white">
-                        {formatDate(customer.date_of_birth)}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        {t.customer.profile.districtLocation}
-                      </label>
-                      <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.district || t.customer.profile.notProvided}
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                        {t.customer.profile.notes}
-                      </label>
-                      <p className="text-base text-neutral-900 dark:text-white">
-                        {customer.notes || t.common.noNotesAvailable}
-                      </p>
-                    </div>
-                    {/* Tags in details tab */}
-                    {customer.tags && customer.tags.length > 0 && (
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
-                          Tags
-                        </label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {customer.tags.map((tag) => {
-                            const getTagStyle = () => {
-                              switch (tag.toLowerCase()) {
-                                case "loyal":
-                                  return "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 border-success-200 dark:border-success-600"
-                                case "vip":
-                                  return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-600"
-                                case "problematic":
-                                  return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 border-danger-200 dark:border-danger-600"
-                                default:
-                                  return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600"
-                              }
-                            }
-                            return (
-                              <span
-                                key={tag}
-                                className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getTagStyle()}`}
-                              >
-                                {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
+              {/* Statistics */}
+              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-600">
+                <h6 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
+                  {t.customer.profile.statistics}
+                </h6>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-success-100 dark:bg-success-600/30 rounded-lg p-4">
+                    <DollarSign className="w-8 h-8 text-success-600 dark:text-success-400 mb-2" />
+                    <p className="text-2xl font-bold text-success-600 dark:text-success-400">
+                      {formatCurrency(customer.total_spent, currency)}
+                    </p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      {t.customer.profile.totalSpent}
+                    </p>
                   </div>
-
-                  <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                    <h6 className="text-base font-semibold mb-3 text-neutral-900 dark:text-white">
-                      {t.customer.profile.customerMetrics}
-                    </h6>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          {t.customer.profile.totalSpent}
-                        </p>
-                        <p className="text-lg font-bold text-success-600 dark:text-success-400">
-                          {formatCurrency(customer.total_spent, currency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          {t.customer.profile.totalBookings}
-                        </p>
-                        <p className="text-lg font-bold text-info-600 dark:text-info-400">
-                          {customer.total_bookings}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          {t.customer.profile.avgSpending}
-                        </p>
-                        <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                          {customer.total_bookings > 0
-                            ? formatCurrency(
-                                customer.total_spent / customer.total_bookings,
-                                currency,
-                              )
-                            : formatCurrency(0, currency)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          {t.customer.profile.customerSince}
-                        </p>
-                        <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                          {safeParseDate(customer.created_at).getFullYear()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Bookings Tab */}
-              {activeTab === "bookings" && customerId && (
-                <BookingHistoryTab customerId={customerId} />
-              )}
-
-              {/* Documents Tab */}
-              {activeTab === "documents" && (
-                <div>
-                  <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
-                    {t.customer.profile.customerDocuments}
-                  </h5>
-
-                  <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6">
-                    <h6 className="text-base font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
-                      <FileImage className="w-5 h-5" />
-                      {t.customer.profile.passportDocument}
-                    </h6>
-
-                    <ImageUpload
-                      value={customer.passport_photo_path}
-                      onChange={(path) => updatePassportMutation.mutate(path)}
-                      label={t.customer.profile.uploadPassport}
-                      disabled={updatePassportMutation.isPending}
-                    />
-
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
-                      {t.customer.profile.acceptedFormatsDesc}
+                  <div className="bg-info-100 dark:bg-info-600/30 rounded-lg p-4">
+                    <ShoppingBag className="w-8 h-8 text-info-600 dark:text-info-400 mb-2" />
+                    <p className="text-2xl font-bold text-info-600 dark:text-info-400">
+                      {customer.total_bookings}
+                    </p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      {t.customer.profile.totalBookings}
                     </p>
                   </div>
                 </div>
-              )}
-
-              {/* Edit Tab */}
-              {activeTab === "edit" && <CustomerEditForm customer={customer} />}
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="font-semibold">
+                      {t.customer.profile.memberSince}
+                    </span>{" "}
+                    {formatDate(customer.created_at)}
+                  </p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="font-semibold">
+                      {t.customer.profile.firstBooking}
+                    </span>{" "}
+                    {formatDate(customer.first_booking_date)}
+                  </p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="font-semibold">
+                      {t.customer.profile.lastBooking}
+                    </span>{" "}
+                    {formatDate(customer.last_booking_date)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Right Column - Tabs */}
+        <div className="col-span-12 lg:col-span-8">
+          <div className="bg-white dark:bg-dark-2 rounded-xl h-full shadow-sm dark:shadow-none">
+            <div className="p-6">
+              {/* Tab Navigation */}
+              <div className="flex flex-wrap border-b border-neutral-200 dark:border-neutral-600 mb-6">
+                <button
+                  className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
+                    activeTab === "details"
+                      ? "border-primary-600 text-primary-600"
+                      : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
+                  }`}
+                  onClick={() => setActiveTab("details")}
+                >
+                  <User className="w-4 h-4" />
+                  {t.customer.profile.customerDetails}
+                </button>
+                <button
+                  className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
+                    activeTab === "bookings"
+                      ? "border-primary-600 text-primary-600"
+                      : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
+                  }`}
+                  onClick={() => setActiveTab("bookings")}
+                >
+                  <Calendar className="w-4 h-4" />
+                  {t.customer.profile.bookingHistory}
+                </button>
+                <button
+                  className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
+                    activeTab === "documents"
+                      ? "border-primary-600 text-primary-600"
+                      : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
+                  }`}
+                  onClick={() => setActiveTab("documents")}
+                >
+                  <FileImage className="w-4 h-4" />
+                  {t.customer.profile.documents}
+                </button>
+                <button
+                  className={`py-2.5 px-4 border-b-2 font-semibold text-base inline-flex items-center gap-2 transition-colors ${
+                    activeTab === "edit"
+                      ? "border-primary-600 text-primary-600"
+                      : "border-transparent text-neutral-600 hover:text-neutral-900 dark:hover:text-white"
+                  }`}
+                  onClick={() => setActiveTab("edit")}
+                >
+                  <Edit className="w-4 h-4" />
+                  {t.customer.profile.editProfile}
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div>
+                {/* Details Tab */}
+                {activeTab === "details" && (
+                  <div>
+                    <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
+                      {t.customer.profile.customerInformation}
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                          {t.customer.profile.fullName}
+                        </label>
+                        <p className="text-base text-neutral-900 dark:text-white">
+                          {customer.first_name} {customer.last_name}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                          {t.customer.profile.phoneNumber}
+                        </label>
+                        <p className="text-base text-neutral-900 dark:text-white">
+                          {customer.phone || t.customer.profile.notProvided}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                          {t.customer.profile.dateOfBirth}
+                        </label>
+                        <p className="text-base text-neutral-900 dark:text-white">
+                          {formatDate(customer.date_of_birth)}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                          {t.customer.profile.districtLocation}
+                        </label>
+                        <p className="text-base text-neutral-900 dark:text-white">
+                          {customer.district || t.customer.profile.notProvided}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                          {t.customer.profile.notes}
+                        </label>
+                        <p className="text-base text-neutral-900 dark:text-white">
+                          {customer.notes || t.common.noNotesAvailable}
+                        </p>
+                      </div>
+                      {/* Tags in details tab */}
+                      {customer.tags && customer.tags.length > 0 && (
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                            Tags
+                          </label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {customer.tags.map((tag) => {
+                              const getTagStyle = () => {
+                                switch (tag.toLowerCase()) {
+                                  case "loyal":
+                                    return "bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 border-success-200 dark:border-success-600"
+                                  case "vip":
+                                    return "bg-warning-100 dark:bg-warning-600/30 text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-600"
+                                  case "problematic":
+                                    return "bg-danger-100 dark:bg-danger-600/30 text-danger-600 dark:text-danger-400 border-danger-200 dark:border-danger-600"
+                                  default:
+                                    return "bg-neutral-100 dark:bg-neutral-600/30 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-600"
+                                }
+                              }
+                              return (
+                                <span
+                                  key={tag}
+                                  className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getTagStyle()}`}
+                                >
+                                  {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-8 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                      <h6 className="text-base font-semibold mb-3 text-neutral-900 dark:text-white">
+                        {t.customer.profile.customerMetrics}
+                      </h6>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            {t.customer.profile.totalSpent}
+                          </p>
+                          <p className="text-lg font-bold text-success-600 dark:text-success-400">
+                            {formatCurrency(customer.total_spent, currency)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            {t.customer.profile.totalBookings}
+                          </p>
+                          <p className="text-lg font-bold text-info-600 dark:text-info-400">
+                            {customer.total_bookings}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            {t.customer.profile.avgSpending}
+                          </p>
+                          <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
+                            {customer.total_bookings > 0
+                              ? formatCurrency(
+                                  customer.total_spent /
+                                    customer.total_bookings,
+                                  currency,
+                                )
+                              : formatCurrency(0, currency)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            {t.customer.profile.customerSince}
+                          </p>
+                          <p className="text-lg font-bold text-neutral-900 dark:text-white">
+                            {safeParseDate(customer.created_at).getFullYear()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bookings Tab */}
+                {activeTab === "bookings" && customerId && (
+                  <BookingHistoryTab customerId={customerId} />
+                )}
+
+                {/* Documents Tab */}
+                {activeTab === "documents" && (
+                  <div>
+                    <h5 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-white">
+                      {t.customer.profile.customerDocuments}
+                    </h5>
+
+                    <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-6">
+                      <h6 className="text-base font-semibold mb-4 text-neutral-900 dark:text-white flex items-center gap-2">
+                        <FileImage className="w-5 h-5" />
+                        {t.customer.profile.passportDocument}
+                      </h6>
+
+                      <ImageUpload
+                        value={customer.passport_photo_path}
+                        onChange={(path) => updatePassportMutation.mutate(path)}
+                        label={t.customer.profile.uploadPassport}
+                        disabled={updatePassportMutation.isPending}
+                      />
+
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
+                        {t.customer.profile.acceptedFormatsDesc}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit Tab */}
+                {activeTab === "edit" && (
+                  <CustomerEditForm customer={customer} />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   )

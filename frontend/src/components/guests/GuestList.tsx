@@ -98,11 +98,21 @@ export function GuestList({
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-warning-800 dark:text-warning-300">
-              Room at maximum capacity
+              {t.bookingDetails.roomAtMaximumCapacity}
             </p>
             <p className="text-sm text-warning-700 dark:text-warning-400 mt-1">
-              This room can accommodate up to {maxOccupancy} guest
-              {maxOccupancy !== 1 ? "s" : ""}. Remove a guest to add another.
+              {t.bookingDetails.roomAccommodatesGuests
+                .replace("{count}", maxOccupancy.toString())
+                .replace(
+                  "{plural}",
+                  maxOccupancy !== 1
+                    ? t.language === "ru"
+                      ? "ей"
+                      : "lar"
+                    : t.language === "ru"
+                      ? "я"
+                      : "",
+                )}
             </p>
           </div>
         </div>

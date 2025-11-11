@@ -12,15 +12,11 @@ import { handleFormError, showSuccess } from "@/utils/error-handling"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   AlertCircle,
-  Calendar,
   Clock,
   Filter,
-  MapPin,
   MessageSquare,
   Save,
-  Users,
   X,
-  Zap,
 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -99,12 +95,12 @@ export function CampaignFormModal({
       setFormData({
         name: campaign.name,
         type: campaign.type,
-        status: campaign.status,
+        status: campaign.status || "draft",
         message_template: campaign.message_template,
         trigger_frequency_minutes:
           campaign.trigger_frequency_minutes || undefined,
       })
-      setCriteria((campaign.criteria as any) || {})
+      setCriteria((campaign.criteria as typeof criteria) || {})
       setShowCriteriaEditor(Object.keys(campaign.criteria || {}).length > 0)
     } else {
       // Reset for create mode
@@ -196,13 +192,24 @@ export function CampaignFormModal({
     // Clean up empty criteria values
     const cleanedCriteria = Object.entries(criteria).reduce(
       (acc, [key, value]) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          value !== "" &&
-          (!Array.isArray(value) || value.length > 0)
-        ) {
-          acc[key] = value
+        if (value !== undefined && value !== null) {
+          // For arrays, check if not empty
+          if (Array.isArray(value)) {
+            if (value.length > 0) {
+              acc[key] = value
+            }
+          }
+          // For strings, check if not empty
+          else if (
+            typeof value === "string" &&
+            (value as string).trim() !== ""
+          ) {
+            acc[key] = value
+          }
+          // For numbers, keep as is
+          else if (typeof value === "number") {
+            acc[key] = value
+          }
         }
         return acc
       },
@@ -228,7 +235,7 @@ export function CampaignFormModal({
     }
   }
 
-  const handleCriteriaChange = (field: string, value: any) => {
+  const handleCriteriaChange = (field: keyof typeof criteria, value: any) => {
     setCriteria((prev) => {
       if (
         value === undefined ||
@@ -271,7 +278,7 @@ export function CampaignFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
+            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg text-neutral-900 dark:text-white"
             disabled={isLoading}
           >
             <X className="w-5 h-5" />
@@ -283,7 +290,7 @@ export function CampaignFormModal({
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-neutral-900 dark:text-white flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5 text-neutral-900 dark:text-white" />
               {t.marketing.basicInformation}
             </h3>
 
@@ -299,7 +306,7 @@ export function CampaignFormModal({
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="e.g., Summer Sale Campaign"
+                placeholder={t.marketing.campaignNamePlaceholder}
               />
               {errors.name && (
                 <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -326,8 +333,8 @@ export function CampaignFormModal({
                   className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                   disabled={isEditMode}
                 >
-                  <option value="onetime">One-time</option>
-                  <option value="trigger">Trigger (Automated)</option>
+                  <option value="onetime">{t.marketing.onetimeOption}</option>
+                  <option value="trigger">{t.marketing.triggerOption}</option>
                 </select>
               </div>
 
@@ -381,10 +388,10 @@ export function CampaignFormModal({
                     min={5}
                     max={1440}
                     className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="30"
+                    placeholder={t.marketing.frequencyPlaceholder}
                   />
                   <span className="text-sm text-neutral-500">
-                    min: 5, max: 1440 (24h)
+                    {t.marketing.frequencyHelpText}
                   </span>
                 </div>
                 {errors.trigger_frequency_minutes && (
@@ -393,8 +400,10 @@ export function CampaignFormModal({
                   </p>
                 )}
                 <p className="text-sm text-neutral-500 mt-1">
-                  Campaign will check for new matching customers every{" "}
-                  {formData.trigger_frequency_minutes || 30} minutes
+                  {t.marketing.campaignCheckFrequencyText.replace(
+                    "{minutes}",
+                    (formData.trigger_frequency_minutes || 30).toString(),
+                  )}
                 </p>
               </div>
             )}
@@ -413,7 +422,7 @@ export function CampaignFormModal({
                   }))
                 }
                 className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Hello {first_name}! We have a special offer for you..."
+                placeholder={t.marketing.messageTemplatePlaceholder}
                 rows={4}
                 maxLength={1000}
               />
@@ -436,15 +445,15 @@ export function CampaignFormModal({
 
           {/* Customer Criteria */}
           <div className="space-y-4">
-            <div className="flex items-center justify_between">
+            <div className="flex items-center justify-between gap-4">
               <h3 className="text-lg font-medium text-neutral-900 dark:text-white flex items-center gap-2">
-                <Filter className="w-5 h-5" />
+                <Filter className="w-5 h-5 text-neutral-900 dark:text-white" />
                 {t.marketing.customerCriteria}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCriteriaEditor(!showCriteriaEditor)}
-                className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                className="px-3 py-1 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors whitespace-nowrap"
               >
                 {showCriteriaEditor
                   ? t.marketing.hideCriteria
@@ -475,7 +484,7 @@ export function CampaignFormModal({
                         min={0}
                         max={120}
                         className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
-                        placeholder="Min age"
+                        placeholder={t.marketing.minAgePlaceholder}
                       />
                     </div>
                     <div>
@@ -493,7 +502,7 @@ export function CampaignFormModal({
                         min={0}
                         max={120}
                         className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
-                        placeholder="Max age"
+                        placeholder={t.marketing.maxAgePlaceholder}
                       />
                     </div>
                   </div>
@@ -548,7 +557,7 @@ export function CampaignFormModal({
                       }
                       min={0}
                       className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
-                      placeholder="e.g., 500000"
+                      placeholder={t.marketing.minSpentPlaceholder}
                     />
                   </div>
                   <div>
@@ -568,7 +577,7 @@ export function CampaignFormModal({
                       }
                       min={0}
                       className="w-full px-3 py-1.5 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white text-sm"
-                      placeholder="e.g., 30"
+                      placeholder={t.marketing.daysSinceVisitPlaceholder}
                     />
                   </div>
                 </div>
@@ -577,36 +586,60 @@ export function CampaignFormModal({
 
                 {/* Criteria Summary */}
                 {Object.keys(criteria).length > 0 && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        <p className="text-sm font-medium text-red-900 dark:text-red-100">
                           {t.marketing.activeFilters}
                         </p>
-                        <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 space-y-0.5">
+                        <ul className="text-xs text-red-700 dark:text-red-300 mt-1 space-y-0.5">
                           {criteria.min_age && (
-                            <li>• {t.marketing.minimumAgeFilter.replace("{age}", criteria.min_age.toString())}</li>
+                            <li className="text-red-700 dark:text-red-300">
+                              •{" "}
+                              {t.marketing.minimumAgeFilter.replace(
+                                "{age}",
+                                criteria.min_age.toString(),
+                              )}
+                            </li>
                           )}
                           {criteria.max_age && (
-                            <li>• {t.marketing.maximumAgeFilter.replace("{age}", criteria.max_age.toString())}</li>
+                            <li className="text-red-700 dark:text-red-300">
+                              •{" "}
+                              {t.marketing.maximumAgeFilter.replace(
+                                "{age}",
+                                criteria.max_age.toString(),
+                              )}
+                            </li>
                           )}
                           {criteria.districts &&
                             criteria.districts.length > 0 && (
-                              <li>
-                                • {t.marketing.districtsFilter.replace("{districts}", criteria.districts
-                                  .map((d) => formatDistrictDisplay(d))
-                                  .join(", "))}
+                              <li className="text-red-700 dark:text-red-300">
+                                •{" "}
+                                {t.marketing.districtsFilter.replace(
+                                  "{districts}",
+                                  criteria.districts
+                                    .map((d) => formatDistrictDisplay(d))
+                                    .join(", "),
+                                )}
                               </li>
                             )}
                           {criteria.min_total_spent && (
-                            <li>
-                              • {t.marketing.minimumSpentFilter.replace("{amount}", criteria.min_total_spent.toLocaleString())}
+                            <li className="text-red-700 dark:text-red-300">
+                              •{" "}
+                              {t.marketing.minimumSpentFilter.replace(
+                                "{amount}",
+                                criteria.min_total_spent.toLocaleString(),
+                              )}
                             </li>
                           )}
                           {criteria.days_since_last_visit && (
-                            <li>
-                              • {t.marketing.notVisitedForFilter.replace("{days}", criteria.days_since_last_visit.toString())}
+                            <li className="text-red-700 dark:text-red-300">
+                              •{" "}
+                              {t.marketing.notVisitedForFilter.replace(
+                                "{days}",
+                                criteria.days_since_last_visit.toString(),
+                              )}
                             </li>
                           )}
                           {/* Room types summary removed */}
@@ -627,21 +660,23 @@ export function CampaignFormModal({
               className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
               disabled={isLoading}
             >
-              Cancel
+              {t.marketing.cancelButton}
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text_white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {isEditMode ? "Updating..." : "Creating..."}
+                  {isEditMode
+                    ? t.marketing.updatingButton
+                    : t.marketing.creatingButton}
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+                  <Save className="w-4 h-4 text-white" />
                   {isEditMode
                     ? t.marketing.updateCampaign
                     : t.marketing.createCampaign}

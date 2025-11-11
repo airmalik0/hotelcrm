@@ -99,9 +99,9 @@ export function RoomCategoryManagerModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300"
+              className="text-neutral-400 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-neutral-400 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300" />
             </button>
           </div>
 
@@ -154,7 +154,7 @@ export function RoomCategoryManagerModal({
                 disabled={createMutation.isPending}
                 className="rounded-lg px-3 py-2 inline-flex items-center gap-2 transition bg-primary-600 text-white hover:bg-primary-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 text-white" />
                 {t.room.addCategory}
               </button>
             </form>

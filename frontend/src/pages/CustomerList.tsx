@@ -723,7 +723,10 @@ export function CustomerList() {
                                   order_by: orderBy,
                                   order_direction: orderDirection,
                                 }
-                                localStorage.setItem('customerListState', JSON.stringify(customerListState))
+                                localStorage.setItem(
+                                  "customerListState",
+                                  JSON.stringify(customerListState),
+                                )
                               }}
                               className="w-8 h-8 bg-info-100 dark:bg-info-600/30 hover:bg-info-200 text-info-600 dark:text-info-400 rounded-full inline-flex items-center justify-center"
                             >

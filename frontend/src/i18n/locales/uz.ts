@@ -70,6 +70,7 @@ export const uz: Translations = {
     noNotesAvailable: "Eslatmalar mavjud emas",
     // Loading states
     loadingRooms: "Xonalar yuklanmoqda...",
+    chooseRoomPlaceholder: "Xona tanlang...",
     loadingUsers: "Foydalanuvchilar yuklanmoqda...",
     loadingCustomers: "Mijozlar yuklanmoqda...",
     loadingBookings: "Bronlar yuklanmoqda...",
@@ -194,6 +195,7 @@ export const uz: Translations = {
     viewDetails: "Tafsilotlarni ko'rish",
     editRoom: "Xonani tahrirlash",
     deleteRoom: "Xonani o'chirish",
+    deleteRoomConfirm: "{roomNumber} xonasini o'chirishga ishonchingiz komilmi? Bu amalni bekor qilib bo'lmaydi.",
     floor: "Qavat",
     // Room modals
     manageCategories: "Xona kategoriyalarini boshqarish",
@@ -607,6 +609,17 @@ export const uz: Translations = {
     campaign: "Kampaniya",
     editCampaign: "Kampaniyani tahrirlash",
     createCampaign: "Kampaniya yaratish",
+    deleteCampaign: "Kampaniyani o'chirish",
+    deleteCampaignConfirm: "\"{name}\" kampaniyasini o'chirishga ishonchingiz komilmi? Bu amalni bekor qilib bo'lmaydi.",
+    campaignRecipientsPreview: "Kampaniya qabul qiluvchilarining oldindan ko'rinishi",
+    executeCampaign: "Kampaniyani bajarish",
+    testCampaign: "Sinov kampaniyasi",
+    execute: "Bajarish",
+    testRun: "Sinov ishlashi",
+    previewRecipients: "Qabul qiluvchilarni oldindan ko'rish",
+    testRunTitle: "Sinov ishlashi",
+    executeCampaignTitle: "Kampaniyani bajarish",
+    editCampaignTitle: "Kampaniyani tahrirlash",
     hideCriteria: "Mezonlarni yashirish",
     addCriteria: "Mezonlar qo'shish",
     updateCampaign: "Kampaniyani yangilash",
@@ -630,6 +643,23 @@ export const uz: Translations = {
     minimumSpentFilter: "Minimal xarajat: {amount}",
     daysSinceLastVisitFilter: "Oxirgi tashrifdan o'tgan kunlar: {days}",
     notVisitedForFilter: "Tashrif buyurmagan: {days} kun",
+    // Campaign form specific
+    onetimeOption: "Bir martalik",
+    triggerOption: "Trigger (Avtomatik)",
+    campaignCheckFrequencyText:
+      "Kampaniya har {minutes} daqiqada yangi mos keluvchi mijozlarni tekshiradi",
+    campaignNamePlaceholder: "masalan, Yozgi chegirma kampaniyasi",
+    frequencyPlaceholder: "30",
+    frequencyHelpText: "min: 5, maks: 1440 (24soat)",
+    minAgePlaceholder: "Minimal yosh",
+    maxAgePlaceholder: "Maksimal yosh",
+    minSpentPlaceholder: "masalan, 500000",
+    daysSinceVisitPlaceholder: "masalan, 30",
+    messageTemplatePlaceholder:
+      "Salom {first_name}! Bizda siz uchun maxsus taklif bor...",
+    cancelButton: "Bekor qilish",
+    updatingButton: "Yangilanmoqda...",
+    creatingButton: "Yaratilmoqda...",
   },
   // Booking Details
   bookingDetails: {
@@ -644,7 +674,8 @@ export const uz: Translations = {
     actualCheckOut: "Haqiqiy chiqish:",
     guestsInRoom: "Xonadagi mehmonlar",
     noGuestsAdded: "Hali mehmonlar qo'shilmagan.",
-    clickAddGuest: "Mehmon qo'shish uchun \"Mehmon qo'shish\" tugmasini bosing.",
+    clickAddGuest:
+      "Mehmon qo'shish uchun \"Mehmon qo'shish\" tugmasini bosing.",
     totalAmount: "Umumiy summa:",
     paymentMethod: "To'lov usuli:",
     discountLabel: "Chegirma:",
@@ -668,8 +699,57 @@ export const uz: Translations = {
     discountReasonRequired: "Chegirma sababi chegirma qo'llanilganda majburiy",
     cannotCheckInMaintenance:
       "Joylashtirib bo'lmaydi: Xona texnik xizmat ko'rsatmoqda",
+    cannotCheckInOccupied: "Joylashtirib bo'lmaydi: Xona allaqachon band. Bu ma'lumotlarning nomuvofiqligi bo'lishi mumkin - qo'llab-quvvatlashga murojaat qiling.",
+    onlyCheckedInCanCheckOut: "Faqat joylashtirilgan bronlardan chiqish mumkin",
+    guestRemovedSuccess: "Mehmon muvaffaqiyatli olib tashlandi!",
+    failedToUpdateRoomStatus: "Xona holatini yangilab bo'lmadi. Qayta urinib ko'ring.",
     roomCleaningConfirm:
       "Xona tozalanmoqda. Uni mavjud deb belgilashni va joylashtirishni davom ettirishni xohlaysizmi?",
+    // Guest List
+    roomAtMaximumCapacity: "Xona maksimal sig'imgacha to'lgan",
+    roomAccommodatesGuests:
+      "Bu xona {count} mehmon{plural}ga mo'ljallangan. Boshqa mehmon qo'shish uchun bir mehmonni olib tashlang.",
+    // Guest Card
+    passport: "pasport",
+    noPhoto: "Rasm yo'q",
+    primary: "Asosiy",
+    removeGuest: "Mehmonni olib tashlash",
+    removeGuestMessage: "Ushbu mehmonni bronlashdan olib tashlashga ishonchingiz komilmi?",
+    // Passport Upload
+    passportPhoto: "Pasport rasmi",
+    uploadPassport: "Pasport yuklash",
+    phonePlaceholder: "+998901234567",
+    // Booking Detail Modal
+    onlyConfirmedBookingsCanBeCheckedIn:
+      "Faqat tasdiqlangan bronlarni joylashtirish mumkin",
+    failedToRemoveGuest: "Mehmonni olib tashlab bo'lmadi",
+    removeDiscount: "Chegirmani olib tashlash",
+    required: "Majburiy",
+    unknown: "Noma'lum",
+    noReasonProvided: "Sabab ko'rsatilmagan",
+    // User Create Modal
+    userCreatedSuccessfully: "Foydalanuvchi muvaffaqiyatli yaratildi!",
+    failedToCreateUser: "Foydalanuvchini yaratib bo'lmadi",
+    usernameRequired: "Foydalanuvchi nomi majburiy",
+    usernameMinLength:
+      "Foydalanuvchi nomi kamida 3 ta belgidan iborat bo'lishi kerak",
+    usernameInvalidChars:
+      "Foydalanuvchi nomi faqat harflar, raqamlar, chiziqlar va pastki chiziqlardan iborat bo'lishi mumkin",
+    passwordRequired: "Parol majburiy",
+    passwordMinLength: "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
+    // Booking Grid
+    movingBooking: "Bron ko'chirilmoqda...",
+    dragToAnotherRoom: "Boshqa xonaga torting",
+    unnamedCategory: "Nomsiz",
+    // Placeholders
+    tagsPlaceholder: "vip,sodiq",
+    amountPlaceholder: "0.00",
+    additionalInfoPlaceholder: "Qo'shimcha ma'lumotlar...",
+    searchInquiriesPlaceholder: "So'rovlarni qidirish...",
+    resolutionDetailsPlaceholder: "Hal qilish tafsilotlarini kiriting...",
+    searchCampaignsPlaceholder: "Kampaniyalarni qidirish...",
+    utilitiesExample: "Masalan, Kommunal xizmatlar",
+    roomNumberExample: "masalan, 101, 202, A1",
   },
   // Customer Inquiries
   inquiries: {
@@ -704,6 +784,52 @@ export const uz: Translations = {
     room: "Xona:",
     pricePerNight: "Narx/Kecha:",
     status: "Holat:",
+  },
+  // UI Components
+  ui: {
+    searchableSelect: {
+      selectOption: "Variant tanlang",
+      clearSelection: "Tanlovni tozalash",
+      typeToSearch: "Qidirish uchun yozing...",
+      searchOptions: "Variantlarni qidirish",
+      noOptionsFound: "Variantlar topilmadi",
+      result: "natija",
+      results: "natijalar",
+      found: "topildi",
+    },
+    imageUpload: {
+      uploadPhoto: "Rasm yuklash",
+      fileSizeError: "Fayl hajmi {size}MB dan kam bo'lishi kerak",
+      invalidFileType:
+        "Noto'g'ri fayl turi. Qabul qilinadigan formatlar: {formats}",
+      photoUploadedSuccess: "Rasm muvaffaqiyatli yuklandi",
+      failedToUploadPhoto: "Rasmni yuklab bo'lmadi",
+      removePhoto: "Rasmni olib tashlash",
+      passportPreview: "Pasport ko'rinishi",
+      uploading: "Yuklanmoqda...",
+      clickToUploadPassport: "Pasport rasmini yuklash uchun bosing",
+    },
+    tagsInput: {
+      selectOrAddTags: "Teglarni tanlang yoki qo'shing...",
+      searchTags: "Teglarni qidirish...",
+      noTagsFound: "Teglar topilmadi",
+      noTagsAvailable: "Teglar mavjud emas",
+    },
+    errorBoundary: {
+      somethingWentWrong: "Nimadir noto'g'ri ketdi",
+      errorDescription:
+        "Kechirasiz, kutilmagan xatolik yuz berdi. Muammoni hal qilish uchun sahifa avtomatik ravishda qayta yuklandi.",
+      reloadPage: "Sahifani qayta yuklash",
+      goBack: "Orqaga",
+      errorDetails: "Xatolik tafsilotlari (faqat ishlab chiquvchilar uchun)",
+    },
+    protectedRoute: {
+      loading: "Yuklanmoqda...",
+      accessDenied: "Kirish taqiqlangan",
+      accessDeniedDescription:
+        "Sizda ushbu sahifaga kirish huquqi yo'q. Agar bu xatolik deb hisoblasangiz, administrator bilan bog'laning.",
+      goBack: "Orqaga",
+    },
   },
   // Forms
   forms: {
@@ -755,6 +881,18 @@ export const uz: Translations = {
       description: "Tavsif",
       deleteExpense: "Xarajatni o'chirish",
       deleteExpenseConfirm: "Bu xarajatni o'chirishni xohlaysizmi?",
+      editExpense: "Xarajatni tahrirlash",
+      editCategory: "Kategoriyani tahrirlash",
+      saveExpense: "Xarajatni saqlash",
+      saveCategory: "Kategoriyani saqlash",
+      saving: "Saqlanmoqda...",
+      errorSavingExpense: "Xarajatni saqlashda xatolik",
+      errorSavingCategory: "Kategoriyani saqlashda xatolik",
+      enterName: "Nomini kiriting",
+      selectCategory: "Iltimos, kategoriyani tanlang",
+      enterAmount: "Summani kiriting",
+      amountGreaterThanZero: "Summa 0 dan katta bo'lishi kerak",
+      noDescription: "Tavsif yo'q",
       page: "Sahifa {current} / {total}",
       prev: "Oldingi",
       next: "Keyingi",

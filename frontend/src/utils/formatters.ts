@@ -71,18 +71,20 @@ import { safeParseDateOrNull } from "./date-helpers"
 /**
  * Format currency amount
  * @param amount - Amount to format
- * @param currency - Currency code (USD, RUB, UZS). Defaults to USD
+ * @param currency - Currency code (USD, RUB, UZS). Defaults to UZS
  * @param locale - Locale string. If not provided, uses default locale for currency
  */
 export function formatCurrency(
   amount: number,
-  currency: Currency = "USD",
+  currency: Currency = "UZS",
   locale?: string,
 ): string {
   const currencyLocale = locale || currencyLocales[currency] || "en-US"
   return new Intl.NumberFormat(currencyLocale, {
     style: "currency",
     currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount)
 }
 

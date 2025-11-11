@@ -16,7 +16,7 @@ class UserBase(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
     role: "UserRole" = Field(default=UserRole.HOST)
     language: str = Field(default="en", max_length=10)
-    currency: str = Field(default="USD", max_length=3)
+    currency: str = Field(default="UZS", max_length=3)
 
     @field_validator("username")
     @classmethod

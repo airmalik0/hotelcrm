@@ -110,9 +110,9 @@ export function MarketingCampaigns() {
 
   const handleDelete = async (campaign: CampaignPublic) => {
     const confirmed = await confirm({
-      title: "Delete Campaign",
-      message: `Are you sure you want to delete "${campaign.name}"? This action cannot be undone.`,
-      confirmText: "Delete",
+      title: t.marketing.deleteCampaign,
+      message: t.marketing.deleteCampaignConfirm.replace("{name}", campaign.name),
+      confirmText: t.common.delete,
       variant: "danger",
     })
 
@@ -124,9 +124,9 @@ export function MarketingCampaigns() {
   const handleExecute = async (campaign: CampaignPublic, testMode = false) => {
     const actionText = testMode ? "test" : "execute"
     const confirmed = await confirm({
-      title: `${testMode ? "Test" : "Execute"} Campaign`,
+      title: testMode ? t.marketing.testCampaign : t.marketing.executeCampaign,
       message: `Are you sure you want to ${actionText} "${campaign.name}"?${testMode ? " This will be a test run with mock SMS." : " This will send real SMS messages."}`,
-      confirmText: testMode ? "Test Run" : "Execute",
+      confirmText: testMode ? t.marketing.testRun : t.marketing.execute,
       variant: testMode ? "info" : "danger",
     })
 
@@ -140,7 +140,7 @@ export function MarketingCampaigns() {
       const preview = await previewMutation.mutateAsync(campaign.id)
 
       await confirm({
-        title: "Campaign Recipients Preview",
+        title: t.marketing.campaignRecipientsPreview,
         message: `Campaign "${campaign.name}" would target ${preview.total_matching_customers} customers. Preview shows first ${preview.preview_customers.length} customers.`,
         confirmText: "OK",
       })
@@ -206,7 +206,7 @@ export function MarketingCampaigns() {
         }`}
       >
         {isOnetime ? <Mail className="w-3 h-3" /> : <Zap className="w-3 h-3" />}
-        {isOnetime ? "One-time" : "Trigger"}
+        {isOnetime ? t.marketing.onetime : t.marketing.trigger}
       </span>
     )
   }
@@ -271,7 +271,7 @@ export function MarketingCampaigns() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
-                placeholder="Search campaigns..."
+                placeholder={t.bookingDetails.searchCampaignsPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -385,7 +385,7 @@ export function MarketingCampaigns() {
                           type="button"
                           onClick={() => handlePreview(campaign)}
                           className="p-2 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400"
-                          title="Preview recipients"
+                          title={t.marketing.previewRecipients}
                         >
                           <Users className="w-4 h-4" />
                         </button>
@@ -396,7 +396,7 @@ export function MarketingCampaigns() {
                                 type="button"
                                 onClick={() => handleExecute(campaign, true)}
                                 className="p-2 text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400"
-                                title="Test run"
+                                title={t.marketing.testRunTitle}
                                 disabled={executeMutation.isPending}
                               >
                                 <Eye className="w-4 h-4" />
@@ -405,7 +405,7 @@ export function MarketingCampaigns() {
                                 type="button"
                                 onClick={() => handleExecute(campaign, false)}
                                 className="p-2 text-neutral-400 hover:text-green-600 dark:hover:text-green-400"
-                                title="Execute campaign"
+                                title={t.marketing.executeCampaignTitle}
                                 disabled={executeMutation.isPending}
                               >
                                 <Play className="w-4 h-4" />
@@ -416,7 +416,7 @@ export function MarketingCampaigns() {
                           type="button"
                           onClick={() => handleEditCampaign(campaign)}
                           className="p-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-                          title="Edit campaign"
+                          title={t.marketing.editCampaignTitle}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -424,7 +424,7 @@ export function MarketingCampaigns() {
                           type="button"
                           onClick={() => handleDelete(campaign)}
                           className="p-2 text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
-                          title="Delete campaign"
+                          title={t.marketing.deleteCampaign}
                           disabled={deleteMutation.isPending}
                         >
                           <Trash2 className="w-4 h-4" />

@@ -23,7 +23,7 @@ from reportlab.platypus import (
 )
 from sqlmodel import Session
 
-from app.localization import get_report_text
+from app.localization import get_currency_symbol, get_report_text
 from app.models.analytics import AnalyticsFilter, DashboardMetrics
 from app.services.analytics import AnalyticsService
 from app.services.chart_service import ChartService
@@ -110,6 +110,7 @@ class PDFReportService:
         hotel_name: str = "Hotel CRM",
         filters: AnalyticsFilter | None = None,
         language: str = "en",
+        currency: str = "UZS",
     ) -> BytesIO:
         """
         Generate a PDF report from dashboard metrics.
@@ -190,12 +191,12 @@ class PDFReportService:
         elements.append(Paragraph(get_report_text('revenue_metrics', language), self.styles["SectionHeader"]))
         revenue_data = [
             [get_report_text('metric', language), get_report_text('value', language)],
-            [get_report_text('total_revenue', language), f"${metrics.revenue.total_revenue:,.2f}"],
-            [get_report_text('average_daily_rate', language), f"${metrics.revenue.average_daily_rate:,.2f}"],
-            [get_report_text('revenue_per_available_room', language), f"${metrics.revenue.revenue_per_available_room:,.2f}"],
+            [get_report_text('total_revenue', language), f"{get_currency_symbol(currency)}{metrics.revenue.total_revenue:,.2f}"],
+            [get_report_text('average_daily_rate', language), f"get_currency_symbol(currency){metrics.revenue.average_daily_rate:,.2f}"],
+            [get_report_text('revenue_per_available_room', language), f"get_currency_symbol(currency){metrics.revenue.revenue_per_available_room:,.2f}"],
             [get_report_text('total_bookings', language), f"{metrics.revenue.total_bookings:,}"],
             [get_report_text('total_nights', language), f"{metrics.revenue.total_nights:,}"],
-            [get_report_text('discounts_given', language), f"${metrics.revenue.discount_amount:,.2f}"],
+            [get_report_text('discounts_given', language), f"get_currency_symbol(currency){metrics.revenue.discount_amount:,.2f}"],
         ]
         revenue_table = self._create_table(revenue_data)
         elements.append(revenue_table)
@@ -223,9 +224,9 @@ class PDFReportService:
         elements.append(Paragraph(get_report_text('payment_method_distribution', language), self.styles["SectionHeader"]))
         payment_data = [
             [get_report_text('payment_method', language), get_report_text('percentage', language), get_report_text('amount', language)],
-            [get_report_text('cash', language), f"{metrics.payment_distribution.cash_percentage:.1f}%", f"${metrics.payment_distribution.cash_amount:,.2f}"],
-            [get_report_text('bank_transfer', language), f"{metrics.payment_distribution.transfer_percentage:.1f}%", f"${metrics.payment_distribution.transfer_amount:,.2f}"],
-            [get_report_text('terminal_card', language), f"{metrics.payment_distribution.terminal_percentage:.1f}%", f"${metrics.payment_distribution.terminal_amount:,.2f}"],
+            [get_report_text('cash', language), f"{metrics.payment_distribution.cash_percentage:.1f}%", f"get_currency_symbol(currency){metrics.payment_distribution.cash_amount:,.2f}"],
+            [get_report_text('bank_transfer', language), f"{metrics.payment_distribution.transfer_percentage:.1f}%", f"get_currency_symbol(currency){metrics.payment_distribution.transfer_amount:,.2f}"],
+            [get_report_text('terminal_card', language), f"{metrics.payment_distribution.terminal_percentage:.1f}%", f"get_currency_symbol(currency){metrics.payment_distribution.terminal_amount:,.2f}"],
         ]
         payment_table = self._create_table(payment_data, col_widths=[2*inch, 1.5*inch, 2*inch])
         elements.append(payment_table)
@@ -285,6 +286,7 @@ class PDFReportService:
         hotel_name: str = "Hotel CRM",
         include_charts: bool = True,
         language: str = "en",
+        currency: str = "UZS",
     ) -> BytesIO:
         """
         Generate a comprehensive PDF report using all analytics endpoints.
@@ -376,19 +378,19 @@ class PDFReportService:
         try:
             # Dashboard Metrics
             dashboard_metrics = analytics_service.get_dashboard_metrics(filters)
-            self._add_dashboard_section(elements, dashboard_metrics, include_charts, language)
+            self._add_dashboard_section(elements, dashboard_metrics, include_charts, language, currency)
 
             # Revenue Details
             revenue_details = analytics_service.get_revenue_details(filters, "day")
-            self._add_revenue_details_section(elements, revenue_details, include_charts, language)
+            self._add_revenue_details_section(elements, revenue_details, include_charts, language, currency)
 
             # Occupancy Details
             occupancy_details = analytics_service.get_occupancy_details(filters)
-            self._add_occupancy_details_section(elements, occupancy_details, language)
+            self._add_occupancy_details_section(elements, occupancy_details, language, currency)
 
             # Customer Details
             customer_details = analytics_service.get_customer_details(filters)
-            self._add_customer_details_section(elements, customer_details, include_charts, language)
+            self._add_customer_details_section(elements, customer_details, include_charts, language, currency)
 
             # Hourly Distribution
             hourly_checkins = analytics_service.get_hourly_distribution(
@@ -397,28 +399,28 @@ class PDFReportService:
             hourly_checkouts = analytics_service.get_hourly_distribution(
                 filters.date_from, filters.date_to, "check_outs", filters.room_id, None, filters
             )
-            self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts, language)
+            self._add_hourly_patterns_section(elements, hourly_checkins, hourly_checkouts, include_charts, language, currency)
 
             # Seasonal Trends
             seasonal_trends = analytics_service.get_seasonal_trends(2, filters.room_id, None, filters)
-            self._add_seasonal_trends_section(elements, seasonal_trends, include_charts, language)
+            self._add_seasonal_trends_section(elements, seasonal_trends, include_charts, language, currency)
 
             # Top Customers (by revenue)
             top_customers = analytics_service.get_top_customers(
                 limit=20, date_from=filters.date_from, date_to=filters.date_to,
                 room_id=filters.room_id, room_type=None, filters=filters
             )
-            self._add_top_customers_section(elements, top_customers, language)
+            self._add_top_customers_section(elements, top_customers, language, currency)
 
             # District Revenue Breakdown
             district_revenue = analytics_service.get_district_revenue(
                 filters.date_from, filters.date_to, filters.room_id, filters
             )
-            self._add_district_revenue_section(elements, district_revenue, language)
+            self._add_district_revenue_section(elements, district_revenue, language, currency)
 
             # Room Performance Analysis
             room_performance = analytics_service.get_room_performance(filters, top_n=10)
-            self._add_room_performance_section(elements, room_performance, language)
+            self._add_room_performance_section(elements, room_performance, language, currency)
 
         except Exception as e:
             # Fallback to basic dashboard if comprehensive fails
@@ -437,18 +439,18 @@ class PDFReportService:
 
         quick_data = [
             ["Period", "Revenue", "Bookings", "Occupancy"],
-            ["Today", f"${quick_stats['today']['revenue']:,.2f}",
+            ["Today", f"get_currency_symbol(currency){quick_stats['today']['revenue']:,.2f}",
              f"{quick_stats['today']['bookings']}", f"{quick_stats['today']['occupancy']:.1f}%"],
-            ["This Week", f"${quick_stats['week']['revenue']:,.2f}",
+            ["This Week", f"get_currency_symbol(currency){quick_stats['week']['revenue']:,.2f}",
              f"{quick_stats['week']['bookings']}", f"{quick_stats['week']['occupancy']:.1f}%"],
-            ["This Month", f"${quick_stats['month']['revenue']:,.2f}",
+            ["This Month", f"get_currency_symbol(currency){quick_stats['month']['revenue']:,.2f}",
              f"{quick_stats['month']['bookings']}", f"{quick_stats['month']['occupancy']:.1f}%"],
         ]
         quick_table = self._create_table(quick_data, col_widths=[1.3*inch, 1.8*inch, 1.1*inch, 1.3*inch])
         elements.append(quick_table)
         elements.append(Spacer(1, 20))
 
-    def _add_dashboard_section(self, elements: list[Any], metrics: DashboardMetrics, include_charts: bool, language: str = "en") -> None:
+    def _add_dashboard_section(self, elements: list[Any], metrics: DashboardMetrics, include_charts: bool, language: str = "en", currency: str = "UZS") -> None:
         """Add dashboard metrics section with key performance indicators."""
         elements.append(Paragraph(get_report_text('dashboard_overview', language), self.styles["SectionHeader"]))
 
@@ -467,8 +469,8 @@ class PDFReportService:
         # Key Performance Indicators (KPIs) - unique metrics only
         kpi_data = [
             [get_report_text('kpi', language), get_report_text('value', language)],
-            [get_report_text('average_daily_rate', language), f"${metrics.revenue.average_daily_rate:,.2f}"],
-            [get_report_text('revenue_per_available_room', language), f"${metrics.revenue.revenue_per_available_room:,.2f}"],
+            [get_report_text('average_daily_rate', language), f"get_currency_symbol(currency){metrics.revenue.average_daily_rate:,.2f}"],
+            [get_report_text('revenue_per_available_room', language), f"get_currency_symbol(currency){metrics.revenue.revenue_per_available_room:,.2f}"],
         ]
         kpi_table = self._create_table(kpi_data)
         elements.append(kpi_table)
@@ -491,15 +493,15 @@ class PDFReportService:
         # Payment Distribution Table with amounts
         payment_data = [
             [get_report_text('payment_method', language), get_report_text('percentage', language), get_report_text('amount', language)],
-            [get_report_text('cash', language), f"{metrics.payment_distribution.cash_percentage:.1f}%", f"${metrics.payment_distribution.cash_amount:,.2f}"],
-            [get_report_text('bank_transfer', language), f"{metrics.payment_distribution.transfer_percentage:.1f}%", f"${metrics.payment_distribution.transfer_amount:,.2f}"],
-            [get_report_text('terminal_card', language), f"{metrics.payment_distribution.terminal_percentage:.1f}%", f"${metrics.payment_distribution.terminal_amount:,.2f}"],
+            [get_report_text('cash', language), f"{metrics.payment_distribution.cash_percentage:.1f}%", f"get_currency_symbol(currency){metrics.payment_distribution.cash_amount:,.2f}"],
+            [get_report_text('bank_transfer', language), f"{metrics.payment_distribution.transfer_percentage:.1f}%", f"get_currency_symbol(currency){metrics.payment_distribution.transfer_amount:,.2f}"],
+            [get_report_text('terminal_card', language), f"{metrics.payment_distribution.terminal_percentage:.1f}%", f"get_currency_symbol(currency){metrics.payment_distribution.terminal_amount:,.2f}"],
         ]
         payment_table = self._create_table(payment_data, col_widths=[2*inch, 1.5*inch, 2*inch])
         elements.append(payment_table)
         elements.append(Spacer(1, 20))
 
-    def _add_revenue_details_section(self, elements: list[Any], revenue_details: dict[str, Any], include_charts: bool, language: str = "en") -> None:
+    def _add_revenue_details_section(self, elements: list[Any], revenue_details: dict[str, Any], include_charts: bool, language: str = "en", currency: str = "UZS") -> None:
         """Add revenue details section."""
         metrics = revenue_details["metrics"]
         trend = revenue_details["trend"]
@@ -519,11 +521,11 @@ class PDFReportService:
         # Detailed revenue metrics
         detailed_data = [
             [get_report_text('metric', language), get_report_text('value', language)],
-            [get_report_text('total_revenue', language), f"${metrics['total_revenue']:,.2f}"],
+            [get_report_text('total_revenue', language), f"get_currency_symbol(currency){metrics['total_revenue']:,.2f}"],
             [get_report_text('total_bookings', language), f"{metrics['booking_count']:,}"],
             [get_report_text('total_nights', language), f"{metrics['total_nights']:,}"],
-            [get_report_text('discounts_given', language), f"${metrics['discount_amount']:,.2f}"],
-            [get_report_text('refunds_processed', language), f"${metrics['refund_amount']:,.2f}"],
+            [get_report_text('discounts_given', language), f"get_currency_symbol(currency){metrics['discount_amount']:,.2f}"],
+            [get_report_text('refunds_processed', language), f"get_currency_symbol(currency){metrics['refund_amount']:,.2f}"],
         ]
         detailed_table = self._create_table(detailed_data)
         section_content.append(detailed_table)
@@ -532,7 +534,7 @@ class PDFReportService:
         # Add section with header kept together with content
         self._add_section_with_header(elements, get_report_text('revenue_analysis', language), section_content)
 
-    def _add_occupancy_details_section(self, elements: list[Any], occupancy_details: dict[str, Any], language: str = "en") -> None:
+    def _add_occupancy_details_section(self, elements: list[Any], occupancy_details: dict[str, Any], language: str = "en", currency: str = "UZS") -> None:
         """Add occupancy details section."""
         section_content = []
 
@@ -552,7 +554,7 @@ class PDFReportService:
 
         self._add_section_with_header(elements, get_report_text('occupancy_analysis', language), section_content)
 
-    def _add_customer_details_section(self, elements: list[Any], customer_details: dict[str, Any], include_charts: bool, language: str = "en") -> None:
+    def _add_customer_details_section(self, elements: list[Any], customer_details: dict[str, Any], include_charts: bool, language: str = "en", currency: str = "UZS") -> None:
         """Add customer details section."""
         section_content = []
 
@@ -584,7 +586,7 @@ class PDFReportService:
 
         self._add_section_with_header(elements, get_report_text('customer_analytics', language), section_content)
 
-    def _add_hourly_patterns_section(self, elements: list[Any], checkins: list[dict[str, Any]], checkouts: list[dict[str, Any]], include_charts: bool, language: str = "en") -> None:
+    def _add_hourly_patterns_section(self, elements: list[Any], checkins: list[dict[str, Any]], checkouts: list[dict[str, Any]], include_charts: bool, language: str = "en", currency: str = "UZS") -> None:
         """Add hourly patterns section."""
         elements.append(PageBreak())
         elements.append(Paragraph(get_report_text('operational_patterns', language), self.styles["SectionHeader"]))
@@ -623,7 +625,7 @@ class PDFReportService:
         elements.append(pattern_table)
         elements.append(Spacer(1, 20))
 
-    def _add_seasonal_trends_section(self, elements: list[Any], seasonal_data: dict[str, Any], include_charts: bool, language: str = "en") -> None:
+    def _add_seasonal_trends_section(self, elements: list[Any], seasonal_data: dict[str, Any], include_charts: bool, language: str = "en", currency: str = "UZS") -> None:
         """Add seasonal trends section."""
         monthly_trends = seasonal_data.get("monthly_trends", [])
         peak_months = seasonal_data.get("peak_months", [])
@@ -645,7 +647,7 @@ class PDFReportService:
             for month in peak_months[:5]:  # Top 5
                 peak_data.append([
                     month["month_name"],
-                    f"${month['revenue']:,.2f}",
+                    f"get_currency_symbol(currency){month['revenue']:,.2f}",
                     f"{month['bookings']:,}"
                 ])
             peak_table = self._create_table(peak_data)
@@ -654,7 +656,7 @@ class PDFReportService:
 
         self._add_section_with_header(elements, get_report_text('seasonal_trends', language), section_content)
 
-    def _add_top_customers_section(self, elements: list[Any], top_customers_data: dict[str, Any], language: str = "en") -> None:
+    def _add_top_customers_section(self, elements: list[Any], top_customers_data: dict[str, Any], language: str = "en", currency: str = "UZS") -> None:
         """Add top customers section."""
         elements.append(PageBreak())
         elements.append(Paragraph(get_report_text('top_customers_by_revenue', language), self.styles["SectionHeader"]))
@@ -668,9 +670,9 @@ class PDFReportService:
                 customer_data.append([
                     str(idx),
                     customer.get("name", "N/A")[:25],  # Truncate long names
-                    f"${customer.get('total_revenue', 0):,.2f}",
+                    f"get_currency_symbol(currency){customer.get('total_revenue', 0):,.2f}",
                     f"{customer.get('total_bookings', 0):,}",
-                    f"${customer.get('average_booking_value', 0):,.2f}"
+                    f"get_currency_symbol(currency){customer.get('average_booking_value', 0):,.2f}"
                 ])
 
             customer_table = self._create_table(
@@ -683,7 +685,7 @@ class PDFReportService:
 
         elements.append(Spacer(1, 20))
 
-    def _add_district_revenue_section(self, elements: list[Any], district_data: dict[str, Any], language: str = "en") -> None:
+    def _add_district_revenue_section(self, elements: list[Any], district_data: dict[str, Any], language: str = "en", currency: str = "UZS") -> None:
         """Add district revenue breakdown section."""
         elements.append(PageBreak())
         elements.append(Paragraph(get_report_text('revenue_by_district', language), self.styles["SectionHeader"]))
@@ -693,7 +695,7 @@ class PDFReportService:
         if districts:
             # Summary
             summary = district_data.get("summary", {})
-            summary_text = f"Total Revenue: ${summary.get('total_revenue', 0):,.2f} | Total Bookings: {summary.get('total_bookings', 0):,} | Districts: {summary.get('district_count', 0)}"
+            summary_text = f"Total Revenue: get_currency_symbol(currency){summary.get('total_revenue', 0):,.2f} | Total Bookings: {summary.get('total_bookings', 0):,} | Districts: {summary.get('district_count', 0)}"
             elements.append(Paragraph(summary_text, self.styles["Normal"]))
             elements.append(Spacer(1, 10))
 
@@ -704,10 +706,10 @@ class PDFReportService:
                 district_table_data.append([
                     str(idx),
                     district.get("district", "").replace("_", " ").title(),
-                    f"${district.get('revenue', 0):,.2f}",
+                    f"get_currency_symbol(currency){district.get('revenue', 0):,.2f}",
                     f"{district.get('percentage', 0):.1f}%",
                     f"{district.get('bookings', 0):,}",
-                    f"${district.get('average_booking_value', 0):,.2f}",
+                    f"get_currency_symbol(currency){district.get('average_booking_value', 0):,.2f}",
                 ])
 
             district_table = self._create_table(
@@ -728,7 +730,7 @@ class PDFReportService:
         max_hour = max(hourly_data, key=lambda x: x['count'])
         return f"{max_hour['hour']:02d}:00 ({max_hour['count']} {get_report_text('total_events', language)})"
 
-    def _add_room_performance_section(self, elements: list[Any], room_performance_data: dict[str, Any], language: str = "en") -> None:
+    def _add_room_performance_section(self, elements: list[Any], room_performance_data: dict[str, Any], language: str = "en", currency: str = "UZS") -> None:
         """Add room performance analysis section (similar to district revenue)."""
         elements.append(PageBreak())
         elements.append(Paragraph(get_report_text('room_performance_analysis', language), self.styles["SectionHeader"]))
@@ -760,8 +762,8 @@ class PDFReportService:
                     str(idx),
                     room.get("room_number", "N/A"),
                     (room.get("category_name") or room.get("category_id") or "").upper(),
-                    f"${room.get('adr', 0):,.2f}",
-                    f"${room.get('revenue', 0):,.2f}",
+                    f"get_currency_symbol(currency){room.get('adr', 0):,.2f}",
+                    f"get_currency_symbol(currency){room.get('revenue', 0):,.2f}",
                     f"{room.get('bookings', 0):,}",
                     f"{room.get('total_nights', 0):,}",
                     f"{room.get('occupancy_rate', 0):.1f}%",
@@ -788,8 +790,8 @@ class PDFReportService:
                     str(idx),
                     room.get("room_number", "N/A"),
                     (room.get("category_name") or room.get("category_id") or "").upper(),
-                    f"${room.get('adr', 0):,.2f}",
-                    f"${room.get('revenue', 0):,.2f}",
+                    f"get_currency_symbol(currency){room.get('adr', 0):,.2f}",
+                    f"get_currency_symbol(currency){room.get('revenue', 0):,.2f}",
                     f"{room.get('bookings', 0):,}",
                     f"{room.get('total_nights', 0):,}",
                     f"{room.get('occupancy_rate', 0):.1f}%",

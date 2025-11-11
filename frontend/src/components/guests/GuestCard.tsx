@@ -1,4 +1,5 @@
 import type { BookingGuestPublic } from "@/client/types.gen"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { getFileUrl } from "@/utils/file-urls"
 import { Crown, MapPin, Phone, Trash2 } from "lucide-react"
 
@@ -15,6 +16,7 @@ export function GuestCard({
   isRemoving = false,
   showRemoveButton = true,
 }: GuestCardProps) {
+  const { t } = useLanguage()
   const passportUrl = getFileUrl(guest.passport_photo_path)
 
   return (
@@ -26,13 +28,13 @@ export function GuestCard({
             {passportUrl ? (
               <img
                 src={passportUrl}
-                alt={`${guest.full_name || "Guest"} passport`}
+                alt={`${guest.full_name || "Guest"} ${t.bookingDetails.passport}`}
                 className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                  No photo
+                  {t.bookingDetails.noPhoto}
                 </span>
               </div>
             )}
@@ -51,7 +53,9 @@ export function GuestCard({
               {guest.is_primary && (
                 <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-50 dark:bg-warning-600/20 text-warning-600 dark:text-warning-400">
                   <Crown className="w-3 h-3" />
-                  <span className="text-xs font-medium">Primary</span>
+                  <span className="text-xs font-medium">
+                    {t.bookingDetails.primary}
+                  </span>
                 </div>
               )}
             </div>
@@ -62,9 +66,9 @@ export function GuestCard({
                 onClick={() => onRemove(guest.id)}
                 disabled={isRemoving}
                 className="flex-shrink-0 p-1.5 rounded-lg hover:bg-danger-50 dark:hover:bg-danger-600/20 text-neutral-600 dark:text-neutral-400 hover:text-danger-600 dark:hover:text-danger-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Remove guest"
+                aria-label={t.bookingDetails.removeGuest}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 text-neutral-600 dark:text-neutral-400 group-hover:text-danger-600 dark:group-hover:text-danger-400" />
               </button>
             )}
           </div>

@@ -101,9 +101,9 @@ export function RoomList() {
 
   const handleDelete = async (room: RoomPublic) => {
     const confirmed = await confirm({
-      title: "Delete Room",
-      message: `Are you sure you want to delete Room ${room.room_number}? This action cannot be undone.`,
-      confirmText: "Delete",
+      title: t.room.deleteRoom,
+      message: t.room.deleteRoomConfirm.replace("{roomNumber}", room.room_number),
+      confirmText: t.common.delete,
       variant: "danger",
     })
 

@@ -375,7 +375,7 @@ function ExpensesTab({
                           type="button"
                           onClick={() => onEdit(expense)}
                           className="text-neutral-500 hover:text-neutral-700 p-1"
-                          title="Edit"
+                          title={t.pages.expenses.editExpense}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -383,7 +383,7 @@ function ExpensesTab({
                           type="button"
                           onClick={() => onDelete(expense)}
                           className="text-danger-600 hover:text-danger-700 p-1"
-                          title="Delete"
+                          title={t.pages.expenses.deleteExpense}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -457,7 +457,7 @@ function CategoriesTab({
                     {category.name}
                   </h5>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {category.description || "No description"}
+                    {category.description || t.pages.expenses.noDescription}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ function CategoriesTab({
                     type="button"
                     onClick={() => onEdit(category)}
                     className="text-neutral-500 hover:text-neutral-700 p-1"
-                    title="Edit"
+                    title={t.pages.expenses.editCategory}
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -473,7 +473,7 @@ function CategoriesTab({
                     type="button"
                     onClick={() => onDelete(category)}
                     className="text-danger-600 hover:text-danger-700 p-1"
-                    title="Delete"
+                    title={t.expenses.deleteCategory}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -546,7 +546,7 @@ function ExpenseModal({
             setError(field as any, { message })
           })
         },
-        "Error saving expense",
+        t.pages.expenses.errorSavingExpense,
       )
     },
   })
@@ -581,7 +581,7 @@ function ExpenseModal({
               </label>
               <select
                 {...register("category_id", {
-                  required: "Please select a category",
+                  required: t.pages.expenses.selectCategory,
                 })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
               >
@@ -607,14 +607,14 @@ function ExpenseModal({
                 type="number"
                 step="0.01"
                 {...register("amount", {
-                  required: "Enter an amount",
+                  required: t.pages.expenses.enterAmount,
                   min: {
                     value: 0.01,
-                    message: "Amount must be greater than 0",
+                    message: t.pages.expenses.amountGreaterThanZero,
                   },
                 })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
-                placeholder="0.00"
+                placeholder={t.bookingDetails.amountPlaceholder}
               />
               {errors.amount && (
                 <p className="text-sm text-danger-600 mt-1">
@@ -642,7 +642,7 @@ function ExpenseModal({
                 {...register("description")}
                 rows={3}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
-                placeholder="Additional information..."
+                placeholder={t.bookingDetails.additionalInfoPlaceholder}
               />
             </div>
           </div>
@@ -660,7 +660,7 @@ function ExpenseModal({
               disabled={mutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {mutation.isPending ? "Saving..." : "Save"}
+              {mutation.isPending ? t.pages.expenses.saving : t.pages.expenses.saveExpense}
             </button>
           </div>
         </form>
@@ -706,7 +706,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
             setError(field as any, { message })
           })
         },
-        "Error saving category",
+        t.pages.expenses.errorSavingCategory,
       )
     },
   })
@@ -741,9 +741,9 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
               </label>
               <input
                 type="text"
-                {...register("name", { required: "Enter a name" })}
+                {...register("name", { required: t.pages.expenses.enterName })}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
-                placeholder="E.g., Utilities"
+                placeholder={t.bookingDetails.utilitiesExample}
               />
               {errors.name && (
                 <p className="text-sm text-danger-600 mt-1">
@@ -760,7 +760,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
                 {...register("description")}
                 rows={3}
                 className="w-full border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white px-4 py-2"
-                placeholder="Additional information..."
+                placeholder={t.bookingDetails.additionalInfoPlaceholder}
               />
             </div>
           </div>
@@ -778,7 +778,7 @@ function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
               disabled={mutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {mutation.isPending ? "Saving..." : "Save"}
+              {mutation.isPending ? t.pages.expenses.saving : t.pages.expenses.saveExpense}
             </button>
           </div>
         </form>

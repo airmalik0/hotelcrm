@@ -570,7 +570,7 @@ export function Analytics() {
                       .filter(Boolean),
                   )
                 }
-                placeholder="vip,loyal"
+                placeholder={t.bookingDetails.tagsPlaceholder}
                 className="border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white px-4 py-2 w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
@@ -808,7 +808,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
         <div className="bg-gradient-to-br from-primary-600/10 to-white dark:from-primary-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
           <div className="flex items-start justify-between mb-3">
             <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center">
-              <DollarSign className="w-6 h-6" />
+              <DollarSign className="w-6 h-6 text-white" />
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
@@ -849,7 +849,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
         <div className="bg-gradient-to-br from-purple-600/10 to-white dark:from-purple-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
           <div className="flex items-start justify-between mb-3">
             <div className="w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center">
-              <UserCheck className="w-6 h-6" />
+              <UserCheck className="w-6 h-6 text-white" />
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
@@ -870,7 +870,7 @@ function OverviewTab({ metrics, quickStats, isLoading }: OverviewTabProps) {
         <div className="bg-gradient-to-br from-danger-600/10 to-white dark:from-danger-600/20 dark:to-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-5">
           <div className="flex items-start justify-between mb-3">
             <div className="w-12 h-12 bg-danger-600 text-white rounded-full flex items-center justify-center">
-              <XCircle className="w-6 h-6" />
+              <XCircle className="w-6 h-6 text-white" />
             </div>
             <div className="text-right">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
@@ -964,7 +964,7 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-green-600 text-white rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5" />
+              <DollarSign className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -980,7 +980,7 @@ function RevenueTab({ data, isLoading }: RevenueTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -1092,7 +1092,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="text-center">
             <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4">
-              <UserCheck className="w-8 h-8" />
+              <UserCheck className="w-8 h-8 text-white" />
             </div>
             <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
               {data.check_ins}
@@ -1120,7 +1120,7 @@ function OccupancyTab({ data, isLoading }: OccupancyTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8" />
+              <XCircle className="w-8 h-8 text-white" />
             </div>
             <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
               {data.cancellations}
@@ -1223,7 +1223,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5" />
+              <Users className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -1239,7 +1239,7 @@ function CustomersTab({ data, isLoading }: CustomersTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-green-600 text-white rounded-lg flex items-center justify-center">
-              <UserCheck className="w-5 h-5" />
+              <UserCheck className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -1368,7 +1368,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -1392,7 +1392,7 @@ function TrendsTab({ data, isLoading }: TrendsTabProps) {
         <div className="bg-white dark:bg-dark-2 rounded-lg border border-neutral-200 dark:border-neutral-600 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-green-600 text-white rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5" />
+              <DollarSign className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">

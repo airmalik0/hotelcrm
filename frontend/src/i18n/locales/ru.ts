@@ -70,6 +70,7 @@ export const ru: Translations = {
     noNotesAvailable: "Заметки отсутствуют",
     // Loading states
     loadingRooms: "Загрузка номеров...",
+    chooseRoomPlaceholder: "Выберите номер...",
     loadingUsers: "Загрузка пользователей...",
     loadingCustomers: "Загрузка клиентов...",
     loadingBookings: "Загрузка бронирований...",
@@ -194,6 +195,7 @@ export const ru: Translations = {
     viewDetails: "Просмотр деталей",
     editRoom: "Редактировать номер",
     deleteRoom: "Удалить номер",
+    deleteRoomConfirm: "Вы уверены, что хотите удалить Номер {roomNumber}? Это действие нельзя отменить.",
     floor: "Этаж",
     // Room modals
     manageCategories: "Управление категориями номеров",
@@ -627,6 +629,17 @@ export const ru: Translations = {
     campaign: "Кампания",
     editCampaign: "Редактировать кампанию",
     createCampaign: "Создать кампанию",
+    deleteCampaign: "Удалить кампанию",
+    deleteCampaignConfirm: "Вы уверены, что хотите удалить \"{name}\"? Это действие нельзя отменить.",
+    campaignRecipientsPreview: "Предварительный просмотр получателей кампании",
+    executeCampaign: "Выполнить кампанию",
+    testCampaign: "Тестовая кампания",
+    execute: "Выполнить",
+    testRun: "Тестовый запуск",
+    previewRecipients: "Предварительный просмотр получателей",
+    testRunTitle: "Тестовый запуск",
+    executeCampaignTitle: "Выполнить кампанию",
+    editCampaignTitle: "Редактировать кампанию",
     hideCriteria: "Скрыть критерии",
     addCriteria: "Добавить критерии",
     updateCampaign: "Обновить кампанию",
@@ -650,6 +663,23 @@ export const ru: Translations = {
     minimumSpentFilter: "Минимальные расходы: {amount}",
     daysSinceLastVisitFilter: "Дней с последнего визита: {days}",
     notVisitedForFilter: "Не посещал: {days} дней",
+    // Campaign form specific
+    onetimeOption: "Одноразовая",
+    triggerOption: "Триггерная (Автоматическая)",
+    campaignCheckFrequencyText:
+      "Кампания будет проверять новых подходящих клиентов каждые {minutes} минут",
+    campaignNamePlaceholder: "например, Распродажа лета",
+    frequencyPlaceholder: "30",
+    frequencyHelpText: "мин: 5, макс: 1440 (24ч)",
+    minAgePlaceholder: "Минимальный возраст",
+    maxAgePlaceholder: "Максимальный возраст",
+    minSpentPlaceholder: "например, 500000",
+    daysSinceVisitPlaceholder: "например, 30",
+    messageTemplatePlaceholder:
+      "Здравствуйте {first_name}! У нас есть специальное предложение для вас...",
+    cancelButton: "Отмена",
+    updatingButton: "Обновление...",
+    creatingButton: "Создание...",
   },
   // Booking Details
   bookingDetails: {
@@ -664,7 +694,8 @@ export const ru: Translations = {
     actualCheckOut: "Фактический выезд:",
     guestsInRoom: "Гости в номере",
     noGuestsAdded: "Гости еще не добавлены.",
-    clickAddGuest: "Нажмите \"Добавить гостя\", чтобы начать добавлять гостей в бронирование.",
+    clickAddGuest:
+      'Нажмите "Добавить гостя", чтобы начать добавлять гостей в бронирование.',
     totalAmount: "Общая сумма:",
     paymentMethod: "Способ оплаты:",
     discountLabel: "Скидка:",
@@ -687,8 +718,56 @@ export const ru: Translations = {
     failedToChangeRoom: "Не удалось изменить номер",
     discountReasonRequired: "Причина скидки обязательна при применении скидки",
     cannotCheckInMaintenance: "Невозможно заселить: Номер на обслуживании",
+    cannotCheckInOccupied: "Невозможно заселить: Номер уже занят. Это может быть несоответствие данных - обратитесь в поддержку.",
+    onlyCheckedInCanCheckOut: "Можно выселить только заселенные бронирования",
+    guestRemovedSuccess: "Гость успешно удален!",
+    failedToUpdateRoomStatus: "Не удалось обновить статус номера. Попробуйте еще раз.",
     roomCleaningConfirm:
       "Номер убирается. Хотите отметить его как доступный и продолжить заселение?",
+    // Guest List
+    roomAtMaximumCapacity: "Номер заполнен до максимума",
+    roomAccommodatesGuests:
+      "Этот номер может вместить до {count} гост{plural}. Удалите гостя, чтобы добавить другого.",
+    // Guest Card
+    passport: "паспорт",
+    noPhoto: "Нет фото",
+    primary: "Основной",
+    removeGuest: "Удалить гостя",
+    removeGuestMessage: "Вы уверены, что хотите удалить этого гостя из бронирования?",
+    // Passport Upload
+    passportPhoto: "Фото паспорта",
+    uploadPassport: "Загрузить паспорт",
+    phonePlaceholder: "+998901234567",
+    // Booking Detail Modal
+    onlyConfirmedBookingsCanBeCheckedIn:
+      "Можно заселить только подтвержденные бронирования",
+    failedToRemoveGuest: "Не удалось удалить гостя",
+    removeDiscount: "Удалить скидку",
+    required: "Обязательно",
+    unknown: "Неизвестно",
+    noReasonProvided: "Причина не указана",
+    // User Create Modal
+    userCreatedSuccessfully: "Пользователь успешно создан!",
+    failedToCreateUser: "Не удалось создать пользователя",
+    usernameRequired: "Имя пользователя обязательно",
+    usernameMinLength: "Имя пользователя должно содержать не менее 3 символов",
+    usernameInvalidChars:
+      "Имя пользователя может содержать только буквы, цифры, дефисы и подчеркивания",
+    passwordRequired: "Пароль обязателен",
+    passwordMinLength: "Пароль должен содержать не менее 8 символов",
+    // Booking Grid
+    movingBooking: "Перемещение бронирования...",
+    dragToAnotherRoom: "Перетащите в другой номер",
+    unnamedCategory: "Без названия",
+    // Placeholders
+    tagsPlaceholder: "vip,лояльный",
+    amountPlaceholder: "0.00",
+    additionalInfoPlaceholder: "Дополнительная информация...",
+    searchInquiriesPlaceholder: "Поиск запросов...",
+    resolutionDetailsPlaceholder: "Введите детали решения...",
+    searchCampaignsPlaceholder: "Поиск кампаний...",
+    utilitiesExample: "Например, Коммунальные услуги",
+    roomNumberExample: "например, 101, 202, A1",
   },
   // Customer Inquiries
   inquiries: {
@@ -723,6 +802,51 @@ export const ru: Translations = {
     room: "Номер:",
     pricePerNight: "Цена/Ночь:",
     status: "Статус:",
+  },
+  // UI Components
+  ui: {
+    searchableSelect: {
+      selectOption: "Выберите вариант",
+      clearSelection: "Очистить выбор",
+      typeToSearch: "Введите для поиска...",
+      searchOptions: "Поиск вариантов",
+      noOptionsFound: "Варианты не найдены",
+      result: "результат",
+      results: "результатов",
+      found: "найдено",
+    },
+    imageUpload: {
+      uploadPhoto: "Загрузить фото",
+      fileSizeError: "Размер файла должен быть меньше {size}МБ",
+      invalidFileType: "Недопустимый тип файла. Допустимые форматы: {formats}",
+      photoUploadedSuccess: "Фото успешно загружено",
+      failedToUploadPhoto: "Не удалось загрузить фото",
+      removePhoto: "Удалить фото",
+      passportPreview: "Предварительный просмотр паспорта",
+      uploading: "Загрузка...",
+      clickToUploadPassport: "Нажмите для загрузки фото паспорта",
+    },
+    tagsInput: {
+      selectOrAddTags: "Выберите или добавьте теги...",
+      searchTags: "Поиск тегов...",
+      noTagsFound: "Теги не найдены",
+      noTagsAvailable: "Теги недоступны",
+    },
+    errorBoundary: {
+      somethingWentWrong: "Что-то пошло не так",
+      errorDescription:
+        "Извините, произошла неожиданная ошибка. Страница была автоматически перезагружена для исправления проблемы.",
+      reloadPage: "Перезагрузить страницу",
+      goBack: "Назад",
+      errorDetails: "Детали ошибки (только для разработчиков)",
+    },
+    protectedRoute: {
+      loading: "Загрузка...",
+      accessDenied: "Доступ запрещен",
+      accessDeniedDescription:
+        "У вас нет прав для доступа к этой странице. Свяжитесь с администратором, если считаете, что это ошибка.",
+      goBack: "Назад",
+    },
   },
   // Forms
   forms: {
@@ -773,6 +897,18 @@ export const ru: Translations = {
       description: "Описание",
       deleteExpense: "Удалить расход",
       deleteExpenseConfirm: "Вы уверены, что хотите удалить этот расход?",
+      editExpense: "Редактировать расход",
+      editCategory: "Редактировать категорию",
+      saveExpense: "Сохранить расход",
+      saveCategory: "Сохранить категорию",
+      saving: "Сохранение...",
+      errorSavingExpense: "Ошибка сохранения расхода",
+      errorSavingCategory: "Ошибка сохранения категории",
+      enterName: "Введите название",
+      selectCategory: "Пожалуйста, выберите категорию",
+      enterAmount: "Введите сумму",
+      amountGreaterThanZero: "Сумма должна быть больше 0",
+      noDescription: "Без описания",
       page: "Страница {current} из {total}",
       prev: "Назад",
       next: "Вперед",

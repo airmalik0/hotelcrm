@@ -85,6 +85,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./backend/uploads:/app/uploads
+      - backups-data:/app/uploads/backups
     env_file:
       - .env
     environment:
@@ -102,6 +103,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN?Variable not set}
+      - TELEGRAM_ADMIN_ID=${TELEGRAM_ADMIN_ID?Variable not set}
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
@@ -193,6 +195,7 @@ services:
 
 volumes:
   app-db-data:
+  backups-data:
 
 networks:
   traefik-public:

@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext"
 import { X } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
@@ -21,8 +22,12 @@ export function TagsInput({
   error,
   disabled = false,
 }: TagsInputProps) {
+  const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+
+  // Set default placeholder if not provided
+  const defaultPlaceholder = placeholder || t.ui.tagsInput.selectOrAddTags
 
   const handleAddTag = (tag: string) => {
     if (!value.includes(tag)) {
@@ -90,7 +95,7 @@ export function TagsInput({
                       }}
                       className="hover:opacity-70"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3 h-3 text-white" />
                     </button>
                   )}
                 </span>
@@ -98,7 +103,7 @@ export function TagsInput({
             })}
             {value.length === 0 && (
               <span className="text-neutral-500 dark:text-neutral-400">
-                {placeholder}
+                {defaultPlaceholder}
               </span>
             )}
           </div>
@@ -115,7 +120,7 @@ export function TagsInput({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search tags..."
+                placeholder={t.ui.tagsInput.searchTags}
                 className="w-full px-3 py-2 border-b border-neutral-200 dark:border-neutral-600 bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none"
                 onClick={(e) => e.stopPropagation()}
               />
@@ -139,7 +144,7 @@ export function TagsInput({
                   ))
                 ) : (
                   <div className="px-3 py-2 text-neutral-500 dark:text-neutral-400">
-                    No tags available
+                    {t.ui.tagsInput.noTagsAvailable}
                   </div>
                 )}
               </div>

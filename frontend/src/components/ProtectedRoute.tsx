@@ -1,5 +1,6 @@
 import type { UserRole } from "@/client/types.gen"
 import { useAuth } from "@/contexts/AuthContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { useRole } from "@/hooks/useRole"
 import { type ReactNode, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
@@ -15,6 +16,7 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth()
   const { hasAnyRole } = useRole()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   // Redirect to login if not authenticated
@@ -30,7 +32,9 @@ export function ProtectedRoute({
       <div className="min-h-screen bg-neutral-50 dark:bg-dark-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading...</p>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            {t.ui.protectedRoute.loading}
+          </p>
         </div>
       </div>
     )
@@ -50,17 +54,16 @@ export function ProtectedRoute({
             <span className="text-2xl">🚫</span>
           </div>
           <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-            Access Denied
+            {t.ui.protectedRoute.accessDenied}
           </h2>
           <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-            You don't have permission to access this page. Contact your
-            administrator if you believe this is an error.
+            {t.ui.protectedRoute.accessDeniedDescription}
           </p>
           <button
             onClick={() => navigate(-1)}
             className="rounded-lg py-2 px-4 inline-flex transition bg-primary-600 text-white hover:bg-primary-700 font-medium"
           >
-            Go Back
+            {t.ui.protectedRoute.goBack}
           </button>
         </div>
       </div>

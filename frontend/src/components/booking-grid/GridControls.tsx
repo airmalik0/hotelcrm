@@ -172,7 +172,13 @@ export const GridControls = memo(function GridControls({
                   : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
               )}
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle
+                className={`w-4 h-4 ${
+                  statusFilters.length > 0
+                    ? "text-blue-700 dark:text-blue-400"
+                    : "text-neutral-700 dark:text-neutral-300"
+                }`}
+              />
               {t.bookingGrid.status}
               {statusFilters.length > 0 && (
                 <span className="bg-blue-600 dark:bg-blue-400 text-white dark:text-neutral-900 text-xs px-1.5 py-0.5 rounded-full">
@@ -247,7 +253,13 @@ export const GridControls = memo(function GridControls({
                   : "bg-white dark:bg-dark-3 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-dark-2",
               )}
             >
-              <Bed className="w-4 h-4" />
+              <Bed
+                className={`w-4 h-4 ${
+                  categoryFilters.length > 0
+                    ? "text-primary-700 dark:text-primary-400"
+                    : "text-neutral-700 dark:text-neutral-300"
+                }`}
+              />
               {t.bookingGrid.categories}
               {categoryFilters.length > 0 && (
                 <span className="bg-primary-600 dark:bg-primary-400 text-white dark:text-neutral-900 text-xs px-1.5 py-0.5 rounded-full">
@@ -290,7 +302,7 @@ export const GridControls = memo(function GridControls({
                           <div className="w-1.5 h-1.5 bg-white dark:bg-neutral-900 rounded-full" />
                         )}
                       </div>
-                      {cat.name || "Unnamed"}
+                      {cat.name || t.bookingDetails.unnamedCategory}
                     </button>
                   ))}
                 </div>
@@ -305,7 +317,7 @@ export const GridControls = memo(function GridControls({
               onClick={onClearAllFilters}
               className="px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors flex items-center gap-1"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3 h-3 text-neutral-600 dark:text-neutral-400" />
               {t.bookingGrid.clearAll}
             </button>
           )}
@@ -320,7 +332,7 @@ export const GridControls = memo(function GridControls({
         >
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               <span>
                 {totalBookings} {t.bookingGrid.bookings}
               </span>

@@ -68,7 +68,7 @@ class BotUserService:
             # Normalize phone to digits-only for comparison
             # Customer.phone is stored as digits-only (validated in Customer model)
             normalized_phone = normalize_phone_for_search(phone)
-            
+
             customer = crud_customer.get_by_phone(self.session, phone=normalized_phone)
 
             if customer:
@@ -111,12 +111,12 @@ class BotUserService:
         try:
             # Normalize phone to digits-only
             normalized_phone = normalize_phone_for_search(phone)
-            
+
             # Search for bookings where guest phone matches normalized or original format
             # BookingGuest.phone may be stored in different formats (with/without +)
             # Use PostgreSQL regexp_replace to normalize on the fly for comparison
             from sqlalchemy import func, or_
-            
+
             # Build OR conditions for different phone formats
             conditions = [
                 # Match normalized phone (digits-only) using regexp_replace
@@ -129,11 +129,11 @@ class BotUserService:
                 # Also try direct match for normalized format (in case it's already stored normalized)
                 BookingGuest.phone == normalized_phone,
             ]
-            
+
             # Add original format match if different from normalized
             if phone and phone != normalized_phone:
                 conditions.append(BookingGuest.phone == phone)
-            
+
             stmt = (
                 select(Booking)
                 .join(BookingGuest)

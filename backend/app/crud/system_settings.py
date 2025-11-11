@@ -13,17 +13,17 @@ class CRUDSystemSettings(CRUDBase[SystemSettings, SystemSettingsUpdate, SystemSe
         """Get system settings or create default if none exists."""
         statement = select(SystemSettings)
         settings = session.exec(statement).first()
-        
+
         if not settings:
             # Create default settings
             settings = SystemSettings(
                 language="en",
-                currency="USD",
+                currency="UZS",
             )
             session.add(settings)
             session.flush()
             session.refresh(settings)
-        
+
         return settings
 
     def get_settings(self, session: Session) -> SystemSettings:
@@ -35,7 +35,7 @@ class CRUDSystemSettings(CRUDBase[SystemSettings, SystemSettingsUpdate, SystemSe
     ) -> SystemSettings:
         """Update system settings."""
         settings = self.get_or_create_default(session)
-        
+
         # Update fields
         update_data = obj_in.model_dump(exclude_unset=True)
         if update_data:
@@ -44,7 +44,7 @@ class CRUDSystemSettings(CRUDBase[SystemSettings, SystemSettingsUpdate, SystemSe
             session.add(settings)
             session.flush()
             session.refresh(settings)
-        
+
         return settings
 
 

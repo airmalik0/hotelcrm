@@ -173,7 +173,7 @@ export function MobileBookingList({
 
                           <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
                             <div className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5" />
+                              <Clock className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
                               <span>
                                 {format(
                                   safeParseDate(booking.check_in),
@@ -196,7 +196,7 @@ export function MobileBookingList({
                 </div>
               ) : (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50 text-neutral-400 dark:text-neutral-500" />
                   <p>No bookings for this day</p>
                   {availableRooms.length > 0 && (
                     <button
@@ -205,7 +205,7 @@ export function MobileBookingList({
                       }}
                       className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm font-medium"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4 text-white" />
                       Add Booking
                     </button>
                   )}

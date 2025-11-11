@@ -297,7 +297,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 onClick={() => setSidebarOpen(true)}
                 className="xl:hidden w-10 h-10 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
               </button>
             </div>
 
@@ -310,9 +310,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                 className="w-10 h-10 bg-neutral-200 dark:bg-neutral-700 dark:text-white rounded-full flex justify-center items-center hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
               >
                 {darkMode ? (
-                  <Sun className="w-5 h-5" />
+                  <Sun className="w-5 h-5 text-neutral-600 dark:text-white" />
                 ) : (
-                  <Moon className="w-5 h-5" />
+                  <Moon className="w-5 h-5 text-neutral-600 dark:text-white" />
                 )}
               </button>
 
@@ -337,7 +337,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-danger-100 dark:hover:bg-danger-600/30 hover:text-danger-600 dark:hover:text-danger-400 transition-colors"
                   title={t.auth.logout}
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4 text-neutral-600 dark:text-neutral-400 group-hover:text-danger-600 dark:group-hover:text-danger-400" />
                 </button>
               </div>
             </div>

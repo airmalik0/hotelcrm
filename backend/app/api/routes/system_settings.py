@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import CurrentUser, SessionDep, require_admin
 from app.core.audit import get_entity_name, log_audit
-from app.models import Message, SystemSettingsPublic, SystemSettingsUpdate
+from app.models import SystemSettingsPublic, SystemSettingsUpdate
 from app.services.system_settings import SystemSettingsService
 
 router = APIRouter(prefix="/system-settings", tags=["system-settings"])
@@ -32,13 +32,13 @@ def update_system_settings(
     Only admin can update system settings.
     """
     service = SystemSettingsService(session)
-    
+
     # Get current settings for audit log
     old_settings = service.get_settings()
-    
+
     # Update settings
     updated_settings = service.update_settings(settings_in)
-    
+
     # Log audit
     entity_name = get_entity_name("system_settings", updated_settings)
     changes = []
@@ -46,7 +46,7 @@ def update_system_settings(
         changes.append(f"language: {old_settings.language} -> {updated_settings.language}")
     if settings_in.currency is not None and old_settings.currency != updated_settings.currency:
         changes.append(f"currency: {old_settings.currency} -> {updated_settings.currency}")
-    
+
     if changes:
         log_audit(
             session=session,
@@ -57,7 +57,7 @@ def update_system_settings(
             entity_name=entity_name,
             changes="; ".join(changes),
         )
-    
+
     session.commit()
     session.refresh(updated_settings)
     return updated_settings

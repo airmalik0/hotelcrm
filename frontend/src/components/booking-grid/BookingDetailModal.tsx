@@ -632,21 +632,21 @@ export const BookingDetailModal = memo(function BookingDetailModal({
         queryClient.invalidateQueries({ queryKey: ["rooms"] })
         queryClient.invalidateQueries({ queryKey: ["room", booking.room_id] })
       } catch (error) {
-        showError("Failed to update room status. Please try again.")
+        showError(t.bookingDetails.failedToUpdateRoomStatus)
         return
       }
     }
 
     if (booking.room?.status === "occupied") {
       showError(
-        "Cannot check in: Room is already occupied. This might be a data inconsistency - please contact support.",
+        t.bookingDetails.cannotCheckInOccupied,
       )
       return
     }
 
     // Client-side validation: Only confirmed bookings can be checked in
     if (booking.status !== "confirmed") {
-      showError("Only confirmed bookings can be checked in")
+      showError(t.bookingDetails.onlyConfirmedBookingsCanBeCheckedIn)
       return
     }
 
@@ -658,7 +658,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     // Client-side validation: Only checked-in bookings can be checked out
     if (booking.status !== "checked_in") {
-      showError("Only checked-in bookings can be checked out")
+      showError(t.bookingDetails.onlyCheckedInCanCheckOut)
       return
     }
 
@@ -675,11 +675,11 @@ export const BookingDetailModal = memo(function BookingDetailModal({
     onSuccess: () => {
       // Invalidate booking to refresh guests list
       queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
-      showSuccess("Guest removed successfully!")
+        showSuccess(t.bookingDetails.guestRemovedSuccess)
       setRemovingGuestId(null)
     },
     onError: (error) => {
-      showError(error, "Failed to remove guest")
+      showError(error, t.bookingDetails.failedToRemoveGuest)
       setRemovingGuestId(null)
     },
   })
@@ -689,7 +689,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
 
     const confirmed = await confirm({
       title: t.booking.removeGuest,
-      message: "Are you sure you want to remove this guest from the booking?",
+      message: t.booking.removeGuestMessage,
       confirmText: t.booking.removeGuestConfirm,
       variant: "danger",
     })
@@ -838,7 +838,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                         onClick={() => setShowRoomChange(true)}
                         className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
                       >
-                        <Edit2 className="w-3 h-3" />
+                        <Edit2 className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                         Change Room
                       </button>
                     )}
@@ -857,8 +857,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       >
                         <option value="">
                           {!availableRooms || !allBookings
-                            ? "Loading rooms..."
-                            : "Choose a room..."}
+                            ? t.common.loadingRooms
+                            : t.common.chooseRoomPlaceholder}
                         </option>
                         {availableRooms?.data &&
                           allBookings?.data &&
@@ -1001,7 +1001,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       <span className="ml-2">
                         {booking.room?.status === "available" && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-600/30 dark:text-emerald-400 text-xs font-medium">
-                            <CheckCircle className="w-3 h-3" />
+                            <CheckCircle className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
                             Available
                           </span>
                         )}
@@ -1063,7 +1063,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     }}
                     className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
                   >
-                    <Edit2 className="w-3 h-3" />
+                    <Edit2 className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                     {booking.status === "checked_in"
                       ? t.booking.modifyCheckOut
                       : t.booking.modifyDates}
@@ -1458,7 +1458,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       onClick={() => setIsEditing(true)}
                       className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
                     >
-                      <Edit2 className="w-3 h-3" />
+                      <Edit2 className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                       Edit
                     </button>
                   )}
@@ -1532,7 +1532,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                 }))
                               }}
                               className="px-2 py-2 text-danger-600 dark:text-danger-400 hover:bg-danger-100 dark:hover:bg-danger-600/40 rounded-lg transition-colors flex-shrink-0"
-                              title="Remove discount"
+                              title={t.bookingDetails.removeDiscount}
                             >
                               ×
                             </button>
@@ -1557,7 +1557,9 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                               }))
                             }
                             placeholder={
-                              formData.discount > 0 ? "Required" : ""
+                              formData.discount > 0
+                                ? t.bookingDetails.required
+                                : ""
                             }
                             className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-500 rounded-lg bg-white dark:bg-transparent text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             required={formData.discount > 0}
@@ -1658,10 +1660,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                             )}
                           >
                             {method === "cash"
-                              ? "Cash"
+                              ? t.paymentMethods.cash
                               : method === "terminal"
-                                ? "Terminal"
-                                : "Transfer"}
+                                ? t.paymentMethods.terminal
+                                : t.paymentMethods.transfer}
                           </button>
                         ),
                       )}
@@ -1673,8 +1675,10 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                       disabled={updateMutation.isPending}
                       className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 text-white font-medium rounded-lg transition-colors text-sm disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400 flex items-center gap-1"
                     >
-                      <Save className="w-3 h-3" />
-                      {updateMutation.isPending ? "Saving..." : "Save"}
+                      <Save className="w-3 h-3 text-white" />
+                      {updateMutation.isPending
+                        ? t.common.loading
+                        : t.common.save}
                     </button>
                     <button
                       onClick={() => setIsEditing(false)}
@@ -1781,7 +1785,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                         ?.replace(/_/g, " ")
                                         .replace(/\b\w/g, (l) =>
                                           l.toUpperCase(),
-                                        ) || "Unknown"}
+                                        ) || t.bookingDetails.unknown}
                                     </span>
                                     {adjustment.amount && (
                                       <span
@@ -1797,7 +1801,8 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                                     )}
                                   </div>
                                   <div className="text-neutral-600 dark:text-neutral-400 break-words">
-                                    {adjustment.reason || "No reason provided"}
+                                    {adjustment.reason ||
+                                      t.bookingDetails.noReasonProvided}
                                   </div>
                                   {adjustment.created_at && (
                                     <div className="text-neutral-500 dark:text-neutral-500 mt-1">
@@ -1855,7 +1860,7 @@ export const BookingDetailModal = memo(function BookingDetailModal({
                     onClick={() => setShowDeleteConfirm(true)}
                     className="px-5 py-2.5 border border-danger-200 dark:border-danger-800 text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-600/40 rounded-lg transition-colors font-medium flex items-center gap-2"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 text-danger-600 dark:text-danger-400" />
                     Delete
                   </button>
                 ) : (

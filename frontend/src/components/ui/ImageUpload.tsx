@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext"
 import { apiClient } from "@/lib/axios"
 import { showError, showSuccess } from "@/utils/error-handling"
 import { getFileUrl } from "@/utils/file-urls"
@@ -16,13 +17,17 @@ interface ImageUploadProps {
 export function ImageUpload({
   value,
   onChange,
-  label = "Upload Photo",
+  label,
   disabled = false,
   maxSizeMB = 5,
   acceptedFormats = [".jpg", ".jpeg", ".png", ".webp"],
 }: ImageUploadProps) {
+  const { t } = useLanguage()
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(getFileUrl(value))
+
+  // Set default label if not provided
+  const defaultLabel = label || t.ui.imageUpload.uploadPhoto
 
   // Update preview URL when value prop changes
   useEffect(() => {
@@ -37,7 +42,12 @@ export function ImageUpload({
       // Validate file size
       const maxSize = maxSizeMB * 1024 * 1024
       if (file.size > maxSize) {
-        showError(`File size must be less than ${maxSizeMB}MB`)
+        showError(
+          t.ui.imageUpload.fileSizeError.replace(
+            "{size}",
+            maxSizeMB.toString(),
+          ),
+        )
         return
       }
 
@@ -47,7 +57,10 @@ export function ImageUpload({
         .toLowerCase()
       if (!acceptedFormats.includes(fileExt)) {
         showError(
-          `Invalid file type. Accepted formats: ${acceptedFormats.join(", ")}`,
+          t.ui.imageUpload.invalidFileType.replace(
+            "{formats}",
+            acceptedFormats.join(", "),
+          ),
         )
         return
       }
@@ -75,9 +88,9 @@ export function ImageUpload({
         const objectUrl = URL.createObjectURL(file)
         setPreviewUrl(objectUrl)
 
-        showSuccess("Photo uploaded successfully")
+        showSuccess(t.ui.imageUpload.photoUploadedSuccess)
       } catch (error) {
-        showError("Failed to upload photo")
+        showError(t.ui.imageUpload.failedToUploadPhoto)
         console.error("Upload error:", error)
       } finally {
         setUploading(false)
@@ -103,14 +116,14 @@ export function ImageUpload({
             onClick={handleRemove}
             disabled={disabled || uploading}
             className="absolute top-2 right-2 z-10 bg-white dark:bg-neutral-800 rounded-full p-1.5 hover:bg-danger-50 dark:hover:bg-danger-600/30 transition-colors shadow-md"
-            aria-label="Remove photo"
+            aria-label={t.ui.imageUpload.removePhoto}
           >
-            <X className="w-4 h-4 text-danger-600" />
+            <X className="w-4 h-4 text-danger-600 dark:text-danger-400" />
           </button>
           <div className="border border-neutral-300 dark:border-neutral-500 rounded-lg overflow-hidden bg-white dark:bg-neutral-900">
             <img
               src={previewUrl}
-              alt="Passport preview"
+              alt={t.ui.imageUpload.passportPreview}
               className="w-full h-auto object-contain"
               style={{ maxHeight: "400px", aspectRatio: "3/4" }}
               onError={() => {
@@ -142,7 +155,7 @@ export function ImageUpload({
               <>
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 <span className="text-base font-medium text-neutral-600 dark:text-neutral-300">
-                  Uploading...
+                  {t.ui.imageUpload.uploading}
                 </span>
               </>
             ) : (
@@ -150,10 +163,10 @@ export function ImageUpload({
                 <Camera className="w-12 h-12 text-neutral-600 dark:text-neutral-300" />
                 <div className="text-center">
                   <span className="text-base font-medium text-neutral-600 dark:text-neutral-300 block">
-                    {label}
+                    {defaultLabel}
                   </span>
                   <span className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 block">
-                    Click to upload passport photo
+                    {t.ui.imageUpload.clickToUploadPassport}
                   </span>
                 </div>
               </>

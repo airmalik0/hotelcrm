@@ -36,19 +36,8 @@ function getStatusBadgeClasses(status: RoomStatus): string {
 // Keeping for backward compatibility but it's better to use t.room.status* directly
 function getStatusText(status: RoomStatus, t?: any): string {
   if (!t) {
-    // Fallback if translations not available
-    switch (status) {
-      case "available":
-        return "Available"
-      case "occupied":
-        return "Occupied"
-      case "cleaning":
-        return "Cleaning"
-      case "maintenance":
-        return "Maintenance"
-      default:
-        return status
-    }
+    // Fallback if translations not available - use status as-is
+    return status
   }
   switch (status) {
     case "available":
@@ -222,7 +211,7 @@ export function RoomCard({ room, onView, onEdit, onDelete }: RoomCardProps) {
                 className="w-8 h-8 bg-success-100 dark:bg-success-600/30 text-success-600 dark:text-success-400 rounded-full inline-flex items-center justify-center hover:bg-success-200 dark:hover:bg-success-600/40 transition-colors"
                 title={t.room.editRoom}
               >
-                <Edit className="w-4 h-4" />
+                <Edit className="w-4 h-4 text-success-600 dark:text-success-400" />
               </button>
               <button
                 onClick={() => onDelete(room)}

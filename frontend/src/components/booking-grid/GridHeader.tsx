@@ -82,7 +82,7 @@ export const GridHeader = memo(function GridHeader({
               onClick={onAddBooking}
               className="p-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5 text-white" />
             </button>
           </div>
 
@@ -169,7 +169,7 @@ export const GridHeader = memo(function GridHeader({
               className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-dark-3 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               <span className="xl:hidden">
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
               </span>
               <span className="hidden xl:inline">{t.bookingGrid.today}</span>
             </button>
@@ -292,7 +292,13 @@ export const GridHeader = memo(function GridHeader({
                     : "hover:bg-neutral-100 dark:hover:bg-dark-3 text-neutral-600 dark:text-neutral-400",
                 )}
               >
-                <CalendarDays className="w-4 h-4" />
+                <CalendarDays
+                  className={`w-4 h-4 ${
+                    viewMode === "month"
+                      ? "text-primary-600 dark:text-primary-400"
+                      : "text-neutral-600 dark:text-neutral-400"
+                  }`}
+                />
                 <span className="hidden xl:inline">{t.bookingGrid.month}</span>
               </button>
             </div>
@@ -302,7 +308,7 @@ export const GridHeader = memo(function GridHeader({
               onClick={onAddBooking}
               className="px-3 md:px-4 py-1.5 md:py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-1 md:gap-2 text-sm font-medium"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-white" />
               <span className="hidden xl:inline">
                 {t.bookingGrid.addBooking}
               </span>

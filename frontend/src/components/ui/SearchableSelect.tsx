@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext"
 import { ChevronDown, MapPin, Search, X } from "lucide-react"
 import type React from "react"
 import { useEffect, useId, useRef, useState } from "react"
@@ -17,17 +18,21 @@ export function SearchableSelect({
   value,
   onChange,
   options,
-  placeholder = "Select an option",
+  placeholder,
   error,
   label,
   required,
   icon = <MapPin className="w-4 h-4" />,
 }: SearchableSelectProps) {
+  const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [highlightedIndex, setHighlightedIndex] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Set default placeholder if not provided
+  const defaultPlaceholder = placeholder || t.ui.searchableSelect.selectOption
 
   // Generate unique IDs for accessibility
   const id = useId()
@@ -159,17 +164,17 @@ export function SearchableSelect({
           <span
             className={`flex-1 ${!displayValue ? "text-neutral-500 dark:text-neutral-400" : ""}`}
           >
-            {displayValue || placeholder}
+            {displayValue || defaultPlaceholder}
           </span>
           <div className="flex items-center gap-1">
             {value && (
               <button
                 type="button"
                 onClick={handleClear}
-                aria-label="Clear selection"
+                aria-label={t.ui.searchableSelect.clearSelection}
                 className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3 text-neutral-500 dark:text-neutral-400" />
               </button>
             )}
             <ChevronDown
@@ -195,8 +200,8 @@ export function SearchableSelect({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type to search..."
-                aria-label="Search options"
+                placeholder={t.ui.searchableSelect.typeToSearch}
+                aria-label={t.ui.searchableSelect.searchOptions}
                 aria-controls={listboxId}
                 aria-activedescendant={activeDescendantId}
                 className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
@@ -213,7 +218,7 @@ export function SearchableSelect({
           >
             {filteredOptions.length === 0 ? (
               <div className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">
-                No options found
+                {t.ui.searchableSelect.noOptionsFound}
               </div>
             ) : (
               filteredOptions.map((option, index) => (
@@ -251,8 +256,11 @@ export function SearchableSelect({
           {/* Results Count */}
           {searchTerm && (
             <div className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 border-t border-neutral-200 dark:border-neutral-600">
-              {filteredOptions.length} result
-              {filteredOptions.length !== 1 ? "s" : ""} found
+              {filteredOptions.length}{" "}
+              {filteredOptions.length === 1
+                ? t.ui.searchableSelect.result
+                : t.ui.searchableSelect.results}{" "}
+              {t.ui.searchableSelect.found}
             </div>
           )}
         </div>

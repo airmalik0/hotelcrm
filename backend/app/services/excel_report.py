@@ -31,7 +31,7 @@ class ExcelReportService:
             bottom=Side(style="thin"),
         )
 
-    def generate_dashboard_report(self, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None, language: str = "en") -> BytesIO:
+    def generate_dashboard_report(self, metrics: DashboardMetrics, filters: AnalyticsFilter | None = None, language: str = "en", currency: str = "UZS") -> BytesIO:
         """
         Generate comprehensive Excel report with dashboard metrics.
 
@@ -68,6 +68,7 @@ class ExcelReportService:
         filters: AnalyticsFilter,
         include_charts: bool = True,
         language: str = "en",
+        currency: str = "UZS",
     ) -> BytesIO:
         """
         Generate comprehensive Excel report using all analytics endpoints.
@@ -182,10 +183,10 @@ class ExcelReportService:
         ws.merge_cells(f"A{row}:B{row}")
 
         kpi_data = [
-            ["Total Revenue", f"${metrics.revenue.total_revenue:,.2f}"],
+            ["Total Revenue", f"get_currency_symbol(currency){metrics.revenue.total_revenue:,.2f}"],
             ["Occupancy Rate", f"{metrics.occupancy.occupancy_rate}%"],
-            ["Average Daily Rate", f"${metrics.revenue.average_daily_rate:,.2f}"],
-            ["RevPAR", f"${metrics.revenue.revenue_per_available_room:,.2f}"],
+            ["Average Daily Rate", f"get_currency_symbol(currency){metrics.revenue.average_daily_rate:,.2f}"],
+            ["RevPAR", f"get_currency_symbol(currency){metrics.revenue.revenue_per_available_room:,.2f}"],
             ["Total Customers", f"{metrics.customer_metrics.total_customers:,}"],
             ["New Customers", f"{metrics.customer_metrics.new_customers:,}"],
         ]
@@ -220,9 +221,9 @@ class ExcelReportService:
             cell.border = self.border
 
         payment_data = [
-            ("Cash", f"{payment_distribution.cash_percentage}%", f"${payment_distribution.cash_amount:,.2f}"),
-            ("Bank Transfer", f"{payment_distribution.transfer_percentage}%", f"${payment_distribution.transfer_amount:,.2f}"),
-            ("Terminal/Card", f"{payment_distribution.terminal_percentage}%", f"${payment_distribution.terminal_amount:,.2f}"),
+            ("Cash", f"{payment_distribution.cash_percentage}%", f"get_currency_symbol(currency){payment_distribution.cash_amount:,.2f}"),
+            ("Bank Transfer", f"{payment_distribution.transfer_percentage}%", f"get_currency_symbol(currency){payment_distribution.transfer_amount:,.2f}"),
+            ("Terminal/Card", f"{payment_distribution.terminal_percentage}%", f"get_currency_symbol(currency){payment_distribution.terminal_amount:,.2f}"),
         ]
 
         for method, percentage, amount in payment_data:
@@ -287,10 +288,10 @@ class ExcelReportService:
         ws.merge_cells(f"A{row}:B{row}")
 
         metrics_data = [
-            ("Total Revenue", f"${metrics.revenue.total_revenue:,.2f}"),
+            ("Total Revenue", f"get_currency_symbol(currency){metrics.revenue.total_revenue:,.2f}"),
             ("Total Bookings", metrics.revenue.total_bookings),
-            ("Average Daily Rate", f"${metrics.revenue.average_daily_rate:,.2f}"),
-            ("RevPAR", f"${metrics.revenue.revenue_per_available_room:,.2f}"),
+            ("Average Daily Rate", f"get_currency_symbol(currency){metrics.revenue.average_daily_rate:,.2f}"),
+            ("RevPAR", f"get_currency_symbol(currency){metrics.revenue.revenue_per_available_room:,.2f}"),
             ("Occupancy Rate", f"{metrics.occupancy.occupancy_rate}%"),
             ("Average Stay Length", f"{metrics.occupancy.average_length_of_stay:.1f} nights"),
             ("Check-ins", metrics.occupancy.check_ins),
@@ -331,13 +332,13 @@ class ExcelReportService:
             cell.border = self.border
 
         revenue_data = [
-            ("Total Revenue", f"${metrics.revenue.total_revenue:,.2f}"),
-            ("Average Daily Rate", f"${metrics.revenue.average_daily_rate:,.2f}"),
-            ("RevPAR", f"${metrics.revenue.revenue_per_available_room:,.2f}"),
+            ("Total Revenue", f"get_currency_symbol(currency){metrics.revenue.total_revenue:,.2f}"),
+            ("Average Daily Rate", f"get_currency_symbol(currency){metrics.revenue.average_daily_rate:,.2f}"),
+            ("RevPAR", f"get_currency_symbol(currency){metrics.revenue.revenue_per_available_room:,.2f}"),
             ("Total Bookings", metrics.revenue.total_bookings),
             ("Total Nights Booked", metrics.revenue.total_nights),
-            ("Discounts Given", f"${metrics.revenue.discount_amount:,.2f}"),
-            ("Refunds Processed", f"${metrics.revenue.refund_amount:,.2f}"),
+            ("Discounts Given", f"get_currency_symbol(currency){metrics.revenue.discount_amount:,.2f}"),
+            ("Refunds Processed", f"get_currency_symbol(currency){metrics.revenue.refund_amount:,.2f}"),
         ]
 
         for label, value in revenue_data:
@@ -364,7 +365,7 @@ class ExcelReportService:
             for point in metrics.revenue_trend:
                 row += 1
                 ws.cell(row=row, column=1, value=point.date).border = self.border
-                ws.cell(row=row, column=2, value=f"${point.value:,.2f}").border = self.border
+                ws.cell(row=row, column=2, value=f"get_currency_symbol(currency){point.value:,.2f}").border = self.border
 
         # Adjust column widths
         ws.column_dimensions["A"].width = 25
@@ -507,13 +508,13 @@ class ExcelReportService:
         payment_data = [
             ("Cash",
              f"{metrics.payment_distribution.cash_percentage}%",
-             f"${metrics.payment_distribution.cash_amount:,.2f}"),
+             f"get_currency_symbol(currency){metrics.payment_distribution.cash_amount:,.2f}"),
             ("Bank Transfer",
              f"{metrics.payment_distribution.transfer_percentage}%",
-             f"${metrics.payment_distribution.transfer_amount:,.2f}"),
+             f"get_currency_symbol(currency){metrics.payment_distribution.transfer_amount:,.2f}"),
             ("Terminal/Card",
              f"{metrics.payment_distribution.terminal_percentage}%",
-             f"${metrics.payment_distribution.terminal_amount:,.2f}"),
+             f"get_currency_symbol(currency){metrics.payment_distribution.terminal_amount:,.2f}"),
         ]
 
         for method, percentage, amount in payment_data:
@@ -549,10 +550,10 @@ class ExcelReportService:
             for cat in metrics.category_breakdown:
                 row += 1
                 ws.cell(row=row, column=1, value=(cat.category_name or cat.category_id or "")).border = self.border
-                ws.cell(row=row, column=2, value=f"${cat.revenue:,.2f}").border = self.border
+                ws.cell(row=row, column=2, value=f"get_currency_symbol(currency){cat.revenue:,.2f}").border = self.border
                 ws.cell(row=row, column=3, value=cat.bookings).border = self.border
                 ws.cell(row=row, column=4, value=f"{cat.occupancy_rate}%").border = self.border
-                ws.cell(row=row, column=5, value=f"${cat.average_rate:,.2f}").border = self.border
+                ws.cell(row=row, column=5, value=f"get_currency_symbol(currency){cat.average_rate:,.2f}").border = self.border
 
             # Calculate totals
             row += 1
@@ -562,7 +563,7 @@ class ExcelReportService:
             total_revenue = sum(cat.revenue for cat in metrics.category_breakdown)
             total_bookings = sum(cat.bookings for cat in metrics.category_breakdown)
 
-            ws.cell(row=row, column=2, value=f"${total_revenue:,.2f}").font = Font(bold=True)
+            ws.cell(row=row, column=2, value=f"get_currency_symbol(currency){total_revenue:,.2f}").font = Font(bold=True)
             ws.cell(row=row, column=2).border = self.border
             ws.cell(row=row, column=3, value=total_bookings).font = Font(bold=True)
             ws.cell(row=row, column=3).border = self.border
@@ -632,10 +633,10 @@ class ExcelReportService:
         ws.merge_cells(f"A{row}:C{row}")
 
         revenue_metrics = [
-            ("Total Revenue", f"${revenue_details.get('total_revenue', 0):,.2f}"),
+            ("Total Revenue", f"get_currency_symbol(currency){revenue_details.get('total_revenue', 0):,.2f}"),
             ("Period Growth", f"{revenue_details.get('growth_rate', 0):+.1f}%"),
-            ("Average Daily Revenue", f"${revenue_details.get('avg_daily', 0):,.2f}"),
-            ("Peak Day Revenue", f"${revenue_details.get('peak_day', 0):,.2f}"),
+            ("Average Daily Revenue", f"get_currency_symbol(currency){revenue_details.get('avg_daily', 0):,.2f}"),
+            ("Peak Day Revenue", f"get_currency_symbol(currency){revenue_details.get('peak_day', 0):,.2f}"),
         ]
 
         for label, value in revenue_metrics:
@@ -662,7 +663,7 @@ class ExcelReportService:
             for day_data in revenue_details.get('daily_trend', []):
                 row += 1
                 ws.cell(row=row, column=1, value=day_data.get('date', '')).border = self.border
-                ws.cell(row=row, column=2, value=f"${day_data.get('revenue', 0):,.2f}").border = self.border
+                ws.cell(row=row, column=2, value=f"get_currency_symbol(currency){day_data.get('revenue', 0):,.2f}").border = self.border
                 ws.cell(row=row, column=3, value=f"{day_data.get('growth', 0):+.1f}%").border = self.border
 
         # Adjust column widths
@@ -747,7 +748,7 @@ class ExcelReportService:
             ("Total Customers", f"{customer_details.get('total_customers', 0):,}"),
             ("New Customers", f"{customer_details.get('new_customers', 0):,}"),
             ("Returning Customers", f"{customer_details.get('returning_customers', 0):,}"),
-            ("Average Customer Value", f"${customer_details.get('avg_value', 0):,.2f}"),
+            ("Average Customer Value", f"get_currency_symbol(currency){customer_details.get('avg_value', 0):,.2f}"),
         ]
 
         for label, value in customer_metrics:
@@ -775,8 +776,8 @@ class ExcelReportService:
                 row += 1
                 ws.cell(row=row, column=1, value=day_data.get('date', '')).border = self.border
                 ws.cell(row=row, column=2, value=day_data.get('new_customers', 0)).border = self.border
-                ws.cell(row=row, column=3, value=f"${day_data.get('total_value', 0):,.2f}").border = self.border
-                ws.cell(row=row, column=4, value=f"${day_data.get('avg_value', 0):,.2f}").border = self.border
+                ws.cell(row=row, column=3, value=f"get_currency_symbol(currency){day_data.get('total_value', 0):,.2f}").border = self.border
+                ws.cell(row=row, column=4, value=f"get_currency_symbol(currency){day_data.get('avg_value', 0):,.2f}").border = self.border
 
         # Adjust column widths
         ws.column_dimensions["A"].width = 25
@@ -872,10 +873,10 @@ class ExcelReportService:
         for month_data in seasonal_trends.get('monthly_data', []):
             row += 1
             ws.cell(row=row, column=1, value=month_data.get('month', '')).border = self.border
-            ws.cell(row=row, column=2, value=f"${month_data.get('revenue', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=2, value=f"get_currency_symbol(currency){month_data.get('revenue', 0):,.2f}").border = self.border
             ws.cell(row=row, column=3, value=month_data.get('bookings', 0)).border = self.border
             ws.cell(row=row, column=4, value=f"{month_data.get('occupancy', 0):.1f}%").border = self.border
-            ws.cell(row=row, column=5, value=f"${month_data.get('avg_rate', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=5, value=f"get_currency_symbol(currency){month_data.get('avg_rate', 0):,.2f}").border = self.border
 
         # Seasonal patterns
         if 'seasonal_patterns' in seasonal_trends:
@@ -935,10 +936,10 @@ class ExcelReportService:
             row += 1
             ws.cell(row=row, column=1, value=idx).border = self.border
             ws.cell(row=row, column=2, value=customer.get('name', 'N/A')).border = self.border
-            ws.cell(row=row, column=3, value=f"${customer.get('total_revenue', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=3, value=f"get_currency_symbol(currency){customer.get('total_revenue', 0):,.2f}").border = self.border
             ws.cell(row=row, column=4, value=customer.get('total_bookings', 0)).border = self.border
-            ws.cell(row=row, column=5, value=f"${customer.get('average_booking_value', 0):,.2f}").border = self.border
-            ws.cell(row=row, column=6, value=f"${customer.get('period_revenue', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=5, value=f"get_currency_symbol(currency){customer.get('average_booking_value', 0):,.2f}").border = self.border
+            ws.cell(row=row, column=6, value=f"get_currency_symbol(currency){customer.get('period_revenue', 0):,.2f}").border = self.border
 
         # Adjust column widths
         ws.column_dimensions["A"].width = 8
@@ -965,10 +966,10 @@ class ExcelReportService:
         ws.merge_cells(f"A{row}:C{row}")
 
         ltv_metrics = [
-            ("Average LTV", f"${customer_ltv.get('avg_ltv', 0):,.2f}"),
-            ("Median LTV", f"${customer_ltv.get('median_ltv', 0):,.2f}"),
-            ("Top 10% Average", f"${customer_ltv.get('top_10_avg', 0):,.2f}"),
-            ("Total Customer Value", f"${customer_ltv.get('total_value', 0):,.2f}"),
+            ("Average LTV", f"get_currency_symbol(currency){customer_ltv.get('avg_ltv', 0):,.2f}"),
+            ("Median LTV", f"get_currency_symbol(currency){customer_ltv.get('median_ltv', 0):,.2f}"),
+            ("Top 10% Average", f"get_currency_symbol(currency){customer_ltv.get('top_10_avg', 0):,.2f}"),
+            ("Total Customer Value", f"get_currency_symbol(currency){customer_ltv.get('total_value', 0):,.2f}"),
         ]
 
         for label, value in ltv_metrics:
@@ -996,7 +997,7 @@ class ExcelReportService:
                 row += 1
                 ws.cell(row=row, column=1, value=dist.get('range', '')).border = self.border
                 ws.cell(row=row, column=2, value=dist.get('customers', 0)).border = self.border
-                ws.cell(row=row, column=3, value=f"${dist.get('total_value', 0):,.2f}").border = self.border
+                ws.cell(row=row, column=3, value=f"get_currency_symbol(currency){dist.get('total_value', 0):,.2f}").border = self.border
                 ws.cell(row=row, column=4, value=f"{dist.get('avg_visits', 0):.1f}").border = self.border
                 ws.cell(row=row, column=5, value=f"{dist.get('percentage', 0):.1f}%").border = self.border
 
@@ -1019,9 +1020,9 @@ class ExcelReportService:
             for customer in customer_ltv.get('top_customers', []):
                 row += 1
                 ws.cell(row=row, column=1, value=customer.get('name', '')).border = self.border
-                ws.cell(row=row, column=2, value=f"${customer.get('ltv', 0):,.2f}").border = self.border
+                ws.cell(row=row, column=2, value=f"get_currency_symbol(currency){customer.get('ltv', 0):,.2f}").border = self.border
                 ws.cell(row=row, column=3, value=customer.get('bookings', 0)).border = self.border
-                ws.cell(row=row, column=4, value=f"${customer.get('avg_booking', 0):,.2f}").border = self.border
+                ws.cell(row=row, column=4, value=f"get_currency_symbol(currency){customer.get('avg_booking', 0):,.2f}").border = self.border
                 ws.cell(row=row, column=5, value=customer.get('last_visit', '')).border = self.border
 
         # Adjust column widths

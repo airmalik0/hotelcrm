@@ -8,8 +8,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import IntegrityError
-from starlette.middleware.cors import CORSMiddleware
 from sqlmodel import Session
+from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
@@ -29,6 +29,7 @@ from app.core.exceptions import (
     ValidationError as DomainValidationError,
 )
 from app.schemas.errors import ValidationErrorDetail, ValidationErrorResponse
+from app.services.backup import run_scheduled_backup
 from app.services.campaigns import CampaignService
 
 logger = logging.getLogger(__name__)
@@ -366,6 +367,23 @@ async def startup_event() -> None:
         id='startup_trigger_campaign_check',
         name='Startup trigger campaign check'
     )
+
+    if settings.BACKUP_ENABLED:
+        scheduler.add_job(
+            run_scheduled_backup,
+            'interval',
+            hours=24,
+            id='daily_database_backup',
+            name='Daily database backup',
+            replace_existing=True
+        )
+        scheduler.add_job(
+            run_scheduled_backup,
+            'date',
+            run_date=None,
+            id='startup_database_backup',
+            name='Initial database backup run'
+        )
 
     scheduler.start()
     logger.info("Background scheduler started")

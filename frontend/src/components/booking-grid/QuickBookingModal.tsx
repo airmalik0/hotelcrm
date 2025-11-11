@@ -475,7 +475,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                     className="p-2 bg-primary-100 dark:bg-primary-600/30 text-primary-600 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-600/40 transition-colors"
                     title={t.booking.createNewCustomer}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   </button>
                 </div>
 
@@ -524,7 +524,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
           {/* Date/Time Selection */}
           <div>
             <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
               {t.booking.checkInAndCheckOut}
             </h3>
 
@@ -673,7 +673,7 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                           }))
                         }}
                         className="px-2 py-2 text-danger-600 dark:text-danger-400 hover:bg-danger-100 dark:hover:bg-danger-600/40 rounded-lg transition-colors flex-shrink-0"
-                        title="Remove discount"
+                        title={t.bookingDetails.removeDiscount}
                       >
                         ×
                       </button>
@@ -697,7 +697,9 @@ export const QuickBookingModal = memo(function QuickBookingModal({
                           discountReason: e.target.value,
                         }))
                       }
-                      placeholder={formData.discount > 0 ? "Required" : ""}
+                      placeholder={
+                        formData.discount > 0 ? t.bookingDetails.required : ""
+                      }
                       className={`w-full px-3 py-2 border ${
                         errors.discountReason
                           ? "border-danger-500 focus:ring-danger-500"

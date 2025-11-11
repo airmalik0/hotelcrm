@@ -154,9 +154,9 @@ export function RoomEditModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300"
+              className="text-neutral-400 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-neutral-400 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300" />
             </button>
           </div>
 

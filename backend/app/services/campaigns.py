@@ -94,9 +94,45 @@ class CampaignService:
         Raises:
             BusinessRuleViolation: If validation fails or campaign is running
         """
-        # Prevent modification of active trigger campaigns
+        update_dict = campaign_in.model_dump(exclude_unset=True)
+
+        # Prevent modification of active trigger campaigns unless status is being downgraded
         if campaign.status == CampaignStatus.ACTIVE and campaign.type == CampaignType.TRIGGER:
-            raise BusinessRuleViolation("Cannot modify active trigger campaigns. Pause first.")
+            allowed_status_transitions = {CampaignStatus.PAUSED, CampaignStatus.ARCHIVED}
+            changed_non_status_fields = {
+                key
+                for key, value in update_dict.items()
+                if key != "status" and hasattr(campaign, key) and getattr(campaign, key) != value
+            }
+
+            if changed_non_status_fields:
+                raise BusinessRuleViolation(
+                    "Cannot modify active trigger campaigns. Pause or archive the campaign first."
+                )
+
+            new_status = update_dict.get("status")
+            if new_status is None:
+                raise BusinessRuleViolation(
+                    "Active trigger campaigns can only change status to paused or archived before other edits."
+                )
+
+            if isinstance(new_status, str):
+                try:
+                    new_status = CampaignStatus(new_status)
+                except ValueError as exc:  # noqa: BLE001
+                    raise BusinessRuleViolation(
+                        "Invalid status transition for active trigger campaign."
+                    ) from exc
+
+            if new_status == campaign.status:
+                raise BusinessRuleViolation(
+                    "Active trigger campaigns must be paused or archived before other edits."
+                )
+
+            if new_status not in allowed_status_transitions:
+                raise BusinessRuleViolation(
+                    "Active trigger campaigns can only transition to paused or archived before other edits."
+                )
 
         # Check for name conflicts if name is being changed
         if campaign_in.name and campaign_in.name != campaign.name:
@@ -329,7 +365,7 @@ class CampaignService:
         """
         # Cannot delete active trigger campaigns
         if campaign.status == CampaignStatus.ACTIVE and campaign.type == CampaignType.TRIGGER:
-            raise BusinessRuleViolation("Cannot delete active trigger campaigns. Archive first.")
+            raise BusinessRuleViolation("Cannot delete active trigger campaigns. Pause or archive the campaign first.")
 
         # Delete associated SMS history first (cascade)
         sms_records = self.session.exec(

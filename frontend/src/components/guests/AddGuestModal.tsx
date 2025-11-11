@@ -226,7 +226,13 @@ export const AddGuestModal = memo(function AddGuestModal({
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
               }`}
             >
-              <Search className="w-4 h-4 inline-block mr-2" />
+              <Search
+                className={`w-4 h-4 inline-block mr-2 ${
+                  mode === "search"
+                    ? "text-primary-600 dark:text-primary-400"
+                    : "text-neutral-600 dark:text-neutral-400"
+                }`}
+              />
               {t.booking.searchExisting}
             </button>
             <button
@@ -241,7 +247,13 @@ export const AddGuestModal = memo(function AddGuestModal({
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
               }`}
             >
-              <UserPlus className="w-4 h-4 inline-block mr-2" />
+              <UserPlus
+                className={`w-4 h-4 inline-block mr-2 ${
+                  mode === "new"
+                    ? "text-primary-600 dark:text-primary-400"
+                    : "text-neutral-600 dark:text-neutral-400"
+                }`}
+              />
               {t.booking.addNewGuest}
             </button>
           </div>
@@ -435,7 +447,7 @@ export const AddGuestModal = memo(function AddGuestModal({
                       ? "border-danger-500 focus:ring-danger-500"
                       : "border-neutral-300 dark:border-neutral-500 focus:ring-primary-500"
                   } rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 placeholder-neutral-500 dark:placeholder-neutral-400 focus:outline-none focus:ring-2`}
-                  placeholder="+998901234567"
+                  placeholder={t.bookingDetails.phonePlaceholder}
                 />
                 {errors.phone && (
                   <p className="mt-1 text-xs text-danger-600 dark:text-danger-400">

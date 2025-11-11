@@ -3288,6 +3288,71 @@ export const SessionCreateRequestSchema = {
     description: 'Request to create session (login)'
 } as const;
 
+export const SystemSettingsPublicSchema = {
+    properties: {
+        language: {
+            type: 'string',
+            maxLength: 10,
+            title: 'Language',
+            description: 'System default language',
+            default: 'en'
+        },
+        currency: {
+            type: 'string',
+            maxLength: 3,
+            title: 'Currency',
+            description: 'System default currency',
+            default: 'UZS'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'updated_at'],
+    title: 'SystemSettingsPublic',
+    description: 'Public schema for system settings.'
+} as const;
+
+export const SystemSettingsUpdateSchema = {
+    properties: {
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 10
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 3
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency'
+        }
+    },
+    type: 'object',
+    title: 'SystemSettingsUpdate',
+    description: 'Schema for updating system settings.'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {
@@ -3438,7 +3503,7 @@ export const UserPublicSchema = {
             type: 'string',
             maxLength: 3,
             title: 'Currency',
-            default: 'USD'
+            default: 'UZS'
         },
         id: {
             type: 'string',
